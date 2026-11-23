@@ -61,7 +61,7 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
   // after a change (scroll, a row's effect, the theme, the intro); otherwise it renders on demand, so an idle page draws
   // nothing (stripe.press idles its product page the same way). Full motion: every movement still plays out.
   const [awake, setAwake] = useState(true);
-  const engaged = useRef(false), napTimer = useRef(0);
+  const engaged = useRef(false), napTimer = useRef(0), openSeen = useRef(false);
   const nap = (ms = 2500) => {
     window.clearTimeout(napTimer.current); setAwake(true);
     napTimer.current = window.setTimeout(() => { if (!engaged.current) setAwake(false); }, ms);
@@ -108,7 +108,9 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
 
   useEffect(() => {
     signals.current.look = open;
-    const wake = window.setTimeout(() => { if (open) engage(); else { engaged.current = false; nap(); } }, 0);
+    if (open) signals.current.peek = false;
+    const changed = openSeen.current !== open; openSeen.current = open;
+    const wake = changed ? window.setTimeout(() => { if (open) engage(); else { engaged.current = false; nap(); } }, 0) : 0;
     if (!open) { Object.assign(signals.current.view, { zoom: 1, x: 0, y: 0, panning: false }); return () => window.clearTimeout(wake); }
     const onKey = (event: KeyboardEvent) => { if (event.key === "Escape" || event.key === "ArrowLeft" || event.key === "h") close(); };
     window.addEventListener("keydown", onKey);
@@ -165,10 +167,12 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
     // Safari's own pinch gestures would zoom the page instead.
     const block = (event: Event) => event.preventDefault();
     element.addEventListener("pointerdown", down); element.addEventListener("pointermove", move); element.addEventListener("pointerup", up); element.addEventListener("pointercancel", up);
+    element.addEventListener("lostpointercapture", up);
     element.addEventListener("gesturestart", block); element.addEventListener("gesturechange", block);
     return () => {
       window.clearTimeout(hold); cancelAnimationFrame(settle);
       element.removeEventListener("pointerdown", down); element.removeEventListener("pointermove", move); element.removeEventListener("pointerup", up); element.removeEventListener("pointercancel", up);
+      element.removeEventListener("lostpointercapture", up);
       element.removeEventListener("gesturestart", block); element.removeEventListener("gesturechange", block);
     };
   }, [open]);
@@ -183,7 +187,7 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
     </div>
     {/* The hit-rect (stripe.press's pattern): the only part of the stage that takes the pointer, fitted by the book to
         its own bounds each frame (the whole stage while Look inside is open). Pointer engagement wakes the loop. */}
-    <div ref={(element) => { signals.current.hitRect = element; }} aria-hidden="true" onPointerEnter={engage} onPointerLeave={release}
+    <div ref={(element) => { signals.current.hitRect = element; }} aria-hidden="true" onPointerEnter={engage} onPointerDown={engage} onPointerLeave={release}
       className="pointer-events-auto absolute inset-0 touch-pan-y in-data-[open=true]:touch-none in-data-[book=hover]:cursor-grab in-data-[book=drag]:cursor-grabbing in-data-[book=mark]:cursor-none" />
     {open
       ? <ArcRoles><div data-book-ui role="group" aria-label={t("lookInside")}

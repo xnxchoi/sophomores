@@ -255,6 +255,8 @@ export function LookInside({ look, root, signals, sound, width, height, thicknes
       target.removeEventListener("lostpointercapture", up);
       if (source) source.dataset.book = "";
       const g = gesture.current; gesture.current = null; if (!g) return;
+      // A cancelled pointer (a touch scroll, lost capture) is not a click, flick or release: the page goes back.
+      if (u.type !== "pointerup") { if (g.leaf >= 0 && !g.edge) l.target[g.leaf] = g.startAngle > PI / 2 ? PI : 0; return; }
       const quick = g.moved < 5 && performance.now() - g.downAt < 400;
       if (quick && !g.braked) { turn(g.dir); return; } // click to turn (#21)
       if (g.edge && g.speed > 0.7) { turnMany(g.dir, MathUtils.clamp(Math.round(g.speed * 3), 2, 8)); return; } // riffle (#23)

@@ -285,7 +285,8 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
       target.removeEventListener("lostpointercapture", up);
       if (!s.dragging) return;
       s.dragging = false; s.released = s.clock; setCursor(s.hovered ? "hover" : "");
-      if (Math.hypot(u.clientX - s.downX, u.clientY - s.downY) < CLICK_PX && performance.now() - s.downAt < CLICK_MS) onOpen?.();
+      // Only a real release clicks: a touch scroll cancels the pointer, and that never opens Look inside.
+      if (u.type === "pointerup" && Math.hypot(u.clientX - s.downX, u.clientY - s.downY) < CLICK_PX && performance.now() - s.downAt < CLICK_MS) onOpen?.();
     };
     try { (e.target as Element).setPointerCapture(e.pointerId); } catch { /* the pointer is already gone */ }
     target.addEventListener("pointermove", move); target.addEventListener("pointerup", up); target.addEventListener("pointercancel", up);
@@ -396,6 +397,21 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
     const zoom = MathUtils.lerp(1, view.zoom, b);
     if (camera.zoom !== zoom) { camera.zoom = zoom; camera.updateProjectionMatrix(); }
     view.unitsPerPx = (2 * (camera.position.z - 4) * Math.tan(MathUtils.degToRad(9))) / Math.max(state.size.height, 1) / zoom;
+  });
+
+  // On-demand rendering (the stage idles the loop when nothing is engaged): while anything still moves, or a released
+  // drag's pitch return (up to 7 s) or an effect is still to play, the book asks for the next frame itself, so motion
+  // always finishes and an idle book draws nothing.
+  const lastPose = useRef(NaN);
+  useFrame((state) => {
+    const s = physics.current, l = look.current, sig = signals.current, r = root.current;
+    const pose = (r ? r.rotation.x + r.rotation.y * 3 + r.rotation.z * 5 + r.position.x * 7 + r.position.y * 11 + r.position.z * 13 : 0)
+      + s.frontA * 17 + s.backA * 19 + s.peek * 23 + s.yaw * 29 + s.pitch * 31 + s.holo * 37 + s.radio * 41
+      + (l ? l.t * 43 + l.angle.reduce((sum, a, i) => sum + a * (i + 47), 0) : 0) + state.camera.position.z * 53;
+    const settling = s.dragging || (Number.isFinite(s.released) && s.clock - s.released < (s.touch ? 3.2 : 7.1))
+      || sig.hologram || sig.radio || sig.spins.length > 0 || sig.commands.length > 0;
+    if (settling || Math.abs(pose - lastPose.current) > 1e-5 || Number.isNaN(lastPose.current)) state.invalidate();
+    lastPose.current = pose;
   });
 
   return <group ref={root}

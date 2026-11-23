@@ -14,6 +14,7 @@ function Intro({ children }: { children: ReactNode }) {
   useFrame((state, delta) => {
     if (clock.current >= 2) return;
     clock.current = Math.min(clock.current + Math.min(delta, 0.05), 2);
+    state.invalidate(); // on demand, the intro still plays to its end
     const e = easeInOutQuad(clock.current / 2);
     state.camera.position.z = 54 + 120 * (1 - e);
     if (group.current) group.current.position.y = -6 * (1 - e);

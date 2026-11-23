@@ -38,7 +38,9 @@ instead of restating them.
 | 2b | The step-by-step path through each branch before and after the purchase | [03b — Step flows](03b-step-flows.md) | Draft; not independently reviewed; token sections held |
 | 2c | The flows standard to e-commerce sites, and the pages they need | [03c — Standard e-commerce flows](03c-standard-ecommerce-flows.md) | Draft; not independently reviewed |
 | 3 | What each flow must achieve (UX), and what it must look like (UI) | [04 — Flow goals](04-flow-goals.md) | UX draft · UI waits on references |
-| 4 | Reference set and moodboard | [04b — References](04b-references.md) | oflyn and osklen captured 2026-11-14; direction proposed, waits on the owner |
+| 4 | Reference set and moodboard | [04b — References](04b-references.md) | First set captured 2026-11-14 (oflyn.fr is out); the owner will send the reference list and research follows it. Direction proposed, waits on the owner |
+| 4c | Direction, reset: what the owner's eight sites share | [04c — Direction](04c-direction.md) | Captured 2026-11-14; all nine owner questions answered 2026-11-15. Motion captured 2026-11-15. Accepted 2026-11-15; replaces 04b's proposed direction |
+| 5 | Design requirements: every part of the site, what it comprises and what it must do | [05 — Design requirements](05-design-requirements.md) | Started 2026-11-15; batch 1 (the inventory) reviewed 2026-11-15; batches 2 (colour) and 3 (type) answered 2026-11-15; D1 and D2 decided, D2 built and reworked 2026-11-16 to a global theme plus page theme; three font questions open; batch 4 next |
 | 5 | Page specifications | [product-sales-page](../product-sales-page/README.md) is the first one | See below |
 
 ### Current focus (owner, 2026-11-14)
@@ -65,6 +67,23 @@ as background only; this plan now covers building the pages in
 [03c](03c-standard-ecommerce-flows.md). Nothing is live, so no page needs a redirect.
 The registry question about the single-purchase rule is withdrawn for the same reason.
 
+### Build split: structure now, style and interaction later (owner, 2026-11-14)
+
+A page is its content and structure, its styling, and its interactions. The first is
+functional, and how a page such as checkout *behaves* is business logic, not design. So:
+
+- **Now:** create the routes and files for the pages in
+  [03c](03c-standard-ecommerce-flows.md). Structure only, with no styling work and no
+  interaction work. Checkout gets a page like the others; what it does is business logic
+  that follows separately.
+- **After level 4:** styling and interactions, once the reference list the owner will send
+  has been researched and a direction is agreed.
+- This replaces 03c's "no page is built until level 4 settles" for structure only. 03c is
+  mirrored from the live doc, so the line there changes in the live doc, not here.
+- **Held, by the owner:** independent review of 01–04, 03b and 03c (see the ledger).
+- **Handed off, not done here:** applying the single-purchase rule. It is mechanism work,
+  not design: [handoff-single-purchase-rule.md](handoff-single-purchase-rule.md).
+
 ### Where the existing product-page work sits
 
 The six documents in [product-sales-page](../product-sales-page/README.md) become the
@@ -74,10 +93,10 @@ level-5 specification for one page: the product page.
   (the `R-xx` IDs) and the draft copy hold whatever direction is chosen. This folder
   cites `R-xx` IDs rather than restating facts.
 - **04–06 are provisional.** The design direction, UX storyboard and asset plan were
-  built on the Analogue reference and the flame light. The owner now wants the
-  current look (from oflyn.fr) fused with osklen.com.br and one or two others. That
-  may replace their direction, so their pending re-reviews are **paused** until level 4
-  settles. Their structural content (states, performance budget, the PG-visible fact
+  built on the Analogue reference and the flame light. The owner now wants a look built
+  from the reference set in [04b](04b-references.md) (osklen.com.br among them). oflyn.fr
+  is out: the owner is keeping it for the lostinseoul project. That may replace their
+  direction, so their pending re-reviews are **paused** until level 4 settles. Their structural content (states, performance budget, the PG-visible fact
   layer, the asset requisites format) is expected to carry over.
 
 ## Review ledger
@@ -97,6 +116,7 @@ Failed and near-failed cycles stay recorded.
 | commerce-experience 01–04 | 4 | — · FAIL | Structure only: 2 MEDIUM (dispute row ignored activation; statuses vs legend), 6 LOW. Fixed, plus a precedence rule for statuses. The full plan now also lives in the owner's live doc |
 | commerce-experience 01–04 | — | Held for owner | Past the three-cycle cap. Round-4 fixes applied, not independently re-checked; the owner's read of the live doc is the next gate |
 | commerce-experience 03c | — | Not reviewed | New 2026-11-14. No independent review; held for owner |
+| commerce-experience 01–04, 03b, 03c | — | Review held (owner, 2026-11-14) | The owner asked to hold independent review for now. Nothing is scheduled |
 | commerce-experience 03b | — | Not reviewed | New 2026-11-14. One self-check: unaccepted steps marked as Proposals, two unsourced claims moved into questions, privacy review added to the door list. Held for owner |
 
 ## What the single-purchase rule changes
@@ -159,7 +179,7 @@ their own documents.
 | C-6 | Holding as part of the launch scope | [02](02-journey-map.md#decisions-for-review) |
 | C-10 | Account deletion against a held token | [03](03-flows-and-scenarios.md#decisions-for-review) |
 | C-11 | How new references relate to Analogue and Má | [04](04-flow-goals.md#decisions-for-review) |
-| C-12 | Weight of the current oflyn-derived look | 04 |
+| C-12 | Weight of the current oflyn-derived look | 04. Withdrawn: oflyn.fr is out (owner, 2026-11-15) |
 | C-13 | When the token becomes the buyer's | 03 |
 | C-14 | Whether a token can ever be revoked | 03 |
 | C-15 | What "a single purchase" counts | 03 |
@@ -171,4 +191,5 @@ their own documents.
 | C-21 | Where orders live | 03c |
 | C-22 | Cancel and return requests from the order page | 03c |
 
-C-5, C-7, C-8 and C-9 were withdrawn when gift purchases were removed.
+C-5, C-7, C-8 and C-9 were withdrawn when gift purchases were removed. C-12 was withdrawn when
+oflyn.fr left the reference set.

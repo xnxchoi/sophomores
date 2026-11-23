@@ -56,3 +56,12 @@ historical ADRs remain provenance, not automatic merge or ownership instructions
 | [0033](0033-no-blocking-gates-assume-it-works.md) | Nothing blocks on a missing fact: assume it works and note what changes when it is real | accepted | 2026-11-22 |
 | [0034](0034-no-legacy-orders-forward-compatible-rules.md) | No compatibility with past orders; new orders record the rule version they were made under | accepted direction; implementation in review | 2026-11-22 |
 | [0035](0035-single-membership-token-per-account.md) | Single membership token per account | accepted scope; enforcement in review | 2026-11-22 |
+| [0036](0036-record-architecture-decisions.md) | Record architecture decisions (design; was design ADR 0001 on feature/product-production) | accepted | 2026-11-15 |
+| [0037](0037-colour-mode-follows-the-hideaway.md) | The colour mode is set the way The Hideaway sets it (design; was design ADR 0002 on feature/product-production) | accepted | 2026-11-15 |
+| [0038](0038-motion-library-split.md) | Motion leads; Lenis scrolls; Tailwind handles colour and opacity (design; was design ADR 0003 on feature/product-production) | accepted | 2026-11-15 |
+| [0039](0039-page-change-next-transition-router.md) | Page changes run through next-transition-router (design; was design ADR 0004 on feature/product-production) | accepted | 2026-11-15 |
+| [0040](0040-base-ui-primitives-vaul-sheets.md) | Base UI for primitives; Vaul for drawers and sheets (design; was design ADR 0005 on feature/product-production) | accepted | 2026-11-15 |
+| [0041](0041-icon-set-phosphor.md) | Icons move to Phosphor (design; was design ADR 0006 on feature/product-production) | accepted | 2026-11-15 |
+| [0042](0042-tanstack-form.md) | Forms use TanStack Form (design; was design ADR 0007 on feature/product-production) | accepted | 2026-11-15 |
+| [0043](0043-type-setup-follows-the-hideaway.md) | The type setup follows The Hideaway, on a 16px root (design; was design ADR 0008 on feature/product-production) | accepted | 2026-11-15 |
+| [0044](0044-three-layer-colour-tokens.md) | Colour tokens in three layers, under The Hideaway's names (design; was design ADR 0009 on feature/product-production) | accepted | 2026-11-15 |

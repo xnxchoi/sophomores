@@ -61,18 +61,12 @@ export default async function CheckoutPage({ searchParams }: { searchParams?: Pr
     <h2 className="text-[15px] leading-[21px] wrap-anywhere">{offer.title}</h2>
     <div className="mt-3">{orderRows}</div>
   </section> : null;
-  const policies: { href: string; label: string }[] = [
-    { href: "/help/shipping", label: offerCopy("shippingAndReturns") },
-    { href: "/terms", label: offerCopy("purchaseTerms") },
-    { href: "/privacy", label: offerCopy("privacyAndDeliveryInformation") },
-    { href: "/refund", label: offerCopy("cancellationsReturnsAndRefunds") }
-  ];
 
-  return <PageFrame title={t("title")} layout="wide">
-    <nav aria-label={t("navigation")} className="mb-8 flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
+  return <PageFrame title={t("title")} titleHidden layout="wide">
+    {/* stripe.press spec §7 (owner): the top row is one way back, nothing else; Help and the rest sit in the foot row. */}
+    <nav aria-label={t("navigation")} className="mb-8">
       {/* A native product has no cart (display-only): go back to its own page instead. */}
-      <Link href={native ? "/shop/products/" + encodeURIComponent(native.offer.productID) : "/shop/cart"} className="inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{native ? offerCopy("productDetails") : t("backToCart")}</Link>
-      <Link href="/help" className="inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{offerCopy("help")}</Link>
+      <Link href={native ? "/shop/products/" + encodeURIComponent(native.offer.productID) : "/shop/cart"} className="inline-flex min-h-11 items-center gap-2 text-xs uppercase tracking-[0.04em] underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2"><span aria-hidden="true">←</span>{native ? offerCopy("productDetails") : t("backToCart")}</Link>
     </nav>
 
     {native ? <NativeCheckoutSummary title={native.title} offer={native.offer} /> : offer ? <>
@@ -88,17 +82,12 @@ export default async function CheckoutPage({ searchParams }: { searchParams?: Pr
       <p className="mt-4 max-w-lg text-sm leading-relaxed text-muted-foreground">{loadFailed ? t("loadFailedDescription") : offerCopy("productDeliveryAndPurchaseInformationWillAppearHereWhen")}</p>
     </section>}
 
-    <footer className="mt-16 grid gap-10 border-t border-border pt-8 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,26rem)] xl:grid-cols-[minmax(0,1fr)_28rem] lg:gap-x-16 xl:gap-x-24">
-      <aside aria-labelledby="checkout-payment-recovery" className="min-w-0">
-        <h2 id="checkout-payment-recovery" className="text-xs uppercase tracking-[0.04em]">{t("paymentRecoveryTitle")}</h2>
-        <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted-foreground">{t("paymentRecoveryDescription")}</p>
-        <Link href="/shop/payment" prefetch={false} className="mt-2 inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t("checkPaymentStatus")}</Link>
-      </aside>
-      <nav aria-label={offerCopy("sellerAndPurchasePolicies")} className="min-w-0">
-        <ul className="flex flex-col">
-          {[...policies, { href: "/shop", label: t("backToShop") }].map((policy) => <li key={policy.label}><Link href={policy.href} className="inline-flex min-h-11 items-center text-sm text-muted-foreground underline decoration-current/30 underline-offset-4 outline-offset-4 hover:text-foreground hover:decoration-current focus-visible:outline-2">{policy.label}</Link></li>)}
-        </ul>
-      </nav>
+    {/* One quiet row at the foot (spec §7); terms, privacy and refunds stay in the business footer. */}
+    <footer className="mt-16 border-t border-border pt-5">
+      <ul className="flex flex-wrap gap-x-6">
+        {[{ href: "/help", label: offerCopy("help") }, { href: "/help/shipping", label: offerCopy("shippingAndReturns") }, { href: "/shop/payment", label: t("checkPaymentStatus") }].map((link) =>
+          <li key={link.href}><Link href={link.href} prefetch={false} className="inline-flex min-h-11 items-center text-xs uppercase tracking-[0.04em] text-muted-foreground underline decoration-current/30 underline-offset-4 outline-offset-4 hover:text-foreground hover:decoration-current focus-visible:outline-2">{link.label}</Link></li>)}
+      </ul>
     </footer>
   </PageFrame>;
 }

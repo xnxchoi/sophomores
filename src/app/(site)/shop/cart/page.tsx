@@ -1,14 +1,14 @@
 import { isReviewCopyRequest } from "@/lib/auth/review-editor-policy";
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
-import { PageFrame } from "@/components/commerce/page-frame";
 import { connection } from "next/server";
+import { headers } from "next/headers";
 import { getPayload } from "payload";
 import config from "@payload-config";
 import { loadCommerceOffer, type CommerceOffer } from "@/lib/commerce/catalogue";
 import { loadPublicMemberCapabilities } from "@/lib/member-auth/public-capabilities.server";
-import { CommerceAccountGate } from "@/components/commerce/checkout";
-import { CommerceCart } from "@/components/commerce/cart";
+import { readHeaderMemberState } from "@/lib/member-auth/header-state.server";
+import { CartView } from "./cart-view";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("PageMetadata");
@@ -24,15 +24,9 @@ export default async function CartPage() {
   let offer: CommerceOffer | null = null;
   try { offer = await loadCommerceOffer(await getPayload({ config })); }
   catch { console.error("Published cart pricing is unavailable."); }
-  const signInOffInReview = isReviewCopyRequest();
-  return <PageFrame title={t("title")} displayTitle layout={signInOffInReview ? "editorial" : "wide"}>
-    <div className="min-w-0">
-      <CommerceAccountGate
-        signInOffInReview={signInOffInReview}
-        initialCapabilities={await loadPublicMemberCapabilities()}
-      >
-        <CommerceCart offer={offer} wide />
-      </CommerceAccountGate>
-    </div>
-  </PageFrame>;
+  // The same request-scoped state the header reads; it only decides whether Checkout asks for sign-in first.
+  const member = await readHeaderMemberState(await headers());
+  return <CartView offer={offer} signedIn={member.state === "signed-in" && member.member}
+    initialCapabilities={await loadPublicMemberCapabilities()} signInOffInReview={isReviewCopyRequest()}
+    copy={{ title: t("title"), signInTitle: t("signInTitle"), backToCart: t("backToCart") }} />;
 }

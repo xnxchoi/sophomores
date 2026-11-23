@@ -80,10 +80,17 @@ function EnabledCommerceAccountGate({ initialCapabilities, children, inlineEmail
 function CommerceSession({ children, verified, onSessionExpired, identityCheckDetails, progress }: {
   children: ReactNode; verified: boolean; onSessionExpired: () => void; identityCheckDetails?: ReactNode; progress?: boolean;
 }) {
+  return <CommerceProvider>
+    <CommerceIdentityBoundary verified={verified} onSessionExpired={onSessionExpired} identityCheckDetails={identityCheckDetails} progress={progress}>{children}</CommerceIdentityBoundary>
+  </CommerceProvider>;
+}
+
+/** The one cart/payment provider configuration, shared by checkout and the cart page (which shows the cart to everyone). */
+export function CommerceProvider({ children }: { children: ReactNode }) {
   return <EcommerceProvider customersSlug="users" debug={false} enableVariants={false} syncLocalStorage={false}
     currenciesConfig={{ defaultCurrency: "KRW", supportedCurrencies: [{ code: "KRW", decimals: 0, label: "Korean Won", symbol: "₩" }] }}
     paymentMethods={[{ name: "portone", label: "Card", initiatePayment: true, confirmOrder: true }]}>
-    <CommerceIdentityBoundary verified={verified} onSessionExpired={onSessionExpired} identityCheckDetails={identityCheckDetails} progress={progress}>{children}</CommerceIdentityBoundary>
+    {children}
   </EcommerceProvider>;
 }
 

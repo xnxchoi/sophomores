@@ -1431,14 +1431,14 @@
     },
     "app_site_shop_cart_page": {
       "title": "",
-      "introduction": ""
+      "introduction": "",
+      "signInTitle": "",
+      "backToCart": ""
     },
     "components_commerce_cart": {
     "estimatedTotalAnnouncement": "",
       "contents": "",
       "loading": "",
-      "unavailable": "",
-      "unavailableDetail": "",
       "empty": "",
       "emptyDetail": "",
       "savedItem": "",

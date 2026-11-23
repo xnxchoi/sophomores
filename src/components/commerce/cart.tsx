@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import NumberFlow, { NumberFlowGroup } from "@number-flow/react";
-import { useCart } from "@payloadcms/plugin-ecommerce/client/react";
+import { useCart, useEcommerce } from "@payloadcms/plugin-ecommerce/client/react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/components/core/Link/Link";
 import type { CommerceOffer } from "@/lib/commerce/catalogue";
@@ -14,10 +14,19 @@ type CartAction =
   | { kind: "refreshing" | "refreshed" | "refresh-error" }
   | null;
 
-/** The existing account gate owns identity and the provider. This view never submits payment. */
-export function CommerceCart({ offer, wide = false }: { offer: CommerceOffer | null; wide?: boolean }) {
+/**
+ * The cart for everyone. Its provider (CommerceProvider) loads a signed-in member's cart itself, and a guest cart once Auth
+ * enables one. This view never submits payment. With `onSignIn`, Checkout asks for sign-in first instead of linking on.
+ */
+export function CommerceCart({ offer, wide = false, signedIn = true, onSignIn }: {
+  offer: CommerceOffer | null; wide?: boolean; signedIn?: boolean; onSignIn?: () => void;
+}) {
   const t = useTranslations("Customer.components_commerce_cart");
   const { cart, isLoading, removeItem, refreshCart } = useCart();
+  const { user } = useEcommerce();
+  // A signed-in member's cart arrives after the provider reads the member; until then (or while the cart it named loads) it's loading, not empty.
+  const savedCarts = (user as { cart?: { docs?: unknown[] } } | null | undefined)?.cart?.docs?.length ?? 0;
+  const waiting = !cart && (isLoading || (signedIn && (!user || savedCarts > 0)));
   const [action, setAction] = useState<CartAction>(null);
   const changing = useRef(false);
   const items: NonNullable<Cart["items"]> = cart?.items ?? [];
@@ -72,9 +81,8 @@ export function CommerceCart({ offer, wide = false }: { offer: CommerceOffer | n
   return <section aria-label={t("contents")} aria-busy={busy} className={cn("grid min-w-0 gap-8",
     wide && items.length > 0 && "lg:grid-cols-[minmax(0,1.6fr)_minmax(18rem,1fr)] lg:gap-12")}>
     <div className="min-w-0">
-      {!cart ? <div className="py-6">
-        <h2 className="text-2xl">{isLoading ? t("loading") : t("unavailable")}</h2>
-        {!isLoading && <p className="mt-4 max-w-lg text-sm leading-relaxed text-muted-foreground">{t("unavailableDetail")}</p>}
+      {waiting ? <div className="py-6">
+        <h2 className="text-2xl">{t("loading")}</h2>
       </div> : items.length === 0 ? <div className="py-6">
         <h2 className="text-2xl">{t("empty")}</h2>
         <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{t("emptyDetail")}</p>
@@ -124,7 +132,10 @@ export function CommerceCart({ offer, wide = false }: { offer: CommerceOffer | n
         </> : <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{t("priceUnavailable")}</p>}
       </section>}
       <nav aria-label={t("nextSteps")} className="flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-border pt-6">
-        <Link href={checkoutAvailable ? "/shop/checkout" : "/shop"} className="inline-flex min-h-12 w-full items-center justify-center rounded-full bg-foreground px-5 text-sm font-medium text-background outline-offset-4 transition-opacity hover:opacity-75 focus-visible:outline-2">{checkoutAvailable ? t("continueToCheckout") : items.length ? t("continueToShop") : t("visitShop")}</Link>
+        {checkoutAvailable && onSignIn
+          // Signed out: Checkout first asks for sign-in (the page swaps to the account step, then comes back here).
+          ? <button type="button" onClick={onSignIn} className="inline-flex min-h-12 w-full items-center justify-center rounded-full bg-foreground px-5 text-sm font-medium text-background outline-offset-4 transition-opacity hover:opacity-75 focus-visible:outline-2">{t("continueToCheckout")}</button>
+          : <Link href={checkoutAvailable ? "/shop/checkout" : "/shop"} className="inline-flex min-h-12 w-full items-center justify-center rounded-full bg-foreground px-5 text-sm font-medium text-background outline-offset-4 transition-opacity hover:opacity-75 focus-visible:outline-2">{checkoutAvailable ? t("continueToCheckout") : items.length ? t("continueToShop") : t("visitShop")}</Link>}
         <Link href="/help/shipping" className="inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t("shippingAndReturns")}</Link>
       </nav>
     </div>

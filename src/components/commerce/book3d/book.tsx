@@ -55,7 +55,10 @@ const SHARE = [0.6, 0.1, 0.1, 0.1, 0.1];
 // stripe.press constants (map §C1). Rates are per 60 fps frame unless named per second.
 const DRAG_RATE = 0.01125, MOUSE_MUL = 0.75, FLING_MAX = 0.42, FLING_DECAY = 0.95, TOUCH_PITCH_ARM_PX = 10;
 const CLICK_PX = 5, CLICK_MS = 500, FLAP_GAIN = 0.037, FLAP_MAX = 0.35 * MathUtils.degToRad(80), FLAP_K = 40;
-const PEEK = MathUtils.degToRad(5), PEEK_EASE = 0.075, REST_YAW = 0.35;
+const PEEK = MathUtils.degToRad(5), PEEK_EASE = 0.075, REST_YAW = 0.5;
+// The closed book's framing, as stripe.press sets it on the art: large, on a diagonal, running past the stage's lower
+// edge. Tuned live against the stage; the open pose is centred and upright as before.
+const REST_PITCH = 0.32, REST_ROLL = -0.55, CLOSED_X = 1.4, CLOSED_Y = -2.4, CLOSED_Z = 12;
 // Look inside pose (map §C2 #16): tilted back 22° (12.5° on touch); pointer height adds up to +10° / −12°.
 const OPEN_TILT = MathUtils.degToRad(22), OPEN_TILT_TOUCH = MathUtils.degToRad(12.5), POINTER_UP = MathUtils.degToRad(10), POINTER_DOWN = MathUtils.degToRad(12);
 
@@ -340,9 +343,11 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
     const b = open.book, closedYaw = REST_YAW + s.yaw + spinYaw + s.scroll * 0.9, progress = l.spread / LEAVES;
     if (root.current) {
       root.current.rotation.set(
-        MathUtils.lerp(s.pitch, -(small ? OPEN_TILT_TOUCH : OPEN_TILT) + s.openTilt, b),
-        MathUtils.lerp(closedYaw, -0.1 * (progress * 2 - 1), b), 0);
-      root.current.position.set(MathUtils.lerp(0, W / 2, b), 0, MathUtils.lerp(s.lift - dip - s.scroll * 6, 4, b));
+        MathUtils.lerp(REST_PITCH + s.pitch, -(small ? OPEN_TILT_TOUCH : OPEN_TILT) + s.openTilt, b),
+        MathUtils.lerp(closedYaw, -0.1 * (progress * 2 - 1), b),
+        MathUtils.lerp(REST_ROLL, 0, b));
+      root.current.position.set(MathUtils.lerp(CLOSED_X, W / 2, b), MathUtils.lerp(CLOSED_Y, 0, b),
+        MathUtils.lerp(CLOSED_Z + s.lift - dip - s.scroll * 6, 4, b));
     }
     // The open spread is twice as wide: on a narrow stage the camera backs off until it fits (after the intro dolly).
     if (s.clock > 2) {

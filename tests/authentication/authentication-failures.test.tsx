@@ -1,4 +1,5 @@
 import messages from "../../messages/en.json";
+import koreanMessages from "../../messages/ko.json";
 import { AuthenticationMessages } from "../fixtures/authentication-messages";
 import { codeCellsIn, codeIn, shownText, spokenText } from "../fixtures/code-input";
 import { readFileSync } from "node:fs";
@@ -157,7 +158,7 @@ const matrix = [
 
 for (const locale of ["en", "ko"] as const) {
   for (const [kind, expectedPhase] of matrix) {
-    test(`${locale}: ${kind} uses canonical inline failure copy with missing-key English fallback`, async () => {
+    test(`${locale}: ${kind} uses canonical inline failure copy in its locale`, async () => {
       const result = renderStudy({ locale });
       await preview(result, kind);
       const body = current(result.container);
@@ -166,8 +167,9 @@ for (const locale of ["en", "ko"] as const) {
       const feedback = ui.within(body).getByRole(role);
       assert.equal(result.container.querySelector("[data-authentication-provider-locale]")?.getAttribute("data-authentication-provider-locale"), locale);
       // Read as assistive technology reads it, and as shown: Arc's code-field message holds the copy once for each.
-      assert.equal(spokenText(feedback).trim(), messages.AuthPhase.failures[kind], "untranslated AuthPhase uses canonical English under either selected locale");
-      assert.equal(shownText(feedback).trim(), messages.AuthPhase.failures[kind], "the message is shown once");
+      const expected = (locale === "ko" ? koreanMessages : messages).AuthPhase.failures[kind];
+      assert.equal(spokenText(feedback).trim(), expected, "failure copy comes from the selected locale's catalogue");
+      assert.equal(shownText(feedback).trim(), expected, "the message is shown once");
       assert.equal(ui.within(body).queryAllByRole(role).length, 1, "feedback is not duplicated");
       if (kind === "rate-limited") {
         assert.equal(feedback.hasAttribute("data-rate-limit-status"), true);

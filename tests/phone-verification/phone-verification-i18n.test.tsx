@@ -19,8 +19,12 @@ function leafMessages(value: object, prefix = ""): Record<string, string> {
   }));
 }
 
+// Argument names only: a {word} right after a plural option keyword
+// (=1, one, other, ...) is that option's literal text, not an ICU argument.
+// The catalogues use no select/selectordinal, so plural keywords suffice.
 function placeholders(message: string) {
-  return [...new Set([...message.matchAll(/\{\s*([A-Za-z_][\w]*)\s*[,}]/g)].map((match) => match[1]))].sort();
+  const argument = /(?<!(?:=\d+|\b(?:zero|one|two|few|many|other))\s*)\{\s*([A-Za-z_][\w]*)\s*[,}]/g;
+  return [...new Set([...message.matchAll(argument)].map((match) => match[1]))].sort();
 }
 
 function languageButton(html: string, label: string) {

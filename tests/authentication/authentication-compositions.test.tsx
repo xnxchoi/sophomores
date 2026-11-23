@@ -1,6 +1,7 @@
 import { AuthenticationMessages } from "../fixtures/authentication-messages";
 import { enteredCode } from "../fixtures/code-input";
 import messages from "../../messages/en.json";
+import koreanMessages from "../../messages/ko.json";
 import { EnglishMessages } from "../fixtures/english-messages";
 import assert from "node:assert/strict";
 import { after, afterEach, before, test } from "node:test";
@@ -449,7 +450,7 @@ for (const composition of ["stacked", "paired"] as const) {
     }
   }
 
-  test(`${composition}: preview language control remains available while untranslated active phases use canonical English fallback`, () => {
+  test(`${composition}: preview language control remains available while active phases render Korean`, () => {
     const { container } = ui.render(
       <AuthenticationMessages locale="ko"><Preview composition={composition} locale="ko" /></AuthenticationMessages>
     );
@@ -472,9 +473,9 @@ for (const composition of ["stacked", "paired"] as const) {
     assert.equal(surface(container).dataset.compositionView, "login");
     assert.ok(ui.within(container).getByRole("combobox", { name: "언어" }));
     assert.ok(
-      ui.within(surface(container)).getByRole("button", { name: "Continue" })
+      ui.within(surface(container)).getByRole("button", { name: koreanMessages.AuthPhase.continue })
     );
-    assert.ok(ui.within(surface(container)).getByLabelText("Email address"));
+    assert.ok(ui.within(surface(container)).getByLabelText(koreanMessages.AuthPhase.email));
     ui.fireEvent.click(
       ui.within(surface(container)).getByRole("button", { name: "뒤로" })
     );
@@ -638,7 +639,7 @@ test("focused outcome actions remain compact rather than full-width cards", asyn
 
 });
 
-test("all explicit phase fixtures render canonical fallback headings under English and Korean providers without native side effects", async () => {
+test("all explicit phase fixtures render their locale's headings under English and Korean providers without native side effects", async () => {
   const { AccountPhaseStudy } = await import("@/components/Authentication/account-phase-study");
   const phases = [
     "entry",
@@ -678,7 +679,7 @@ test("all explicit phase fixtures render canonical fallback headings under Engli
           `${locale}/${current} has a heading`
         );
         const headingKey = { entry: "signup", "email-code": "emailHeading", passkey: "passkeyHeading", phone: "phoneHeading", waiting: "waitingHeading", review: "reviewHeading", "phone-confirmed": "confirmedHeading", complete: "completeHeading", expired: "expiredHeading", used: "usedHeading", error: "errorHeading" } as const;
-        assert.equal(heading?.textContent?.trim(), messages.AuthPhase[headingKey[current]], "missing Korean phase keys use canonical English, never invented Korean");
+        assert.equal(heading?.textContent?.trim(), (locale === "ko" ? koreanMessages : messages).AuthPhase[headingKey[current]], "phase headings come from the selected locale's catalogue");
         assert.equal(server.window.document.querySelector("[data-authentication-provider-locale]")?.getAttribute("data-authentication-provider-locale"), locale);
         assert.ok(
           root.querySelector(

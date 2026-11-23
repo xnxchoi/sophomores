@@ -119,7 +119,7 @@ test("client hooks receive Korean and English fallback through the shared provid
       children: createElement(Messages)
     })
   );
-  assert.equal(html, "<p>취소 / Account ready / Try again in 7s.</p>");
+  assert.equal(html, "<p>취소 / 계정 준비 완료 / 7초 후에 다시 시도해 주세요.</p>");
 });
 
 test("server request and all layout providers share the resolved catalogue", () => {

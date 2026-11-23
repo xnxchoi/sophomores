@@ -1,4 +1,5 @@
 import messages from "../../messages/en.json";
+import koreanMessages from "../../messages/ko.json";
 import { AuthenticationMessages } from "../fixtures/authentication-messages";
 import { codeCellsIn, codeDescriptionIn, codeIn, spokenText } from "../fixtures/code-input";
 import assert from "node:assert/strict";
@@ -209,7 +210,7 @@ for (const locale of ["en", "ko"] as const) {
     assert.doesNotMatch(intro.textContent ?? "", /No password needed|비밀번호는 필요 없어요/);
     login.unmount();
     const signup = renderStudy({ flow: "signup", locale });
-    assert.ok(signup.container.querySelector("[data-phase-intro]")?.textContent?.includes(messages.AuthPhase.signupHelp), "untranslated signup help uses canonical English for both locales");
+    assert.ok(signup.container.querySelector("[data-phase-intro]")?.textContent?.includes((locale === "ko" ? koreanMessages : messages).AuthPhase.signupHelp), "signup help comes from the selected locale's catalogue");
   });
 }
 

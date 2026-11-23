@@ -116,7 +116,7 @@ const koreanBaseline = {
     "helpDevice": "메시지 앱이 열려도 문자가 자동 발송되지는 않아요. 수신 주소와 내용을 확인한 뒤 직접 보내 주세요.",
     "helpMms": "이 인증은 이메일 주소로 보내는 통신사 MMS를 사용해요. 메일 앱으로 이메일을 보내면 휴대폰 번호를 확인할 수 없어요.",
     "helpIphone": "iPhone에서는 설정 → 앱 → 메시지에서 MMS 메시지 사용 가능 여부를 확인해 주세요. iMessage(파란 말풍선)로는 이 방식의 인증을 할 수 없어요. 초록색도 SMS·MMS·RCS일 수 있어 MMS 발송을 보장하지 않아요.",
-    "helpLimitations": "웹페이지는 MMS를 강제하거나 iMessage를 끌 수 없어요. 통신사·요금제·기기에 따라 이메일 수신자 MMS를 지원하지 않을 수 있어요. 발송이 안 되면 반복해서 보내지 말고 지원 여부를 확인해 주세요.",
+    "helpLimitations": "웹페이지에서는 MMS 전송을 강제하거나 iMessage를 끌 수 없어요. 통신사, 요금제, 기기에 따라 이메일 주소로 MMS를 보내지 못할 수 있어요. 메시지가 전송되지 않으면 이용 중인 요금제로 이메일 주소에 MMS를 보낼 수 있는지 통신사에 문의해 주세요.",
     "modalClose": "인증 창 닫기",
     "openVerification": "휴대폰 인증하기",
     "modalDescription": "대한민국 휴대폰 번호 인증 화면입니다. 미리 보기에서는 문자를 발송하지 않아요.",
@@ -135,8 +135,8 @@ const koreanBaseline = {
   "VerificationTrial": {
     "trial": "로컬 인증 테스트",
     "close": "로컬 인증 테스트 닫기",
-    "boundary": "로컬 테스트 전용이며 계정이나 등록 권한을 부여하지 않아요. SKT 파일럿을 활성화하면 인증된 통신사 메시지를 확인해요.",
-    "numberDescription": "대한민국 휴대폰 번호로 사용할 일회성 테스트 문구를 만들어요. 실제 등록과는 연결되지 않아요.",
+    "boundary": "로컬 테스트 전용이며 계정을 만들거나 가입을 완료하지는 않아요. SKT 파일럿을 활성화하면 인증된 통신사 메시지를 확인해요.",
+    "numberDescription": "대한민국 휴대폰 번호로 사용할, 일정 시간 동안만 유효한 인증 문구를 만들어요. 이 로컬 테스트는 가입과 별개예요.",
     "privacy": "로컬 백엔드는 키 기반 휴대폰 번호 다이제스트와 인증 상태를 처리해요. 인증 모듈은 원본 번호를 저장하지 않아요. Zoho 접근 권한은 concierge 메일함 전체에 적용될 수 있지만 verify 별칭 수신 메일만 처리해요. 이 로컬 테스트에는 본인의 휴대폰 번호만 사용해 주세요.",
     "create": "테스트 문구 만들기",
     "creating": "만드는 중…",
@@ -173,7 +173,7 @@ const koreanBaseline = {
       "status": "현재 상태를 확인하지 못했어요. 자동 확인을 멈췄으니 상태 확인을 다시 눌러 주세요. 인증 완료로 판단하지 마세요.",
       "cancel": "취소 여부를 확인하지 못했어요. 다시 시도하거나 창을 닫아 주세요. 테스트 문구는 만료 시간까지만 유효해요."
     },
-    "numberPrompt": "쓰고 있는 휴대폰 번호를 입력하세요. 직접 보낼 인증 문구를 준비할게요.",
+    "numberPrompt": "사용 중인 대한민국 휴대폰 번호를 입력하세요. 직접 보낼 인증 문구를 준비할게요.",
     "continueLabel": "계속",
     "registration": {
       "composerHelpLabel": "메시지 앱이 열리지 않나요?",
@@ -205,9 +205,9 @@ const koreanBaseline = {
       },
       "state": {
         "pending": "인증 메시지를 기다리고 있어요.",
-        "review": "아직 인증되지 않았어요. 메시지의 통신사 인증 근거를 확인하지 못했어요. 입력한 번호의 통신사 MMS로 보냈는지 확인해 주세요.",
-        "verified": "통신사 메시지가 휴대폰 확인 검사를 통과했어요.",
-        "consumed": "이미 사용한 인증이라 다시 연결할 수 없어요.",
+        "review": "아직 인증되지 않았어요. 메시지의 통신사 인증 근거를 확인하지 못했어요. 입력한 번호로 통신사 MMS를 보냈는지 확인해 주세요.",
+        "verified": "보낸 통신사 메시지가 전화번호 인증 검사를 통과했어요.",
+        "consumed": "이 인증은 이미 사용했어요. 다시 시작해 새 메시지를 준비해 주세요.",
         "cancelled": "인증이 취소됐어요. 다시 시작해 새 메시지를 준비해 주세요.",
         "expired": "새 메시지를 준비해 다시 시도해 주세요. 이전 메시지로는 이 번호를 인증할 수 없어요."
       },
@@ -215,7 +215,7 @@ const koreanBaseline = {
         "receiver": "지금은 인증 메시지를 받을 수 없어요. 메시지를 다시 보내지 마세요. 서비스가 복구되면 다시 확인해 주세요. 기존 메시지의 만료 시간은 그대로 유지돼요.",
         "create": "인증 메시지를 준비하지 못했어요. 아직 휴대폰이 인증되지 않았으니 다시 시도해 주세요.",
         "status": "메시지 상태를 확인하지 못해 자동 확인이 일시 중지됐어요. 상태 확인을 다시 눌러 주세요. 아직 휴대폰이 인증되지 않았어요.",
-        "cancel": "취소됐는지 확인하지 못했어요. 다시 시도해 주세요. 이 메시지는 잠시 후 만료돼요."
+        "cancel": "취소 여부를 확인하지 못했어요. 다시 시도하거나 인증이 만료될 때까지 기다려 주세요."
       }
     }
   }
@@ -324,11 +324,11 @@ test("auth, Payload and phone surfaces retain canonical provider coverage", () =
   assert.doesNotMatch(source, /\.\/messages\//);
 });
 
-test("English fallback keeps singular nouns under Korean plural rules", () => {
+test("Korean plural messages render through Korean plural rules", () => {
   const tickets = createTranslator({ locale: "ko", messages: messagesByLocale.ko, namespace: "Customer.components_tickets_ticket_selection" });
   const sessions = createTranslator({ locale: "ko", messages: messagesByLocale.ko, namespace: "Customer.app_site_me_settings_page_client" });
-  assert.equal(tickets("ticketCount", { quantity: 1 }), "1 ticket");
-  assert.equal(tickets("ticketCount", { quantity: 2 }), "2 tickets");
-  assert.equal(sessions("activeSessionCount", { count: 1 }), "1 active session");
-  assert.equal(sessions("activeSessionCount", { count: 2 }), "2 active sessions");
+  assert.equal(tickets("ticketCount", { quantity: 1 }), "입장권 1장");
+  assert.equal(tickets("ticketCount", { quantity: 2 }), "입장권 2장");
+  assert.equal(sessions("activeSessionCount", { count: 1 }), "활성 세션 1개");
+  assert.equal(sessions("activeSessionCount", { count: 2 }), "활성 세션 2개");
 });

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { test } from "node:test";
 import ts from "typescript";
@@ -333,4 +334,74 @@ test("the base layer removes the browser's focus outline", () => {
 test("every control shows some keyboard focus cue", () => {
   const { sources } = reachable();
   assert.deepEqual(sources.flatMap(controlsWithoutCue), []);
+});
+
+// --- Arc components reach pages through ArcFocus ---------------------------------------------------------
+
+// Arc ships no keyboard ring and the base layer removes the browser's, so an Arc component with controls must reach
+// a page through core/ArcFocus, which adds the cue on the visible shape. The cue check above skips Arc's files (they
+// are Arc's), so this is what catches a direct import (Review-B, r3: the essay pagination showed nothing on Tab).
+// Direct imports are fine for hooks and providers, for parts with no controls, and for parts that bring their own
+// keyboard cue (each named with its reason).
+const arcDirect: Record<string, string> = {
+  Badge: "no controls",
+  AnimatedCounter: "no controls",
+  Progress: "no controls",
+  ConfirmMorph: "its module CSS fills each button on :focus-visible",
+  NumberField: "a text field: border-colour cue on focus; its steppers fill on :focus-visible",
+  OtpInput: "a text field: its cell border is the cue (the ring is the cell's own box; see the OTP test)"
+};
+
+export function arcImportProblems(file: string): string[] {
+  const rel = path.relative(root, file);
+  if (!/\.[jt]sx?$/.test(file) || rel.startsWith("src/components/arc/") || rel === "src/components/core/ArcFocus/ArcFocus.tsx") return [];
+  const source = ts.createSourceFile(file, fs.readFileSync(file, "utf8"), ts.ScriptTarget.Latest, true);
+  const out: string[] = [];
+  for (const statement of source.statements) {
+    if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier)) continue;
+    if (!/^@\/components\/arc\/(?!_shared\/)/.test(statement.moduleSpecifier.text)) continue;
+    const names = statement.importClause?.namedBindings && ts.isNamedImports(statement.importClause.namedBindings)
+      ? statement.importClause.namedBindings.elements.filter((element) => !element.isTypeOnly && !statement.importClause!.isTypeOnly).map((element) => (element.propertyName ?? element.name).text)
+      : statement.importClause?.name ? [statement.importClause.name.text] : [];
+    for (const name of names) {
+      if (/^use[A-Z]/.test(name) || /Provider$/.test(name) || name in arcDirect) continue;
+      out.push(`${rel}  imports Arc's ${name} directly; route it through core/ArcFocus`);
+    }
+  }
+  return out;
+}
+
+test("Arc components with controls reach pages only through ArcFocus", () => {
+  const { sources } = reachable();
+  assert.deepEqual(sources.flatMap(arcImportProblems), []);
+});
+
+test("the Arc import check flags a direct Arc control and passes hooks and parts without controls", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "focus-guard-"));
+  const direct = path.join(dir, "direct.tsx");
+  const fine = path.join(dir, "fine.tsx");
+  fs.writeFileSync(direct, 'import { Pagination } from "@/components/arc/pagination/pagination";\nexport const x = Pagination;\n');
+  fs.writeFileSync(fine, 'import { Badge } from "@/components/arc/badge/badge";\nimport { useCopyFeedback } from "@/components/arc/copy-button/use-copy-feedback";\nimport { ToastStackProvider } from "@/components/arc/toast-stack/toast-stack";\nexport const y = [Badge, useCopyFeedback, ToastStackProvider];\n');
+  assert.equal(arcImportProblems(direct).length, 1);
+  assert.deepEqual(arcImportProblems(fine), []);
+});
+
+test("the essay pagination, toast stack and expandable card take their keyboard cue through ArcFocus", () => {
+  const arcFocus = fs.readFileSync(path.join(root, "src/components/core/ArcFocus/ArcFocus.tsx"), "utf8");
+  assert.match(arcFocus, /export function Pagination[\s\S]*?\[&_button:focus-visible\]:outline-2/);
+  assert.match(arcFocus, /export function ToastStack[\s\S]*?\[&_button:focus-visible\]:outline-2/);
+  assert.match(arcFocus, /export function ExpandableCard[\s\S]*?\[&_button\[aria-expanded\]:focus-visible\]:bg-/);
+  assert.match(fs.readFileSync(path.join(root, "src/components/reading/essay-pagination.tsx"), "utf8"), /import \{ Pagination \} from "@\/components\/core\/ArcFocus\/ArcFocus"/);
+});
+
+test("Arc's OTP focus ring is the code cell's own box, never a larger hit area", () => {
+  const rules = cssRules(fs.readFileSync(path.join(root, "src/components/arc/otp-input/otp-input.module.css"), "utf8"));
+  const body = (selector: string) => rules.find((rule) => rule.selectors.length === 1 && rule.selectors[0].trim() === selector)?.declarations ?? "";
+  const ring = body(".ring");
+  const input = body(".input");
+  // The ring sits on the slot's top-left at the slot's full height, and the cell (the input) fills the slot.
+  for (const declaration of [/top:\s*0/, /left:\s*0/, /height:\s*100%/, /border-radius:\s*var\(--radius-control\)/]) assert.match(ring, declaration);
+  for (const declaration of [/width:\s*100%/, /height:\s*100%/, /border-radius:\s*var\(--radius-control\)/]) assert.match(input, declaration);
+  // Its width and offset are measured from the slot, so it never grows past the cell.
+  assert.match(fs.readFileSync(path.join(root, "src/components/arc/otp-input/otp-input.tsx"), "utf8"), /x: slot\.offsetLeft, width: slot\.offsetWidth/);
 });

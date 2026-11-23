@@ -565,8 +565,10 @@ function EmailCode(props: Props) {
         {/* Arc's code input (owner, 23 Nov: "Arc block, underlined field"). Codes are letters and digits, upper case;
             a full code verifies once, and a replaced full code verifies again. Monochrome: Arc's accent is the
             foreground here. */}
-        {/* Arc's message rows read --leading-body, which the project's token layer does not define; set it here. */}
-        <div data-email-code-field="" className="[--accent-strong:var(--foreground)] [--accent-subtle:transparent] [--accent:var(--foreground)] [--leading-body:1.25rem]">
+        {/* Arc's message rows read --leading-body, which the project's token layer does not define; set it here.
+            data-arc-control keeps the legacy global input rule (sphmrs.scss: margin, padding, tracking) off the cells,
+            so each cell fills its slot and the focus ring sits on it. */}
+        <div data-email-code-field="" data-arc-control="" className="[--accent-strong:var(--foreground)] [--accent-subtle:transparent] [--accent:var(--foreground)] [--leading-body:1.25rem]">
           <OtpInput
             label={t("code")}
             inputMode="text"

@@ -741,7 +741,7 @@ function IdentityStep(props: MemberAccountViewProps & { locked: boolean; reserve
       )}
       {snapshot.codeRequested && capabilities?.magicLink && (
         <AccountTextButton
-          className={cn("mt-[var(--account-action-gap)] flex min-h-11 gap-2 aria-busy:opacity-80", props.presentation === "ticket-checkout" ? "mr-auto px-0 text-[length:var(--step-body)]" : "mx-auto px-3")}
+          className={cn("mx-auto mt-[var(--account-action-gap)] flex min-h-11 gap-2 px-3 aria-busy:opacity-80", props.presentation === "ticket-checkout" && "mt-1 font-medium no-underline")}
           type="button"
           disabled={locked || !props.email.trim() || (props.resendRemaining ?? 0) > 0}
           aria-busy={snapshot.busy && snapshot.pendingAction === "magic-link"}
@@ -755,7 +755,7 @@ function IdentityStep(props: MemberAccountViewProps & { locked: boolean; reserve
       )}
       {!props.reauthenticating && (props.presentation === "ticket-checkout" || props.flow !== "signup") && props.onRecover && (
         <AccountTextButton
-          className={cn("mt-[var(--account-action-gap)] flex min-h-11", props.presentation === "ticket-checkout" ? "mr-auto px-0 text-[length:var(--step-body)]" : "mx-auto px-3")}
+          className={cn("mx-auto mt-[var(--account-action-gap)] flex min-h-11 px-3", props.presentation === "ticket-checkout" && "mt-1 font-medium no-underline")}
           type="button"
           disabled={snapshot.busy}
           onClick={props.onRecover}

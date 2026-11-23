@@ -1312,3 +1312,20 @@ test("unavailable catalogue and stale draft cannot block inline identity or over
   assert.equal(ui.screen.queryByRole("textbox", { name: "Ticket quantity" }) === null, true);
   assert.equal(dom.window.localStorage.getItem(TICKET_SELECTION_DRAFT_KEY), before);
 });
+
+test("the code step's cells opt out of the legacy input rule, and its text actions are centred like Change email", async () => {
+  ui.render(<EnglishMessages><Tickets memberClient={{ ...memberActions, status: async () => anonymous }} /></EnglishMessages>);
+  const email = await ui.screen.findByRole("textbox", { name: "Email address" }) as HTMLInputElement;
+  await ui.waitFor(() => assert.equal(email.disabled, false));
+  ui.fireEvent.change(email, { target: { value: "returning@example.com" } });
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Continue" }));
+  ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Send sign-in code" }));
+  await ui.screen.findByLabelText(messages.AuthPhase.code);
+  // sphmrs.scss adds margin and padding to every input outside [data-arc-control]; that pushed each cell below the
+  // focus ring Arc draws at the slot.
+  assert.equal(firstCodeCell(ui.screen).closest("[data-arc-control]") !== null, true);
+  const centred = (name: string) => ui.screen.getByRole("button", { name }).classList.contains("mx-auto");
+  assert.equal(centred("Change email"), true);
+  assert.equal(centred("Email a sign-in link instead"), true);
+  assert.equal(centred("Can’t sign in?"), true);
+});

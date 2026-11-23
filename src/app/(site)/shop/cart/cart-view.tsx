@@ -31,7 +31,7 @@ export function CartView({ offer, signedIn, initialCapabilities, signInOffInRevi
       className="-ml-1 mb-6 inline-flex min-h-11 items-center gap-2 px-1 text-xs uppercase tracking-[0.04em] underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">
       <ArrowLeftIcon aria-hidden="true" className="size-4" />{copy.backToCart}
     </button>
-    <CommerceAccountGate signInOffInReview={signInOffInReview} initialCapabilities={initialCapabilities}>
+    <CommerceAccountGate signInOffInReview={signInOffInReview} initialCapabilities={initialCapabilities} returnTo="shop-cart">
       <SignedIn onReady={() => { setMember(true); setView("cart"); }} />
     </CommerceAccountGate>
   </PageFrame>;
@@ -101,7 +101,7 @@ function GuestCartWriteThrough() {
   const mounted = useRef(true);
   const latest = useRef(memberID);
   useEffect(() => { latest.current = memberID; }, [memberID]);
-  useEffect(() => () => { mounted.current = false; }, []);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   useEffect(() => {
     const expected = latest.current;
     if (!expected || ran.current === attempt) return;

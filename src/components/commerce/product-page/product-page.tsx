@@ -35,7 +35,7 @@ export function ProductPage({ product, offer, content, shelf }: { product: Editi
   const hasTable = details.length > 0 || content.typefaces.length > 0 || content.materials.length > 0 || content.techniques.length > 0;
   const hasFullWidth = content.praise.length > 0 || hasTable || content.gallery.length > 0;
   return <PageInset as="main" className="pt-[4.5rem] pb-24 text-foreground lg:grid lg:grid-cols-[minmax(0,1.58fr)_minmax(0,1fr)] lg:items-start lg:gap-x-10">
-    <div className="sticky top-[4.5rem] z-0 flex min-w-0 flex-col lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:h-[calc(100svh-5.5rem)]">
+    <div className="sticky top-[4.5rem] z-0 flex min-w-0 flex-col max-lg:has-[[data-open=true]]:z-50 lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:h-[calc(100svh-5.5rem)]">
       <ShelfStrip shelf={shelf} label={t("shelf")} />
       <BookStage id={product.productID} textures={bookTextures(content)} pageTextures={pageTextures(content)}
         className="relative aspect-[4/5] w-full overflow-hidden rounded-lg sm:aspect-[5/4] lg:aspect-auto lg:min-h-0 lg:flex-1">
@@ -105,12 +105,12 @@ export function ProductPage({ product, offer, content, shelf }: { product: Editi
 
       {(hasTable || content.gallery.length > 0) && <section aria-label={t("details")}
         className={cn("grid gap-x-10 gap-y-10 lg:grid-cols-[minmax(0,1.58fr)_minmax(0,1fr)]", content.praise.length > 0 && "mt-12 lg:mt-20")}>
-        <dl className="min-w-0 border-t border-foreground">
+        {hasTable && <dl className="min-w-0 border-t border-foreground">
           <DetailRow label={t("details")} items={details} />
           <DetailRow label={t("typefaces")} items={content.typefaces.map((face) => face.foundry ? face.name + ", " + face.foundry : face.name)} />
           <DetailRow label={t("materials")} items={content.materials.map(({ item }) => item)} />
           <DetailRow label={t("techniques")} items={content.techniques.map(({ item }) => item)} />
-        </dl>
+        </dl>}
         {content.gallery.length > 0 && <div className="min-w-0 border-t border-foreground pt-4">
           <Label>{t("gallery")}</Label>
           <ul className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-5">

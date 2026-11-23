@@ -34,9 +34,10 @@ export function pathHidesFooter(pathname: string): boolean {
  * Whether the pinned footer is showing under the page. The Help pill steps aside while it is, since the footer's
  * strip sits where the pill floats.
  *
- * `pageEnd` is where the page's own content ends, in document pixels (Infinity where no footer shows). The header's
- * scroll scrub stops there, so the scroll that only reveals the footer never changes the header (owner, 21 Nov:
- * "only footer scrolls should not make the header, change").
+ * `pageEnd` is where the page's own content ends, in document pixels (Infinity where no footer shows). From md up the
+ * header's scroll scrub stops there, so the scroll that only reveals the footer never changes the header (owner, 21 Nov:
+ * "only footer scrolls should not make the header, change"; md and up, 24 Nov). Pages with 50 px or less of their own
+ * scroll aren't capped (site-header capHeaderScroll).
  */
 export const useFooterReveal = create<{
   revealed: boolean;

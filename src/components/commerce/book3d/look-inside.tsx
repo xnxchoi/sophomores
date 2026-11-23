@@ -90,6 +90,25 @@ const INK = { pink: { rgb: "255,95,168", alpha: 0.48, hex: 0xff5fa8 }, yellow: {
 export type Ink = keyof typeof INK;
 type Stroke = { leaf: number; back: boolean; ink: Ink; points: number[] };
 
+/**
+ * The highlighter's saved marks (#28): committed strokes only. A stroke in flight is painted but never saved until it ends
+ * as a stroke (a pan or pinch that takes its finger undoes it instead). Each delayed write (400 ms) snapshots the
+ * committed strokes when it fires, and flush() writes a pending save at once (on leaving) instead of dropping it
+ * (Review-B r4).
+ */
+export function createMarkStore(key: string | undefined, storage: Pick<Storage, "getItem" | "setItem"> | null, delay = 400) {
+  let committed: Stroke[] = [];
+  try { committed = key && storage ? JSON.parse(storage.getItem(key) ?? "[]") as Stroke[] : []; } catch { committed = []; }
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  const write = () => { timer = null; if (!key || !storage) return; try { storage.setItem(key, JSON.stringify(committed)); } catch { /* storage unavailable */ } };
+  return {
+    strokes: () => committed,
+    commit(stroke: Stroke) { committed = [...committed, stroke]; if (timer !== null) clearTimeout(timer); timer = setTimeout(write, delay); },
+    flush() { if (timer !== null) { clearTimeout(timer); write(); } }
+  };
+}
+export type { Stroke };
+
 type Gesture = {
   leaf: number; dir: 1 | -1; startAngle: number; downX: number; downY: number; downAt: number; lastX: number; lastAt: number;
   speed: number; v: number; edge: boolean; moved: number; braked: boolean;
@@ -130,7 +149,7 @@ export function LookInside({ look, root, signals, sound, width, height, thicknes
   // Highlighter (#28): each page side gets an ink canvas on first use; strokes are kept as page coordinates, so they replay
   // onto fresh canvases and save small. Marks are kept in localStorage (debounced 400 ms).
   const surfaces = useRef(new Map<string, { context: CanvasRenderingContext2D; canvas: HTMLCanvasElement; texture: CanvasTexture }>());
-  const strokes = useRef<Stroke[]>([]), painting = useRef<null | { stroke: Stroke; at: number; x: number; y: number; id: number }>(null), saveTimer = useRef(0);
+  const marks = useRef<ReturnType<typeof createMarkStore> | null>(null), painting = useRef<null | { stroke: Stroke; at: number; x: number; y: number; id: number }>(null);
   const marker = useRef<Group>(null), markerMaterial = useMemo(() => new MeshStandardMaterial({ color: INK.pink.hex, roughness: 0.5 }), []);
   const markerGeometry = useMemo(() => { const g = new BoxGeometry(0.32, 0.32, 2.2); g.translate(0, 0, 1.1); return g; }, []);
   const markerMotion = useRef({ x: 0, y: 0, roll: 0, rollV: 0, pitch: 0, pitchV: 0, lift: 0.35, lastX: 0, lastY: 0 });
@@ -157,28 +176,25 @@ export function LookInside({ look, root, signals, sound, width, height, thicknes
     if (p.length === 2) context.lineTo(p[0] * canvas.width + 0.1, (1 - p[1]) * canvas.height);
     context.stroke(); texture.needsUpdate = true;
   }
-  /** Take a stroke back: clear every ink canvas and replay the rest (the same replay as loading saved marks). */
-  const undoStroke = (stroke: Stroke) => {
+  const replay = (list: Stroke[]) => list.forEach((stroke) => { if (stroke.leaf >= 0 && stroke.leaf < LEAVES && INK[stroke.ink]) paint(stroke, 0); });
+  /** Take back the stroke in flight: clear every ink canvas and replay the committed strokes (it was never committed). */
+  const undoStroke = () => {
     painting.current = null;
-    strokes.current = strokes.current.filter((other) => other !== stroke);
     surfaces.current.forEach(({ context, canvas, texture }) => { context.clearRect(0, 0, canvas.width, canvas.height); texture.needsUpdate = true; });
-    strokes.current.forEach((other) => paint(other, 0));
-    saveMarks();
-  };
-  const saveMarks = () => {
-    if (!marksKey) return;
-    window.clearTimeout(saveTimer.current);
-    saveTimer.current = window.setTimeout(() => { try { window.localStorage.setItem(marksKey, JSON.stringify(strokes.current)); } catch { /* storage unavailable */ } }, 400);
+    replay(marks.current?.strokes() ?? []);
   };
   useEffect(() => {
     // New leaf materials (new page images) start with fresh canvases; the saved strokes replay onto them.
     surfaces.current.forEach(({ texture }) => texture.dispose()); surfaces.current.clear();
-    try { strokes.current = marksKey ? JSON.parse(window.localStorage.getItem(marksKey) ?? "[]") as Stroke[] : []; } catch { strokes.current = []; }
-    strokes.current.forEach((stroke) => { if (stroke.leaf >= 0 && stroke.leaf < LEAVES && INK[stroke.ink]) paint(stroke, 0); });
+    marks.current?.flush();
+    let storage: Storage | null = null;
+    try { storage = window.localStorage; } catch { storage = null; }
+    marks.current = createMarkStore(marksKey, storage);
+    replay(marks.current.strokes());
     // paint() reads leaves (a dependency) and the stable refs only.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leaves, marksKey]);
-  useEffect(() => () => { window.clearTimeout(saveTimer.current); markerMaterial.dispose(); markerGeometry.dispose(); surfaces.current.forEach(({ texture }) => texture.dispose()); }, [markerMaterial, markerGeometry]);
+  useEffect(() => () => { marks.current?.flush(); markerMaterial.dispose(); markerGeometry.dispose(); surfaces.current.forEach(({ texture }) => texture.dispose()); }, [markerMaterial, markerGeometry]);
 
   // The leaves' hinge in book space: the page block's spine edge.
   const spine = -width / 2 - 0.075;
@@ -215,7 +231,7 @@ export function LookInside({ look, root, signals, sound, width, height, thicknes
     if (!l?.active || signals.current.view.panning || (event.nativeEvent.target as Element | null)?.closest?.("[data-book-ui]")) return;
     event.stopPropagation();
     // A second finger is a pinch: the page in hand goes back, and the stage's pinch takes over (Review-B r2).
-    if (gesture.current || painting.current) { cancelGesture(); if (painting.current) undoStroke(painting.current.stroke); return; }
+    if (gesture.current || painting.current) { cancelGesture(); if (painting.current) undoStroke(); return; }
     const { side, u, v } = pageCoords(event), e = event.nativeEvent, now = performance.now();
     // Highlighter on: a press paints on the top page of that side instead of turning it.
     const ink = signals.current.marker;
@@ -223,7 +239,7 @@ export function LookInside({ look, root, signals, sound, width, height, thicknes
       const leaf = side === "right" ? (l.spread < LEAVES ? l.spread : -1) : l.spread - 1;
       if (leaf < 0) return;
       const stroke: Stroke = { leaf, back: side === "left", ink, points: [u, v] };
-      strokes.current.push(stroke); paint(stroke, 0);
+      paint(stroke, 0); // in flight: painted now, committed (and saved) only when it ends as a stroke
       painting.current = { stroke, at: now, x: e.clientX, y: e.clientY, id: e.pointerId };
       const target = source ?? (e.target as HTMLElement);
       const end = (ev: PointerEvent) => {
@@ -231,8 +247,8 @@ export function LookInside({ look, root, signals, sound, width, height, thicknes
         target.removeEventListener("pointerup", end); target.removeEventListener("pointercancel", end); target.removeEventListener("lostpointercapture", end);
         if (painting.current?.id !== e.pointerId) return; // a newer stroke from another pointer is not this one's to end
         // A held pan took this finger over, even without a move over the pages: the stroke is undone, not kept.
-        if (signals.current.view.panning) { undoStroke(painting.current.stroke); return; }
-        painting.current = null; saveMarks();
+        if (signals.current.view.panning) { undoStroke(); return; }
+        marks.current?.commit(painting.current.stroke); painting.current = null;
       };
       try { (e.target as Element).setPointerCapture(e.pointerId); } catch { /* the pointer is already gone */ }
       target.addEventListener("pointerup", end); target.addEventListener("pointercancel", end); target.addEventListener("lostpointercapture", end);
@@ -298,7 +314,7 @@ export function LookInside({ look, root, signals, sound, width, height, thicknes
     const { side, u, v, x, y } = pageCoords(event); Object.assign(hover.current, { side, v, x, y });
     if (source && !gesture.current) source.dataset.book = signals.current.marker ? "mark" : "hover";
     // A held pan or pinch took over the finger that started a stroke: that stroke is undone, not extended (Review-B r3).
-    if (signals.current.view.panning && painting.current) undoStroke(painting.current.stroke);
+    if (signals.current.view.panning && painting.current) undoStroke();
     // Painting: extend the stroke while it stays on the page it started on; the paper rubs with the speed.
     const e = event.nativeEvent, p = painting.current && painting.current.id === e.pointerId ? painting.current : null;
     if (p && (side === "left") === p.stroke.back) {

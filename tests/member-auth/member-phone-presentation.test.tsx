@@ -443,6 +443,16 @@ test("the member phone step stays English under a Korean page", () => {
   assert.doesNotMatch(text, /휴대폰 인증|휴대폰 번호/);
 });
 
-test("without the bilingual delivery the phone step fails at once instead of taking the Korean page's copy", () => {
-  assert.throws(() => renderToStaticMarkup(<KoreanPage>{phoneStep()}</KoreanPage>), /VerificationProvider needs VerificationMessages/);
+test("without the bilingual delivery the phone step never renders in the Korean page's copy, in any environment", () => {
+  const previous = process.env.NODE_ENV;
+  try {
+    for (const environment of ["development", "test", "production"]) {
+      (process.env as Record<string, string | undefined>).NODE_ENV = environment;
+      let html = "";
+      assert.throws(() => { html = renderToStaticMarkup(<KoreanPage>{phoneStep()}</KoreanPage>); }, /VerificationProvider needs VerificationMessages/, environment);
+      assert.equal(html, "", `${environment}: nothing rendered, in neither language`);
+    }
+  } finally {
+    (process.env as Record<string, string | undefined>).NODE_ENV = previous;
+  }
 });

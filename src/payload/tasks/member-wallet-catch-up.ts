@@ -21,5 +21,6 @@ const deny = () => false;
 // The Local API can run the registered task in a proof. No automatic trigger or public runner.
 export const walletCatchUpJobs = {
   tasks: [memberWalletCatchUpTask],
+  deleteJobOnComplete: false,
   access: { queue: deny, run: deny, cancel: deny },
 } satisfies JobsConfig;

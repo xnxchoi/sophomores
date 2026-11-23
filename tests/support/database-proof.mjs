@@ -59,6 +59,11 @@ const proofs = [
     flag: "NATIVE_EDITION_DATABASE_TESTS", explicit: true,
     ...proofTargets.nativeEdition, container: `${proofTargets.nativeEdition.container}${randomUUID()}`,
   },
+  {
+    file: "tests/commerce/keys/wallet-catch-up-runner.db.test.ts",
+    flag: "W2_RUNNER_DATABASE_TESTS", explicit: true,
+    ...proofTargets.walletRunner, container: `${proofTargets.walletRunner.container}${randomUUID()}`,
+  },
 ];
 const image = "postgres:16";
 
@@ -148,7 +153,10 @@ for (const proof of selected ? [selected] : proofs.filter(({ explicit }) => !exp
       stdio: "inherit",
       env: {
         ...process.env, [proof.flag]: "1", DISABLE_PAYLOAD_HMR: "true", GOMAXPROCS: "1", SPHMRS_PROOF_VOLUME: volume,
-        ...(proof.explicit ? { NATIVE_EDITION_PROOF_CONTAINER: proof.container, NATIVE_EDITION_PROOF_RUN: runID } : {}),
+        ...(proof.flag === "NATIVE_EDITION_DATABASE_TESTS"
+          ? { NATIVE_EDITION_PROOF_CONTAINER: proof.container, NATIVE_EDITION_PROOF_RUN: runID } : {}),
+        ...(proof.flag === "W2_RUNNER_DATABASE_TESTS"
+          ? { W2_RUNNER_PROOF_CONTAINER: proof.container, W2_RUNNER_PROOF_RUN: runID } : {}),
         TSX_TSCONFIG_PATH: fileURLToPath(new URL("../tsconfig.json", import.meta.url)),
       },
     });

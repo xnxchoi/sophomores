@@ -75,3 +75,19 @@ stripe.press's numbers (map §C1) are the tuning reference. The code is ours.
   - a cover shutting fast slaps.
 - **Sample slots** (`Book`'s `samples` prop): `pageTurn[]`, `grab`, `flop` and `crackle`. They are empty, because there are no files. When filled, they play through Howler, and the page turn plays faster for faster turns.
 - **First sound.** Audio starts on the first press, as browsers require.
+
+## Known gaps and disclosures
+- **No trigger on the page yet.** Spin, hologram and radio have none: purchase is closed, and there are no ebook or audiobook rows. Recordings that show them fire the `book3d:*` events by hand and are captioned "triggered manually: no purchase rows yet".
+- **Column height.** The product column's box is held at the stage's height, so Other editions starts where the stage ends. The column's content isn't padded. Because our column is short, the pin barely shows at 1440×900.
+- **Leaf shadows.** Leaves cast no shadow: three's shadow pass doesn't run the bend, so it would draw them flat.
+- **Highlighter.** Not built yet. It waits for a build that confirms page picking.
+- **Not built:**
+  - stripe.press's drag-the-pill-to-open gesture;
+  - the art panel shortening on scroll;
+  - handing a touch pan at the page edge over to a page drag;
+  - the magnifier's double tap.
+- **Our own numbers.** These differ from stripe.press's code, or are absent from it:
+  - the add-to-cart spin duration (0.9 s);
+  - the open pose's counter-turn;
+  - the curl scale for this bend model;
+  - the page spring (tuned live).

@@ -51,6 +51,34 @@ export const useFooterReveal = create<{
 }));
 
 /**
+ * Pages that keep the FXFrame band off (owner, 23 Nov: "Switch it off on certain page", the product page first): its
+ * contrast(500%) saturate(1500%) filter turns art under the viewport's foot into red and yellow flames. A count, not
+ * a flag: PageCover still writes the band's own on/off for the footer (below), and this sits on top of it, so neither
+ * overwrites the other, and an arriving page and a leaving one can both hold it during the curtain.
+ */
+export const useFXFrameOff = create<{ held: number; hold: () => void; release: () => void }>((set) => ({
+  held: 0,
+  hold: () => set((state) => ({ held: state.held + 1 })),
+  release: () => set((state) => ({ held: Math.max(0, state.held - 1) }))
+}));
+
+/**
+ * Drop `<FXFrameOff />` anywhere in a page to keep the band off while the page is on screen. It lets go when the
+ * page starts to leave (its curtain), so the next page gets the band back unless it holds it too.
+ */
+export function FXFrameOff() {
+  const isPresent = useIsPresent();
+  const hold = useFXFrameOff((state) => state.hold);
+  const release = useFXFrameOff((state) => state.release);
+  useEffect(() => {
+    if (!isPresent) return;
+    hold();
+    return release;
+  }, [isPresent, hold, release]);
+  return null;
+}
+
+/**
  * Renders the footer only where it shows. From md up it is pinned under the page, which lifts off it (Osklen
  * study, owner 20 Nov: "yes to the pinned footer"): CSS `sticky` keeps it at the window's foot while the page,
  * one layer up with its own background, covers it until the page's end scrolls past. Below md it scrolls

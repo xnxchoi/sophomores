@@ -6,6 +6,7 @@ import { AnimatePresence, useMotionValue, useSpring } from "motion/react";
 import * as m from "motion/react-m";
 import { useEffect, useRef } from "react";
 import { useShallow } from "zustand/shallow";
+import { useFXFrameOff } from "@/components/shell/footer-visibility";
 
 export const FXFrame = () => {
   const showFXFrame = useRPStore(useShallow((l) => l.showFXFrame));
@@ -17,6 +18,8 @@ export const FXFrame = () => {
   const fxWrapperRef = useRef<HTMLDivElement>(null!);
   const { left, right, bottom } = useFrameState();
   const showHeader = useRPStore(useShallow((r) => r.showHeader));
+  // A page that holds the band off (FXFrameOff, shell/footer-visibility) wins over the footer's on/off.
+  const heldOff = useFXFrameOff((state) => state.held > 0);
 
   const l = useSpring(left, {
     ...SPRING_EASE.power3.inOut,
@@ -32,7 +35,7 @@ export const FXFrame = () => {
   });
   return (
     <AnimatePresence>
-      {showFXFrame && showHeader && (
+      {showFXFrame && showHeader && !heldOff && (
         <m.div
           ref={fxWrapperRef}
           initial={{ visibility: "hidden", opacity: 0 }}

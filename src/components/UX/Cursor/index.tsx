@@ -101,6 +101,8 @@ export default function RP_Cursor() {
   );
   const containerWidth = useMotionValue(100);
   const containerHeight = useMotionValue(40);
+  const fadeWidth = useMotionValue(100);
+  const fadeHeight = useMotionValue(40);
   const outerRad = useMotionValue(c.SMALL);
   const innerRad = useMotionValue(c.SMALL);
 
@@ -159,14 +161,16 @@ export default function RP_Cursor() {
     const ii = isDrag ? 0 : isFocus ? 1 : rr;
     outerRad.set(rr);
     innerRad.set(ii);
-    // A fading pill keeps its size while it leaves (Review-B r1 LOW); the next label sizes it again.
-    const keep = !isTC && cursorExit === "fade";
-    const width = keep
-      ? containerWidth.get()
-      : !isTC
+    const width = !isTC
       ? 1
       : clamp(((cursorState.length * 5 + 7) / 4) * textWidth.current, 85, 120);
-    const height = keep ? containerHeight.get() : !isTC ? 1 : 40;
+    const height = !isTC ? 1 : 40;
+    // The fading pill has its own size, set only while its claim shows: whatever comes next (idle, DRAG, FOCUS or
+    // another label) resizes the shared values, never the pill on its way out (Review-B r1/r2 LOW).
+    if (isTC && cursorExit === "fade") {
+      fadeWidth.set(width);
+      fadeHeight.set(height);
+    }
     const currentW = containerWidth.get();
     const currentH = containerHeight.get();
     if (width !== currentW) {
@@ -183,6 +187,8 @@ export default function RP_Cursor() {
     setCircleVariant,
     containerWidth,
     containerHeight,
+    fadeWidth,
+    fadeHeight,
     c,
     innerRad,
     outerRad,
@@ -325,7 +331,7 @@ export default function RP_Cursor() {
                   "pointer-events-none flex shrink-0 cursor-none flex-col items-center justify-center overflow-hidden outline-none",
                   "rounded-[8px] bg-nav-button/10 font-dots backdrop-blur-xs perspective-distant"
                 )}
-                style={{ width: containerWidth, height: containerHeight }}
+                style={exit === "fade" ? { width: fadeWidth, height: fadeHeight } : { width: containerWidth, height: containerHeight }}
                 variants={textCursorVariants}
                 data-themed="color, border-color, background-color, outline-color,box-shadow"
                 initial="hidden"

@@ -28,16 +28,18 @@ class ResourceEntrypointTests(unittest.TestCase):
         self.assertTrue("--node-old-space-mib 3072" in command)
         cap = re.search(r"--max-gib (\d+(?:\.\d+)?)", command)
         self.assertIsNotNone(cap, "Missing aggregate memory cap")
-        self.assertLessEqual(float(cap.group(1)), 6, "Dev preview must stay within the 6 GiB dev/build default")
+        self.assertLessEqual(float(cap.group(1)), 6, "Dev preview must stay within the 6 GiB dev default")
 
     def test_production_build_heap_stays_inside_aggregate_guard(self):
         # Measured 2026-11-15: without a heap cap, next build's TypeScript step pushed
         # the process group past 6 GiB; with 3072 MiB it peaked at about 4.2 GiB.
+        # Measured 2026-11-23: a cold build on main peaks at 6-7 GiB (Turbopack compile
+        # overlapping the TypeScript step), 3.9-4.1 GiB warm; the build cap is 8 GiB.
         command = json.loads((ROOT / "package.json").read_text())["scripts"]["build:guarded"]
         self.assertTrue("--node-old-space-mib 3072" in command)
         cap = re.search(r"--max-gib (\d+(?:\.\d+)?)", command)
         self.assertIsNotNone(cap, "Missing aggregate memory cap")
-        self.assertLessEqual(float(cap.group(1)), 6, "Build must stay within the 6 GiB dev/build default")
+        self.assertLessEqual(float(cap.group(1)), 8, "Build must stay within the 8 GiB build default")
 
     def test_unit_runner_preserves_heap_environment_and_serializes_workers(self):
         source = (ROOT / "tests/run-unit.mjs").read_text()

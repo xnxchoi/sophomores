@@ -53,7 +53,7 @@ TDD/coverage/test-only, blanket isolation and project-level proposal-approval ho
   are not the local agent workflow.
 - Only one guarded workload may run per checkout. Stop the owned preview before
   tests/typechecking. Keep at least 10 GiB of system headroom; current local
-  defaults are 4 GiB for checks and 6 GiB for dev/build, below the user's 15 GiB
+  defaults are 4 GiB for checks, 6 GiB for dev and 8 GiB for builds, below the user's 15 GiB
   aggregate ceiling. Browser/MCP/container memory is outside the child process
   group: account for it separately and do not start extra browser instances or
   concurrent agent workloads to bypass the lock.

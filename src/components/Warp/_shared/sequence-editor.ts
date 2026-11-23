@@ -1,8 +1,7 @@
-import { createTranslator } from "next-intl";
-import english from "@/../messages/en.json";
 import { z } from "zod";
 
-const validationMessage = createTranslator({ locale: "en", messages: english, namespace: "Developer.sequenceData" });
+// Keys only: the editor translates them with useTranslations("Developer.sequenceData"), so no catalogue ships here.
+type SequenceMessageKey = keyof (typeof import("@/../messages/en.json"))["Developer"]["sequenceData"];
 
 // Feature-private data shared by the Warp owner, editor and native Motion compiler.
 // Motion owns interpolation; Zod owns parsing. No generic timeline engine is needed.
@@ -31,121 +30,94 @@ export type SequenceDraft = {
 export const SEQUENCE_CLIPS = [
   {
     id: "openingText",
-    label: english.Developer.sequenceData.headlineReveal,
     labelKey: "headlineReveal",
     group: "Opening",
     domain: "opening",
-    description:
-      english.Developer.sequenceData.characterRevealIncludingTheFinalCharacterSFullAnimation,
     descriptionKey: "characterRevealIncludingTheFinalCharacterSFullAnimation"
   },
   {
     id: "openingField",
-    label: english.Developer.sequenceData.fieldReveal,
     labelKey: "fieldReveal",
     group: "Opening",
     domain: "opening",
-    description: english.Developer.sequenceData.streakFieldFadesIntoViewAfterRendererReadiness,
     descriptionKey: "streakFieldFadesIntoViewAfterRendererReadiness"
   },
   {
     id: "headlineSplit",
-    label: english.Developer.sequenceData.headlineSplit,
     labelKey: "headlineSplit",
     group: "Headline",
     domain: "scroll",
-    description: english.Developer.sequenceData.headlineSeparatesHorizontally,
     descriptionKey: "headlineSeparatesHorizontally"
   },
   {
     id: "headlineScale",
-    label: english.Developer.sequenceData.headlineScale,
     labelKey: "headlineScale",
     group: "Headline",
     domain: "scroll",
-    description: english.Developer.sequenceData.headlineSettlesFromFullSizeToItsSplitPose,
     descriptionKey: "headlineSettlesFromFullSizeToItsSplitPose"
   },
   {
     id: "headlineFade",
-    label: english.Developer.sequenceData.headlineFade,
     labelKey: "headlineFade",
     group: "Headline",
     domain: "scroll",
-    description: english.Developer.sequenceData.splitHeadlineFadesOut,
     descriptionKey: "splitHeadlineFadesOut"
   },
   {
     id: "passageLine1",
-    label: english.Developer.sequenceData.passageLine1,
     labelKey: "passageLine1",
     group: "Passage",
     domain: "scroll",
-    description: english.Developer.sequenceData.firstPassageLineWordsAppearInTurn,
     descriptionKey: "firstPassageLineWordsAppearInTurn"
   },
   {
     id: "passageLine2",
-    label: english.Developer.sequenceData.passageLine2,
     labelKey: "passageLine2",
     group: "Passage",
     domain: "scroll",
-    description: english.Developer.sequenceData.secondPassageLineWordsAppearInTurn,
     descriptionKey: "secondPassageLineWordsAppearInTurn"
   },
   {
     id: "passageTravel",
-    label: english.Developer.sequenceData.passageTravel,
     labelKey: "passageTravel",
     group: "Passage",
     domain: "scroll",
-    description: english.Developer.sequenceData.passageTravelsUpwardThroughTheViewport,
     descriptionKey: "passageTravelsUpwardThroughTheViewport"
   },
   {
     id: "passageFadeIn",
-    label: english.Developer.sequenceData.passageFadeIn,
     labelKey: "passageFadeIn",
     group: "Passage",
     domain: "scroll",
-    description: english.Developer.sequenceData.passageBecomesVisibleAtItsEntry,
     descriptionKey: "passageBecomesVisibleAtItsEntry"
   },
   {
     id: "passageFadeOut",
-    label: english.Developer.sequenceData.passageFadeOut,
     labelKey: "passageFadeOut",
     group: "Passage",
     domain: "scroll",
-    description: english.Developer.sequenceData.passageDisappearsAfterClearingTheViewport,
     descriptionKey: "passageDisappearsAfterClearingTheViewport"
   },
   {
     id: "warpApproach",
-    label: english.Developer.sequenceData.warpApproach,
     labelKey: "warpApproach",
     group: "Field",
     domain: "scroll",
-    description: english.Developer.sequenceData.originalFieldExpansionReachesItsHeldPreCoronaPose,
     descriptionKey: "originalFieldExpansionReachesItsHeldPreCoronaPose"
   },
   {
     id: "ringSettlement",
-    label: english.Developer.sequenceData.ringSettlement,
     labelKey: "ringSettlement",
     group: "Field",
     domain: "scroll",
-    description: english.Developer.sequenceData.materialSettlesIntoTheExactCoronaPoseAt70,
     descriptionKey: "materialSettlesIntoTheExactCoronaPoseAt70"
   }
 ] as const satisfies ReadonlyArray<{
   id: SequenceClipId;
-  label: string;
-  labelKey: keyof typeof english.Developer.sequenceData;
+  labelKey: SequenceMessageKey;
   group: string;
   domain: SequenceDomain;
-  description: string;
-  descriptionKey: keyof typeof english.Developer.sequenceData;
+  descriptionKey: SequenceMessageKey;
 }>;
 
 // The passage lines' words appear in turn from Start (Warp's PassageWords), so the editor moves them whole: the
@@ -238,7 +210,7 @@ const sequenceSchema = z
         context.addIssue({
           code: "custom",
           path: ["clips", id, "end"],
-          message: validationMessage("clipDurationMinimum", { minimum }),
+          message: "clipDurationMinimum",
           params: { messageKey: "clipDurationMinimum", values: { minimum } } satisfies SequenceValidationParams
         });
       }
@@ -246,7 +218,7 @@ const sequenceSchema = z
         context.addIssue({
           code: "custom",
           path: ["clips", id, "end"],
-          message: english.Developer.sequenceData.clipExceedsItsTimelineDomain,
+          message: "clipExceedsItsTimelineDomain",
           params: { messageKey: "clipExceedsItsTimelineDomain" } satisfies SequenceValidationParams
         });
       }
@@ -255,7 +227,7 @@ const sequenceSchema = z
       context.addIssue({
         code: "custom",
         path: ["clips", "ringSettlement", "end"],
-        message: english.Developer.sequenceData.ringSettlementMustEndAtThe70CoronaHandoff,
+        message: "ringSettlementMustEndAtThe70CoronaHandoff",
         params: { messageKey: "ringSettlementMustEndAtThe70CoronaHandoff" } satisfies SequenceValidationParams
       });
     }
@@ -263,7 +235,7 @@ const sequenceSchema = z
       context.addIssue({
         code: "custom",
         path: ["clips", "ringSettlement", "start"],
-        message: english.Developer.sequenceData.ringSettlementMustStartNoLaterThan68,
+        message: "ringSettlementMustStartNoLaterThan68",
         params: { messageKey: "ringSettlementMustStartNoLaterThan68" } satisfies SequenceValidationParams
       });
     }
@@ -271,7 +243,7 @@ const sequenceSchema = z
       context.addIssue({
         code: "custom",
         path: ["clips", "warpApproach", "start"],
-        message: english.Developer.sequenceData.warpApproachMustStartAt0,
+        message: "warpApproachMustStartAt0",
         params: { messageKey: "warpApproachMustStartAt0" } satisfies SequenceValidationParams
       });
     }
@@ -279,7 +251,7 @@ const sequenceSchema = z
       context.addIssue({
         code: "custom",
         path: ["clips", "warpApproach", "end"],
-        message: english.Developer.sequenceData.warpApproachMustFinishBeforeRingSettlementStarts,
+        message: "warpApproachMustFinishBeforeRingSettlementStarts",
         params: { messageKey: "warpApproachMustFinishBeforeRingSettlementStarts" } satisfies SequenceValidationParams
       });
     }

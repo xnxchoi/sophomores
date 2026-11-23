@@ -224,11 +224,9 @@ describe("the import walker", () => {
 });
 
 // Whole-catalogue imports inside a client bundle ship every namespace as JavaScript, whatever the providers hand
-// over. These five remain and are filed with their owners; the list may only shrink: when one is fixed, drop it.
+// over. These three remain and are filed with their owners; the list may only shrink: when one is fixed, drop it.
 const knownClientCatalogueImports = [
   "src/components/Authentication/phone-verification/verification-tray.tsx", // Auth: en.json for Common.cancel
-  "src/components/Warp/_shared/sequence-editor.ts", // Home Warp: createTranslator over en.json (Developer)
-  "src/components/Warp/_shared/tuning.ts", // Home Warp: Developer.tuningData labels
   "src/i18n/messages.ts", // via Auth's phone-verification.tsx (messagesByLocale, both locales)
   "src/lib/phone-verification/i18n.ts" // Auth: phone verification copy
 ];

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { getWarpCaptionFade } from "@/components/Warp/sequence";
+import { messagesByLocale } from "@/i18n/messages";
 import {
   SEQUENCE_CLIPS,
   createDefaultSequence,
@@ -65,7 +66,7 @@ test("the passage lines are start-only across the editor", () => {
   for (const id of ["passageLine1", "passageLine2"] as const) {
     const clip = SEQUENCE_CLIPS.find((item) => item.id === id)!;
     assert.match(clip.descriptionKey, /WordsAppearInTurn$/);
-    assert.doesNotMatch(clip.description, /wipe/i);
+    assert.doesNotMatch(messagesByLocale.en.Developer.sequenceData[clip.descriptionKey], /wipe/i);
   }
 });
 

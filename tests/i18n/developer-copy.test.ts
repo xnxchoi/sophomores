@@ -24,9 +24,11 @@ test("canonical developer validation retains exact bounds and actionable English
   assert.equal(result.success, false);
   if (!result.success) {
     const issue = result.error.issues[0];
-    assert.equal(issue.message, "Clip duration must be at least 0.001.");
     assert.equal(issue.code, "custom");
     if (issue.code === "custom") assert.deepEqual(issue.params, { messageKey: "clipDurationMinimum", values: { minimum: 0.001 } });
+    // The editor shows the issue through its key (useTranslations("Developer.sequenceData")): the same English.
+    const sequenceText = createTranslator({ locale: "en", messages: messagesByLocale.en, namespace: "Developer.sequenceData" });
+    assert.equal(sequenceText("clipDurationMinimum", { minimum: 0.001 }), "Clip duration must be at least 0.001.");
   }
   assert.equal(validateSequenceDraft(draft).success, true);
   assert.equal(draft.clips.ringSettlement.end, 70);

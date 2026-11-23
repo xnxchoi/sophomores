@@ -172,7 +172,7 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
     </div>
     {open
       ? <ArcRoles><div data-book-ui role="group" aria-label={t("lookInside")}
-          className="absolute bottom-4 left-1/2 z-1 flex -translate-x-1/2 items-center gap-2 max-lg:bottom-[max(1rem,env(safe-area-inset-bottom))]">
+          className="absolute bottom-4 left-1/2 z-1 flex -translate-x-1/2 items-center gap-2 max-lg:bottom-[calc(4rem+env(safe-area-inset-bottom))]">
           <Button variant="secondary" size="sm" aria-label={t("closeBook")} onClick={close}><XIcon aria-hidden="true" className="size-5" /></Button>
           <Button variant="secondary" size="sm" aria-label={t("previousPage")} onClick={() => signals.current.commands.push("back")}><CaretLeftIcon aria-hidden="true" className="size-5" /></Button>
           <Button variant="secondary" size="sm" aria-label={t("nextPage")} onClick={() => signals.current.commands.push("forward")}><CaretRightIcon aria-hidden="true" className="size-5" /></Button>

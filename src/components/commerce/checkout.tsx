@@ -18,10 +18,9 @@ import { ReviewCustomerNotice } from "./review-customer-notice";
 import { ArcRoles } from "./arc-roles";
 import { Progress } from "@/components/arc/progress/progress";
 import { AnimatedCounter } from "@/components/arc/animated-counter/animated-counter";
-import { ExpandableCard } from "@/components/arc/expandable-card/expandable-card";
 import { Badge } from "@/components/arc/badge/badge";
 import { NumberField } from "@/components/arc/number-field/number-field";
-import { Button } from "@/components/core/ArcFocus/ArcFocus";
+import { Button, ExpandableCard } from "@/components/core/ArcFocus/ArcFocus";
 
 type CommerceAccountGateProps = {
   initialCapabilities: Readonly<MemberCapabilities>;

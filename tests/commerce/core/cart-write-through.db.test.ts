@@ -34,7 +34,8 @@ test("member cart write-through and saved-cart reload on real PostgreSQL", {
     const refused = error as { name?: string; status?: number; data?: unknown; message?: string };
     assert.equal(refused?.name, "APIError", `a cart refusal is an APIError (got ${refused?.name}: ${refused?.message})`);
     assert.equal(refused.status, 409);
-    assert.deepEqual(refused.data, { cartRefusal: reason });
+    assert.equal((refused.data as { cartRefusal?: string }).cartRefusal, reason);
+    assert.ok(refused.message?.endsWith(`[cart-refusal:${reason}]`), "the code is also tagged in the message");
     return true;
   };
 
@@ -62,7 +63,8 @@ test("member cart write-through and saved-cart reload on real PostgreSQL", {
     const reserved = await initiateAttempt(payload);
     const owner = { user: reserved.user, customerID: reserved.customerID };
     const next = await seedCheckoutCart(payload, owner);
-    await assert.rejects(create(reserved.user, [{ product: next.productID, quantity: 1 }]), refusal("limit-reached"));
+    // This member already has open carts (one carries the attempt), so a create converges on them before any limit.
+    await assert.rejects(create(reserved.user, [{ product: next.productID, quantity: 1 }]), refusal("open-cart-exists"));
     const emptied = await patch(reserved.user, next.cartID, []);
     assert.deepEqual(lines(emptied), []);
     await assert.rejects(patch(reserved.user, next.cartID, [{ product: next.productID, quantity: 1 }]), refusal("limit-reached"));
@@ -79,6 +81,52 @@ test("member cart write-through and saved-cart reload on real PostgreSQL", {
     await assert.rejects(patch(stranger.user, member.cartID, [{ product: stranger.productID, quantity: 1 }]));
     const unchanged = await payload.findByID({ collection: carts, id: member.cartID, overrideAccess: true, depth: 0 });
     assert.deepEqual(lines(unchanged), [{ product: member.productID, quantity: 1 }]);
+  });
+
+  const openCarts = async (customerID: string) => (await payload.find({ collection: carts, overrideAccess: true, depth: 0, limit: 10,
+    where: { and: [{ customer: { equals: customerID } }, { purchasedAt: { exists: false } }] } })).docs.map((cart) => String(cart.id));
+  const memberWithoutCart = async () => {
+    const id = randomUUID(), now = new Date().toISOString();
+    await payload.db.create({ collection: "users" as CollectionSlug, customID: id, data: { email: `${id}@fixture.invalid`, name: "Fixture", createdAt: now, updatedAt: now } });
+    return { id, user: { id, email: `${id}@fixture.invalid`, collection: "users" } as TypedUser };
+  };
+
+  await t.test("concurrent creates for one member leave exactly one open cart; the others are refused toward it", async () => {
+    const seller = await seedCheckoutCart(payload);
+    const member = await memberWithoutCart();
+    const results = await Promise.allSettled([1, 2, 3].map(() => create(member.user, [{ product: seller.productID, quantity: 1 }])));
+    const created = results.filter((result) => result.status === "fulfilled");
+    assert.equal(created.length, 1, "one create wins");
+    const open = await openCarts(member.id);
+    assert.deepEqual(open, [String((created[0] as PromiseFulfilledResult<{ id: unknown }>).value.id)]);
+    for (const result of results.filter((result) => result.status === "rejected")) {
+      refusal("open-cart-exists")((result as PromiseRejectedResult).reason);
+      assert.equal(((result as PromiseRejectedResult).reason as { data: { cartID: string } }).data.cartID, open[0]);
+    }
+  });
+
+  await t.test("a create retried after a lost acknowledgement converges on the first cart", async () => {
+    const seller = await seedCheckoutCart(payload);
+    const member = await memberWithoutCart();
+    const first = await create(member.user, [{ product: seller.productID, quantity: 1 }]);
+    // The browser never saw the first answer and sends the same create again.
+    await assert.rejects(create(member.user, [{ product: seller.productID, quantity: 1 }]), refusal("open-cart-exists"));
+    assert.deepEqual(await openCarts(member.id), [String(first.id)]);
+    // The helper then writes into that cart: the same line again, still one cart, still one line.
+    const again = await patch(member.user, String(first.id), [{ product: seller.productID, quantity: 1 }]);
+    assert.deepEqual(lines(again), [{ product: seller.productID, quantity: 1 }]);
+    assert.deepEqual(await openCarts(member.id), [String(first.id)]);
+  });
+
+  await t.test("the refusal code survives Payload's own REST error formatter", async () => {
+    const { formatErrors } = await import("payload");
+    const { cartRefusalOf } = await import("../../../src/lib/commerce/cart-refusal");
+    const reserved = await initiateAttempt(payload);
+    const error = await patch(reserved.user, reserved.cartID, []).then(() => undefined, (caught: unknown) => caught);
+    // This is what the REST route sends (routeError -> formatErrors; a 409 is public).
+    const sent = formatErrors(error as Error) as { errors: { message?: unknown; data?: unknown }[] };
+    t.diagnostic(`REST body keeps error data: ${sent.errors[0]?.data !== undefined}`);
+    assert.equal(cartRefusalOf(sent.errors[0]), "payment-in-progress", "the browser keeps the line on a payment in progress");
   });
 
   await t.test("signing in finds the member's newest open cart, never a purchased one", async () => {

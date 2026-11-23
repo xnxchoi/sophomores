@@ -113,3 +113,58 @@ test("transient failures and a lost session keep the line for a later try", asyn
   assert.deepEqual(await writeThroughGuestCart(undefined, { fetcher: offline, storage }), { outcome: "retry", productID: "product-a" });
   assert.equal(listGuestCart(storage).length, 1);
 });
+
+test("a refusal whose error data was stripped is still read from its message tag", async () => {
+  const storage = memoryStorage();
+  addGuestCartLine("product-a", storage);
+  const stripped = fetcher(409, { errors: [{ message: "Resolve the existing payment before editing this cart [cart-refusal:payment-in-progress]" }] });
+  assert.deepEqual(await writeThroughGuestCart({ id: "cart-1", items: [] }, { fetcher: stripped, storage }),
+    { outcome: "refused", reason: "payment-in-progress", productID: "product-a" });
+  assert.equal(listGuestCart(storage).length, 1, "payment in progress keeps the line, even without error data");
+});
+
+test("a create that finds the member's open cart writes the line into that cart instead (retry, race or lost ack)", async () => {
+  const storage = memoryStorage();
+  addGuestCartLine("product-a", storage);
+  const calls: { url: string; init: RequestInit }[] = [];
+  const answers = [
+    Response.json({ errors: [{ message: "An open cart already exists [cart-refusal:open-cart-exists]" }] }, { status: 409 }),
+    Response.json({ user: { id: "member", cart: { docs: ["cart-9"] } } }),
+    Response.json({ doc: { id: "cart-9" } }),
+  ];
+  const sequence = (async (url: string, init?: RequestInit) => { calls.push({ url: String(url), init: init ?? {} }); return answers.shift()!; }) as unknown as typeof fetch;
+  assert.deepEqual(await writeThroughGuestCart(undefined, { fetcher: sequence, storage }), { outcome: "written", cartID: "cart-9" });
+  assert.deepEqual(calls.map(({ url, init }) => `${init.method ?? "GET"} ${url}`),
+    ["POST /api/carts", "GET /api/users/me?depth=0&select[cart]=true", "PATCH /api/carts/cart-9"]);
+  assert.deepEqual(JSON.parse(String(calls[2].init.body)), { items: [{ product: "product-a", quantity: 1 }] });
+  assert.deepEqual(listGuestCart(storage), []);
+});
+
+test("an open cart that cannot be found, or a second open-cart refusal, is a retry, never a loop", async () => {
+  const storage = memoryStorage();
+  addGuestCartLine("product-a", storage);
+  const exists = () => Response.json({ errors: [{ message: "x [cart-refusal:open-cart-exists]" }] }, { status: 409 });
+  const noCart = [exists(), Response.json({ user: { id: "member", cart: { docs: [] } } })];
+  assert.deepEqual(await writeThroughGuestCart(undefined, { fetcher: (async () => noCart.shift()!) as unknown as typeof fetch, storage }),
+    { outcome: "retry", productID: "product-a" });
+  const twice = [exists(), Response.json({ user: { cart: { docs: [{ id: "cart-9" }] } } }), exists()];
+  assert.deepEqual(await writeThroughGuestCart(undefined, { fetcher: (async () => twice.shift()!) as unknown as typeof fetch, storage }),
+    { outcome: "retry", productID: "product-a" });
+  assert.equal(listGuestCart(storage).length, 1);
+});
+
+test("a newer choice made while a write-through was in flight is kept", async () => {
+  const storage = memoryStorage();
+  addGuestCartLine("product-a", storage);
+  const slow = (async () => { addGuestCartLine("product-b", storage); return Response.json({ doc: { id: "cart-1" } }); }) as unknown as typeof fetch;
+  assert.deepEqual(await writeThroughGuestCart({ id: "cart-1", items: [] }, { fetcher: slow, storage }), { outcome: "written", cartID: "cart-1" });
+  assert.deepEqual(listGuestCart(storage), [{ productID: "product-b", quantity: 1 }], "only the line that was sent is cleared");
+});
+
+test("storage that exists but refuses access keeps the cart for the page", () => {
+  const refusing = { getItem: () => { throw new Error("denied"); }, setItem: () => { throw new Error("denied"); }, removeItem: () => { throw new Error("denied"); } };
+  addGuestCartLine("product-a", refusing);
+  assert.deepEqual(listGuestCart(refusing), [{ productID: "product-a", quantity: 1 }]);
+  clearGuestCart(refusing);
+  assert.deepEqual(listGuestCart(refusing), []);
+});

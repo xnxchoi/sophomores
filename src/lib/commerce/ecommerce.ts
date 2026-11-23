@@ -11,7 +11,7 @@ import { Orders } from "../../payload/collections/orders";
 import { assertCommerceBrowserMutation, commerceAdmin, commerceAdminField, commerceAttemptCreate, commerceOwnerRead, commerceServerField, commerceServerWrite } from "./access";
 import { commerceProductSchema, commercePublicationSchema, loadCommerceCatalogue } from "./catalogue";
 import { MEMBERSHIP_ACCOUNT_LIMIT, shippingAddressSchema } from "./contracts";
-import { cartRefusalData } from "./cart-refusal";
+import { cartRefusalData, cartRefusalMessage } from "./cart-refusal";
 import { purchaseSnapshotSchema } from "./purchase-snapshot";
 import { preserveNativeCheckoutHold } from "./_shared/native-checkout-hold";
 import { readCommerceJSON } from "./_shared/request-body";
@@ -54,14 +54,24 @@ export const createSecureCart = (authorizeMutation: (req: PayloadRequest) => Pro
     await lockCommerce(req, [`cart:${originalDoc.id}`]);
     current = await readCommerce(req, "carts", String(originalDoc.id));
   }
-  if (current?.purchasedAt || (current?.customer && relationshipID(current.customer) !== String(owner))) throw new APIError("Cart is locked", 409, cartRefusalData("cart-locked"));
+  // One open cart per member: a browser create holds the member's cart lock for its transaction and is refused when an
+  // open cart already exists, so retries, concurrent calls and lost acknowledgements converge on that one cart. SYSTEM
+  // read (overrideAccess): the member's own open-cart existence, scoped by customer, answered as that cart only.
+  if (operation === "create" && !internal) {
+    await lockCommerce(req, [`cart-owner:${owner}`]);
+    const open = await req.payload.find({ collection: "carts" as CollectionSlug, req, overrideAccess: true, depth: 0, limit: 1,
+      where: { and: [{ customer: { equals: String(owner) } }, { purchasedAt: { exists: false } }] } });
+    if (open.docs.length) throw new APIError(cartRefusalMessage("An open cart already exists", "open-cart-exists"), 409,
+      { ...cartRefusalData("open-cart-exists"), cartID: String(open.docs[0].id) });
+  }
+  if (current?.purchasedAt || (current?.customer && relationshipID(current.customer) !== String(owner))) throw new APIError(cartRefusalMessage("Cart is locked", "cart-locked"), 409, cartRefusalData("cart-locked"));
   // Official finalization owns purchasedAt and inventory. A reserved sold-out
   // item must still settle at its immutable charge, not at a fresh quotation.
   if (internal && data.purchasedAt) return { ...data, customer: String(owner), currency: "KRW", items: current.items, subtotal: current.subtotal };
   if (!internal && operation === "update") {
     const active = await req.payload.find({ collection: "transactions" as never, req, overrideAccess: true, depth: 0, limit: 1,
       where: { and: [{ cart: { equals: current.id } }, { status: { in: ["pending", "processing"] } }] } });
-    if (active.docs.length) throw new APIError("Resolve the existing payment before editing this cart", 409, cartRefusalData("payment-in-progress"));
+    if (active.docs.length) throw new APIError(cartRefusalMessage("Resolve the existing payment before editing this cart", "payment-in-progress"), 409, cartRefusalData("payment-in-progress"));
   }
   if (data.customer && relationshipID(data.customer) !== String(owner)) throw new APIError("Cart ownership mismatch", 403);
   // Payload beforeValidate restores omitted fields from the document (including
@@ -75,12 +85,12 @@ export const createSecureCart = (authorizeMutation: (req: PayloadRequest) => Pro
   for (const item of items) {
     if (item.variant != null) throw new APIError("Variants unavailable", 409);
     const offer = await loadCommerceCatalogue({ req, productID: relationshipID(item.product) });
-    if (!offer || item.quantity > offer.availableQuantity) throw new APIError("Offer unavailable", 409, cartRefusalData("offer-unavailable"));
+    if (!offer || item.quantity > offer.availableQuantity) throw new APIError(cartRefusalMessage("Offer unavailable", "offer-unavailable"), 409, cartRefusalData("offer-unavailable"));
     // A browser line that is new or larger is refused early at the account limit. Removing or clearing is never blocked.
     const previous = (current?.items ?? []).find((line: { product?: unknown }) => relationshipID(line.product) === offer.productID);
     if (!internal && item.quantity > (previous?.quantity ?? 0) && !await accountAllowanceAdmits(req, { customerID: String(owner),
       productID: offer.productID, eventID: offer.event.id, quantity: item.quantity, accountLimit: MEMBERSHIP_ACCOUNT_LIMIT })) {
-      throw new APIError("Account membership allowance exceeded", 409, cartRefusalData("limit-reached"));
+      throw new APIError(cartRefusalMessage("Account membership allowance exceeded", "limit-reached"), 409, cartRefusalData("limit-reached"));
     }
     subtotal += offer.priceKRW * item.quantity;
   }

@@ -152,6 +152,8 @@ broadcast. Keep the separately scoped action-time gates.
 | **9–15 Dec** | Live test stage (about 10 keys and live invites), sandbox journey run within 30 test payments, and security hardening after review-copy upload. | Final phone and desktop page passes. |
 | **18 Dec** | **Launch** as the final milestone, following functional journey completion and applicable release approvals. | |
 
+**After-preview gate (owner, 23 Nov: "that will have to come AFTER we first have the site running for preview. That's when the staff will test"):** once the preview site is up, staff run the Unlock real-phone single-use test: a second scan, a copied screenshot, the name fallback then a scan, and offline. See the [23 Nov rulings](#23-nov-owner-rulings).
+
 Still open for the owner: the PortOne application once the site is running and
 creating the launch event in Unlock's EVENTS app, as listed above. Checkout
 acceptance should cover one order on repeated settlement, exact-amount mismatch
@@ -589,7 +591,7 @@ This is the ledger everything else is checked against. A decision you made expli
 | 2026-11-21 | [Owner answers: sourcing, UI review, main push, auth adoption and admin setup](#21-nov-owner-answers). All 22 [retained items](#open-work-retained-by-the-owner-21-nov) marked Keep. | Owner answers to master plan sections 3–4 |
 | 2026-11-21 | "all lanes, Claude only writes files". Codex sessions read and review, reporting by message only; main's single writer is a Claude Maintenance session. Widens the 18 Nov UI-workflow rule. | Owner chat (relayed by the coordinator) |
 | 2026-11-22 | [Owner rulings: no blocking gates, forward-compatible orders, single membership token, editions, frame and controls, checkout, policy pages, idle Codex lanes](#22-nov-owner-rulings) | Owner chat (relayed by the coordinator) |
-| 2026-11-23 | [Owner rulings: /vault, `.history` kept, mechanism branch retired, `.inbox/` ignored, headings, local database migrated, legacy tickets server deleted, 8 GB builds, two locks per event, guest ticket plan, Unlock-hosted passes, guest QR to the member, NFC launch scope](#23-nov-owner-rulings) | Owner chat (relayed by the coordinator) |
+| 2026-11-23 | [Owner rulings: /vault, `.history` kept, mechanism branch retired, `.inbox/` ignored, headings, local database migrated, legacy tickets server deleted, 8 GB builds, two locks per event, guest ticket plan, Unlock-hosted passes, guest QR to the member, NFC launch scope, Unlock door authority, stripe.press product page, guest-ticket changes](#23-nov-owner-rulings) | Owner chat (relayed by the coordinator) |
 
 ### Member and guest event tickets (20 Nov)
 
@@ -686,6 +688,9 @@ Same columns as above. Quotes come from the coordinator's relay of the owner's c
 | Unlock-hosted passes | "Okay, push and go ahead with the guest ticket plan and use unlocks passes." (same message) | Wallet passes come from Unlock (Locksmith `/v2/pass/{network}/{lock}/{keyId}/ios` and `/android`), not from an issuer of our own. To confirm with Unlock before launch: what the pass route exposes (privacy), whether Google pass object IDs collide across the event's two locks, and how check-in behaves in the native EVENTS app. |
 | Guest QR goes to the paying member | "Oh... hmm. Let's make it members receive the QR. The members can send it to the guests right? And we can check the QR at the door and have each qr be idempotent(not-usable-by-multiple)" | Revises the guest ticket plan row: the recipient is the paying member (the 16 Nov rule restored), not the claimant. Members pass the QR on to their guests. Each QR is single-use at the door. NFC is sending an impact note for the rest of the plan. |
 | NFC launch scope | "Oh btw NFC does not have to be fully functional at first-deployment; the requisite is that our system can accommodate the NFC functinality with stress-resistant, field-ready level of security, reliability and resilience." | NFC need not be fully working at first deployment. What launch needs is a system that can take NFC with field-ready security, reliability and resilience under stress. Recorded in the road to launch (2–8 Dec row). |
+| Unlock is the single door authority; phone test after preview | "2. Yes, but that will have to come AFTER we first have the site running for preview. That's when the staff will test 3. As stripe.press does! 4. yup" (item 2) | Unlock's EVENTS app is the only door authority. Every entry, including the staff name fallback, goes through Unlock; our system only reads check-in status. Staff run the real-phone single-use test (second scan, copied screenshot, name then scan, offline) once the preview site is up; it is an after-preview gate in the road to launch. |
+| The product page follows stripe.press | Same message (item 3) | The product page copies stripe.press: the art / 3D book stays pinned while the purchase column scrolls. |
+| Guest-ticket changes approved | Same message (item 4) | NFC's impact note (`msg_38017266dcd6`) is approved, with check-in now Unlock-only. |
 
 ## Change log
 
@@ -693,6 +698,7 @@ Every change with its impact, newest first.
 
 | Date | Change | Touches | Breaks or kept | Status |
 | --- | --- | --- | --- | --- |
+| 2026-11-23 | Unlock is the single door authority, with a staff phone test after preview; the product page follows stripe.press; NFC's guest-ticket impact note approved (owner) | Door check-in (read-only status on our side), road to launch after-preview gate, product page layout, guest ticket flow | Our system no longer records door entry itself; check-in is Unlock-only | Recorded |
 | 2026-11-23 | Guest QR goes to the paying member, single-use at the door; NFC need not be fully working at first deployment (owner) | Guest ticket recipient, door QR check, road to launch NFC scope | The claimant-bound recipient in the earlier guest ticket plan is revised; NFC's impact note follows | Recorded |
 | 2026-11-23 | Guest ticket plan approved; passes are Unlock-hosted (owner) | Guest claim transaction, Guest Ticket grant intent and its worker, activation and door lock resolution, wallet passes, the owner's Unlock to-do (one event, both locks) | No pass issuer of our own; no QR or pass before a matching receipt; three Unlock questions stay open until launch | Recorded; NFC and Auth build it |
 | 2026-11-23 | Two Unlock locks per event, members and guests (owner) | Event lock setup, the owner to-do, ticket grant and check-in design | The single-lock assumption is gone; every lock-address setting and test takes two addresses per event | Recorded; mechanism work follows |

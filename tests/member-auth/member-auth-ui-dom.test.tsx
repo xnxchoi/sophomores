@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { after, afterEach, before, test } from "node:test";
 import { JSDOM } from "jsdom";
+import { untilAsserted } from "../support/dom-state";
 import type { MemberClient, MemberStatus } from "@/lib/member-auth/client";
 
 let MemberAuthProviders: typeof import("./fixtures/providers").MemberAuthProviders;
@@ -181,7 +182,7 @@ async function choose(
 ) {
   const rendered = ui.render(<Study client={c.value} />, { wrapper: MemberAuthProviders });
   ui.fireEvent.click(ui.screen.getByRole("button", { name }));
-  await ui.waitFor(() =>
+  await untilAsserted(ui, () =>
     assert.equal(
       (ui.screen.getByLabelText(/^Email(?: address)?$/) as HTMLInputElement).disabled,
       false
@@ -195,7 +196,7 @@ test("login requires explicit registration continuation for an incomplete authen
   const server = phoneServer();
   ui.render(<Study client={c.value} />, { wrapper: MemberAuthProviders });
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign in" }));
-  await ui.waitFor(() =>
+  await untilAsserted(ui, () =>
     assert.ok(
       ui.screen.queryByRole("heading", {
         name: "Finish setting up your account"
@@ -210,7 +211,7 @@ test("login requires explicit registration continuation for an incomplete authen
   }
   assert.equal(setupHeading.classList.contains("text-center"), false, "the title remains aligned with its body and primary action");
   assert.equal(setupHeading.classList.contains("pr-14"), false, "clearance follows the left-side dismissal control");
-  const setupDescription = await ui.screen.findByText("Verify your phone to finish.");
+  const setupDescription = await untilAsserted(ui, () => ui.screen.getByText("Verify your phone to finish."));
   assert.ok(setupDescription.parentElement?.classList.contains("[&>p:first-child]:pl-14"), "the grouped setup instruction shares its heading's left clearance");
   assert.equal(setupDescription.classList.contains("text-center"), false);
   const setupSwitch = ui.screen.getByRole("button", { name: "Switch account" });
@@ -222,7 +223,7 @@ test("login requires explicit registration continuation for an incomplete authen
   );
   assert.equal(document.querySelector("[data-member-phone-step]"), null);
   assert.equal(server.calls.length, 0);
-  await ui.waitFor(() =>
+  await untilAsserted(ui, () =>
     assert.ok(
       ui.screen.queryByRole("button", { name: "Continue registration" })
     )
@@ -230,7 +231,7 @@ test("login requires explicit registration continuation for an incomplete authen
   ui.fireEvent.click(
     ui.screen.getByRole("button", { name: "Continue registration" })
   );
-  await ui.waitFor(() =>
+  await untilAsserted(ui, () =>
     assert.ok(ui.screen.queryByRole("textbox", { name: "Phone number" }))
   );
   assert.equal(ui.screen.getByRole("button", { name: "Switch account" }).classList.contains("w-full"), false,
@@ -238,14 +239,14 @@ test("login requires explicit registration continuation for an incomplete authen
   const phoneHeading = ui.screen.getByRole("heading", { name: "Verify your phone to finish" });
   assert.equal(phoneHeading.classList.contains("mt-0!"), false);
   assert.equal(phoneHeading.classList.contains("mb-2!"), false);
-  await ui.waitFor(() => assert.equal(document.activeElement?.id, "member-phone-heading"));
+  await untilAsserted(ui, () => assert.equal(document.activeElement?.id, "member-phone-heading"));
   assert.equal(
     server.calls.length,
     0,
     "continuing must not issue a challenge automatically"
   );
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Cancel" }));
-  await ui.waitFor(() => assert.ok(ui.screen.queryByRole("textbox", { name: "Phone number" }) === null));
+  await untilAsserted(ui, () => assert.ok(ui.screen.queryByRole("textbox", { name: "Phone number" }) === null));
   assert.ok(ui.screen.queryByRole("heading", { name: "Welcome" }) === null);
   assert.ok(ui.screen.queryByRole("button", { name: "Resume registration" }) === null);
   assert.ok(ui.screen.getByRole("button", { name: "Open account options" }));
@@ -262,7 +263,7 @@ test("provider return defaults to an explicit setup gate, not automatic phone ve
   );
   assert.match(route, /initialFlow="login"/);
   ui.render(<Study client={c.value} initialFlow="login" />, { wrapper: MemberAuthProviders });
-  await ui.waitFor(() =>
+  await untilAsserted(ui, () =>
     assert.ok(
       ui.screen.queryByRole("heading", {
         name: "Finish setting up your account"
@@ -274,11 +275,11 @@ test("provider return defaults to an explicit setup gate, not automatic phone ve
     null
   );
   assert.equal(server.calls.length, 0);
-  await ui.waitFor(() =>
+  await untilAsserted(ui, () =>
     assert.ok(ui.screen.queryByRole("button", { name: "Switch account" }))
   );
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Switch account" }));
-  await ui.waitFor(() =>
+  await untilAsserted(ui, () =>
     assert.ok(ui.screen.queryByRole("heading", { name: messages.AuthPhase.login }))
   );
   assert.ok(c.calls.some(([name]) => name === "signout"));
@@ -295,14 +296,14 @@ test("Switch account clears the confirmed sign-in identity and retains only the 
     target: { value: "previous@example.com" }
   });
   ui.fireEvent.submit(ui.screen.getByLabelText("Email address").closest("form")!);
-  ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Send sign-in code" }));
-  await ui.waitFor(() => assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code)));
+  ui.fireEvent.click(await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Send sign-in code" })));
+  await untilAsserted(ui, () => assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code)));
   ui.fireEvent.change(ui.screen.getByLabelText(messages.AuthPhase.code), {
     target: { value: "A1B2C3" }
   });
-  await ui.waitFor(() => assert.ok(ui.screen.queryByRole("button", { name: "Switch account" })));
+  await untilAsserted(ui, () => assert.ok(ui.screen.queryByRole("button", { name: "Switch account" })));
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Switch account" }));
-  await ui.waitFor(() => {
+  await untilAsserted(ui, () => {
     const email = ui.screen.getByLabelText("Email address") as HTMLInputElement;
     assert.equal(email.value, "");
     assert.equal(email.disabled, false);
@@ -318,8 +319,8 @@ test("Switch account clears the confirmed sign-in identity and retains only the 
   ui.fireEvent.change(ui.screen.getByLabelText("Email address"), { target: { value: "next@example.com" } });
   assert.equal(document.querySelector<HTMLButtonElement>("[data-phase-action=submit]")?.disabled, false);
   ui.fireEvent.submit(ui.screen.getByLabelText("Email address").closest("form")!);
-  ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Send sign-in code" }));
-  await ui.screen.findByLabelText(messages.AuthPhase.code);
+  ui.fireEvent.click(await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Send sign-in code" })));
+  await untilAsserted(ui, () => ui.screen.getByLabelText(messages.AuthPhase.code));
   assert.deepEqual(c.calls.filter(([name]) => name === "code"), [["code", "previous@example.com"], ["code", "next@example.com"]]);
 });
 
@@ -329,9 +330,9 @@ test("ordinary login and sign-out never expose phone account lookup", async () =
   assert.ok(ui.screen.queryByRole("button", { name: "Use phone to identify account" }) === null);
   assert.ok(ui.screen.queryByRole("textbox", { name: "Phone number" }) === null);
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign in with a passkey" }));
-  await ui.waitFor(() => assert.ok(ui.screen.queryByRole("button", { name: "Sign out" })));
+  await untilAsserted(ui, () => assert.ok(ui.screen.queryByRole("button", { name: "Sign out" })));
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign out" }));
-  await ui.waitFor(() => assert.ok(ui.screen.queryByLabelText("Email address")));
+  await untilAsserted(ui, () => assert.ok(ui.screen.queryByLabelText("Email address")));
   assert.ok(ui.screen.queryByRole("button", { name: "Use phone to identify account" }) === null);
   assert.equal(c.calls.filter(([name]) => name === "identify").length, 0);
 });
@@ -344,7 +345,7 @@ for (const failure of ["request", "authenticated-status", "status-request", "ide
       target: { value: "retained@example.com" }
     });
     ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign in with a passkey" }));
-    await ui.waitFor(() => assert.ok(ui.screen.queryByRole("button", { name: "Sign out" })));
+    await untilAsserted(ui, () => assert.ok(ui.screen.queryByRole("button", { name: "Sign out" })));
     const signOut = c.value.signOut;
     const status = c.value.status;
     const clear = c.value.clearPhoneIdentifier;
@@ -360,14 +361,14 @@ for (const failure of ["request", "authenticated-status", "status-request", "ide
     assert.ok(ui.screen.queryByRole("heading", { name: "Account ready" }));
     assert.ok(ui.screen.queryByLabelText("Email address") === null);
     await ui.act(async () => release());
-    await ui.waitFor(() => assert.ok(ui.screen.queryByRole("alert")));
+    await untilAsserted(ui, () => assert.ok(ui.screen.queryByRole("alert")));
     assert.ok(ui.screen.queryByRole("heading", { name: "Account ready" }));
     assert.doesNotMatch(ui.screen.getByRole("alert").textContent!, /private/);
     c.value.status = status;
     c.value.clearPhoneIdentifier = clear;
     c.setStatus(anonymous);
     ui.fireEvent.click(ui.screen.getByRole("button", { name: "Refresh account status" }));
-    await ui.waitFor(() =>
+    await untilAsserted(ui, () =>
       assert.equal((ui.screen.getByLabelText("Email address") as HTMLInputElement).value, "retained@example.com")
     );
   });
@@ -377,7 +378,7 @@ test("a disposed sign-out cannot clear the next flow's identity", async () => {
   const c = client();
   await choose("Sign in", c);
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign in with a passkey" }));
-  await ui.waitFor(() => assert.ok(ui.screen.queryByRole("button", { name: "Sign out" })));
+  await untilAsserted(ui, () => assert.ok(ui.screen.queryByRole("button", { name: "Sign out" })));
   let release!: () => void;
   c.value.signOut = () => new Promise<void>((resolve) => { release = resolve; });
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign out" }));
@@ -385,7 +386,7 @@ test("a disposed sign-out cannot clear the next flow's identity", async () => {
   c.setStatus(anonymous);
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Open account options" }));
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign in" }));
-  await ui.waitFor(() =>
+  await untilAsserted(ui, () =>
     assert.equal((ui.screen.getByLabelText("Email address") as HTMLInputElement).disabled, false)
   );
   ui.fireEvent.change(ui.screen.getByLabelText("Email address"), {
@@ -400,7 +401,7 @@ test("explicit signup resumes phone verification and Cancel returns directly to 
   c.setStatus({ ...anonymous, phoneBindingAuth: "ready", authenticated: true, emailVerified: true });
   const server = phoneServer();
   ui.render(<Study client={c.value} initialFlow="signup" />, { wrapper: MemberAuthProviders });
-  await ui.waitFor(() =>
+  await untilAsserted(ui, () =>
     assert.ok(ui.screen.queryByRole("textbox", { name: "Phone number" }))
   );
   assert.ok(
@@ -416,7 +417,7 @@ test("explicit signup resumes phone verification and Cancel returns directly to 
   assert.equal(
     server.calls.length,
     0,
-    "resuming does not create a phone challenge"
+    `resuming does not create a phone challenge (calls: ${JSON.stringify(server.calls.map(([path, method, body]) => [method, path, body]))})`
   );
   assert.ok(
     c.calls.every(([name]) => name === "status"),
@@ -424,7 +425,7 @@ test("explicit signup resumes phone verification and Cancel returns directly to 
   );
 
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Cancel" }));
-  await ui.waitFor(() => assert.ok(ui.screen.queryByRole("textbox", { name: "Phone number" }) === null));
+  await untilAsserted(ui, () => assert.ok(ui.screen.queryByRole("textbox", { name: "Phone number" }) === null));
   assert.ok(ui.screen.queryByRole("button", { name: "Resume registration" }) === null);
   assert.ok(ui.screen.queryByRole("heading", { name: "Welcome" }) === null);
   assert.ok(ui.screen.getByRole("button", { name: "Open account options" }));
@@ -433,10 +434,10 @@ test("authenticated returning member resumes the account screen without repeatin
   const c = client();
   c.setStatus(active);
   ui.render(<Study client={c.value} initialFlow="signup" />, { wrapper: MemberAuthProviders });
-  await ui.waitFor(() =>
+  await untilAsserted(ui, () =>
     assert.ok(ui.screen.queryByRole("heading", { name: "Account ready" }))
   );
-  await ui.waitFor(() =>
+  await untilAsserted(ui, () =>
     assert.ok(ui.screen.queryByRole("button", { name: "Add a passkey" }))
   );
   assert.ok(ui.screen.queryByRole("heading", { name: "Welcome" }) === null);
@@ -449,8 +450,8 @@ test("authenticated returning member resumes the account screen without repeatin
 test("anonymous direct continuation never grants authentication or membership", async () => {
   const c = client();
   ui.render(<Study client={c.value} initialFlow="signup" />, { wrapper: MemberAuthProviders });
-  await ui.screen.findByRole("heading", { name: messages.AuthPhase.signup });
-  await ui.waitFor(() => assert.ok(c.calls.some(([name]) => name === "clear")));
+  await untilAsserted(ui, () => ui.screen.getByRole("heading", { name: messages.AuthPhase.signup }));
+  await untilAsserted(ui, () => assert.ok(c.calls.some(([name]) => name === "clear")));
   assert.equal(ui.screen.queryByRole("textbox", { name: "Email address" }) === null, true);
   assert.equal(
     ui.screen.queryByRole("heading", { name: "Account ready" }),
@@ -499,7 +500,7 @@ test("one Vaul surface morphs from dismissible chooser to locked flow; Cancel cl
     "chooser does not initialize a credential session"
   );
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign in" }));
-  await ui.waitFor(() => assert.ok(ui.screen.queryByLabelText(/^Email(?: address)?$/)));
+  await untilAsserted(ui, () => assert.ok(ui.screen.queryByLabelText(/^Email(?: address)?$/)));
   assert.ok(document.querySelector("[data-verification-sheet]") === surface);
   assert.equal(surface.getAttribute("data-authentication-mode"), "focused");
   ui.fireEvent.change(ui.screen.getByLabelText(/^Email(?: address)?$/), {
@@ -517,7 +518,7 @@ test("one Vaul surface morphs from dismissible chooser to locked flow; Cancel cl
   assert.equal(surface.getAttribute("data-authentication-mode"), "chooser");
   assert.ok(ui.screen.queryByLabelText(/^Email(?: address)?$/) === null);
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign in" }));
-  await ui.waitFor(() =>
+  await untilAsserted(ui, () =>
     assert.equal(
       (ui.screen.getByLabelText(/^Email(?: address)?$/) as HTMLInputElement).value,
       ""
@@ -532,12 +533,12 @@ test("chooser closes and reopens while focused account actions preserve real ema
   ui.fireEvent.click(
     ui.screen.getByRole("button", { name: "Close account options" })
   );
-  await ui.waitFor(() => assert.ok(ui.screen.queryByRole("dialog") === null));
+  await untilAsserted(ui, () => assert.ok(ui.screen.queryByRole("dialog") === null));
   ui.fireEvent.click(
     ui.screen.getByRole("button", { name: "Open account options" })
   );
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign in" }));
-  await ui.waitFor(() =>
+  await untilAsserted(ui, () =>
     assert.equal(
       (ui.screen.getByLabelText(/^Email(?: address)?$/) as HTMLInputElement).disabled,
       false
@@ -549,12 +550,12 @@ test("chooser closes and reopens while focused account actions preserve real ema
   ui.fireEvent.click(
     ui.screen.getByRole("button", { name: "Continue with Google" })
   );
-  await ui.waitFor(() =>
+  await untilAsserted(ui, () =>
     assert.ok(c.calls.some(([name]) => name === "google"))
   );
   ui.fireEvent.submit(ui.screen.getByLabelText(/^Email(?: address)?$/).closest("form")!);
-  ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Send sign-in code" }));
-  await ui.waitFor(() => assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code)));
+  ui.fireEvent.click(await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Send sign-in code" })));
+  await untilAsserted(ui, () => assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code)));
   ui.fireEvent.change(ui.screen.getByLabelText(messages.AuthPhase.code), {
     target: { value: "a1b2c" }
   });
@@ -567,21 +568,24 @@ test("chooser closes and reopens while focused account actions preserve real ema
   ui.fireEvent.click(
     ui.screen.getByRole("button", { name: /Send (?:a )?new code/ })
   );
-  await ui.waitFor(() =>
-    assert.equal(c.calls.filter(([name]) => name === "code").length, 2)
-  );
+  // The resend is complete only when its result is committed (a successful resend clears the code). Changing the
+  // email before that races the in-flight resend, which is what left the code field in place under load.
+  await untilAsserted(ui, () => {
+    assert.equal(c.calls.filter(([name]) => name === "code").length, 2);
+    assert.equal((ui.screen.getByLabelText(messages.AuthPhase.code) as HTMLInputElement).value, "");
+  });
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Change email" }));
   assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code) === null);
   now += 31_000;
   await ui.act(async () => { document.dispatchEvent(new Event("visibilitychange")); });
   const continueButton = ui.screen.queryByRole("button", { name: "Continue" });
   if (continueButton) ui.fireEvent.click(continueButton);
-  ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Send sign-in code" }));
-  await ui.waitFor(() => assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code)));
+  ui.fireEvent.click(await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Send sign-in code" })));
+  await untilAsserted(ui, () => assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code)));
   ui.fireEvent.change(ui.screen.getByLabelText(messages.AuthPhase.code), {
     target: { value: "D4E5F6" }
   });
-  await ui.waitFor(() =>
+  await untilAsserted(ui, () =>
     assert.ok(
       ui.screen.queryByRole("heading", {
         name: "Finish setting up your account"
@@ -613,8 +617,8 @@ test("completing an email code verifies once, exposes pending and failure, and r
     target: { value: "member@example.com" }
   });
   ui.fireEvent.submit(ui.screen.getByLabelText(/^Email(?: address)?$/).closest("form")!);
-  ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Send sign-in code" }));
-  await ui.waitFor(() => assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code)));
+  ui.fireEvent.click(await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Send sign-in code" })));
+  await untilAsserted(ui, () => assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code)));
   const input = ui.screen.getByLabelText(messages.AuthPhase.code) as HTMLInputElement;
   ui.fireEvent.change(input, { target: { value: "a1b2c" } });
   ui.fireEvent.submit(input.closest("form")!);
@@ -666,7 +670,7 @@ test("completing an email code verifies once, exposes pending and failure, and r
   ]);
   c.setStatus({ ...anonymous, phoneBindingAuth: "ready", authenticated: true, emailVerified: true });
   await ui.act(async () => resolve());
-  await ui.waitFor(() =>
+  await untilAsserted(ui, () =>
     assert.ok(ui.screen.queryByRole("heading", { name: "Finish setting up your account" }))
   );
   assert.equal(c.calls.filter(([name]) => name === "verify").length, 4);
@@ -683,8 +687,8 @@ test("Cancel disposes an automatic code verification before its late result", as
     target: { value: "private@example.com" }
   });
   ui.fireEvent.submit(ui.screen.getByLabelText(/^Email(?: address)?$/).closest("form")!);
-  ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Send sign-in code" }));
-  await ui.waitFor(() => assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code)));
+  ui.fireEvent.click(await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Send sign-in code" })));
+  await untilAsserted(ui, () => assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code)));
   ui.fireEvent.change(ui.screen.getByLabelText(messages.AuthPhase.code), {
     target: { value: "A1B2C3" }
   });
@@ -702,7 +706,7 @@ test("passkey failure preserves the email fallback without introducing phone loo
   c.value.signInPasskey = async () => { throw Error("private credential cancelled"); };
   await choose("Sign in", c);
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign in with a passkey" }));
-  await ui.waitFor(() => assert.match(ui.screen.getByRole("alert").textContent!, /Sign-in is unavailable/));
+  await untilAsserted(ui, () => assert.match(ui.screen.getByRole("alert").textContent!, /Sign-in is unavailable/));
   assert.doesNotMatch(document.body.textContent!, /private credential/);
   assert.ok(ui.screen.queryByLabelText("Email address"));
   assert.ok(ui.screen.queryByRole("button", { name: "More options" }) === null);
@@ -715,15 +719,15 @@ test("returning passkey member can add passkey and sign out without routine refr
   ui.fireEvent.click(
     ui.screen.getByRole("button", { name: "Sign in with a passkey" })
   );
-  await ui.waitFor(() =>
+  await untilAsserted(ui, () =>
     assert.ok(ui.screen.queryByRole("button", { name: "Add a passkey" }))
   );
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Add a passkey" }));
-  await ui.waitFor(() =>
+  await untilAsserted(ui, () =>
     assert.ok(ui.screen.queryByText("Passkey added to this local account."))
   );
   assert.ok(ui.screen.queryByRole("button", { name: "Refresh account status" }) === null);
-  await ui.waitFor(() =>
+  await untilAsserted(ui, () =>
     assert.equal(
       ui.screen
         .getByRole("button", { name: "Sign out" })
@@ -732,7 +736,7 @@ test("returning passkey member can add passkey and sign out without routine refr
     )
   );
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign out" }));
-  await ui.waitFor(() => assert.ok(ui.screen.queryByLabelText(/^Email(?: address)?$/)));
+  await untilAsserted(ui, () => assert.ok(ui.screen.queryByLabelText(/^Email(?: address)?$/)));
   assert.ok(c.calls.some(([name]) => name === "add-passkey"));
   assert.ok(c.calls.some(([name]) => name === "signout"));
 });
@@ -803,7 +807,7 @@ async function startPhone() {
   ui.fireEvent.submit(
     ui.screen.getByRole("textbox", { name: "Phone number" }).closest("form")!
   );
-  await ui.waitFor(() =>
+  await untilAsserted(ui, () =>
     assert.ok(ui.screen.queryByRole("button", { name: "Check status" }))
   );
 }
@@ -817,18 +821,18 @@ test("phone UI starts only by explicit submission, refreshes real proof and bind
     phone: "+821012345678"
   });
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Check status" }));
-  await ui.waitFor(() =>
+  await untilAsserted(ui, () =>
     assert.ok(ui.screen.queryByRole("button", { name: "Finish registration" }))
   );
   ui.fireEvent.click(
     ui.screen.getByRole("button", { name: "Finish registration" })
   );
   assert.deepEqual(bound, [[server.challenge.id, "+821012345678"]]);
-  await ui.waitFor(() =>
+  await untilAsserted(ui, () =>
     assert.ok(ui.screen.queryByRole("button", { name: "Use a different phone" }))
   );
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Use a different phone" }));
-  await ui.waitFor(() =>
+  await untilAsserted(ui, () =>
     assert.ok(ui.screen.queryByRole("textbox", { name: "Phone number" }))
   );
   assert.equal(
@@ -850,7 +854,7 @@ test("phone UI refuses elapsed proof at click-time, even before the expiry timer
   );
   await startPhone();
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Check status" }));
-  await ui.waitFor(() =>
+  await untilAsserted(ui, () =>
     assert.ok(ui.screen.queryByRole("button", { name: "Finish registration" }))
   );
   const original = Date.now;
@@ -874,14 +878,12 @@ test("phone UI timer expires verified proof and pending challenge without granti
   );
   await startPhone();
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Check status" }));
-  await ui.waitFor(() =>
+  await untilAsserted(ui, () =>
     assert.ok(ui.screen.queryByRole("button", { name: "Finish registration" }))
   );
-  await ui.waitFor(
-    () => assert.equal(Boolean(ui.screen.queryByText(messages.MemberAuth.verificationExpiredTryAgain)), true),
-    { timeout: 1500 }
-  );
-  await ui.waitFor(() => {
+  // Expiry fires on the step's own timer: await the expired state it commits, not a wall-clock window.
+  await untilAsserted(ui, () => assert.equal(Boolean(ui.screen.queryByText(messages.MemberAuth.verificationExpiredTryAgain)), true));
+  await untilAsserted(ui, () => {
     assert.ok(ui.screen.getByRole("heading", { name: "Verification expired" }));
     assert.equal(
       ui.screen.queryByRole("heading", { name: "Phone verified" }),
@@ -900,12 +902,7 @@ test("phone UI timer expires verified proof and pending challenge without granti
     <Phone onPrepare={async () => true} busy={false} onBind={() => assert.fail("pending challenge bound")} />, { wrapper: MemberAuthProviders }
   );
   await startPhone();
-  await ui.waitFor(
-    () => assert.ok(ui.screen.queryByText("Verification expired")),
-    {
-      timeout: 2000
-    }
-  );
+  await untilAsserted(ui, () => assert.ok(ui.screen.queryByText("Verification expired")));
   assert.equal(
     ui.screen.queryByRole("button", { name: "Finish registration" }),
     null
@@ -923,7 +920,7 @@ test("phone UI handles network errors truthfully and cancels on disposal", async
   ui.fireEvent.submit(
     ui.screen.getByRole("textbox", { name: "Phone number" }).closest("form")!
   );
-  await ui.waitFor(() =>
+  await untilAsserted(ui, () =>
     assert.match(ui.screen.getByRole("alert").textContent!, /couldn't prepare/)
   );
   assert.doesNotMatch(document.body.textContent!, /private network failure/);
@@ -937,11 +934,11 @@ test("phone UI handles network errors truthfully and cancels on disposal", async
   );
   await startPhone();
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Check status" }));
-  await ui.waitFor(() =>
+  await untilAsserted(ui, () =>
     assert.match(ui.screen.getByRole("alert").textContent!, /couldn't check/)
   );
   second.unmount();
-  await ui.waitFor(() =>
+  await untilAsserted(ui, () =>
     assert.ok(server.calls.some(([, method]) => method === "DELETE"))
   );
 });
@@ -952,7 +949,7 @@ test("pending account completes phone verification then refreshes server-confirm
   phoneServer({ verified: true });
   ui.render(<Study client={c.value} />, { wrapper: MemberAuthProviders });
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign up" }));
-  await ui.waitFor(() =>
+  await untilAsserted(ui, () =>
     assert.ok(ui.screen.queryByRole("textbox", { name: "Phone number" }))
   );
   const accountHeading = ui.screen.getByRole("heading", {
@@ -986,13 +983,13 @@ test("pending account completes phone verification then refreshes server-confirm
   assert.ok(ui.screen.queryByRole("textbox", { name: "Phone number" }));
   await startPhone();
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Check status" }));
-  await ui.waitFor(() =>
+  await untilAsserted(ui, () =>
     assert.ok(ui.screen.queryByRole("button", { name: "Finish registration" }))
   );
   ui.fireEvent.click(
     ui.screen.getByRole("button", { name: "Finish registration" })
   );
-  await ui.waitFor(() =>
+  await untilAsserted(ui, () =>
     assert.ok(ui.screen.queryByRole("button", { name: "Add a passkey" }))
   );
   assert.ok(
@@ -1015,7 +1012,7 @@ test("entry alternatives are compact peer actions without a disclosure or phone 
   assert.equal(row?.querySelectorAll("button").length, 2);
   assert.equal(ui.screen.getAllByRole("button", { name: "Continue with Google" }).length, 1);
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Continue with Google" }));
-  await ui.waitFor(() => assert.equal(c.calls.filter(([name]) => name === "google").length, 1));
+  await untilAsserted(ui, () => assert.equal(c.calls.filter(([name]) => name === "google").length, 1));
   assert.equal(c.calls.filter(([name]) => name === "code" || name === "link" || name === "identify").length, 0);
 });
 
@@ -1027,8 +1024,8 @@ test("code-stage sign-in link honors shared cooldown and replaces code instructi
   ui.fireEvent.change(ui.screen.getByLabelText("Email address"), { target: { value: "member@example.com" } });
   assert.ok(ui.screen.queryByRole("button", { name: "Email a sign-in link instead" }) === null);
   ui.fireEvent.submit(ui.screen.getByLabelText("Email address").closest("form")!);
-  ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Send sign-in code" }));
-  await ui.waitFor(() => assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code)));
+  ui.fireEvent.click(await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Send sign-in code" })));
+  await untilAsserted(ui, () => assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code)));
   const magic = ui.screen.getByRole("button", { name: "Email a sign-in link instead" }) as HTMLButtonElement;
   assert.equal(magic.disabled, true);
   ui.fireEvent.click(magic);
@@ -1037,7 +1034,7 @@ test("code-stage sign-in link honors shared cooldown and replaces code instructi
   await ui.act(async () => { document.dispatchEvent(new Event("visibilitychange")); });
   assert.equal(magic.disabled, false);
   ui.fireEvent.click(magic);
-  await ui.waitFor(() => assert.ok(ui.screen.queryByText(/Check your inbox for a sign-in link/)));
+  await untilAsserted(ui, () => assert.ok(ui.screen.queryByText(/Check your inbox for a sign-in link/)));
   assert.ok(c.calls.some(([name, email]) => name === "link" && email === "member@example.com"));
   assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code) === null);
   assert.ok(ui.screen.queryByRole("button", { name: "Email a sign-in link instead" }) === null);
@@ -1048,8 +1045,8 @@ test("code-stage sign-in link honors shared cooldown and replaces code instructi
 test("social signup exposes no email delivery or passkey action", async () => {
   const c = client();
   ui.render(<Study client={c.value} initialFlow="signup" />, { wrapper: MemberAuthProviders });
-  const google = await ui.screen.findByRole("button", { name: "Continue with Google" }) as HTMLButtonElement;
-  await ui.waitFor(() => assert.equal(google.disabled, false));
+  const google = await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Continue with Google" })) as HTMLButtonElement;
+  await untilAsserted(ui, () => assert.equal(google.disabled, false));
   assert.equal(ui.screen.queryByRole("textbox", { name: "Email address" }) === null, true);
   assert.equal(ui.screen.queryByRole("button", { name: "Sign in with a passkey" }) === null, true);
   assert.equal(ui.screen.queryByRole("button", { name: "Email a sign-in link instead" }) === null, true);
@@ -1158,8 +1155,8 @@ test("status retry keeps its action, feedback slot and input mounted through its
   ui.fireEvent.change(input, { target: { value: "retained@example.com" } });
   c.value.sendEmailCode = async () => { throw new Error("Private delivery outage"); };
   ui.fireEvent.submit(input.closest("form")!);
-  ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Send sign-in code" }));
-  await ui.screen.findByRole("button", { name: "Refresh account status" });
+  ui.fireEvent.click(await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Send sign-in code" })));
+  await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Refresh account status" }));
   const retry = ui.screen.getByRole("button", { name: "Refresh account status" }) as HTMLButtonElement;
   const feedback = document.getElementById(input.getAttribute("aria-describedby")!)!;
   const icon = retry.querySelector<HTMLElement>("[data-account-refresh-icon]");
@@ -1194,7 +1191,7 @@ test("status retry keeps its action, feedback slot and input mounted through its
   ui.fireEvent.click(retry);
   assert.equal(calls, 1, "disabled retry cannot issue a duplicate status request");
   await ui.act(async () => reject(new Error("Private status outage")));
-  await ui.waitFor(() => assert.equal(retry.disabled, false));
+  await untilAsserted(ui, () => assert.equal(retry.disabled, false));
   assert.ok(ui.screen.getByRole("button", { name: "Refresh account status" }) === retry);
   assert.equal(retry.getAttribute("aria-busy"), "false");
   assert.ok(icon?.querySelector(".lucide-refresh-cw"));
@@ -1203,7 +1200,7 @@ test("status retry keeps its action, feedback slot and input mounted through its
   assert.equal(input.value, "retained@example.com");
   c.value.status = async () => anonymous;
   ui.fireEvent.click(retry);
-  await ui.waitFor(() => assert.ok(ui.screen.queryByRole("button", { name: "Refresh account status" }) === null));
+  await untilAsserted(ui, () => assert.ok(ui.screen.queryByRole("button", { name: "Refresh account status" }) === null));
   assert.equal(feedback.parentElement?.classList.contains("min-h-11"), false, "irrelevant outage space collapses after recovery");
   assert.equal(feedback.classList.contains("sr-only"), true);
   assert.ok(ui.screen.getByLabelText("Email address") === input);
@@ -1215,20 +1212,20 @@ test("a disposed status retry cannot clear a later flow's pending retry", async 
   await choose("Sign in", c);
   ui.fireEvent.change(ui.screen.getByLabelText("Email address"), { target: { value: "first@example.com" } });
   ui.fireEvent.submit(ui.screen.getByLabelText("Email address").closest("form")!);
-  ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Send sign-in code" }));
-  const first = await ui.screen.findByRole("button", { name: "Refresh account status" });
+  ui.fireEvent.click(await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Send sign-in code" })));
+  const first = await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Refresh account status" }));
   let oldReject!: (error: Error) => void;
   c.value.status = () => new Promise((_resolve, reject) => { oldReject = reject; });
   ui.fireEvent.click(first);
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Cancel" }));
   c.value.status = async () => anonymous;
-  ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Sign in" }));
-  const input = await ui.screen.findByLabelText("Email address") as HTMLInputElement;
-  await ui.waitFor(() => assert.equal(input.disabled, false));
+  ui.fireEvent.click(await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Sign in" })));
+  const input = await untilAsserted(ui, () => ui.screen.getByLabelText("Email address")) as HTMLInputElement;
+  await untilAsserted(ui, () => assert.equal(input.disabled, false));
   ui.fireEvent.change(input, { target: { value: "next@example.com" } });
   ui.fireEvent.submit(input.closest("form")!);
-  ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Send sign-in code" }));
-  const next = await ui.screen.findByRole("button", { name: "Refresh account status" }) as HTMLButtonElement;
+  ui.fireEvent.click(await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Send sign-in code" })));
+  const next = await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Refresh account status" })) as HTMLButtonElement;
   let release!: (status: MemberStatus) => void;
   c.value.status = () => new Promise((resolve) => { release = resolve; });
   ui.fireEvent.click(next);
@@ -1238,7 +1235,7 @@ test("a disposed status retry cannot clear a later flow's pending retry", async 
   assert.equal(next.getAttribute("aria-busy"), "true", "disposed lifetime cannot clear the next retry state");
   assert.equal(input.value, "next@example.com");
   await ui.act(async () => release(anonymous));
-  await ui.waitFor(() => assert.ok(ui.screen.queryByRole("button", { name: "Refresh account status" }) === null));
+  await untilAsserted(ui, () => assert.ok(ui.screen.queryByRole("button", { name: "Refresh account status" }) === null));
 });
 
 
@@ -1246,7 +1243,7 @@ test("capability outage feedback keeps the same compact slot during refresh and 
   const c = client();
   c.setStatus({ ...anonymous, capabilities: { ...anonymous.capabilities, emailOtp: false } });
   const rendered = ui.render(<Study client={c.value} initialFlow="login" />, { wrapper: MemberAuthProviders });
-  const retry = await ui.screen.findByRole("button", { name: "Refresh account status" }) as HTMLButtonElement;
+  const retry = await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Refresh account status" })) as HTMLButtonElement;
   const input = ui.screen.getByLabelText("Email address") as HTMLInputElement;
   const feedback = document.getElementById(input.getAttribute("aria-describedby")!)!;
   assert.ok(feedback.parentElement?.classList.contains("min-h-11"), "capability outages share the same phase-owned status slot as request failures");
@@ -1259,7 +1256,7 @@ test("capability outage feedback keeps the same compact slot during refresh and 
   assert.match(feedback.textContent!, /Email sign-in is unavailable/, "the prior outage remains visible during retry");
   assert.ok(ui.screen.queryByRole("alert") === null);
   await ui.act(async () => reject(new Error("Private status failure")));
-  await ui.waitFor(() => assert.equal(retry.disabled, false));
+  await untilAsserted(ui, () => assert.equal(retry.disabled, false));
   assert.ok(feedback.isConnected && feedback.parentElement?.classList.contains("min-h-11"));
   assert.match(feedback.textContent!, /Sign-in is unavailable/);
   rendered.unmount();
@@ -1270,7 +1267,7 @@ test("embedded phone entry has only the trial phase as its incoming fade owner",
   const c = client();
   c.setStatus({ ...anonymous, phoneBindingAuth: "ready", authenticated: true, emailVerified: true });
   ui.render(<Study client={c.value} initialFlow="login" />, { wrapper: MemberAuthProviders });
-  ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Continue registration" }));
+  ui.fireEvent.click(await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Continue registration" })));
   const accountPhase = document.querySelector<HTMLElement>('[data-member-account-phase="phone"]')!;
   const trialPhase = accountPhase.querySelector<HTMLElement>('[data-trial-phase="number"]')!;
   assert.ok(accountPhase && trialPhase, "the real phone controller renders inside the account phase");

@@ -5,6 +5,7 @@ import assert from "node:assert/strict";
 import { after, afterEach, before, test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import { JSDOM } from "jsdom";
+import { untilDomState } from "../support/dom-state";
 
 let dom: JSDOM;
 let ui: typeof import("@testing-library/react/pure");
@@ -429,32 +430,19 @@ for (const composition of ["stacked", "paired"] as const) {
           target.focus();
           ui.fireEvent.keyDown(target, { key: "Escape" });
         }
-        await ui.waitFor(() =>
-          assert.ok(
-            container.querySelector("[data-composition-surface]") === null,
-            "the dismissed surface is removed after its exit animation"
-          )
-        );
+        // The surface leaves after Motion's exit frames: await that removal itself, not a wall-clock window.
+        await untilDomState(ui, () => container.querySelector("[data-composition-surface]") === null);
+        assert.ok(container.querySelector("[data-composition-surface]") === null, "the dismissed surface is removed after its exit animation");
         const open = ui
           .within(container)
           .getByRole("button", { name: "Open preview" });
-        await ui.waitFor(() =>
-          assert.ok(
-            document.activeElement === open,
-            "Open preview receives focus"
-          )
-        );
+        await untilDomState(ui, () => document.activeElement === open);
+        assert.ok(document.activeElement === open, "Open preview receives focus");
         ui.fireEvent.click(open);
         assert.equal(surface(container).dataset.compositionView, "chooser");
-        await ui.waitFor(() =>
-          assert.ok(
-            document.activeElement ===
-              ui
-                .within(surface(container))
-                .getByRole("button", { name: "Sign up" }),
-            "reopening focuses the primary action"
-          )
-        );
+        const primary = () => ui.within(surface(container)).getByRole("button", { name: "Sign up" });
+        await untilDomState(ui, () => document.activeElement === primary());
+        assert.ok(document.activeElement === primary(), "reopening focuses the primary action");
       });
     }
   }
@@ -533,9 +521,7 @@ test("dismissing a focused preview also removes its technical scenario controls"
   ui.fireEvent.click(
     ui.within(surface(container)).getByRole("button", { name: "Cancel" })
   );
-  await ui.waitFor(() =>
-    assert.ok(container.querySelector("[data-composition-surface]") === null)
-  );
+  await untilDomState(ui, () => container.querySelector("[data-composition-surface]") === null);
   assert.ok(
     container.querySelector('[aria-label="Preview state"]') === null,
     "dismissed previews expose no stale scenario selector"
@@ -718,12 +704,8 @@ test("separate previews keep independent state and Escape only dismisses its foc
   assert.equal(surface(previews[0]).dataset.compositionView, "login");
   assert.equal(surface(previews[1]).dataset.compositionView, "chooser");
   ui.fireEvent.keyDown(surface(previews[0]), { key: "Escape" });
-  await ui.waitFor(() =>
-    assert.ok(
-      previews[0].querySelector("[data-composition-surface]") === null,
-      "Escape removes only its preview after its exit animation"
-    )
-  );
+  await untilDomState(ui, () => previews[0].querySelector("[data-composition-surface]") === null);
+  assert.ok(previews[0].querySelector("[data-composition-surface]") === null, "Escape removes only its preview after its exit animation");
   assert.equal(surface(previews[1]).dataset.compositionView, "chooser");
 });
 
@@ -768,7 +750,8 @@ test("failed unchanged OTP never loops after rerender or locale change", async (
   ui.fireEvent.change(code, { target: { value: "000000" } });
   const verify = () => container.querySelector<HTMLButtonElement>('[data-phase-action="submit"]')!;
   assert.ok(verify().disabled, "full code auto-verifies");
-  await ui.waitFor(() => assert.equal(code.getAttribute("aria-invalid"), "true"));
+  // The study's simulated verification resolves on its own timer: await the invalid state it commits.
+  await untilDomState(ui, () => code.getAttribute("aria-invalid") === "true");
   for (const locale of ["en", "ko", "en"] as const) {
     rerender(<AuthenticationMessages locale={locale}><AccountPhaseStudy {...props} locale={locale} /></AuthenticationMessages>);
     assert.equal(container.querySelector("[data-authentication-provider-locale]")?.getAttribute("data-authentication-provider-locale"), locale);
@@ -796,6 +779,8 @@ test("Cancel during OTP pending dismisses without allowing stale success on re-e
   ui.fireEvent.click(ui.within(surface(container)).getByRole("button", { name: "Cancel" }));
   await ui.act(async () => { await new Promise((resolve) => setTimeout(resolve, 650)); });
   assert.ok(container.querySelector('[data-account-phase="complete"]') === null);
+  // Reopen only once the dismissed surface has actually left (its exit frames), as a person would.
+  await untilDomState(ui, () => container.querySelector("[data-composition-surface]") === null);
   ui.fireEvent.click(ui.within(container).getByRole("button", { name: "Open preview" }));
   ui.fireEvent.click(ui.within(surface(container)).getByRole("button", { name: "Sign in" }));
   await ui.waitFor(() => assert.ok(surface(container).querySelector('input[type="email"]')));

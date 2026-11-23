@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { after, afterEach, before, test } from "node:test";
 import { createRef } from "react";
 import { JSDOM } from "jsdom";
+import { untilAsserted, untilDomState } from "../support/dom-state";
 import type {
   AccountPhase,
   PhaseAction,
@@ -189,10 +190,10 @@ function submit(container: HTMLElement) {
   ui.fireEvent.submit(form);
 }
 
+// The study moves phases on its own simulated-delay timer: await the phase it commits, not a wall-clock window.
 async function waitForPhase(container: HTMLElement, expected: AccountPhase) {
-  await ui.waitFor(() => assert.equal(phase(container), expected), {
-    timeout: 1500
-  });
+  await untilDomState(ui, () => container.querySelector<HTMLElement>("[data-account-phase]")?.dataset.accountPhase === expected);
+  assert.equal(phase(container), expected);
 }
 
 for (const locale of ["en", "ko"] as const) {
@@ -217,7 +218,7 @@ for (const flow of ["login", "signup"] as const) {
     const email = field(container, 'input[type="email"]');
     assert.equal(email.value, "you@example.com");
     assert.ok(!email.readOnly);
-    await ui.waitFor(() => assert.ok(document.activeElement === email));
+    await untilAsserted(ui, () => assert.ok(document.activeElement === email));
     for (const value of ["", "not-an-email", "💥' OR 1=1", "a".repeat(10000)]) {
       ui.fireEvent.change(email, { target: { value } });
       submit(container);
@@ -257,7 +258,7 @@ test("email code uses six OTP slots with one labelled alphanumeric autofill inpu
 test("OTP partial edits never submit; formatted paste verifies once despite manual activation while busy", async () => {
   const { container } = renderStudy({ initialPhase: "email-code" });
   const code = field(container, 'input[autocomplete="one-time-code"]');
-  await ui.waitFor(() => assert.ok(document.activeElement === code));
+  await untilAsserted(ui, () => assert.ok(document.activeElement === code));
   for (const value of ["", "a", "a1b2", "a1b2c"]) {
     ui.fireEvent.change(code, { target: { value } });
     assert.equal(code.value, value.toUpperCase());
@@ -336,7 +337,7 @@ test("wrong full codes show pending then inline error; full-length edits and man
     assert.ok(action(container, "submit").disabled, "even a wrong full code starts pending");
     assert.equal(code.getAttribute("aria-invalid"), "false", "no error before validation finishes");
     assert.equal(action(container, "submit").textContent?.trim(), messages.AuthPhase.verifying);
-    await ui.waitFor(() => {
+    await untilAsserted(ui, () => {
       assert.ok(!action(container, "submit").disabled);
       assert.equal(code.getAttribute("aria-invalid"), "true");
     });
@@ -346,7 +347,7 @@ test("wrong full codes show pending then inline error; full-length edits and man
   }
   ui.fireEvent.click(action(container, "submit"));
   assert.ok(action(container, "submit").disabled, "Verify remains an unchanged-code manual fallback");
-  await ui.waitFor(() => assert.ok(!action(container, "submit").disabled));
+  await untilAsserted(ui, () => assert.ok(!action(container, "submit").disabled));
   assert.equal(code.getAttribute("aria-invalid"), "true");
   ui.fireEvent.change(code, { target: { value: "A1B2C" } });
   assert.equal(code.value, "A1B2C", "backspace keeps corrections editable");
@@ -381,7 +382,7 @@ test("signup progresses email → phone → waiting and checking never invents v
   await waitForPhase(container, "waiting");
   for (let attempt = 0; attempt < 3; attempt += 1) {
     ui.fireEvent.click(action(container, "check"));
-    await ui.waitFor(() => assert.ok(!action(container, "check").disabled));
+    await untilAsserted(ui, () => assert.ok(!action(container, "check").disabled));
     assert.equal(phase(container), "waiting");
   }
   assert.doesNotMatch(
@@ -449,7 +450,7 @@ test("manual fixtures are explicit and cannot turn a pending submit into automat
     "stale submit timers cannot override explicit scenarios"
   );
   ui.fireEvent.click(action(container, "passkey"));
-  await ui.waitFor(() => assert.ok(notices.length > 0));
+  await untilAsserted(ui, () => assert.ok(notices.length > 0));
   assert.equal(
     phase(container),
     "passkey",
@@ -463,14 +464,14 @@ test("waiting copies only a synthetic message and reports clipboard failure", as
     initialPhase: "waiting"
   });
   ui.fireEvent.click(action(container, "copy"));
-  await ui.waitFor(() => assert.equal(copied.length, 1));
+  await untilAsserted(ui, () => assert.equal(copied.length, 1));
   assert.ok(copied[0].trim().length > 0);
   assert.doesNotMatch(
     copied[0],
     /https?:\/\//,
     "fixture message carries no live verification link"
   );
-  await ui.waitFor(() =>
+  await untilAsserted(ui, () =>
     assert.match(container.textContent ?? "", /copied|복사/i)
   );
   Object.defineProperty(navigator, "clipboard", {
@@ -482,7 +483,7 @@ test("waiting copies only a synthetic message and reports clipboard failure", as
     }
   });
   ui.fireEvent.click(action(container, "copy"));
-  await ui.waitFor(() =>
+  await untilAsserted(ui, () =>
     assert.match(
       container.textContent ?? "",
       /could(?: not|n['’]t)|unable|failed|복사.*(?:못|실패)/i
@@ -494,19 +495,22 @@ test("waiting copies only a synthetic message and reports clipboard failure", as
 test("provider and composer actions explain their local-only boundary", async () => {
   const { container, navigationRef, notices } = renderStudy();
   ui.fireEvent.click(action(container, "google"));
-  await ui.waitFor(() => assert.ok(notices.length > 0));
+  await untilAsserted(ui, () => assert.ok(notices.length > 0));
   assert.equal(phase(container), "entry");
   const before = notices.length;
   ui.act(() => navigationRef.current!.preview("waiting"));
   await waitForPhase(container, "waiting");
   ui.fireEvent.click(action(container, "compose"));
-  await ui.waitFor(() => assert.ok(notices.length > before));
+  await untilAsserted(ui, () => assert.ok(notices.length > before));
   assert.equal(phase(container), "waiting");
   assert.match(notices.join(" "), /preview|simulat|미리보기|시뮬레이션/i);
 });
 
-test("normal code delivery starts a resend cooldown that Back cannot bypass", async () => {
+test("normal code delivery starts a resend cooldown that Back cannot bypass", async (t) => {
   const { container, navigationRef } = renderStudy();
+  // The countdown is read at its start: pin the wall clock there, so a stalled event loop cannot age it first.
+  const startedAt = Date.now();
+  t.mock.method(Date, "now", () => startedAt);
   submit(container);
   await waitForPhase(container, "email-code");
   const resend = action(container, "retry");
@@ -532,8 +536,11 @@ test("resend locks for thirty wall-clock seconds and ignores repeated activation
   assert.equal(ready.textContent?.trim(), messages.AuthPhase.codeRecovery);
   assert.ok(!ready.disabled);
   const before = notices.length;
+  // The countdown is read at its start: pin the wall clock there, so a stalled event loop cannot age it first.
+  const startedAt = Date.now();
+  t.mock.method(Date, "now", () => startedAt);
   ui.fireEvent.click(ready);
-  await ui.waitFor(() => assert.equal(notices.length, before + 1));
+  await untilAsserted(ui, () => assert.equal(notices.length, before + 1));
   await waitForPhase(container, "email-code");
   const cooling = action(container, "retry");
   assert.ok(cooling.disabled);
@@ -587,8 +594,10 @@ test("successful inline resend returns its still-owned retry control to the pres
   assert.ok(field(container, 'input[autocomplete="one-time-code"]') === code);
   assert.ok(ui.within(document.body).queryByRole("menu") === null);
   assert.ok(ui.within(document.body).queryByRole("dialog") === null);
-  await ui.waitFor(() => assert.equal(notices.length, 1));
-  await ui.waitFor(() => assert.ok(document.activeElement === code));
+  // The resend settles on the study's own timer; await its committed result (notice sent, code cleared, focus returned).
+  await untilDomState(ui, () => notices.length === 1 && code.value === "" && document.activeElement === code);
+  assert.equal(notices.length, 1);
+  assert.ok(document.activeElement === code);
   assert.equal(phase(container), "email-code");
   assert.ok(field(container, 'input[autocomplete="one-time-code"]') === code);
   assert.equal(code.value, "");
@@ -610,7 +619,9 @@ test("successful inline resend does not steal focus when the user leaves its ret
   const heading = container.querySelector<HTMLElement>("h3");
   assert.ok(heading);
   ui.act(() => heading.focus());
-  await ui.waitFor(() => assert.equal(notices.length, 1));
+  // Await the resend's committed result (notice sent, code cleared); focus is judged after that commit.
+  await untilDomState(ui, () => notices.length === 1 && code.value === "");
+  assert.equal(notices.length, 1);
   assert.ok(document.activeElement === heading, "successful resend may hand off only if its triggering control still owns focus");
   assert.ok(field(container, 'input[autocomplete="one-time-code"]') === code);
   assert.equal(code.value, "");
@@ -623,11 +634,11 @@ test("resend clears invalid code and changing email returns to an editable entry
   let code = field(container, 'input[autocomplete="one-time-code"]');
   ui.fireEvent.change(code, { target: { value: "000000" } });
   submit(container);
-  await ui.waitFor(() => assert.equal(code.getAttribute("aria-invalid"), "true"));
+  await untilAsserted(ui, () => assert.equal(code.getAttribute("aria-invalid"), "true"));
   ui.fireEvent.click(action(container, "retry"));
   await waitForPhase(container, "email-code");
   code = field(container, 'input[autocomplete="one-time-code"]');
-  await ui.waitFor(() => {
+  await untilAsserted(ui, () => {
     assert.equal(code.value, "");
     assert.equal(code.getAttribute("aria-invalid"), "false");
   });
@@ -647,17 +658,20 @@ test("resend clears invalid code and changing email returns to an editable entry
   );
 });
 
-test("changing phone returns to editable phone and starts a fresh waiting session", async () => {
+test("changing phone returns to editable phone and starts a fresh waiting session", async (t) => {
   const { container } = renderStudy({
     flow: "signup",
     initialPhase: "waiting"
   });
   ui.fireEvent.click(action(container, "check"));
-  await ui.waitFor(() => assert.ok(!action(container, "check").disabled));
+  await untilAsserted(ui, () => assert.ok(!action(container, "check").disabled));
   ui.fireEvent.click(action(container, "edit-phone"));
   await waitForPhase(container, "phone");
   const phone = field(container, 'input[type="tel"]');
   ui.fireEvent.change(phone, { target: { value: "010-2222-3333" } });
+  // The countdown is read at its start: pin the wall clock there, so a stalled event loop cannot age it first.
+  const startedAt = Date.now();
+  t.mock.method(Date, "now", () => startedAt);
   submit(container);
   await waitForPhase(container, "waiting");
   assert.ok(container.textContent?.includes("010-2222-3333"));

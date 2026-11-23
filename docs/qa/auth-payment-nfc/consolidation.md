@@ -85,7 +85,7 @@ Tick a box to accept what I propose. To answer differently, comment on the item 
   - **Observed, not a new decision:** the on-chain name is `SIGNET - SPHMRS`, not `Signet` as written in ADR-0011. The adapter was tested on Base Sepolia; Auth still needs to confirm compatibility with this v15 lock in Slice 3. This deployment does not approve enabling Polygon in the application.
 - [x] **22. Live grant signer funded.** The owner sent 2 POL to `0x2CDb060E373F0EFE93BefFD1478cdE739cBc5336` for grant gas. The coordinator verified a balance of 2.000000 POL on 20 Nov (`msg_2e81e351e856`); this is a dated balance, not a continuing guarantee.
 - [ ] **Polygon one-grant check (owner-run).** Run the dry run, the single broadcast and the finality check in [Polygon owner commands](polygon-owner-commands.md); no agent broadcasts or moves funds.
-- [ ] Create the launch event in Unlock's EVENTS app from MetaMask, once you have POL. Then add the live grant signer 0x2CDb060E373F0EFE93BefFD1478cdE739cBc5336 as a key granter, turn off self-serve sign-up, make tickets non-transferable, and send me the event's lock address. **Ours: the single-address assumption is superseded by the [20 Nov member and guest ticket entry](#member-and-guest-event-tickets-20-nov).**
+- [ ] Create both locks per event in Unlock's EVENTS app from MetaMask, once you have POL: one for members, one for guests. Add the live grant signer 0x2CDb060E373F0EFE93BefFD1478cdE739cBc5336 to each as a key granter, turn off self-serve sign-up and make tickets non-transferable on both, and send me both lock addresses. Owner, 23 Nov: "locks indeed are twofold" ([23 Nov rulings](#23-nov-owner-rulings)).
 - [x] **24. Wallet owner key approved, created offline, and backed up.** The owner approved creation (`msg_1c3474f51a6f`). Public address: `0xe2f6f26929a4f27cd39aa24a850dbf285ab81fc7`. It is separate from the grant signer and lock manager. It signs nothing at launch, but every member Safe address depends on it. On 20 Nov the owner confirmed an owner-held password-manager backup (`msg_f6812d705807`); the original remains on this Mac. No restore test was performed. This is not approval to enable Polygon or to use the key on chain.
 
 ### Open follow-through from the 21 Nov owner answers
@@ -319,7 +319,7 @@ You re-laid the whole journey on 16 Nov. This section is now the reference: wher
 - A passkey is only a way to sign in, not an owner of the wallet. That's my reading of "we hold control".
 - One owner key that we hold signs for every member's Safe, and each member's Safe gets its own address from their account. This key is a third secret, kept apart from the grant key and the lock manager key. It must be settled before the first live Signet: the wallet address is computed from it, so changing it later would strand Signets already granted.
 - The Safe exists as an address from payment, and Signet is granted to it at once. It is created on chain only when it first has to act, which saves POL on every sale.
-- Event lock settings: self-serve purchase on Unlock's event page turned off, so only our grant key issues Tickets; Tickets can't be transferred; the per-wallet limit set high. The cap of 2 lives in our database, so changing it needs no blockchain transaction. **Ours: the single-lock settings assumption is superseded by the [20 Nov member and guest ticket entry](#member-and-guest-event-tickets-20-nov).**
+- Event lock settings: self-serve purchase on Unlock's event page turned off, so only our grant key issues Tickets; Tickets can't be transferred; the per-wallet limit set high. The cap of 2 lives in our database, so changing it needs no blockchain transaction. These settings apply to each of the event's two locks, one for members and one for guests (owner, 23 Nov: "locks indeed are twofold"; see the [20 Nov member and guest ticket entry](#member-and-guest-event-tickets-20-nov)).
 
 **Branches**
 
@@ -589,6 +589,7 @@ This is the ledger everything else is checked against. A decision you made expli
 | 2026-11-21 | [Owner answers: sourcing, UI review, main push, auth adoption and admin setup](#21-nov-owner-answers). All 22 [retained items](#open-work-retained-by-the-owner-21-nov) marked Keep. | Owner answers to master plan sections 3–4 |
 | 2026-11-21 | "all lanes, Claude only writes files". Codex sessions read and review, reporting by message only; main's single writer is a Claude Maintenance session. Widens the 18 Nov UI-workflow rule. | Owner chat (relayed by the coordinator) |
 | 2026-11-22 | [Owner rulings: no blocking gates, forward-compatible orders, single membership token, editions, frame and controls, checkout, policy pages, idle Codex lanes](#22-nov-owner-rulings) | Owner chat (relayed by the coordinator) |
+| 2026-11-23 | [Owner rulings: /vault, `.history` kept, mechanism branch retired, `.inbox/` ignored, headings, local database migrated, legacy tickets server deleted, 8 GB builds, two locks per event](#23-nov-owner-rulings) | Owner chat (relayed by the coordinator) |
 
 ### Member and guest event tickets (20 Nov)
 
@@ -601,7 +602,11 @@ This is the ledger everything else is checked against. A decision you made expli
 
 > "I want to separate the 2 in price and benefit; one for the members, one for the guests. The guests are not  given gifts."
 
-**Coordinator implementation note (ours, not an owner quote):** Plan for two Unlock locks per event, one for member tickets and one for guest tickets. The grant signer issues the free member ticket. Guest pricing is an unset sale fact for later; it does not block launch. The exact Part II drink benefit for guests stays open by the owner's choice.
+**Owner, verbatim (23 Nov), confirming the two locks:**
+
+> "locks indeed are twofold"
+
+**Coordinator implementation note (ours, not an owner quote):** Each event has two Unlock locks, one for member tickets and one for guest tickets. Design and test against two lock addresses per event; never assume a single lock. The grant signer issues the free member ticket. Guest pricing is an unset sale fact for later; it does not block launch. The exact Part II drink benefit for guests stays open by the owner's choice.
 
 **Owner, verbatim (20 Nov):**
 
@@ -659,6 +664,7 @@ column is always our reading, not the owner's.
 | Help and mobile controls | Help: "Why is the help button still saying help? I thought I wanted an icon. And it needs to be smaller. It needs to be shorter. It needs to be more subtle, too." Mobile buttons: "If the buttons on mobile are that fat because of some rule that we enforced, and we could lax it so that we visually make it shorter or thinner and still allow a wider hitbox. Just a mobile." | Help is an icon: small, short, subtle. Mobile buttons may look smaller, but keep a 44px hit area; mobile only. UI-Shell builds both in one packet on top of the black bar. |
 | Checkout additions | "The phone input may be nice. It's but you know, we just set the country automatically to Korea. And confirm with undo. Yeah, maybe. Pop-up toasts are nice too. I don't need to show them in line. As a matter of fact, if there are failures during payment, it's probably better to show them as toasts." Then: "The progress bar, I agree, but maybe the progress bar could be the thing that, as long as it doesn't rerun for every step, but it, you know, like it doesn't, if I am step on step 2 and then go to step 3, it goes up, you know, goes from 0 to 2 and then 0 to 3. As long as it could go from 2 to 3, 3 to 4 like that, I think maybe the progress bar could be something." | Payment failures show as toasts, not inline; this overrides the "results inline" default for payment failures only. Phone input with the country fixed to Korea. Confirm-with-undo only where it fits. The progress bar animates from the previous step to the next, never from zero. UI-Commerce builds these in checkout rev 5. |
 | Policy pages | "The terms of use page has a weird layout. I mean, the topmost part with its page title is fine, but below, it looks weird. It looks half done, too. I think we should just bring over what we did from the hideaway for using showing the policy page. I think I had a layout for them." Then: "Yeah, today's Hideaway Docs layout is good. That's not what I saw, though." (both from UI-Content's policy packet notes) | Policy pages match The Hideaway's terms type and spacing, in our font. A plain "Legal" eyebrow replaces the hard-coded `/shop` back link. Packet C is in Codex review. Open owner calls: heading weight in Helvetica, and "Legal" staying English in Korean until translated. |
+| Phone bar size (correction) | Not quoted. The coordinator relayed it as the owner's exception: "36px band, 42px bar targets". | The phone bottom bar is a 36px band; its controls keep 42px touch targets. This is an owner exception to the 44px touch default and corrects the "thin" reading above. |
 | Codex lanes pause when idle | "Sorry, I was saying as long as codex lanes are not busy, they should stop or pause." | Codex lanes also pause once idle. Reviewers finish only their current review; queued items wait. |
 
 ### 23 Nov owner rulings
@@ -668,6 +674,14 @@ Same columns as above. Quotes come from the coordinator's relay of the owner's c
 | Ruling | Owner, verbatim | Our reading and follow-through |
 | --- | --- | --- |
 | The CMS moves to /vault | "change the admin pathname from /admin to /vault." On redirecting the old path: "No redirect (Recommended)". | Payload's `routes.admin` is `/vault` and the route folder is `src/app/(payload)/vault`. Every CMS screen follows: `/vault/login`, `/vault/collections/*`. `/admin` is not redirected and simply 404s. Staff magic-link and code callbacks now point at `/vault`, so a link sent before the switch lands on a 404; asking for a new email fixes it. The unused Hideaway AdminBar links are left alone (Hideaway exclusion). Auth's `/vault` packet carries the code; this plan and the deployment docs carry the paths. |
+| `.history` is kept | "I recanted the deletion and would like it kept" | The `.history` folder stays, gitignored; the coordinator restored it. The Hideaway boundary check skips it. |
+| The mechanism branch is retired | "Delete it, update rule (Recommended)" | `codex/auth-payment-nfc` is deleted. AGENTS.md now says mechanism work starts from `main` in its own worktree and lands through `main`'s single writer. |
+| Lane mailboxes are ignored | "Yes, ignore .inbox/" | `.inbox/` (Orca lane mailboxes) is in `.gitignore`. |
+| Headings typography | "Headings follow the same rule - Helvetica with Pretendard fallback" | Headings use the body stack: Helvetica, with Pretendard for Korean. The condensed-bold fix maps each weight to a local Helvetica Neue face. |
+| The local preview database is migrated | "Yes, migrate it" | Backed up first, then migrated from 10 to 23 recorded migrations. Migrations landed after that (E2's `20261122_160100`) are not yet applied locally. |
+| The legacy PortOne tickets server is deleted | "Yes, delete it" | Removed from `main` (`b02f50fd`). |
+| Builds get 8 GB | "Yes, 8 GB for builds" | `build:guarded` runs with `--max-gib 8`; checks stay at 4 GiB and dev at 6 GiB. AGENTS.md states the new default. Builds still run one at a time, inside the 15 GiB aggregate and 10 GiB headroom. |
+| Two locks per event | "locks indeed are twofold" | Each event has two Unlock locks, one for members and one for guests. Design and test against two lock addresses per event; never assume one. The owner to-do and the event lock settings now say so. |
 
 ## Change log
 
@@ -675,6 +689,8 @@ Every change with its impact, newest first.
 
 | Date | Change | Touches | Breaks or kept | Status |
 | --- | --- | --- | --- | --- |
+| 2026-11-23 | Two Unlock locks per event, members and guests (owner) | Event lock setup, the owner to-do, ticket grant and check-in design | The single-lock assumption is gone; every lock-address setting and test takes two addresses per event | Recorded; mechanism work follows |
+| 2026-11-23 | `build:guarded` cap 6 → 8 GiB (owner) | `package.json`, the tooling test, AGENTS.md | Other guards unchanged; cold builds (6–7 GiB) no longer stop | Landed |
 | 2026-11-23 | The CMS moves from `/admin` to `/vault`, with no redirect (owner) | Payload `routes.admin`, the `(payload)/vault` route, staff login and magic-link callbacks, the deployment route table, the codemap | `/admin` bookmarks and staff links already sent stop working (404); everything else follows the new path | Landed with Auth's `/vault` packet |
 | 2026-11-22 | Ledger sync: the 22 Nov owner rulings added to the decision ledger, verbatim where the owner's words were recorded, readings labelled ours | Decision ledger (one row and the 22 Nov rulings section) | No application, provider, deployment or branch change | Recorded on main, not pushed |
 | 2026-11-21 | DOC-01: folded the master plan and owner answers into the canonical plan | Priority, 22 retained open items, road to launch and owner decision ledger | No application, provider, deployment, branch adoption or rule change | Recorded on main; review-copy and launch gates remain separate |

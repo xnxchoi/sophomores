@@ -27,7 +27,7 @@ export function CartView({ offer, signedIn, initialCapabilities, signInOffInRevi
   const [member, setMember] = useState(signedIn);
   if (view === "sign-in") return <PageFrame title={copy.signInTitle} displayTitle layout="wide">
     <button type="button" onClick={() => setView("cart")}
-      className="-ml-1 mb-6 inline-flex min-h-12 items-center gap-2 px-1 text-sm text-muted-foreground outline-offset-4 transition-colors hover:text-foreground focus-visible:outline-2">
+      className="-ml-1 mb-6 inline-flex min-h-11 items-center gap-2 px-1 text-xs uppercase tracking-[0.04em] underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">
       <ArrowLeftIcon aria-hidden="true" className="size-4" />{copy.backToCart}
     </button>
     <CommerceAccountGate signInOffInReview={signInOffInReview} initialCapabilities={initialCapabilities}>

@@ -9,6 +9,7 @@ import type { CommerceOffer } from "@/lib/commerce/catalogue";
 import { listGuestCart, removeGuestCartLine, subscribeGuestCart, type GuestCartLine } from "@/lib/commerce/browser-cart";
 import type { Cart } from "@/payload-types";
 import { cn } from "@/lib/utils";
+import { XCircleIcon } from "@phosphor-icons/react";
 
 type CartAction =
   | { kind: "removing" | "removed-or-unconfirmed" | "remove-error"; itemID: string; cartID: string }
@@ -120,7 +121,8 @@ export function CommerceCart({ offer, wide = false, signedIn = true, onSignIn }:
                 {matching ? <p className="mt-1 text-xs tabular-nums">{t("unitPrice", { amount: offer.priceKRW.toLocaleString("ko-KR") })}</p>
                   : <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{t("itemDetailsUnavailable")}</p>}
                 <button type="button" aria-label={t("removeNamed", { title })} disabled={busy || !item.id || !!cart?.purchasedAt || cart?.status === "purchased"}
-                  onClick={() => item.id && void remove(item.id)} className="mt-3 inline-flex min-h-12 items-center justify-center rounded-full border border-border px-5 text-sm outline-offset-4 transition-colors hover:bg-muted focus-visible:outline-2 disabled:opacity-40">{action?.kind === "removing" && action.itemID === item.id ? t("removing") : t("remove")}</button>
+                  onClick={() => item.id && void remove(item.id)} className={cn("-ml-3 mt-1 inline-flex size-11 items-center justify-center rounded-full outline-offset-2 transition-opacity hover:opacity-70 focus-visible:outline-2 disabled:opacity-40", action?.kind === "removing" && action.itemID === item.id && "animate-pulse")}>
+                  <XCircleIcon aria-hidden="true" className="size-5" /></button>
               </div>
             </li>;
           })}
@@ -131,7 +133,7 @@ export function CommerceCart({ offer, wide = false, signedIn = true, onSignIn }:
         <p role="status" aria-atomic="true" className="sr-only">
           {quoted ? t("estimatedTotalAnnouncement", { amount: total.toLocaleString("ko-KR") }) : ""}
         </p>
-        {cart && <button type="button" disabled={busy} onClick={() => void refresh()} className="inline-flex min-h-12 items-center justify-center rounded-full border border-border px-5 text-sm outline-offset-4 transition-colors hover:bg-muted focus-visible:outline-2 disabled:opacity-40">{action?.kind === "refreshing" ? t("refreshing") : t("refresh")}</button>}
+        {cart && <button type="button" disabled={busy} onClick={() => void refresh()} className="inline-flex min-h-11 items-center text-xs uppercase tracking-[0.04em] underline decoration-dotted underline-offset-4 outline-offset-4 hover:decoration-solid focus-visible:outline-2 disabled:opacity-40">{action?.kind === "refreshing" ? t("refreshing") : t("refresh")}</button>}
       </div>
     </div>
     <div className="min-w-0 space-y-6">
@@ -152,9 +154,9 @@ export function CommerceCart({ offer, wide = false, signedIn = true, onSignIn }:
       <nav aria-label={t("nextSteps")} className="flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-border pt-6">
         {checkoutAvailable && onSignIn
           // Signed out: Checkout first asks for sign-in (the page swaps to the account step, then comes back here).
-          ? <button type="button" onClick={onSignIn} className="inline-flex min-h-12 w-full items-center justify-center rounded-full bg-foreground px-5 text-sm font-medium text-background outline-offset-4 transition-opacity hover:opacity-75 focus-visible:outline-2">{t("continueToCheckout")}</button>
-          : <Link href={checkoutAvailable ? "/shop/checkout" : "/shop"} className="inline-flex min-h-12 w-full items-center justify-center rounded-full bg-foreground px-5 text-sm font-medium text-background outline-offset-4 transition-opacity hover:opacity-75 focus-visible:outline-2">{checkoutAvailable ? t("continueToCheckout") : items.length ? t("continueToShop") : t("visitShop")}</Link>}
-        <Link href="/help/shipping" className="inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t("shippingAndReturns")}</Link>
+          ? <button type="button" onClick={onSignIn} className="inline-flex h-10 w-full items-center justify-center rounded-full border border-foreground bg-transparent px-3 text-[13px] uppercase tracking-[0.04em] text-foreground outline-offset-4 transition-colors hover:bg-foreground hover:text-background focus-visible:outline-2 pointer-coarse:h-11">{t("continueToCheckout")}</button>
+          : <Link href={checkoutAvailable ? "/shop/checkout" : "/shop"} className="inline-flex h-10 w-full items-center justify-center rounded-full border border-foreground bg-transparent px-3 text-[13px] uppercase tracking-[0.04em] text-foreground outline-offset-4 transition-colors hover:bg-foreground hover:text-background focus-visible:outline-2 pointer-coarse:h-11">{checkoutAvailable ? t("continueToCheckout") : items.length ? t("continueToShop") : t("visitShop")}</Link>}
+        <Link href="/help/shipping" className="inline-flex min-h-11 items-center text-xs uppercase tracking-[0.04em] underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t("shippingAndReturns")}</Link>
       </nav>
     </div>
   </section>;

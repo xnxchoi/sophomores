@@ -22,7 +22,7 @@ export function CommerceOfferView({ offer, children }: { offer: CommerceOffer | 
       <h1 id="commerce-product-heading" className="mt-5 max-w-4xl font-display text-[clamp(2.5rem,4vw,3.5rem)] font-normal leading-[1.08] tracking-[-0.02em] text-balance">{offer.title}</h1>
       <div className="mt-8 flex flex-wrap items-center justify-between gap-x-8 gap-y-5">
         <p className="text-[15px] leading-[21px] tabular-nums">{offer.priceKRW.toLocaleString("ko-KR")} KRW</p>
-        <a href="#offer-purchase" className="inline-flex min-h-12 items-center justify-center rounded-full bg-foreground px-5 text-sm font-medium text-background outline-offset-4 transition-opacity hover:opacity-75 focus-visible:outline-2">{t('purchaseOptions')}</a>
+        <a href="#offer-purchase" className="inline-flex h-10 items-center justify-center rounded-full border border-foreground bg-transparent px-5 text-[13px] uppercase tracking-[0.04em] text-foreground outline-offset-4 transition-colors hover:bg-foreground hover:text-background focus-visible:outline-2 pointer-coarse:h-11">{t('purchaseOptions')}</a>
       </div>
     </header>
     <div className="grid items-start gap-12 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] lg:gap-14 xl:gap-20">

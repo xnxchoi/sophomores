@@ -47,8 +47,9 @@ export type BookSignals = {
   /** Highlighter ink while it's on (#28). */
   marker: null | Ink;
   /**
-   * The stage's hit-rect: the only element that takes the pointer (stripe.press's pattern). The book sizes it to its
-   * own projected bounds each frame, or to the whole stage while Look inside is open.
+   * The book's hit area (stripe.press's hit-rect): the View's own element, the only one that takes the pointer. It spans
+   * the stage; the book clips its hit-testing to its own projected bounds each frame (clip-path), or to none while Look
+   * inside is open. Its events then target the View's element, which drei's View needs to raycast.
    */
   hitRect: HTMLElement | null;
   /** Asks the canvas for a frame (on-demand rendering); the book writes it, the stage calls it on scroll, effects, theme. */
@@ -56,7 +57,7 @@ export type BookSignals = {
 };
 
 const hitBox = new Box3(), hitPart = new Box3(), hitCorner = new Vector3();
-/** Fit the hit-rect to the book's on-screen bounds (padded 6%), writing to the DOM only when it moved a pixel. */
+/** Clip the hit area to the book's on-screen bounds (padded 6%), writing to the DOM only when it moved a pixel. */
 function fitHitRect(element: HTMLElement, root: Group, camera: PerspectiveCamera, width: number, height: number, full: boolean) {
   let box = "0,0," + width + "," + height;
   if (!full) {
@@ -80,8 +81,8 @@ function fitHitRect(element: HTMLElement, root: Group, camera: PerspectiveCamera
   }
   if (element.dataset.box === box) return;
   element.dataset.box = box;
-  const [left, top, w, h] = box.split(",");
-  element.style.left = left + "px"; element.style.top = top + "px"; element.style.width = w + "px"; element.style.height = h + "px";
+  const [left, top, w, h] = box.split(",").map(Number);
+  element.style.clipPath = full ? "none" : `inset(${top}px ${width - left - w}px ${height - top - h}px ${left}px)`;
 }
 
 // Proportions from the atlas: each cover 826×1264 px, the spine 224 px. World units; the camera sees 17.1 units tall.
@@ -226,7 +227,9 @@ const easeInOutQuint = (x: number) => x < 0.5 ? 16 * x ** 5 : 1 - (-2 * x + 2) *
  * coupling, and the hologram and radio effects. `onOpen` gets a click (a press under 5 px and 500 ms).
  * Look inside (signals.look) opens the book in place; the pages are LookInside's. The spread you leave is saved.
  */
-export function Book({ textures, signals, onOpen, onClose, small, storageKey, pageTextures = [], samples }: {
+export function Book({ textures, signals, onOpen, onClose, small, storageKey, pageTextures = [], samples, source }: {
+  /** The book's DOM hit area (the View's element): its pointer listeners and cursor state live there. */
+  source?: HTMLElement;
   textures: BookTextures; signals: RefObject<BookSignals>; onOpen?: () => void; onClose?: () => void; small: boolean;
   /** sessionStorage key for the saved spread (#26). */
   storageKey?: string;
@@ -252,7 +255,6 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
   const root = useRef<Group>(null), front = useRef<(Group | null)[]>([]), back = useRef<(Group | null)[]>([]);
   const frontHinge = useRef<Group>(null), closedPages = useRef<Mesh>(null);
   const look = useRef<LookState | null>(null);
-  const source = useThree((state) => state.events.connected) as HTMLElement | undefined;
   const invalidate = useThree((state) => state.invalidate);
   useEffect(() => { const sig = signals.current; sig.invalidate = () => invalidate(); return () => { sig.invalidate = null; }; }, [invalidate, signals]);
   const physics = useRef({
@@ -309,10 +311,13 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
   }
 
   useFrame((state, delta) => {
+    // The View's own size: in drei's View the portal's state.size only updates when the View re-renders, so a resize or
+    // a sticky slot would leave it stale; the hit area is the View's tracked element.
+    const sw = source?.clientWidth || state.size.width, sh = source?.clientHeight || state.size.height;
     const dt = Math.min(delta, 0.05), f = dt * 60, sig = signals.current, s = physics.current;
     s.clock += dt; uniforms.uTime.value = s.clock;
     const l = (look.current ??= createLookState(readSavedSpread(storageKey)));
-    if (sig.hitRect && root.current) fitHitRect(sig.hitRect, root.current, state.camera as PerspectiveCamera, state.size.width, state.size.height, l.t > 0);
+    if (sig.hitRect && root.current) fitHitRect(sig.hitRect, root.current, state.camera as PerspectiveCamera, sw, sh, l.t > 0);
 
     // Look inside timeline (#15): opens over OPEN_SECONDS, closes over 1.88 s.
     const want = sig.look ? 1 : -1;
@@ -352,7 +357,7 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
     // A cover shutting fast slaps, louder the faster it closes.
     if (frontBefore > 0.03 && s.frontA <= 0.03 && s.frontV < -0.8) sound.slap(-s.frontV / 6);
     // The pointer moving across the closed book rubs its cover.
-    const moved = s.lastPointer.distanceTo(state.pointer) * Math.max(state.size.width, state.size.height) / 2;
+    const moved = s.lastPointer.distanceTo(state.pointer) * Math.max(sw, sh) / 2;
     s.lastPointer.copy(state.pointer);
     if (s.hovered && l.t === 0 && !s.dragging && moved > 0) sound.rub("cover", moved / (dt * 1000));
     s.backV += (FLAP_K * (flap * 1.5 - s.backA) - damping * s.backV) * dt; s.backA += s.backV * dt;
@@ -403,7 +408,7 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
     }
     // The open spread is twice as wide: on a narrow stage the camera backs off until it fits (after the intro dolly).
     if (s.clock > 2) {
-      const aspect = state.size.width / Math.max(state.size.height, 1), fit = Math.max(54, (W * 1.1) / (Math.tan(MathUtils.degToRad(9)) * aspect) + 4);
+      const aspect = sw / Math.max(sh, 1), fit = Math.max(54, (W * 1.1) / (Math.tan(MathUtils.degToRad(9)) * aspect) + 4);
       state.camera.position.z = MathUtils.lerp(54, fit, b);
     }
     // Touch zoom and pan apply only while the book is open.
@@ -411,7 +416,7 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
     camera.position.x = view.x * b; camera.position.y = view.y * b;
     const zoom = MathUtils.lerp(1, view.zoom, b);
     if (camera.zoom !== zoom) { camera.zoom = zoom; camera.updateProjectionMatrix(); }
-    view.unitsPerPx = (2 * (camera.position.z - 4) * Math.tan(MathUtils.degToRad(9))) / Math.max(state.size.height, 1) / zoom;
+    view.unitsPerPx = (2 * (camera.position.z - 4) * Math.tan(MathUtils.degToRad(9))) / Math.max(sh, 1) / zoom;
   });
 
   // On-demand rendering (the stage idles the loop when nothing is engaged): while anything still moves, or a released
@@ -437,7 +442,7 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
     <mesh ref={closedPages} geometry={geometry.pages} material={material} position={[-0.075, 0, 0]} castShadow />
     <group ref={frontHinge} position={[-W / 2, 0, T / 2]}><Board geometries={geometry.front} segments={front} material={material} /></group>
     <group position={[-W / 2, 0, -T / 2]}><Board geometries={geometry.back} segments={back} material={material} /></group>
-    <LookInside look={look} root={root} signals={signals} sound={sound} width={W - 0.15} height={H - 0.3} thickness={T} pageTextures={pageTextures} marksKey={storageKey && storageKey + ":marks"}
+    <LookInside source={source} look={look} root={root} signals={signals} sound={sound} width={W - 0.15} height={H - 0.3} thickness={T} pageTextures={pageTextures} marksKey={storageKey && storageKey + ":marks"}
       onClose={() => onClose?.()}
       onSpread={(spread) => { if (storageKey) try { window.sessionStorage.setItem(storageKey, String(spread)); } catch { /* storage unavailable */ } }} />
   </group>;

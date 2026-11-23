@@ -4,7 +4,7 @@
 /* eslint-disable react-hooks/immutability */
 
 import { useTexture } from "@react-three/drei";
-import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
+import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, type RefObject } from "react";
 import type { BookSignals } from "./book";
 import type { BookSound } from "./book-sound";
@@ -119,7 +119,8 @@ type Gesture = {
  * at the fore edge, and trackpad swipe; pages in flight can be caught; they never pass each other; hovering lifts and
  * curls the page under the cursor and pushes the block near the screen's edge. Tapping past either end closes.
  */
-export function LookInside({ look, root, signals, sound, width, height, thickness, pageTextures, marksKey, onClose, onSpread }: {
+export function LookInside({ source, look, root, signals, sound, width, height, thickness, pageTextures, marksKey, onClose, onSpread }: {
+  source?: HTMLElement;
   look: RefObject<LookState | null>; root: RefObject<Group | null>; signals: RefObject<BookSignals>; sound: BookSound;
   width: number; height: number; thickness: number;
   /** Page images in reading order: page 1 (leaf 1 front), page 2 (leaf 1 back), ... Missing pages show blank. */
@@ -142,7 +143,6 @@ export function LookInside({ look, root, signals, sound, width, height, thicknes
   }, [geometry, block, blockMaterial, hitGeometry, hitMaterial, leaves]);
 
   const group = useRef<Group>(null), hit = useRef<Mesh>(null), leafGroups = useRef<(Group | null)[]>([]), rightBlock = useRef<Mesh>(null), leftBlock = useRef<Mesh>(null);
-  const source = useThree((state) => state.events.connected) as HTMLElement | undefined;
   const gesture = useRef<Gesture | null>(null);
   const hover = useRef({ side: "" as "" | "left" | "right", x: 0, y: 0, v: 0, lift: 0, curl: 0, edge: 0, edgeSince: -1, brakeUntil: 0, swipe: 0, swipeAt: 0, lastTurnAt: 0, clock: 0 });
 

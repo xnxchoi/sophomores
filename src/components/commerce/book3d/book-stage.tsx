@@ -10,6 +10,7 @@ import { Button } from "@/components/core/ArcFocus/ArcFocus";
 import { ArcRoles } from "../arc-roles";
 import { useTheme } from "@/providers/Theme";
 import { CurContext } from "@/providers/RP_Pro";
+import { useCanvasClaim } from "@/components/gl/canvas-frameloop";
 import type { BookSignals, BookTextures } from "./book";
 
 // Not three's MathUtils: the stage loads with the page, and three must stay in the lazy canvas chunk.
@@ -17,8 +18,9 @@ const clamp = (value: number, min: number, max: number) => Math.min(Math.max(val
 const BookCanvas = dynamic(() => import("./book-canvas"), { ssr: false });
 
 /**
- * The product page's stage: the art (children) with the 3D book over it. The stage itself takes the pointer (the canvas
- * doesn't), so the art's own controls keep working. Rendering runs while the stage is in view and not covered by a
+ * The product page's stage: the art (children) with the 3D book over it. The book draws in the site's shared canvas
+ * through a drei View (book-canvas.tsx); only its clipped hit area takes the pointer, so the art's own controls keep
+ * working. The book's View draws while the stage is in view and not covered by a
  * full-width section (`data-covers-stage`), which still counts as "in view" when it scrolls over the pinned stage.
  *
  * The page talks to the book through window events, so a row or the cart can drive it without importing three:
@@ -68,9 +70,11 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
   // Otherwise it renders on demand: a scroll, a row's effect or the theme asks for a frame, and the book keeps asking only
   // while something it shows still moves (book.tsx), so an idle page draws nothing (Review-B r2: demand on release).
   const [hovering, setHovering] = useState(false);
+  // The shared canvas runs 'always' while any View holds a claim (gl/canvas-frameloop.tsx), otherwise on demand.
+  useCanvasClaim(inView && !covered && (hovering || open));
   const engage = () => setHovering(true), release = () => setHovering(false);
   const poke = () => signals.current.invalidate?.();
-  // The site cursor follows the book's pointer state (book.tsx and look-inside.tsx write it to the stage's data-book).
+  // The site cursor follows the book's pointer state (book.tsx and look-inside.tsx write it to the hit area's data-book).
   // The book claims the cursor with its own token and releases only what it still holds (compare-and-release), so it never
   // clears another control's state. Its label leaves with the fade (stripe.press's pill); the exit belongs to the claim.
   const cursor = useContext(CurContext);
@@ -80,12 +84,13 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
     const node = stage.current, me = owner.current;
     if (!node || !cursor) return;
     const sync = () => {
-      const state = node.dataset.book === "drag" ? "DRAG" : node.dataset.book === "hover" && !open ? lookLabel : null;
+      const book = (signals.current.hitRect ?? node).dataset.book;
+      const state = book === "drag" ? "DRAG" : book === "hover" && !open ? lookLabel : null;
       if (state === null) cursor.getState().releaseCursor(me);
       else cursor.getState().claimCursor(me, state, state === lookLabel ? "fade" : "instant");
     };
     const observer = new MutationObserver(sync);
-    observer.observe(node, { attributes: true, attributeFilter: ["data-book"] });
+    observer.observe(node, { attributes: true, attributeFilter: ["data-book"], subtree: true });
     sync();
     return () => { observer.disconnect(); cursor.getState().releaseCursor(me); };
   }, [cursor, open, lookLabel]);
@@ -111,26 +116,11 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
       if (detail.radio !== undefined) signals.current.radio = detail.radio;
     };
     onScroll();
-    // Moves over the stage's own controls stay out of R3F (Review-B r2): stopped in the stage's capture phase, before
-    // R3F's listener on the stage sees them. The first such move tells R3F the pointer left the book (its own
-    // pointerleave), so hover clears. Presses and clicks still pass; R3F keeps the last book pointer for them.
-    const node = stage.current;
-    let onControls = false;
-    const shield = (event: PointerEvent) => {
-      const over = Boolean((event.target as Element | null)?.closest?.("[data-book-ui]"));
-      if (over) {
-        event.stopPropagation();
-        if (!onControls) node?.dispatchEvent(new PointerEvent("pointerleave", { pointerId: event.pointerId, pointerType: event.pointerType, clientX: event.clientX, clientY: event.clientY }));
-      }
-      onControls = over;
-    };
-    node?.addEventListener("pointermove", shield, { capture: true });
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll);
     window.addEventListener("book3d:spin", onSpin);
     window.addEventListener("book3d:effect", onEffect);
     return () => {
-      node?.removeEventListener("pointermove", shield, { capture: true });
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
       window.removeEventListener("book3d:spin", onSpin);
@@ -211,15 +201,14 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
     onDragStart={(event) => event.preventDefault()}
     className={cn("pointer-events-none select-none [-webkit-touch-callout:none] [-webkit-user-drag:none] [&_img]:[-webkit-user-drag:none] max-lg:data-[open=true]:fixed max-lg:data-[open=true]:inset-0 max-lg:data-[open=true]:z-50 max-lg:data-[open=true]:h-dvh max-lg:data-[open=true]:bg-background", className)}>
     {children}
-    <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-      <BookCanvas eventSource={stage} signals={signals} textures={textures} frameloop={inView && !covered ? (hovering || open ? "always" : "demand") : "never"} dark={dark}
-        onOpen={() => setOpen(true)} onClose={close} storageKey={"book3d:" + id} pageTextures={pageTextures} magnifier={magnifier} />
-    </div>
-    {/* The hit-rect (stripe.press's pattern): the only part of the stage that takes the pointer, fitted by the book to
-        its own visible bounds each frame (the whole stage while Look inside is open); it starts empty, so it takes nothing
-        until the book has fitted it. Pointer engagement runs the loop. */}
-    <div ref={(element) => { signals.current.hitRect = element; }} aria-hidden="true" onPointerEnter={engage} onPointerDown={engage} onPointerMove={hovering ? undefined : engage} onPointerLeave={release}
-      className="pointer-events-auto absolute top-0 left-0 size-0 touch-pan-y in-data-[open=true]:touch-none " />
+    {/* The book draws in the site's shared canvas through a drei View; the View's own element is its hit area (the
+        stripe.press hit-rect): it spans the stage, and the book clips its hit-testing to its own bounds each frame (the
+        whole stage while Look inside is open). It starts clipped to nothing. Pointer engagement holds a frameloop claim. */}
+    <BookCanvas signals={signals} textures={textures} visible={inView && !covered} dark={dark}
+      onOpen={() => setOpen(true)} onClose={close} storageKey={"book3d:" + id} pageTextures={pageTextures} magnifier={magnifier}
+      onElement={(element) => { signals.current.hitRect = element; }}
+      onPointerEnter={engage} onPointerDown={engage} onPointerMove={hovering ? undefined : engage} onPointerLeave={release}
+      className="pointer-events-auto absolute inset-0 touch-pan-y in-data-[open=true]:touch-none" />
     {open
       ? <ArcRoles><div data-book-ui role="group" aria-label={t("lookInside")}
           className="pointer-events-auto absolute bottom-4 left-1/2 z-1 flex -translate-x-1/2 items-center gap-2 max-lg:bottom-[calc(max(var(--bar-target),var(--frame-bottom))+1rem+env(safe-area-inset-bottom))]">

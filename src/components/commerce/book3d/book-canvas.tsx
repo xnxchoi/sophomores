@@ -1,9 +1,9 @@
 "use client";
 
-import { Environment, Lightformer, useFBO } from "@react-three/drei";
-import { Canvas, events as createPointerEvents, useFrame, useThree } from "@react-three/fiber";
-import { Suspense, useEffect, useMemo, useRef, type ReactNode, type RefObject } from "react";
-import { MathUtils, Mesh, OrthographicCamera, PlaneGeometry, Scene, ShaderMaterial, Vector2, type Group, type SpotLight } from "three";
+import { Environment, Lightformer, PerspectiveCamera, useFBO, View } from "@react-three/drei";
+import { useFrame } from "@react-three/fiber";
+import { Suspense, useEffect, useMemo, useRef, useState, type ComponentProps, type ReactNode, type RefObject } from "react";
+import { MathUtils, Mesh, PlaneGeometry, ShaderMaterial, Vector2, type Group, type SpotLight } from "three";
 import { Book, type BookSignals, type BookTextures } from "./book";
 
 const easeInOutQuad = (x: number) => x < 0.5 ? 2 * x * x : 1 - (-2 * x + 2) ** 2 / 2;
@@ -38,48 +38,42 @@ function PointerSpot({ dark }: { dark: boolean }) {
 }
 
 /**
- * Magnifier (#29): a lens over the scene. Magnification 0.308, radius 0.31 of the height, barrel −0.57, a ring at the
+ * Magnifier (#29): a lens over the book. Magnification 0.308, radius 0.31 of the height, barrel −0.57, a ring at the
  * edge. It follows the pointer at 22/s; on touch it stays where it was put and moves only while a finger drags.
- * Mounted only while it's on: it renders the scene itself (into a target for the lens, then to the screen).
+ * In the shared canvas it can't draw a full-screen pass (that would paint over every other View), so it renders the
+ * View's own scene into a target first, then the lens is a quad inside the View, drawn last within its scissor.
  */
-function Magnifier({ touch }: { touch: boolean }) {
+function Magnifier({ touch, source }: { touch: boolean; source?: HTMLElement }) {
   const target = useFBO();
-  const source = useThree((state) => state.events.connected) as HTMLElement | undefined;
-  const lens = useMemo(() => {
-    const material = new ShaderMaterial({
-      transparent: true, depthTest: false, depthWrite: false,
-      uniforms: { uMap: { value: null }, uCenter: { value: new Vector2(0.5, 0.5) }, uAspect: { value: 1 }, uRadius: { value: 0.31 }, uMag: { value: 0.308 }, uBarrel: { value: -0.57 } },
-      vertexShader: "varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }",
-      fragmentShader: `
-        uniform sampler2D uMap; uniform vec2 uCenter; uniform float uAspect, uRadius, uMag, uBarrel; varying vec2 vUv;
-        void main() {
-          vec2 d = (vUv - uCenter) * vec2(uAspect, 1.0); float n = length(d) / uRadius;
-          if (n > 1.0) discard;
-          vec2 sampleUv = uCenter + (vUv - uCenter) * (1.0 - uMag) * (1.0 + uBarrel * (1.0 - n * n) * 0.5);
-          vec4 color = texture2D(uMap, sampleUv);
-          float ring = smoothstep(0.955, 0.985, n);
-          gl_FragColor = vec4(mix(color.rgb, vec3(0.0), ring * 0.45), max(color.a, ring * 0.45 + 0.9 * (1.0 - ring)));
-        }`
-    });
-    const scene = new Scene(); scene.add(new Mesh(new PlaneGeometry(2, 2), material));
-    return { material, scene, camera: new OrthographicCamera(-1, 1, 1, -1, 0, 1) };
-  }, []);
-  useEffect(() => () => { lens.material.dispose(); lens.scene.traverse((o) => { if (o instanceof Mesh) o.geometry.dispose(); }); }, [lens]);
+  const lens = useMemo(() => new ShaderMaterial({
+    transparent: true, depthTest: false, depthWrite: false,
+    uniforms: { uMap: { value: null }, uCenter: { value: new Vector2(0.5, 0.5) }, uAspect: { value: 1 }, uRadius: { value: 0.31 }, uMag: { value: 0.308 }, uBarrel: { value: -0.57 } },
+    vertexShader: "varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }",
+    fragmentShader: `
+      uniform sampler2D uMap; uniform vec2 uCenter; uniform float uAspect, uRadius, uMag, uBarrel; varying vec2 vUv;
+      void main() {
+        vec2 d = (vUv - uCenter) * vec2(uAspect, 1.0); float n = length(d) / uRadius;
+        if (n > 1.0) discard;
+        vec2 sampleUv = uCenter + (vUv - uCenter) * (1.0 - uMag) * (1.0 + uBarrel * (1.0 - n * n) * 0.5);
+        vec4 color = texture2D(uMap, sampleUv);
+        float ring = smoothstep(0.955, 0.985, n);
+        gl_FragColor = vec4(mix(color.rgb, vec3(0.0), ring * 0.45), max(color.a, ring * 0.45 + 0.9 * (1.0 - ring)));
+      }`
+  }), []);
+  const quad = useMemo(() => new PlaneGeometry(2, 2), []);
+  useEffect(() => () => { lens.dispose(); quad.dispose(); }, [lens, quad]);
+  const mesh = useRef<Mesh>(null);
   // The touch that holds the lens, by pointer ID: another finger's release doesn't drop it (Review-B r3).
   const pressed = useRef<number | null>(null), held = useRef(new Vector2(0.5, 0.5));
   useEffect(() => {
-    // The stage (the canvas's event source) takes the pointer, not the canvas. Releases arrive there too: a press on
-    // the book captures the pointer to the stage, so no window listener is needed.
+    // The book's hit area takes the pointer; a press on the book captures to it, so releases arrive there too.
     if (!source) return;
     // On touch the lens sits under its own finger: that pointer's position, not R3F's shared pointer (another finger's).
     const place = (event: PointerEvent) => {
       const rect = source.getBoundingClientRect();
       held.current.set((event.clientX - rect.left) / Math.max(rect.width, 1), 1 - (event.clientY - rect.top) / Math.max(rect.height, 1));
     };
-    const down = (event: PointerEvent) => {
-      if (pressed.current !== null || (event.target as Element | null)?.closest?.("[data-book-ui]")) return;
-      pressed.current = event.pointerId; place(event);
-    };
+    const down = (event: PointerEvent) => { if (pressed.current === null) { pressed.current = event.pointerId; place(event); } };
     const move = (event: PointerEvent) => { if (event.pointerId === pressed.current) place(event); };
     const up = (event: PointerEvent) => { if (event.pointerId === pressed.current) pressed.current = null; };
     source.addEventListener("pointerdown", down); source.addEventListener("pointermove", move);
@@ -90,53 +84,49 @@ function Magnifier({ touch }: { touch: boolean }) {
       for (const type of ends) source.removeEventListener(type, up);
     };
   }, [source]);
-  // The lens uniforms are live GPU state, not React state.
+  // The lens uniforms are live GPU state, not React state. Priority 0 runs before drei's View pass (priority 1).
   /* eslint-disable react-hooks/immutability */
   useFrame((state, delta) => {
-    const u = lens.material.uniforms, center = u.uCenter.value as Vector2;
+    const u = lens.uniforms, center = u.uCenter.value as Vector2;
     if (!touch || pressed.current !== null) {
       const k = 1 - Math.exp(-22 * Math.min(delta, 0.05));
       const tx = touch ? held.current.x : (state.pointer.x + 1) / 2, ty = touch ? held.current.y : (state.pointer.y + 1) / 2;
       center.x += (tx - center.x) * k; center.y += (ty - center.y) * k;
     }
-    u.uAspect.value = state.size.width / Math.max(state.size.height, 1);
+    u.uAspect.value = (source?.clientWidth || state.size.width) / Math.max(source?.clientHeight || state.size.height, 1);
     u.uMap.value = target.texture;
-    state.gl.setRenderTarget(target); state.gl.render(state.scene, state.camera); state.gl.setRenderTarget(null);
-    state.gl.render(state.scene, state.camera);
-    state.gl.autoClear = false; state.gl.render(lens.scene, lens.camera); state.gl.autoClear = true;
-  }, 1);
+    if (mesh.current) mesh.current.visible = false;
+    state.gl.setRenderTarget(target); state.gl.clear(); state.gl.render(state.scene, state.camera); state.gl.setRenderTarget(null);
+    if (mesh.current) mesh.current.visible = true;
+  }, 0);
   /* eslint-enable react-hooks/immutability */
-  return null;
+  return <mesh ref={mesh} geometry={quad} material={lens} frustumCulled={false} renderOrder={1000} raycast={() => null} />;
 }
 
-/** The book's canvas, loaded lazily by BookStage (three, R3F and drei stay out of the page's first load). */
-export default function BookCanvas({ eventSource, signals, textures, frameloop, dark, onOpen, onClose, storageKey, pageTextures, magnifier = false }: {
-  eventSource: RefObject<HTMLElement | null>;
+/**
+ * The book in the site's shared canvas (gl/shared-canvas.tsx), through a drei View: no canvas of its own (owner, 24 Nov:
+ * "use as much as possible the same goddamn scene I set up in the root… then we use [drei]'s view"). Loaded lazily by
+ * BookStage. The View's own element is the book's hit area (see BookSignals.hitRect): drei raycasts only events that
+ * target it, so it spans the stage and the book clips its hit-testing to its own bounds. Hidden while covered.
+ */
+export default function BookView({ signals, textures, visible, dark, onOpen, onClose, storageKey, pageTextures, magnifier = false, onElement, ...hit }: {
   signals: RefObject<BookSignals>;
   textures: BookTextures;
-  frameloop: "always" | "demand" | "never";
+  visible: boolean;
   dark: boolean;
   onOpen?: () => void;
   onClose?: () => void;
   storageKey?: string;
   pageTextures?: string[];
   magnifier?: boolean;
-}) {
+  onElement?: (element: HTMLElement | null) => void;
+} & Pick<ComponentProps<"div">, "className" | "onPointerEnter" | "onPointerDown" | "onPointerMove" | "onPointerLeave">) {
   const small = typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
-  return <Canvas frameloop={frameloop} dpr={[1, small ? 1.5 : 2]} shadows={dark} eventSource={eventSource as RefObject<HTMLElement>}
-    // The pointer from client coordinates against the stage's own rect (R3F's client prefix doesn't subtract the offset).
-    // Moves over the stage's own controls never get here (book-stage.tsx); their presses and clicks do, and keep the last
-    // book pointer, so a tap on a control doesn't move the lens, light or tilt.
-    events={(store) => ({ ...createPointerEvents(store), compute(event, state) {
-      const stage = state.events.connected as HTMLElement | undefined;
-      if (!stage) return;
-      const rect = stage.getBoundingClientRect();
-      if (!(event.target as Element | null)?.closest?.("[data-book-ui]")) state.pointer.set(((event.clientX - rect.left) / Math.max(rect.width, 1)) * 2 - 1, -((event.clientY - rect.top) / Math.max(rect.height, 1)) * 2 + 1);
-      state.raycaster.setFromCamera(state.pointer, state.camera);
-    } })}
-    camera={{ fov: 18, position: [0, 0, 174], near: 1, far: 400 }} gl={{ antialias: true, alpha: true }}
-    // A click on empty canvas closes Look inside (#25), unless it was on the stage's own controls.
-    onPointerMissed={(event) => { if (signals.current.look && !(event.target as Element | null)?.closest?.("[data-book-ui]")) onClose?.(); }}>
+  const [source, setSource] = useState<HTMLElement>();
+  return <View visible={visible} aria-hidden="true" {...hit} style={{ clipPath: "inset(50%)" }}
+    // drei re-attaches the ref on every render (useImperativeHandle without deps): keep the element, ignore the null.
+    ref={(element: HTMLElement | null) => { if (element) { setSource(element); onElement?.(element); } }}>
+    <PerspectiveCamera makeDefault fov={18} position={[0, 0, 174]} near={1} far={400} />
     <ambientLight intensity={0.6} />
     <directionalLight position={[10, 14, 30]} intensity={1.1} />
     <PointerSpot dark={dark} />
@@ -145,13 +135,18 @@ export default function BookCanvas({ eventSource, signals, textures, frameloop, 
       <Lightformer form="rect" intensity={2} position={[0, 6, 20]} scale={[30, 8, 1]} />
       <Lightformer form="rect" intensity={1} position={[-20, -4, 10]} rotation-y={Math.PI / 3} scale={[20, 6, 1]} />
     </Environment>
+    {/* A click on the hit area that misses the book closes Look inside (#25). R3F listens on the whole page frame, so
+        clicks elsewhere (the controls, the page) don't count. Only the book is in this group, so the shadow catcher or
+        the lens never counts as a hit. */}
     <Suspense fallback={null}>
-      <Intro><Book textures={textures} signals={signals} onOpen={onOpen} onClose={onClose} small={small} storageKey={storageKey} pageTextures={pageTextures} /></Intro>
+      <group onPointerMissed={(event) => { if (signals.current.look && source && event.target === source) onClose?.(); }}><Intro><Book source={source} textures={textures} signals={signals} onOpen={onOpen} onClose={onClose} small={small} storageKey={storageKey} pageTextures={pageTextures} /></Intro></group>
     </Suspense>
-    {magnifier && <Magnifier touch={small} />}
+    {magnifier && <Magnifier touch={small} source={source} />}
+    {/* The shared canvas has no shadow maps yet (proposal to UI-Shell: shadows="soft", as Hideaway's MainInternal);
+        until then the dark theme's cast shadow is absent and this catcher stays empty. */}
     {dark && <mesh position={[0, 0, -4]} receiveShadow>
       <planeGeometry args={[120, 120]} />
       <shadowMaterial opacity={0.855 * 0.4} />
     </mesh>}
-  </Canvas>;
+  </View>;
 }

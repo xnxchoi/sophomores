@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { connection } from "next/server";
 import { getPayload } from "payload";
 import config from "@payload-config";
-import { loadCommerceEditionOffer, loadPublishedCommerceEditions, type CommerceEditionOffer } from "@/lib/commerce/editions";
+import { listCommerceEditionProducts, loadCommerceEditionOffer, loadPublishedCommerceEditions, type CommerceEditionOffer, type CommerceEditionShop } from "@/lib/commerce/editions";
 import { CommerceProductView } from "@/components/commerce/book-offer";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -17,13 +17,19 @@ export default async function ShopProductPage({ params }: { params: Promise<{ id
   const { id } = await params;
   let product: Parameters<typeof CommerceProductView>[0]["product"] = null;
   let offer: CommerceEditionOffer | null = null;
+  let others: Extract<CommerceEditionShop, { status: "displayable" }>["products"] = [];
   try {
     const payload = await getPayload({ config });
     const [catalogue, edition] = await Promise.all([loadPublishedCommerceEditions(payload, undefined, id), loadCommerceEditionOffer(payload, id)]);
     // Both server reads must agree on the product, or nothing is shown (fails closed).
     if (catalogue.status === "displayable" && edition && catalogue.product.productID === edition.productID) { product = catalogue.product; offer = edition; }
+    // The other products for Other editions; if the list can't load, the page shows without it.
+    if (product) {
+      const shop = await listCommerceEditionProducts(payload).catch(() => null);
+      if (shop?.status === "displayable") others = shop.products.filter((entry) => entry.product.productID !== id);
+    }
   } catch {
     console.error("Published product information is unavailable.");
   }
-  return <div className="min-h-dvh bg-background text-foreground"><CommerceProductView product={product} offer={offer} /></div>;
+  return <div className="min-h-dvh bg-background text-foreground"><CommerceProductView product={product} offer={offer} others={others} /></div>;
 }

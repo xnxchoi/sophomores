@@ -811,7 +811,8 @@
       "includesBundle": "Includes the book, one membership token and one free Member Ticket.",
       "includesBookOnly": "The book only. No membership token or ticket.",
       "onePerAccount": "One per account",
-      "description": "Description"
+      "description": "Description",
+      "otherEditions": "Other editions"
     },
     "components_commerce_checkout": {
       "customerSignInIsOffInThisReviewCopy": "Customer sign-in is off in this review copy.",

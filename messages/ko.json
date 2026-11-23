@@ -811,7 +811,8 @@
       "includesBundle": "",
       "includesBookOnly": "",
       "onePerAccount": "",
-      "description": ""
+      "description": "",
+      "otherEditions": ""
     },
     "components_commerce_checkout": {
       "customerSignInIsOffInThisReviewCopy": "",

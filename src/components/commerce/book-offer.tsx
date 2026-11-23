@@ -18,31 +18,39 @@ export function CommerceShopView({ shop }: { shop: CommerceEditionShop | null })
       <h1 className="font-display text-[2.5rem] font-normal leading-[1.05] tracking-[-0.02em]">{t("book")}</h1>
     </header>
     <ul className="mt-10 grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
-      {shop.products.map(({ product, offer }) => <li key={product.productID} className="min-w-0">
-        <Link href={"/shop/products/" + encodeURIComponent(product.productID)} className="group block min-w-0 outline-offset-4 focus-visible:outline-2">
-          <ProductCover product={product} />
-          <h2 className="mt-5 text-2xl leading-snug tracking-tight underline-offset-4 [overflow-wrap:anywhere] group-hover:underline">{product.title}</h2>
-          <ProductFacts offer={offer} className="mt-3" />
-        </Link>
-      </li>)}
+      {shop.products.map(({ product, offer }) => <ProductCard key={product.productID} product={product} offer={offer} />)}
     </ul>
   </PageInset>;
 }
 
+type ShopEntry = Extract<CommerceEditionShop, { status: "displayable" }>["products"][number];
+
+/** One product in a list (the shop, and Other editions on a product page): cover, title and facts, linking to its page. */
+function ProductCard({ product, offer }: ShopEntry) {
+  return <li className="min-w-0">
+    <Link href={"/shop/products/" + encodeURIComponent(product.productID)} className="group block min-w-0 outline-offset-4 focus-visible:outline-2">
+      <ProductCover product={product} />
+      <h2 className="mt-5 text-2xl leading-snug tracking-tight underline-offset-4 [overflow-wrap:anywhere] group-hover:underline">{product.title}</h2>
+      <ProductFacts offer={offer} className="mt-3" />
+    </Link>
+  </li>;
+}
+
 /**
  * One product's page, laid out like stripe.press's (map 23 Nov, owner: "a full-enough port of the Product page layout"):
- * the stage (art, later the 3D book) holds the left 60% and stays pinned under the header while the purchase column on
- * the right 40% scrolls; it lets go where the page ends. On a phone the stage sits at the top and stays pinned while the
- * column scrolls up over it, as stripe.press's art does.
+ * the stage (the art and the 3D book) holds the left 60% and stays pinned under the header while the purchase column on
+ * the right 40% scrolls. On a phone the stage sits at the top and stays pinned while the column scrolls up over it, as
+ * stripe.press's art does. Full-width sections after the column (Other editions) scroll over the pinned stage, as
+ * stripe.press's praise and production sections do (owner: "As stripe.press does!").
  */
-export function CommerceProductView({ product, offer }: { product: EditionProduct | null; offer: CommerceEditionOffer | null }) {
+export function CommerceProductView({ product, offer, others = [] }: { product: EditionProduct | null; offer: CommerceEditionOffer | null; others?: readonly ShopEntry[] }) {
   const t = useTranslations("Customer.components_commerce_book_offer");
   if (!product || !offer) return <BookUnavailable />;
   return <PageInset as="main" className="pt-[4.5rem] pb-24 text-foreground lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start lg:gap-x-6 lg:pt-[5.5rem]">
-    <BookStage className="sticky top-[4.5rem] min-w-0 lg:top-[5.5rem] lg:h-[calc(100svh-7rem)]">
+    <BookStage className="sticky top-[4.5rem] min-w-0 lg:row-span-2 lg:top-[5.5rem] lg:h-[calc(100svh-7rem)]">
       <CommerceProductGallery key={product.productID} images={product.images} title={product.title} fill />
     </BookStage>
-    <div className="relative z-1 min-w-0 bg-background pt-8 lg:bg-transparent lg:pt-0">
+    <div className="relative z-1 min-w-0 bg-background pt-8 lg:min-h-[calc(100svh-7rem)] lg:bg-transparent lg:pt-0">
       <Link href="/shop" className="inline-flex min-h-12 items-center text-sm text-muted-foreground underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2 lg:-mt-3">{t("allProducts")}</Link>
       <header className="mt-6">
         <p className="text-xs uppercase tracking-[0.04em] text-muted-foreground">{t("book")}</p>
@@ -60,6 +68,13 @@ export function CommerceProductView({ product, offer }: { product: EditionProduc
         </p>
       </div>
     </div>
+    {others.length > 0 && <section data-covers-stage aria-labelledby="other-editions-heading"
+      className="relative z-1 mt-24 bg-background pt-3 lg:col-span-full lg:row-start-2 lg:mt-16 lg:pb-24">
+      <h2 id="other-editions-heading" className="border-b border-foreground pb-3 text-xs uppercase tracking-[0.04em]">{t("otherEditions")}</h2>
+      <ul className="mt-10 grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+        {others.map((entry) => <ProductCard key={entry.product.productID} {...entry} />)}
+      </ul>
+    </section>}
   </PageInset>;
 }
 

@@ -1,4 +1,7 @@
 "use client";
+// Three objects, shader uniforms and the physics refs are live GPU and frame state, not React state: frames and pointer
+// handlers change them in place (as menu-gradient.tsx does for its uniforms).
+/* eslint-disable react-hooks/immutability */
 
 import { useTexture } from "@react-three/drei";
 import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
@@ -189,7 +192,7 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
   const sound = useBookSound(samples);
   const slots = useMemo(() => Object.fromEntries(Object.entries(textures).filter(([, url]) => url)) as Record<string, string>, [textures]);
   const maps = useTexture(slots) as unknown as Record<string, Texture>;
-  const uniforms = useMemo(createUniforms, []);
+  const uniforms = useMemo(() => createUniforms(), []);
   const material = useMemo(() => createCoverMaterial(maps, uniforms, small), [maps, uniforms, small]);
   const geometry = useMemo(() => ({
     front: SHARE.map((_, k) => atlasBox("front", SEG, H, BOARD, k)),

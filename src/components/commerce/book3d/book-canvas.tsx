@@ -70,6 +70,8 @@ function Magnifier({ touch }: { touch: boolean }) {
     element.addEventListener("pointerdown", down); window.addEventListener("pointerup", up);
     return () => { element.removeEventListener("pointerdown", down); window.removeEventListener("pointerup", up); };
   }, [source]);
+  // The lens uniforms are live GPU state, not React state.
+  /* eslint-disable react-hooks/immutability */
   useFrame((state, delta) => {
     const u = lens.material.uniforms, center = u.uCenter.value as Vector2;
     if (!touch || pressed.current) {
@@ -82,6 +84,7 @@ function Magnifier({ touch }: { touch: boolean }) {
     state.gl.render(state.scene, state.camera);
     state.gl.autoClear = false; state.gl.render(lens.scene, lens.camera); state.gl.autoClear = true;
   }, 1);
+  /* eslint-enable react-hooks/immutability */
   return null;
 }
 

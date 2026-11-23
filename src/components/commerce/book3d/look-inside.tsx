@@ -1,4 +1,7 @@
 "use client";
+// The leaves' uniforms and the shared page state are live GPU and frame state, not React state: frames and pointer
+// handlers change them in place (as menu-gradient.tsx does for its uniforms).
+/* eslint-disable react-hooks/immutability */
 
 import { useTexture } from "@react-three/drei";
 import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";

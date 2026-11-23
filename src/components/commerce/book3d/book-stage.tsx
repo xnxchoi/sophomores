@@ -50,6 +50,7 @@ export function BookStage({ id, className, textures = TEMPORARY_BOOK_TEXTURES, p
   const t = useTranslations("Customer.components_commerce_book_offer");
   const [open, setOpen] = useState(false);
   const [magnifier, setMagnifier] = useState(false);
+  const close = () => { setOpen(false); setMagnifier(false); };
   const stage = useRef<HTMLDivElement>(null);
   const signals = useRef<BookSignals>({ scroll: 0, hologram: false, radio: false, spins: [], look: false, peek: false, commands: [],
     view: { zoom: 1, x: 0, y: 0, panning: false, unitsPerPx: 0.02 } });
@@ -87,8 +88,8 @@ export function BookStage({ id, className, textures = TEMPORARY_BOOK_TEXTURES, p
 
   useEffect(() => {
     signals.current.look = open;
-    if (!open) { setMagnifier(false); Object.assign(signals.current.view, { zoom: 1, x: 0, y: 0, panning: false }); return; }
-    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape" || event.key === "ArrowLeft" || event.key === "h") setOpen(false); };
+    if (!open) { Object.assign(signals.current.view, { zoom: 1, x: 0, y: 0, panning: false }); return; }
+    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape" || event.key === "ArrowLeft" || event.key === "h") close(); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
@@ -155,12 +156,12 @@ export function BookStage({ id, className, textures = TEMPORARY_BOOK_TEXTURES, p
     {children}
     <div aria-hidden="true" className="pointer-events-none absolute inset-0">
       <BookCanvas eventSource={stage} signals={signals} textures={textures} frameloop={inView && !covered ? "always" : "never"} dark={dark}
-        onOpen={() => setOpen(true)} onClose={() => setOpen(false)} storageKey={"book3d:" + id} pageTextures={pageTextures} magnifier={magnifier} />
+        onOpen={() => setOpen(true)} onClose={close} storageKey={"book3d:" + id} pageTextures={pageTextures} magnifier={magnifier} />
     </div>
     {open
       ? <ArcRoles><div data-book-ui role="group" aria-label={t("lookInside")}
           className="absolute bottom-4 left-1/2 z-1 flex -translate-x-1/2 items-center gap-2 max-lg:bottom-[max(1rem,env(safe-area-inset-bottom))]">
-          <Button variant="secondary" size="sm" aria-label={t("closeBook")} onClick={() => setOpen(false)}><XIcon aria-hidden="true" className="size-5" /></Button>
+          <Button variant="secondary" size="sm" aria-label={t("closeBook")} onClick={close}><XIcon aria-hidden="true" className="size-5" /></Button>
           <Button variant="secondary" size="sm" aria-label={t("previousPage")} onClick={() => signals.current.commands.push("back")}><CaretLeftIcon aria-hidden="true" className="size-5" /></Button>
           <Button variant="secondary" size="sm" aria-label={t("nextPage")} onClick={() => signals.current.commands.push("forward")}><CaretRightIcon aria-hidden="true" className="size-5" /></Button>
           <Button variant="secondary" size="sm" aria-label={t("magnifier")} aria-pressed={magnifier} onClick={() => setMagnifier((on) => !on)}><MagnifyingGlassIcon aria-hidden="true" weight={magnifier ? "fill" : "regular"} className="size-5" /></Button>

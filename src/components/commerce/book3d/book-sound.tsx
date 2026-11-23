@@ -19,7 +19,8 @@ type Rub = { gain: GainNode };
  */
 export function useBookSound(samples: BookSamples = {}) {
   const sound = useMemo(() => {
-    let context: AudioContext | null = null, noise: AudioBuffer | null = null;
+    // Created on the first press (browsers allow audio only then).
+    const audio: { context: AudioContext | null; noise: AudioBuffer | null } = { context: null, noise: null };
     const rubs = new Map<"cover" | "paper", Rub>();
     const howls: Partial<Record<keyof BookSamples, Howl[]>> = {};
     (Object.entries(samples) as [keyof BookSamples, string | string[] | undefined][]).forEach(([key, value]) => {
@@ -28,16 +29,17 @@ export function useBookSound(samples: BookSamples = {}) {
     });
 
     function unlock() {
-      if (context) { void context.resume().catch(() => {}); return; }
+      if (audio.context) { void audio.context.resume().catch(() => {}); return; }
       const Context = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
       if (!Context) return;
-      context = new Context();
-      noise = context.createBuffer(1, context.sampleRate * 2, context.sampleRate);
+      const context = new Context(), noise = context.createBuffer(1, context.sampleRate * 2, context.sampleRate);
+      audio.context = context; audio.noise = noise;
       const data = noise.getChannelData(0);
       for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
     }
 
     function rubChannel(kind: "cover" | "paper") {
+      const { context, noise } = audio;
       if (!context || !noise) return null;
       let rub = rubs.get(kind);
       if (!rub) {
@@ -56,7 +58,7 @@ export function useBookSound(samples: BookSamples = {}) {
       unlock,
       /** speed: pointer speed in px/ms. The level eases in and falls away within ~0.12 s once the pointer stops. */
       rub(kind: "cover" | "paper", speed: number) {
-        const rub = rubChannel(kind); if (!rub || !context) return;
+        const rub = rubChannel(kind), context = audio.context; if (!rub || !context) return;
         const level = Math.min(speed / 3, 1) * (kind === "cover" ? 0.22 : 0.16), now = context.currentTime;
         rub.gain.gain.cancelScheduledValues(now);
         rub.gain.gain.setTargetAtTime(level, now, 0.02);
@@ -64,6 +66,7 @@ export function useBookSound(samples: BookSamples = {}) {
       },
       /** strength 0–1, from how fast the cover closed. */
       slap(strength: number) {
+        const { context, noise } = audio;
         if (!context || !noise) return;
         const source = context.createBufferSource(), low = context.createBiquadFilter(), gain = context.createGain(), now = context.currentTime;
         source.buffer = noise; low.type = "lowpass"; low.frequency.value = 420;
@@ -78,7 +81,7 @@ export function useBookSound(samples: BookSamples = {}) {
         howl.play();
       },
       dispose() {
-        void context?.close().catch(() => {}); context = null; rubs.clear();
+        void audio.context?.close().catch(() => {}); rubs.clear();
         Object.values(howls).flat().forEach((howl) => howl?.unload());
       }
     };

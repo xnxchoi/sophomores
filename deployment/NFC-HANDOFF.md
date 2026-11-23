@@ -40,6 +40,12 @@ driver evidence or swallowing query rejections.
   query. Reject noncanonical NFC requests with an empty, non-cacheable error
   before forwarding, without reflecting the target in the response or
   Location. For clean confirmation documents and form POSTs, never add a query.
+- Next's global trailing-slash redirect is disabled so it cannot reflect a
+  malformed NFC tap. The replacement is a public redirect for normal site
+  URLs, not a copy of Next's internal priority rule: it skips requests with
+  `x-nextjs-data`, and Next's public-route handling of reserved `/_next`
+  paths can differ. Do not depend on slash redirects for framework data or
+  asset URLs; internal callers should use their canonical URLs.
 - Disable or redact the original target, query, referrer, cookies, form body
   and redirect diagnostics at every hop, including errors and security events,
   access logs, trace spans, RUM and replay. Use an NFC route label, status and

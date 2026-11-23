@@ -48,7 +48,9 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
   const [open, setOpen] = useState(false);
   const [magnifier, setMagnifier] = useState(false);
   const [ink, setInk] = useState<null | "pink" | "yellow">(null);
-  const close = () => { setOpen(false); setMagnifier(false); setInk(null); };
+  // Closing (or opening from the button, which unmounts before its pointerleave) clears hover; the hit-rect's next move
+  // engages again if the pointer is still on the book.
+  const close = () => { setOpen(false); setMagnifier(false); setInk(null); setHovering(false); };
   // Picking the active ink again turns the highlighter off (stripe.press).
   const pickInk = (next: "pink" | "yellow") => setInk((current) => current === next ? null : next);
   const stage = useRef<HTMLDivElement>(null);
@@ -86,11 +88,17 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
       if (detail.radio !== undefined) signals.current.radio = detail.radio;
     };
     onScroll();
+    // Moves over the stage's own controls stay out of R3F (Review-B r2): stopped in the stage's capture phase, before
+    // R3F's listener on the stage sees them. Presses and clicks still pass (sound unlock, the controls' own handlers).
+    const node = stage.current;
+    const shield = (event: PointerEvent) => { if ((event.target as Element | null)?.closest?.("[data-book-ui]")) event.stopPropagation(); };
+    node?.addEventListener("pointermove", shield, { capture: true });
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll);
     window.addEventListener("book3d:spin", onSpin);
     window.addEventListener("book3d:effect", onEffect);
     return () => {
+      node?.removeEventListener("pointermove", shield, { capture: true });
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
       window.removeEventListener("book3d:spin", onSpin);
@@ -178,7 +186,7 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
     {/* The hit-rect (stripe.press's pattern): the only part of the stage that takes the pointer, fitted by the book to
         its own visible bounds each frame (the whole stage while Look inside is open); it starts empty, so it takes nothing
         until the book has fitted it. Pointer engagement runs the loop. */}
-    <div ref={(element) => { signals.current.hitRect = element; }} aria-hidden="true" onPointerEnter={engage} onPointerDown={engage} onPointerLeave={release}
+    <div ref={(element) => { signals.current.hitRect = element; }} aria-hidden="true" onPointerEnter={engage} onPointerDown={engage} onPointerMove={hovering ? undefined : engage} onPointerLeave={release}
       className="pointer-events-auto absolute top-0 left-0 size-0 touch-pan-y in-data-[open=true]:touch-none in-data-[book=hover]:cursor-grab in-data-[book=drag]:cursor-grabbing in-data-[book=mark]:cursor-none" />
     {open
       ? <ArcRoles><div data-book-ui role="group" aria-label={t("lookInside")}
@@ -195,7 +203,7 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
             <span aria-hidden="true" className={cn("size-4 rounded-full bg-[#f4e400]", ink === "yellow" && "ring-2 ring-current ring-offset-2 ring-offset-transparent")} />
           </Button>
         </div></ArcRoles>
-      : <button type="button" data-book-ui onClick={() => setOpen(true)}
+      : <button type="button" data-book-ui onClick={() => { setOpen(true); setHovering(false); }}
           onPointerEnter={() => { signals.current.peek = true; engage(); }} onPointerLeave={() => { signals.current.peek = false; release(); }}
           className="pointer-events-auto absolute bottom-4 left-1/2 z-1 inline-flex h-10 -translate-x-1/2 items-center rounded-full border border-foreground bg-background px-4 text-[13px] uppercase tracking-[0.04em] outline-offset-2 focus-visible:outline-2 pointer-coarse:h-11">
           {t("lookInside")}

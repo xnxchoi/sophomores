@@ -106,14 +106,13 @@ export default function BookCanvas({ eventSource, signals, textures, frameloop, 
 }) {
   const small = typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
   return <Canvas frameloop={frameloop} dpr={[1, small ? 1.5 : 2]} shadows={dark} eventSource={eventSource as RefObject<HTMLElement>}
-    // The pointer from client coordinates against the stage's own rect (R3F's client prefix doesn't subtract the offset);
-    // pointers over the stage's controls are sent off-screen, so they never hover or pick the book.
+    // The pointer from client coordinates against the stage's own rect (R3F's client prefix doesn't subtract the offset).
+    // Moves over the stage's controls never get here: the stage stops them before R3F (book-stage.tsx).
     events={(store) => ({ ...createPointerEvents(store), compute(event, state) {
       const stage = state.events.connected as HTMLElement | undefined;
       if (!stage) return;
       const rect = stage.getBoundingClientRect();
-      if ((event.target as Element | null)?.closest?.("[data-book-ui]")) state.pointer.set(4, 4);
-      else state.pointer.set(((event.clientX - rect.left) / Math.max(rect.width, 1)) * 2 - 1, -((event.clientY - rect.top) / Math.max(rect.height, 1)) * 2 + 1);
+      state.pointer.set(((event.clientX - rect.left) / Math.max(rect.width, 1)) * 2 - 1, -((event.clientY - rect.top) / Math.max(rect.height, 1)) * 2 + 1);
       state.raycaster.setFromCamera(state.pointer, state.camera);
     } })}
     camera={{ fov: 18, position: [0, 0, 174], near: 1, far: 400 }} gl={{ antialias: true, alpha: true }}

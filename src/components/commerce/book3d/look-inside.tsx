@@ -130,7 +130,7 @@ export function LookInside({ look, root, signals, sound, width, height, thicknes
   // Highlighter (#28): each page side gets an ink canvas on first use; strokes are kept as page coordinates, so they replay
   // onto fresh canvases and save small. Marks are kept in localStorage (debounced 400 ms).
   const surfaces = useRef(new Map<string, { context: CanvasRenderingContext2D; canvas: HTMLCanvasElement; texture: CanvasTexture }>());
-  const strokes = useRef<Stroke[]>([]), painting = useRef<null | { stroke: Stroke; at: number; x: number; y: number }>(null), saveTimer = useRef(0);
+  const strokes = useRef<Stroke[]>([]), painting = useRef<null | { stroke: Stroke; at: number; x: number; y: number; id: number }>(null), saveTimer = useRef(0);
   const marker = useRef<Group>(null), markerMaterial = useMemo(() => new MeshStandardMaterial({ color: INK.pink.hex, roughness: 0.5 }), []);
   const markerGeometry = useMemo(() => { const g = new BoxGeometry(0.32, 0.32, 2.2); g.translate(0, 0, 1.1); return g; }, []);
   const markerMotion = useRef({ x: 0, y: 0, roll: 0, rollV: 0, pitch: 0, pitchV: 0, lift: 0.35, lastX: 0, lastY: 0 });
@@ -216,7 +216,7 @@ export function LookInside({ look, root, signals, sound, width, height, thicknes
       if (leaf < 0) return;
       const stroke: Stroke = { leaf, back: side === "left", ink, points: [u, v] };
       strokes.current.push(stroke); paint(stroke, 0);
-      painting.current = { stroke, at: now, x: e.clientX, y: e.clientY };
+      painting.current = { stroke, at: now, x: e.clientX, y: e.clientY, id: e.pointerId };
       const target = source ?? (e.target as HTMLElement);
       const end = (ev: PointerEvent) => {
         if (ev.pointerId !== e.pointerId) return;
@@ -288,7 +288,7 @@ export function LookInside({ look, root, signals, sound, width, height, thicknes
     const { side, u, v, x, y } = pageCoords(event); Object.assign(hover.current, { side, v, x, y });
     if (source && !gesture.current) source.dataset.book = signals.current.marker ? "mark" : "hover";
     // Painting: extend the stroke while it stays on the page it started on; the paper rubs with the speed.
-    const p = painting.current, e = event.nativeEvent;
+    const e = event.nativeEvent, p = painting.current && painting.current.id === e.pointerId ? painting.current : null;
     if (p && (side === "left") === p.stroke.back) {
       const now = performance.now(), speed = Math.hypot(e.clientX - p.x, e.clientY - p.y) / Math.max(now - p.at, 1);
       p.stroke.points.push(u, v); paint(p.stroke, p.stroke.points.length - 2);

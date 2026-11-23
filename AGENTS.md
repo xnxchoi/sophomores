@@ -262,6 +262,32 @@ Use actual production import sites to choose the lowest sensible shared ownershi
 
 Group, position, and nest code by scope and use. Do not create single-depth catch-all directories mixing unrelated domains or dumping every helper/component into one flat list. Broad shared code stays at an appropriately broad level; feature-specific code, hooks, tests, and fixtures live in cohesive nested feature/domain directories. Prefer the repo's existing structure over introducing a competing hierarchy, and avoid meaningless single-file nesting or re-export chains.
 
+## Skills: load before you start (owner-approved routing, 2026-11-23)
+
+Load the listed skills before the first edit or draft in that area. Where a skill disagrees with an owner rule in this file, the owner rule wins. Claude loads them with the `Skill` tool; Codex reads project skills from `.agents/skills/<name>/SKILL.md` and checks plugin skills through the packet line below. Project hooks in `.claude/settings.json` remind Claude once per session per area and log each loaded skill to `.tmp/skills-used/<session-id>.log`.
+
+| When the task is… | Load first | Then, as needed |
+|---|---|---|
+| UI page or component (`src/app/(site)/**`, `src/components/**`, `src/hideaway/**`) | `better-ui`, `ecc:make-interfaces-feel-better`, `ecc:frontend-design-direction` | `improve-ui`; `arc` + Arc MCP for primitives and forms; `shadcn` |
+| Interface copy (English) | `ux-writing` | `brand-copy-refinement` |
+| `messages/en.json` / `messages/ko.json` | `sphmrs-catalogue-copy-pass`, `ux-writing` | `multi-model-catalogue-copy-pass`; never `ecc:i18n-sync` |
+| Motion or animation | `ecc:motion-foundations` | `ecc:motion-patterns`, `ecc:motion-advanced`, `improve-animations`; drop any reduced-motion branch they suggest |
+| Tailwind tokens, theme, fonts | `tailwind-design-system` | `next-font-variable-roles` |
+| Payload collections, fields, hooks, access | `payload` | `ecc:backend-patterns` |
+| Migrations or schema | `payload`, `ecc:database-migrations` | `ecc:postgres-patterns`; `ecc:database-reviewer` agent |
+| Next.js routing, server/client boundary, caching | `ecc:nextjs-turbopack` + `node_modules/next/dist/docs/` | `ecc:react-patterns`, `ecc:react-performance`; Context7 |
+| Route handlers, server actions | `ecc:api-design`, `ecc:error-handling` | `ecc:security-review` |
+| Auth, phone verification, sessions; commerce, payment, orders, wallet, tickets, NFC, invites | `ecc:security-review`, `sphmrs-personal-data-pages` | `ecc:security-reviewer` agent; built-in `security-review` before the landing packet; `ecc:click-path-audit` for whole purchase flows |
+| Any page or handler that shows personal data | `sphmrs-personal-data-pages`, `ecc:security-review` | — |
+| Library or framework API | `ecc:documentation-lookup` (Context7 first) | `ecc:search-first` before writing a helper |
+| Changing working behaviour / new capability / bug | `ecc:change-impact` → `ecc:orch-change-feature` / `ecc:orch-add-feature` or `ecc:multi-workflow` / `ecc:orch-fix-defect` | `ecc:plan-orchestrate`; `ecc:council` for owner-level choices |
+| Orca multi-lane work | `orchestration`, `orca-cli` | `orca-resumed-session-mailbox-recovery`; `orca-worker-delivery-pitfalls` before `worker_done` |
+| Live browser check | Chrome DevTools MCP | `ecc:browser-qa` without its axe or accessibility phase |
+| Self-review before a packet | built-in `code-review` | `simplify`; `ecc:santa-method`; `ecc:astra-review` |
+| Harness, settings or hooks | `update-config`, `ecc:hookify-rules` | `ecc:security-scan` |
+
+**Packet line.** Every worker packet and `worker_done` ends with `Skills used: <comma list> (log: .tmp/skills-used/<session-id>.log)`. Reviewers compare it with the area rows above and with the log. A missing required skill on an auth, commerce or personal-data row is a FAIL; elsewhere it is a note.
+
 <!-- BEGIN:nextjs-agent-upgrade -->
 
 ## Next.js upgrade reminders

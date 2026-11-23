@@ -1,3 +1,80 @@
 {
-  "enabledMcpjsonServers": ["arc"]
+  "enabledMcpjsonServers": [
+    "arc"
+  ],
+  "skillListingBudgetFraction": 0.04,
+  "skillOverrides": {
+    "anthropic-skills:google-workspace": "user-invocable-only",
+    "ccg-gen-docs": "user-invocable-only",
+    "ccg-multi-agent": "user-invocable-only",
+    "ccg-verify-change": "user-invocable-only",
+    "ccg-verify-module": "user-invocable-only",
+    "ccg-verify-quality": "user-invocable-only",
+    "ccg-verify-security": "user-invocable-only",
+    "ccg:go": "user-invocable-only",
+    "ccg:spec-impl": "user-invocable-only",
+    "ccg:spec-init": "user-invocable-only",
+    "ccg:spec-plan": "user-invocable-only",
+    "ccg:spec-research": "user-invocable-only",
+    "ccg:spec-review": "user-invocable-only",
+    "design-lab": "user-invocable-only",
+    "devfleet": "user-invocable-only",
+    "e2e": "user-invocable-only",
+    "eval": "user-invocable-only",
+    "imagegen": "user-invocable-only",
+    "orchestrate": "user-invocable-only",
+    "prompt-optimize": "user-invocable-only",
+    "rules-distill": "user-invocable-only",
+    "tdd": "user-invocable-only"
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/scripts/hooks/skill-reminder.sh domain",
+            "if": "Edit(src/**)",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/scripts/hooks/skill-reminder.sh domain",
+            "if": "Write(src/**)",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/scripts/hooks/skill-reminder.sh domain",
+            "if": "Edit(messages/*.json)",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/scripts/hooks/skill-reminder.sh packet",
+            "if": "Bash(orca orchestration *)",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Skill",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/scripts/hooks/skill-reminder.sh log",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
 }

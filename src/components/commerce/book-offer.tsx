@@ -4,6 +4,7 @@ import { Link } from "@/components/core/Link/Link";
 import { PageInset } from "@/components/core/PageInset/PageInset";
 import { Badge } from "@/components/arc/badge/badge";
 import { CommerceProductGallery } from "./product-gallery";
+import { BookStage } from "./book3d/book-stage";
 import { ArcRoles } from "./arc-roles";
 
 type EditionProduct = Extract<CommerceEditionCatalogue, { status: "displayable" }>["product"];
@@ -38,9 +39,9 @@ export function CommerceProductView({ product, offer }: { product: EditionProduc
   const t = useTranslations("Customer.components_commerce_book_offer");
   if (!product || !offer) return <BookUnavailable />;
   return <PageInset as="main" className="pt-[4.5rem] pb-24 text-foreground lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start lg:gap-x-6 lg:pt-[5.5rem]">
-    <div className="sticky top-[4.5rem] min-w-0 lg:top-[5.5rem] lg:h-[calc(100svh-7rem)]">
+    <BookStage className="sticky top-[4.5rem] min-w-0 lg:top-[5.5rem] lg:h-[calc(100svh-7rem)]">
       <CommerceProductGallery key={product.productID} images={product.images} title={product.title} fill />
-    </div>
+    </BookStage>
     <div className="relative z-1 min-w-0 bg-background pt-8 lg:bg-transparent lg:pt-0">
       <Link href="/shop" className="inline-flex min-h-12 items-center text-sm text-muted-foreground underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2 lg:-mt-3">{t("allProducts")}</Link>
       <header className="mt-6">

@@ -24,6 +24,9 @@ import {
   TriangleAlert
 } from "lucide-react";
 import { cn } from "../../lib/utils";
+import { DrawnField } from "@/components/ui/input";
+import { OtpInput } from "@/components/arc/otp-input/otp-input";
+import { Button } from "@/components/arc/button/button";
 import { motionTokens } from "../../lib/motion-tokens";
 import { useTranslations } from "next-intl";
 import { useAccountPhaseFocus } from "./account-phase-focus";
@@ -34,7 +37,6 @@ import type {
 } from "./_shared/account-phase-types";
 import {
   StudyChoiceAction,
-  StudyCodeField,
   StudyField,
   StudyPrimaryAction,
   StudyTextAction
@@ -231,7 +233,7 @@ function Intro({
     <h3
       id={headingId}
       tabIndex={-1}
-      className="text-[24px] leading-[30px] font-medium tracking-[-0.025em] text-[#f4f4f3] outline-none"
+      className="text-[24px] leading-[30px] font-medium tracking-[-0.025em] text-foreground outline-none"
     >
       {title}
     </h3>
@@ -243,7 +245,7 @@ function Intro({
       className={cn(
         "mb-6 data-[authentication-presentation=modal]:[@media(max-height:600px)]:mb-4",
         centered ? "text-center" : "text-left",
-        renderHeading && !mobileTray && !centered && "pl-14"
+        renderHeading && presentation != null && !mobileTray && !centered && "pl-14"
       )}
     >
       <div
@@ -252,7 +254,7 @@ function Intro({
         {icon && (
           <span
             aria-hidden="true"
-            className="shrink-0 text-neutral-400 [&>svg]:size-6 [&>svg]:stroke-[1.5]"
+            className="shrink-0 text-muted-foreground [&>svg]:size-6 [&>svg]:stroke-[1.5]"
           >
             {icon}
           </span>
@@ -260,7 +262,7 @@ function Intro({
         {renderHeading ? renderHeading(heading) : heading}
       </div>
       {children && (
-        <div className="mt-2 text-[14px] leading-5 text-neutral-400">
+        <div className="mt-2 text-[14px] leading-5 text-muted-foreground">
           {children}
         </div>
       )}
@@ -287,8 +289,12 @@ function Submit({
     props.pendingAction !== "passkey" &&
     props.pendingAction !== "magic-link";
   return (
-    <StudyPrimaryAction
+    // Arc's primary button, as in Arc's Sign in block (owner, 23 Nov: "Arc block, underlined field").
+    <Button
       type="submit"
+      variant="primary"
+      size="lg"
+      loading={busy}
       data-phase-action="submit"
       disabled={
         props.busy ||
@@ -301,8 +307,7 @@ function Submit({
         (props.failure === "rate-limited" &&
           (props.verificationRemaining ?? props.resendRemaining) > 0)
       }
-      aria-busy={busy}
-      className={cn("relative min-w-36", wide ? "w-full" : "ml-auto w-fit")}
+      className={cn("min-w-36", wide ? "w-full" : "ml-auto w-fit")}
     >
       {busy
         ? props.pendingAction === "send-code"
@@ -311,15 +316,7 @@ function Submit({
             ? t("verifying")
             : t("busy")
         : children}
-      {busy && (
-        <PhaseSpinner
-          visible={props.visible}
-          size={15}
-          duration={1}
-          className="absolute right-4"
-        />
-      )}
-    </StudyPrimaryAction>
+    </Button>
   );
 }
 
@@ -360,7 +357,7 @@ function Feedback({
       id={id}
       className={cn(
         hasFeedback || reserve
-          ? "my-2 overflow-hidden text-[13px] leading-5 text-neutral-200"
+          ? "my-2 overflow-hidden text-[13px] leading-5 text-foreground"
           : "sr-only",
         reserve && !action && "min-h-10",
         action && "my-0 min-w-0 flex-1",
@@ -473,19 +470,21 @@ function EmailEntry(props: Props) {
           }}
           noValidate
         >
-          <StudyField
+          <div>
+          <DrawnField
+            steady
             id={`${props.headingId}-email`}
             label={t("email")}
             type="email"
             inputMode="email"
             autoComplete="email"
-            placeholder={t("emailPlaceholder")}
             value={props.email}
             disabled={props.busy}
             aria-invalid={invalid}
             aria-describedby={`${props.headingId}-feedback`}
             onChange={(event) => props.onField("email", event.target.value)}
           />
+          </div>
           {feedback}
           {/* No empty row once the submit is hidden, so spacing matches the other states. */}
           {(!props.submitHidden || !props.googleDisabled) && (
@@ -498,7 +497,7 @@ function EmailEntry(props: Props) {
               {!props.googleDisabled && (
                 <StudyTextAction
                   data-phase-action="google"
-                  className="relative w-full px-3 text-[14px] font-medium text-neutral-300 disabled:opacity-40 aria-busy:opacity-80"
+                  className="relative w-full px-3 text-[14px] font-medium text-muted-foreground disabled:opacity-40 aria-busy:opacity-80"
                   disabled={props.busy}
                   aria-busy={props.busy && props.pendingAction === "google"}
                   onClick={() => props.onAction("google")}
@@ -526,18 +525,32 @@ function EmailEntry(props: Props) {
 
 function EmailCode(props: Props) {
   const t = useTranslations("AuthPhase");
+  // Centred in the sheet; left-aligned when it takes over a page inline.
+  const inline = useContext(VerificationPresentation) == null;
   const invalid = props.invalid === "code";
+  // A rejected code is marked on the code input itself (Arc's documented error prop: aria-invalid on each cell, the
+  // message under the cells); the feedback row keeps every other outcome.
+  const rejected = invalid || props.failure === "invalid-code";
+  const codeError = rejected ? (props.failure === "invalid-code" ? t("failures.invalid-code") : t("codeInvalid")) : undefined;
+  const codeDisabled =
+    props.busy ||
+    props.submitDisabled ||
+    Boolean(props.codeRecovery) ||
+    (props.verificationRemaining ?? 0) > 0 ||
+    props.failure === "expired-code" ||
+    props.failure === "attempts-exhausted" ||
+    (props.failure === "rate-limited" && (props.verificationRemaining ?? props.resendRemaining) > 0);
   return (
     <div className="w-full">
       <Intro
-        centered
+        centered={!inline}
         headingId={props.headingId}
         title={t("emailHeading")}
         renderHeading={props.renderHeading}
       >
         <p>
           {t("emailHelp")}{" "}
-          <span className="block mt-1 font-medium break-all text-neutral-200">
+          <span className="block mt-1 font-medium break-all text-foreground">
             {props.email}
           </span>
         </p>
@@ -549,30 +562,39 @@ function EmailCode(props: Props) {
         }}
         noValidate
       >
-        <StudyCodeField
-          id={`${props.headingId}-code`}
-          label={t("code")}
-          value={props.code}
-          disabled={
-            props.busy ||
-            props.submitDisabled ||
-            Boolean(props.codeRecovery) ||
-            (props.verificationRemaining ?? 0) > 0 ||
-            props.failure === "expired-code" ||
-            props.failure === "attempts-exhausted" ||
-            (props.failure === "rate-limited" &&
-              (props.verificationRemaining ?? props.resendRemaining) > 0)
-          }
-          invalid={invalid || props.failure === "invalid-code"}
-          descriptionId={`${props.headingId}-feedback`}
-          visible={props.visible}
-          onChange={(value) => props.onField("code", value)}
-          onComplete={props.onCodeComplete}
-        />
+        {/* Arc's code input (owner, 23 Nov: "Arc block, underlined field"). Codes are letters and digits, upper case;
+            a full code verifies once, and a replaced full code verifies again. Monochrome: Arc's accent is the
+            foreground here. */}
+        {/* Arc's message rows read --leading-body, which the project's token layer does not define; set it here. */}
+        <div data-email-code-field="" className="[--accent-strong:var(--foreground)] [--accent-subtle:transparent] [--accent:var(--foreground)] [--leading-body:1.25rem]">
+          <OtpInput
+            label={t("code")}
+            inputMode="text"
+            error={codeError}
+            value={props.code}
+            disabled={codeDisabled}
+            aria-describedby={`${props.headingId}-feedback`}
+            // As the previous field: spaces and hyphens in a pasted or autofilled code are formatting and are dropped;
+            // any other character outside A-Z and 0-9 refuses the whole entry, so the cells stay as they were.
+            normalize={(raw) => {
+              const compact = raw.replace(/[\s-]/g, "");
+              return /^[A-Za-z0-9]*$/.test(compact) ? compact.toUpperCase() : null;
+            }}
+            onChange={(next) => {
+              // Letters and digits only, as the previous field accepted; anything else is dropped.
+              const normalized = next.replace(/[^a-zA-Z0-9]/g, "").toUpperCase().slice(0, 6);
+              props.onField("code", normalized);
+              // As before: verify when the code becomes complete, or when a rejected code is replaced by another full one.
+              if (normalized.length === 6 && !codeDisabled && props.visible
+                && (props.code.length < 6 || (rejected && normalized !== props.code)))
+                props.onCodeComplete(normalized);
+            }}
+          />
+        </div>
         <Feedback
           id={`${props.headingId}-feedback`}
           className="text-left"
-          failure={props.failure}
+          failure={rejected ? null : props.failure}
           reserve={props.reserveFeedback || props.failure === "rate-limited"}
           action={props.feedbackAction}
           quiet={props.feedbackPending}
@@ -589,7 +611,7 @@ function EmailCode(props: Props) {
           }
           locale={props.locale}
         >
-          {invalid ? t("codeInvalid") : props.feedbackMessage}
+          {rejected ? null : props.feedbackMessage}
         </Feedback>
         <div className="mt-4">
           <Submit props={props} wide>
@@ -599,7 +621,7 @@ function EmailCode(props: Props) {
         <InlineEmailResend props={props} />
         {props.onEditEmail && (
           <StudyTextAction
-            className="mx-auto mt-1 min-h-11 px-3 text-[13px] text-neutral-400"
+            className="mx-auto mt-1 min-h-11 px-3 text-[13px] text-muted-foreground"
             disabled={props.busy}
             onClick={props.onEditEmail}
           >
@@ -624,7 +646,7 @@ function InlineEmailResend({ props }: { props: Props }) {
           coolingDown ? undefined : `${t("codeRecovery")} ${t("resend")}`
         }
         onClick={() => props.onAction("retry")}
-        className="min-h-11 w-44 gap-1 rounded-md px-3 text-[13px] font-normal text-neutral-400 underline decoration-white/30 underline-offset-4 hover:bg-transparent hover:text-white disabled:cursor-not-allowed disabled:text-neutral-500 disabled:no-underline"
+        className="min-h-11 w-44 gap-1 rounded-md px-3 text-[13px] font-normal text-muted-foreground underline decoration-current/30 underline-offset-4 hover:bg-transparent hover:text-foreground disabled:cursor-not-allowed disabled:text-muted-foreground disabled:no-underline"
       >
         {coolingDown ? (
           <>
@@ -667,7 +689,7 @@ function Passkey(props: Props) {
       </StudyPrimaryAction>
       <StudyTextAction
         data-phase-action="email-code"
-        className="mt-3 w-full text-[13px] text-neutral-400"
+        className="mt-3 w-full text-[13px] text-muted-foreground"
         disabled={props.busy}
         onClick={() => props.onAction("email-code")}
       >
@@ -721,7 +743,7 @@ function Waiting(props: Props) {
       <Intro headingId={props.headingId} title={t("waitingHeading")}>
         <p>
           {t("waitingHelp")}{" "}
-          <span className="whitespace-nowrap text-neutral-200">
+          <span className="whitespace-nowrap text-foreground">
             {props.phone}
           </span>
         </p>
@@ -735,7 +757,7 @@ function Waiting(props: Props) {
       >
         {t("compose")}
       </StudyPrimaryAction>
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11px] leading-5 text-neutral-400">
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11px] leading-5 text-muted-foreground">
         <span role="status" className="flex items-center gap-2">
           <PhaseSpinner visible={props.visible} size={12} duration={2} />
           {props.checked ? t("checked") : t("waiting")}
@@ -743,7 +765,7 @@ function Waiting(props: Props) {
         <span
           role="timer"
           aria-live="off"
-          className="font-sans text-neutral-500"
+          className="font-sans text-muted-foreground"
         >
           {props.remaining}{" "}
           <span className="font-[system-ui]">{t("remaining")}</span>
@@ -760,7 +782,7 @@ function Waiting(props: Props) {
         </StudyTextAction>
         <StudyTextAction
           data-phase-action="edit-phone"
-          className="px-3 text-[13px] text-neutral-400"
+          className="px-3 text-[13px] text-muted-foreground"
           disabled={props.busy}
           onClick={() => props.onAction("edit-phone")}
         >
@@ -773,14 +795,14 @@ function Waiting(props: Props) {
 
 function MessageDetails({ props, t }: { props: Props; t: CopyText }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-black/10 px-4 py-3 shadow-[inset_0_1px_3px_#00000018]">
+    <div className="rounded-xl border border-border bg-transparent px-4 py-3">
       <div className="flex min-w-0 items-center justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-xs leading-[18px] text-neutral-400 select-all">
+          <p className="text-xs leading-[18px] text-muted-foreground select-all">
             <span className="sr-only">{t("to")} </span>
             <span className="block break-all">{props.recipient}</span>
           </p>
-          <p className="mt-2 font-sans text-[15px] leading-[22px] tracking-normal break-all text-neutral-100 select-all">
+          <p className="mt-2 font-sans text-[15px] leading-[22px] tracking-normal break-all text-foreground select-all">
             {props.message}
           </p>
         </div>
@@ -790,8 +812,8 @@ function MessageDetails({ props, t }: { props: Props; t: CopyText }) {
           aria-label={props.copied ? t("copied") : t("copy")}
           onClick={() => props.onAction("copy")}
           className={cn(
-            "flex size-11 shrink-0 items-center justify-center rounded-xl text-neutral-400 transition-[background-color,color,transform] duration-200 ease-out hover:bg-white/5 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white active:scale-95",
-            props.copied && "text-neutral-100"
+            "flex size-11 shrink-0 items-center justify-center rounded-xl text-muted-foreground transition-[background-color,color,transform] duration-200 ease-out hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground active:scale-95",
+            props.copied && "text-foreground"
           )}
         >
           <motion.span
@@ -816,7 +838,7 @@ function MessageDetails({ props, t }: { props: Props; t: CopyText }) {
         role="status"
         aria-live="polite"
         className={cn(
-          "text-[11px] leading-4 text-neutral-400",
+          "text-[11px] leading-4 text-muted-foreground",
           props.copyFailed ? "mt-1" : "sr-only"
         )}
       >
@@ -837,12 +859,12 @@ function Completion(props: Props) {
         aria-hidden="true"
         size={32}
         strokeWidth={1.5}
-        className="mb-4 text-neutral-200"
+        className="mb-4 text-foreground"
       />
       <h3
         id={props.headingId}
         tabIndex={-1}
-        className="mb-8 text-[28px] leading-[34px] font-medium tracking-[-0.025em] text-[#f4f4f3] outline-none"
+        className="mb-8 text-[28px] leading-[34px] font-medium tracking-[-0.025em] text-foreground outline-none"
       >
         {t("completeHeading")}
       </h3>
@@ -884,7 +906,7 @@ function Outcome(
       {props.changePhone && (
         <StudyTextAction
           data-phase-action="edit-phone"
-          className="mt-3 w-full text-[13px] text-neutral-400"
+          className="mt-3 w-full text-[13px] text-muted-foreground"
           disabled={props.busy}
           onClick={() => props.onAction("edit-phone")}
         >

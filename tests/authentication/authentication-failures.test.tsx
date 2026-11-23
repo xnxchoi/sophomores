@@ -1,5 +1,7 @@
 import messages from "../../messages/en.json";
 import { AuthenticationMessages } from "../fixtures/authentication-messages";
+import { codeCellsIn, codeIn, shownText, spokenText } from "../fixtures/code-input";
+import { readFileSync } from "node:fs";
 import assert from "node:assert/strict";
 import { after, afterEach, before, test } from "node:test";
 import { createRef } from "react";
@@ -163,7 +165,9 @@ for (const locale of ["en", "ko"] as const) {
       const role = kind === "passkey-cancelled" || kind === "provider-denied" || kind === "rate-limited" ? "status" : "alert";
       const feedback = ui.within(body).getByRole(role);
       assert.equal(result.container.querySelector("[data-authentication-provider-locale]")?.getAttribute("data-authentication-provider-locale"), locale);
-      assert.equal(feedback.textContent?.trim(), messages.AuthPhase.failures[kind], "untranslated AuthPhase uses canonical English under either selected locale");
+      // Read as assistive technology reads it, and as shown: Arc's code-field message holds the copy once for each.
+      assert.equal(spokenText(feedback).trim(), messages.AuthPhase.failures[kind], "untranslated AuthPhase uses canonical English under either selected locale");
+      assert.equal(shownText(feedback).trim(), messages.AuthPhase.failures[kind], "the message is shown once");
       assert.equal(ui.within(body).queryAllByRole(role).length, 1, "feedback is not duplicated");
       if (kind === "rate-limited") {
         assert.equal(feedback.hasAttribute("data-rate-limit-status"), true);
@@ -185,26 +189,47 @@ for (const locale of ["en", "ko"] as const) {
   }
 }
 
-test("rejected code keeps neutral slot feedback and a content-sized readable message", async () => {
+test("rejected code keeps the six cells, marks them, and shows one neutral, readable message under them", async () => {
   const result = renderStudy({ initialPhase: "email-code" });
   await preview(result, "invalid-code");
   const body = current(result.container);
   assert.ok(body.classList.contains("[font-family:system-ui]"), "approved typography belongs to the shared view, not only its study shell");
-  const group = body.querySelector<HTMLElement>('[data-slot="input-otp-group"]');
-  assert.ok(group, "the same six-slot OTP group remains in place");
-  assert.ok(group.classList.contains("has-aria-invalid:ring-0"), "invalid input cannot add a red group rectangle");
-  assert.ok(group.classList.contains("dark:has-aria-invalid:ring-0"), "the group override also covers dark mode");
-  const feedback = ui.within(body).getByRole("alert").closest("p")!;
-  for (const token of ["my-2", "text-[13px]", "leading-5", "text-neutral-200"]) {
-    assert.ok(feedback.classList.contains(token), `feedback preserves readable spacing and tone: ${token}`);
-  }
+  // The approved sign-in step uses Arc's code input: six cells in one labelled group, with its own message row.
+  const cells = codeCellsIn(body);
+  assert.equal(cells.length, 6, "the same six code cells remain in place");
+  assert.ok(cells.every((cell) => cell.getAttribute("aria-invalid") === "true"), "every cell is marked rejected");
+  const group = cells[0].closest<HTMLElement>('[role="group"]');
+  assert.ok(group && cells.every((cell) => group.contains(cell)) && group.getAttribute("data-invalid") === "true");
+  const feedback = ui.within(body).getByRole("alert");
+  assert.equal(spokenText(feedback).trim(), messages.AuthPhase.failures["invalid-code"]);
+  const codeField = group.closest<HTMLElement>("[data-email-code-field]");
+  assert.ok(codeField && codeField.contains(feedback), "the message sits with the cells, in the code field");
+  // Formatting. CSS modules are not loaded in these tests, so the message's rule is read from Arc's stylesheet and its
+  // tokens are followed to their values.
+  const arcCss = readFileSync(new URL("../../src/components/arc/otp-input/otp-input.module.css", import.meta.url), "utf8");
+  const rule = (selector: string) => {
+    const found = [...arcCss.matchAll(/([^{}]+)\{([^}]*)\}/g)].find(([, selectors]) => selectors.split(",").some((part) => part.trim() === selector));
+    assert.ok(found, `Arc's stylesheet has a ${selector} rule`);
+    return found[2];
+  };
+  const message = rule(".error");
+  assert.match(message, /padding-top:\s*8px/, "the message keeps its space below the cells");
+  assert.match(message, /font-size:\s*var\(--text-xs\)/);
+  assert.match(message, /line-height:\s*var\(--leading-body\)/);
+  assert.match(arcCss, /\.error\s*\{\s*color:\s*var\(--danger\)/, "the message takes Arc's danger role");
+  assert.match(readFileSync(new URL("../../node_modules/tailwindcss/theme.css", import.meta.url), "utf8"), /--text-xs:\s*0\.75rem;/, "--text-xs is 12px");
+  assert.ok(codeField.classList.contains("[--leading-body:1.25rem]"), "the code field sets the message's line height (the token layer has none)");
+  // Neutral: Arc's danger role (the rejected cells, ring and message) resolves to the current text colour and is not
+  // redefined anywhere else (light or dark), so a rejected code adds no red.
+  const globals = readFileSync(new URL("../../src/styles/globals.css", import.meta.url), "utf8");
+  assert.deepEqual(globals.match(/--danger:[^;]*;/g), ["--danger: currentColor;"]);
 });
 
 test("wrong code remains editable and a corrected code can verify without resending", async () => {
   const result = renderStudy({ initialPhase: "email-code" });
   ui.fireEvent.change(field(result.container), { target: { value: "ZZZZZ" } });
   await preview(result, "invalid-code");
-  assert.equal(field(result.container).value, "ZZZZZ");
+  assert.equal(codeIn(current(result.container)), "ZZZZZ");
   assert.ok(!field(result.container).disabled, "wrong code remains editable");
   assert.ok(action(result.container, "submit").disabled, "partial codes cannot verify");
   ui.fireEvent.change(field(result.container), { target: { value: "A1B2C3" } });
@@ -217,7 +242,7 @@ for (const kind of ["expired-code", "attempts-exhausted"] as const) {
     const result = renderStudy({ initialPhase: "email-code" });
     ui.fireEvent.change(field(result.container), { target: { value: "A1B2C" } });
     await preview(result, kind);
-    assert.equal(field(result.container).value, "A1B2C", "preview preserves the existing code");
+    assert.equal(codeIn(current(result.container)), "A1B2C", "preview preserves the existing code");
     assert.ok(action(result.container, "submit").disabled);
     ui.fireEvent.change(field(result.container), { target: { value: "A1B2C3" } });
     submit(result.container);
@@ -227,7 +252,7 @@ for (const kind of ["expired-code", "attempts-exhausted"] as const) {
     ui.fireEvent.click(action(result.container, "retry"));
     await ui.waitFor(() => assert.equal(result.failures.at(-1), null));
     await ui.waitFor(() => assert.ok(!field(result.container).disabled));
-    assert.equal(field(result.container).value, "", "only a fresh resend clears the old code");
+    assert.equal(codeIn(current(result.container)), "", "only a fresh resend clears the old code");
     assert.ok(action(result.container, "submit").disabled, "a new complete code is required");
     assert.ok(action(result.container, "retry").disabled, "fresh resend starts its existing cooldown");
   });
@@ -253,7 +278,7 @@ test("rate limit uses the same thirty-second deadline for verify and resend, wit
     ui.act(() => tick());
     assert.ok(!action(result.container, "submit").disabled);
     assert.ok(!action(result.container, "retry").disabled);
-    assert.equal(field(result.container).value, "A1B2C3");
+    assert.equal(codeIn(current(result.container)), "A1B2C3");
     await settle();
     assert.equal(current(result.container).dataset.accountPhase, "email-code", "unlock does not auto-verify retained code");
     submit(result.container);
@@ -270,7 +295,7 @@ for (const kind of ["network", "timeout", "unavailable"] as const) {
     ui.act(() => result.navigationRef.current?.preview("email-code"));
     ui.fireEvent.change(field(result.container), { target: { value: "A1B2C" } });
     await preview(result, kind);
-    assert.equal(field(result.container).value, "A1B2C");
+    assert.equal(codeIn(current(result.container)), "A1B2C");
     assert.match(current(result.container).textContent ?? "", /fixture\+member@example\.com/);
     assert.ok(!field(result.container).disabled, "retry can edit the retained partial code");
     assert.ok(action(result.container, "submit").disabled, "partial input is not a request");

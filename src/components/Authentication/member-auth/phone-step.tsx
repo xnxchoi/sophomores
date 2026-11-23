@@ -86,7 +86,7 @@ export function MemberPhoneStep({
     <div data-member-phone-step="" className="[font-family:system-ui] [&_section]:!px-0 [&_section]:!pt-0 [&_section]:!pb-0 [&>section]:!px-0 [&>section]:!pt-0 [&>section]:!pb-0">
       {recoveryRequired && <div data-member-phone-recovery="" className="space-y-5">
         <VerificationTrayTitle><Heading id="member-phone-recovery-heading" tabIndex={-1} className="mt-0 mb-2 text-center text-[24px] leading-[30px] tracking-[-0.035em] sm:text-[24px]">{t("signInAgain")}</Heading></VerificationTrayTitle>
-        <p className="text-center text-sm leading-6 text-neutral-400">{t("continueRegistrationAfterSigningIn")}</p>
+        <p className="text-center text-sm leading-6 text-muted-foreground">{t("continueRegistrationAfterSigningIn")}</p>
         <AccountPrimaryButton type="button" disabled={working} onClick={onRecover}>{t("signInAgain")}</AccountPrimaryButton>
       </div>}
       <div hidden={recoveryRequired} inert={recoveryRequired}>
@@ -130,7 +130,7 @@ export function MemberPhoneStep({
             <AccountTextButton className="mx-auto flex px-3 no-underline hover:underline" type="button" disabled={working} onClick={() => { setSuppressResetFocus(false); setExpired(false); void controller.current?.reset(); }}>{t("useADifferentPhone")}</AccountTextButton>
             <p role="status" className="sr-only">{busy ? t("finishingRegistration") : ""}</p>
           </div>}
-          registrationFeedback={<div data-member-phone-feedback="" className="min-h-5 text-[13px] leading-5 text-neutral-300" aria-live="polite">{feedback && <p role="alert" className="m-0">{feedback}</p>}</div>}
+          registrationFeedback={<div data-member-phone-feedback="" className="min-h-5 text-[13px] leading-5 text-muted-foreground" aria-live="polite">{feedback && <p role="alert" className="m-0">{feedback}</p>}</div>}
         />
       </VerificationProvider>
       </div>

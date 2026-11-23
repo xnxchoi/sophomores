@@ -18,10 +18,10 @@ export function StudyChoiceAction({
       type="button"
       data-composition-choice-tone={tone}
       className={cn(
-        "flex h-13 w-full min-w-0 items-center justify-center rounded-[14px] border px-5 text-[15px] font-medium tracking-[-0.01em] transition-[background-color,border-color,color,transform] duration-200 ease-out focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white active:scale-[0.985]",
+        "flex h-13 w-full min-w-0 items-center justify-center rounded-[14px] border px-5 text-[15px] font-medium tracking-[-0.01em] transition-[background-color,border-color,color,transform] duration-200 ease-out focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-foreground active:scale-[0.985]",
         tone === "primary"
-          ? "border-transparent bg-[#efefed] text-neutral-950 shadow-[0_1px_2px_#00000026] hover:bg-white"
-          : "border-white/15 bg-white/5 text-neutral-100 shadow-[inset_0_1px_0_#ffffff08] hover:bg-white/10 active:bg-white/15",
+          ? "border-transparent bg-foreground text-background hover:bg-foreground/90"
+          : "border-border bg-transparent text-foreground hover:bg-muted active:bg-muted",
         className
       )}
       {...props}
@@ -37,7 +37,7 @@ export function StudyPrimaryAction({
     <button
       type="button"
       className={cn(
-        "flex h-12 min-w-0 items-center justify-center rounded-xl bg-[#e8e8e6] px-5 text-[15px] font-medium text-neutral-950 shadow-[inset_0_1px_0_#ffffff60,0_1px_2px_#00000026] transition-[background-color,color,opacity,transform] duration-200 ease-out hover:bg-[#f5f5f3] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-40 aria-busy:cursor-wait aria-busy:opacity-80",
+        "flex h-12 min-w-0 items-center justify-center rounded-xl bg-foreground px-5 text-[15px] font-medium text-background transition-[background-color,color,opacity,transform] duration-200 ease-out hover:bg-foreground/90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-foreground active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-40 aria-busy:cursor-wait aria-busy:opacity-80",
         className
       )}
       {...props}
@@ -53,7 +53,7 @@ export function StudyTextAction({
     <button
       type="button"
       className={cn(
-        "flex min-h-11 min-w-0 items-center justify-center rounded-[14px] px-4 text-[15px] font-medium text-neutral-200 transition-[background-color,color,transform] duration-200 ease-out hover:bg-white/5 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white active:scale-[0.98]",
+        "flex min-h-11 min-w-0 items-center justify-center rounded-[14px] px-4 text-[15px] font-medium text-foreground transition-[background-color,color,transform] duration-200 ease-out hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-foreground active:scale-[0.98]",
         className
       )}
       {...props}
@@ -70,12 +70,12 @@ export function StudyIconAction({
     <button
       type="button"
       className={cn(
-        "group flex size-11 shrink-0 items-center justify-center rounded-full text-neutral-400 transition-colors duration-200 ease-out hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white",
+        "group flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors duration-200 ease-out hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground",
         className
       )}
       {...props}
     >
-      <span className="flex size-7 items-center justify-center rounded-full bg-white/5 transition-colors duration-200 ease-out group-hover:bg-white/9">
+      <span className="flex size-7 items-center justify-center rounded-full bg-transparent transition-colors duration-200 ease-out group-hover:bg-muted">
         {children}
       </span>
     </button>
@@ -90,7 +90,7 @@ export function StudyBackAction({
     <button
       type="button"
       className={cn(
-        "flex size-11 items-center justify-center rounded-full text-neutral-400 transition-[background-color,color,transform] duration-200 ease-out hover:bg-white/5 hover:text-white focus-visible:outline-2 focus-visible:outline-white active:scale-95",
+        "flex size-11 items-center justify-center rounded-full text-muted-foreground transition-[background-color,color,transform] duration-200 ease-out hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-foreground active:scale-95",
         className
       )}
       {...props}
@@ -115,7 +115,7 @@ export function StudyLocale({
         onChange={(event) =>
           onChange(event.target.value === "ko" ? "ko" : "en")
         }
-        className="min-h-11 appearance-none rounded-lg border-0 bg-transparent py-2 pr-7 pl-3 text-[11px] text-neutral-400 [color-scheme:dark] shadow-none transition-colors duration-200 ease-out hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+        className="min-h-11 appearance-none rounded-lg border-0 bg-transparent py-2 pr-7 pl-3 text-[11px] text-muted-foreground shadow-none transition-colors duration-200 ease-out hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
       >
         <option value="en">English</option>
         <option value="ko">한국어</option>
@@ -124,7 +124,7 @@ export function StudyLocale({
         aria-hidden="true"
         size={12}
         strokeWidth={1.5}
-        className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-neutral-500"
+        className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground"
       />
     </div>
   );
@@ -140,14 +140,14 @@ export function StudyField({
     <div>
       <label
         htmlFor={id}
-        className="mb-2 block text-[13px] leading-[18px] font-medium text-neutral-400"
+        className="mb-2 block text-[13px] leading-[18px] font-medium text-muted-foreground"
       >
         {label}
       </label>
       <input
         id={id}
         className={cn(
-          "!m-0 !h-13 !w-full !rounded-xl !border !border-solid !border-white/12 !bg-black/10 !px-4 !py-0 !text-base !font-normal !tracking-normal !text-neutral-100 !shadow-[inset_0_1px_3px_#00000018] transition-[border-color,box-shadow,opacity] duration-200 ease-out focus:!border-white/45 focus:!shadow-[inset_0_0_0_1px_#ffffff24] focus:!outline-none disabled:opacity-60",
+          "!m-0 !h-13 !w-full !rounded-xl !border !border-solid !border-border !bg-transparent !px-4 !py-0 !text-base !font-normal !tracking-normal !text-foreground transition-[border-color,box-shadow,opacity] duration-200 ease-out focus:!border-foreground focus:!outline-none disabled:opacity-60",
           className
         )}
         {...props}
@@ -218,7 +218,7 @@ export function StudyCodeField({
         <InputOTPGroup
           aria-hidden="true"
           className={cn(
-            "grid w-full min-w-0 grid-cols-6 gap-1 has-aria-invalid:border-transparent has-aria-invalid:ring-0 min-[400px]:gap-2 dark:has-aria-invalid:ring-0 [&_[data-slot=input-otp-caret]]:bg-neutral-100"
+            "grid w-full min-w-0 grid-cols-6 gap-1 has-aria-invalid:border-transparent has-aria-invalid:ring-0 min-[400px]:gap-2 dark:has-aria-invalid:ring-0 [&_[data-slot=input-otp-caret]]:bg-foreground"
           )}
         >
           {Array.from({ length: 6 }, (_, index) => (
@@ -249,7 +249,7 @@ function StudyCodeSlot({
       index={index}
       caretPaused={caretPaused}
       aria-invalid={invalid}
-      className="h-13 w-full min-w-0 rounded-[10px] border border-white/15 bg-black/10 [font-family:system-ui] text-[22px] font-medium text-neutral-100 tabular-nums shadow-[inset_0_1px_3px_#00000018] transition-[border-color,background-color,box-shadow,color] duration-200 ease-out first:rounded-[10px] last:rounded-[10px] aria-invalid:border-white/50 aria-invalid:bg-white/4 data-[active=true]:border-white/60 data-[active=true]:ring-1 data-[active=true]:ring-white/20 data-[active=true]:aria-invalid:border-white/70 data-[active=true]:aria-invalid:ring-white/20 dark:bg-black/10 dark:data-[active=true]:aria-invalid:ring-white/20"
+      className="h-13 w-full min-w-0 rounded-[10px] border border-border bg-transparent [font-family:system-ui] text-[22px] font-medium text-foreground tabular-nums transition-[border-color,background-color,box-shadow,color] duration-200 ease-out first:rounded-[10px] last:rounded-[10px] aria-invalid:border-foreground aria-invalid:bg-muted data-[active=true]:border-foreground data-[active=true]:aria-invalid:border-foreground"
     />
   );
 }

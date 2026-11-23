@@ -42,6 +42,7 @@ import {
 import { TicketClamp } from "@/lib/tickets/tickets";
 import { subscribeVisibility } from "@/utils/browser/visibility";
 import { MemberAccountFlow } from "@/components/Authentication/member-auth/account-study";
+import { ArcRoles } from "@/components/commerce/arc-roles";
 import { PortOneCheckoutButton } from "./portone-checkout";
 import type { PortOneCatalogue } from "@/lib/tickets/portone/config";
 
@@ -626,7 +627,7 @@ export function TicketSelection({
 
   return (
     <>
-      <main className="min-h-svh bg-neutral-950 px-6 py-8 [font-family:system-ui] text-neutral-100 sm:px-10">
+      <main className="dark min-h-svh bg-neutral-950 px-6 py-8 [font-family:system-ui] text-neutral-100 sm:px-10">
         <header className="mx-auto flex max-w-[960px] items-center justify-between gap-6">
           <BrandMark asChild>
             {/* Match the approved customer-account header mark exactly. */}
@@ -671,15 +672,17 @@ export function TicketSelection({
             inert={eligible}
             className={cn("mx-auto max-w-[440px]", eligible && "hidden")}
           >
-            <MemberAccountFlow
-              client={client}
-              flow="signup"
-              presentation="ticket-checkout"
-              headingId={quantityId + "-account"}
-              initialCapabilities={initialCapabilities}
-              onSnapshot={updateAccount}
-              onVerifiedFocus={captureVerifiedFocus}
-            />
+            <ArcRoles>
+              <MemberAccountFlow
+                client={client}
+                flow="signup"
+                presentation="ticket-checkout"
+                headingId={quantityId + "-account"}
+                initialCapabilities={initialCapabilities}
+                onSnapshot={updateAccount}
+                onVerifiedFocus={captureVerifiedFocus}
+              />
+            </ArcRoles>
             {storageBlocked && (
               <p
                 role="status"

@@ -54,7 +54,7 @@ export function VerificationStatus({
       <p
         role="status"
         aria-live="polite"
-        className="flex min-w-0 items-center gap-2 text-xs leading-5 text-neutral-400"
+        className="flex min-w-0 items-center gap-2 text-xs leading-5 text-muted-foreground"
       >
         <span
           aria-hidden="true"
@@ -65,11 +65,11 @@ export function VerificationStatus({
             animate={{ rotate: indicator === "checking" ? 360 : 0 }}
             transition={{ duration: indicator === "checking" ? 1 : 0, ease: "linear", repeat: indicator === "checking" ? Infinity : 0 }}
             className={cn(
-              "inline-flex size-3 items-center justify-center rounded-full border border-neutral-500",
+              "inline-flex size-3 items-center justify-center rounded-full border border-muted-foreground",
               indicator === "checking" &&
-                "border-neutral-300 border-r-transparent",
+                "border-foreground border-r-transparent",
               indicator === "verified" &&
-                "border-neutral-100 bg-neutral-100 text-[8px] text-neutral-950"
+                "border-foreground bg-foreground text-[8px] text-background"
             )}
           >
             {indicator === "verified" ? "✓" : null}

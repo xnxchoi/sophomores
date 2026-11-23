@@ -66,11 +66,11 @@ function EnabledCommerceAccountGate({ initialCapabilities, children, inlineEmail
   const content = <>
     {progress ? <div hidden={eligible} inert={eligible} className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,26rem)] xl:grid-cols-[minmax(0,1fr)_28rem] lg:gap-x-16 xl:gap-x-24">
       {accountIntroduction != null && <div className="min-w-0 lg:sticky lg:top-28 lg:col-start-2 lg:row-start-1 lg:self-start">{accountIntroduction}</div>}
-      {/* The account flow (Auth) hard-codes dark-surface colours, so it sits on a dark surface in both themes, as the older layout does. */}
-      <div className="dark min-w-0 rounded-xl border border-border bg-background text-foreground lg:col-start-1 lg:row-start-1">{account}</div>
+      {/* The account step follows the page theme and sits flat in the column, like the sections after it. */}
+      <div className="min-w-0 lg:col-start-1 lg:row-start-1">{account}</div>
     </div> : <div hidden={eligible} inert={eligible}>
       {accountIntroduction}
-      <div className="dark min-w-0 rounded-2xl border border-border bg-background text-foreground shadow-sm">{account}</div>
+      <div className="min-w-0">{account}</div>
     </div>}
     {started && <div hidden={!eligible} inert={!eligible}><CommerceSession verified={eligible} onSessionExpired={onSessionExpired} identityCheckDetails={identityCheckDetails} progress={progress}>{children}</CommerceSession></div>}
   </>;

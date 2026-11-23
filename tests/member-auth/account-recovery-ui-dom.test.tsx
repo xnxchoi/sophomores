@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { after, afterEach, before, test } from "node:test";
 import { JSDOM } from "jsdom";
 import type { MemberClient, MemberStatus } from "@/lib/member-auth/client";
+import { enteredCode, firstCodeCell } from "../fixtures/code-input";
 
 let MemberAuthProviders: typeof import("./fixtures/providers").MemberAuthProviders;
 let dom: JSDOM;
@@ -261,13 +262,13 @@ test("returning from recovery preserves the email code phase, input and resend d
   ui.fireEvent.submit(ui.screen.getByLabelText("Email address").closest("form")!);
   ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Send sign-in code" }));
   await ui.waitFor(() => assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code)));
-  ui.fireEvent.change(ui.screen.getByLabelText(messages.AuthPhase.code), { target: { value: "A1B" } });
+  ui.fireEvent.change(firstCodeCell(ui.screen), { target: { value: "A1B" } });
   const beforeRecovery = [...c.calls];
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Can’t sign in?" }));
   await requestForm();
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Back to sign in" }));
   await ui.waitFor(() => assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code)));
-  assert.equal((ui.screen.getByLabelText(messages.AuthPhase.code) as HTMLInputElement).value, "A1B");
+  assert.equal(enteredCode(ui.screen), "A1B");
   assert.match(document.body.textContent!, /original@example.com/);
   const resend = document.querySelector<HTMLButtonElement>('button[data-phase-action="retry"]');
   assert.ok(resend, "the existing retry action survives recovery regardless of its countdown label");

@@ -2,6 +2,7 @@ import messages from "../../messages/en.json";
 import assert from "node:assert/strict";
 import { after, afterEach, before, test } from "node:test";
 import { JSDOM } from "jsdom";
+import { codeDescription, firstCodeCell } from "../fixtures/code-input";
 import {
   MemberAuthActionError,
   type MemberClient,
@@ -212,9 +213,7 @@ for (const kind of [
     await ui.waitFor(() =>
       assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code))
     );
-    const input = ui.screen.getByLabelText(
-      messages.AuthPhase.code
-    ) as HTMLInputElement;
+    const input = firstCodeCell(ui.screen);
     assert.equal(
       (
         ui.screen.getByRole("button", {
@@ -242,9 +241,10 @@ for (const kind of [
       input.disabled,
       kind === "expired-code" || kind === "attempts-exhausted"
     );
+    // Arc's code input marks a rejected code on its cells and carries no aria-invalid otherwise.
     assert.equal(
-      input.getAttribute("aria-invalid"),
-      kind === "invalid-code" ? "true" : "false"
+      input.getAttribute("aria-invalid") === "true",
+      kind === "invalid-code"
     );
     assert.equal(document.querySelector("[data-phase-completion]"), null);
     assert.equal(document.querySelector("[data-member-phone-step]"), null);
@@ -283,9 +283,7 @@ for (const recovery of ["expired-code", "attempts-exhausted"] as const) {
     await ui.waitFor(() =>
       assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code))
     );
-    const input = ui.screen.getByLabelText(
-      messages.AuthPhase.code
-    ) as HTMLInputElement;
+    const input = firstCodeCell(ui.screen);
     ui.fireEvent.change(input, { target: { value: "A1B2C3" } });
     await ui.waitFor(() => assert.equal(input.disabled, true));
     assert.equal(ui.screen.queryByRole("button", { name: "Refresh account status" }), null);
@@ -316,8 +314,7 @@ for (const recovery of ["expired-code", "attempts-exhausted"] as const) {
       true
     );
     assert.match(
-      document.getElementById(input.getAttribute("aria-describedby")!)!
-        .textContent!,
+      codeDescription(ui.screen),
       /new code/i
     );
     let rejectResend!: (error: Error) => void;
@@ -345,8 +342,7 @@ for (const recovery of ["expired-code", "attempts-exhausted"] as const) {
       true
     );
     assert.match(
-      document.getElementById(input.getAttribute("aria-describedby")!)!
-        .textContent!,
+      codeDescription(ui.screen),
       /new code/i
     );
     assert.match(
@@ -388,9 +384,7 @@ test("verification cooldown survives hidden time without unrelated status refres
   await ui.waitFor(() =>
     assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code))
   );
-  const input = ui.screen.getByLabelText(
-    messages.AuthPhase.code
-  ) as HTMLInputElement;
+  const input = firstCodeCell(ui.screen);
   ui.fireEvent.change(input, { target: { value: "A1B2C3" } });
   await ui.waitFor(() => {
     assert.ok(ui.screen.queryByRole("button", { name: messages.AuthPhase.verifying }));
@@ -399,9 +393,9 @@ test("verification cooldown survives hidden time without unrelated status refres
   await ui.act(async () => settleVerification());
   await ui.waitFor(() => {
     const verify = ui.screen.getByRole("button", { name: messages.AuthPhase.verify });
-    assert.equal(verify.getAttribute("aria-busy"), "false");
+    assert.notEqual(verify.getAttribute("aria-busy"), "true"); // Arc\'s button carries aria-busy only while busy
     assert.equal(input.disabled, true, "settled rate limit owns the cooldown lock");
-    assert.ok(document.getElementById(input.getAttribute("aria-describedby")!)!.textContent!.includes(messages.AuthPhase.retryIn));
+    assert.ok(codeDescription(ui.screen).includes(messages.AuthPhase.retryIn));
   });
   now += 3_000;
   await ui.act(async () => {
@@ -416,9 +410,9 @@ test("verification cooldown survives hidden time without unrelated status refres
   await ui.act(async () => settleVerification());
   await ui.waitFor(() => {
     const verify = ui.screen.getByRole("button", { name: messages.AuthPhase.verify });
-    assert.equal(verify.getAttribute("aria-busy"), "false");
+    assert.notEqual(verify.getAttribute("aria-busy"), "true"); // Arc\'s button carries aria-busy only while busy
     assert.equal(input.disabled, true, "settled rate limit owns the cooldown lock");
-    assert.ok(document.getElementById(input.getAttribute("aria-describedby")!)!.textContent!.includes(messages.AuthPhase.retryIn));
+    assert.ok(codeDescription(ui.screen).includes(messages.AuthPhase.retryIn));
   });
   assert.equal(ui.screen.queryByRole("button", { name: "Refresh account status" }), null);
   assert.equal(input.disabled, true);
@@ -431,8 +425,7 @@ test("verification cooldown survives hidden time without unrelated status refres
     true
   );
   assert.ok(
-    document.getElementById(input.getAttribute("aria-describedby")!)!
-      .textContent!.includes(messages.AuthPhase.retryIn)
+    codeDescription(ui.screen).includes(messages.AuthPhase.retryIn)
   );
   Object.defineProperty(document, "visibilityState", {
     configurable: true,
@@ -463,7 +456,7 @@ test("verification cooldown survives hidden time without unrelated status refres
     assert.equal(c.calls.filter(([action]) => action === "verify").length, 3)
   );
   await ui.waitFor(() => {
-    assert.equal(ui.screen.getByRole("button", { name: messages.AuthPhase.verify }).getAttribute("aria-busy"), "false");
+    assert.notEqual(ui.screen.getByRole("button", { name: messages.AuthPhase.verify }).getAttribute("aria-busy"), "true"); // Arc\'s button carries aria-busy only while busy
   });
   Reflect.deleteProperty(document, "visibilityState");
 });

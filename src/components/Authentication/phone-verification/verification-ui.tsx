@@ -25,7 +25,7 @@ export const Modal = ({
   return (
     <motion.div
       className={cn(
-        "fixed inset-x-0 bottom-3 z-50 mx-auto max-h-[calc(100dvh-1.5rem)] w-[calc(100%-1.5rem)] max-w-[440px] !touch-pan-y [scrollbar-width:thin] [scrollbar-color:#525252_transparent] [scrollbar-gutter:stable] overflow-y-auto overscroll-contain rounded-3xl bg-teaser-card/95 p-0 text-white shadow-[0_24px_64px_-24px_#000000b3,inset_0_1px_0_#ffffff12] ring-1 ring-white/12 backdrop-blur-2xl outline-none after:!hidden sm:bottom-6 sm:max-h-[calc(100dvh-3rem)]",
+        "fixed inset-x-0 bottom-3 z-50 mx-auto max-h-[calc(100dvh-1.5rem)] w-[calc(100%-1.5rem)] max-w-[440px] !touch-pan-y [scrollbar-width:thin] [scrollbar-color:var(--border)_transparent] [scrollbar-gutter:stable] overflow-y-auto overscroll-contain rounded-3xl bg-background/95 p-0 text-foreground shadow-2xl ring-1 backdrop-blur-2xl outline-none after:!hidden sm:bottom-6 sm:max-h-[calc(100dvh-3rem)]",
         className
       )}
       {...props}
@@ -42,7 +42,7 @@ export const Bar = ({
   return (
     <div
       className={cn(
-        "sticky top-0 z-10 flex shrink-0 items-center justify-between bg-teaser-card/95 px-6 pt-4 pb-1 backdrop-blur-xl sm:px-7",
+        "sticky top-0 z-10 flex shrink-0 items-center justify-between bg-background/95 px-6 pt-4 pb-1 backdrop-blur-xl sm:px-7",
         className
       )}
       {...props}
@@ -60,7 +60,7 @@ export const Close = ({
     <button
       type="button"
       className={cn(
-        "relative flex size-11 items-center justify-center rounded-lg text-2xl text-neutral-400 transition-colors duration-200 ease-out hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white",
+        "relative flex size-11 items-center justify-center rounded-lg text-2xl text-muted-foreground transition-colors duration-200 ease-out hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground",
         className
       )}
       {...props}
@@ -94,7 +94,7 @@ export const Heading = ({
   return (
     <Component
       className={cn(
-        "mt-3 mb-3 text-left text-[30px] leading-[1.12] font-semibold tracking-[-0.045em] text-white outline-none sm:text-[34px]",
+        "mt-3 mb-3 text-left text-[30px] leading-[1.12] font-semibold tracking-[-0.045em] text-foreground outline-none sm:text-[34px]",
         className
       )}
       {...props}
@@ -111,7 +111,7 @@ export const Description = ({
   return (
     <p
       className={cn(
-        "mb-5 max-w-[38ch] text-left text-sm leading-relaxed break-keep text-neutral-400",
+        "mb-5 max-w-[38ch] text-left text-sm leading-relaxed break-keep text-muted-foreground",
         className
       )}
       {...props}
@@ -124,7 +124,7 @@ export function Note({ className, ...props }: ComponentProps<"p">) {
   return (
     <p
       className={cn(
-        "my-3 text-xs leading-relaxed break-keep text-neutral-400",
+        "my-3 text-xs leading-relaxed break-keep text-muted-foreground",
         className
       )}
       {...props}
@@ -138,7 +138,7 @@ export function PrimaryButton({
   return (
     <button
       className={cn(
-        "relative mt-5 flex min-h-13 w-full items-center justify-between gap-3 rounded-lg bg-white px-5 py-3.5 text-sm font-semibold text-teaser-card shadow-[0_1px_2px_#00000050,inset_0_1px_0_#ffffff80] transition-[background-color,transform,box-shadow] duration-200 ease-out hover:bg-neutral-200 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-neutral-500",
+        "relative mt-5 flex min-h-13 w-full items-center justify-between gap-3 rounded-lg bg-foreground px-5 py-3.5 text-sm font-semibold text-background transition-[background-color,transform,box-shadow] duration-200 ease-out hover:bg-foreground/90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-foreground active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground",
         className
       )}
       {...props}
@@ -150,7 +150,7 @@ export function PrimaryLink({ className, ...props }: ComponentProps<"a">) {
   return (
     <a
       className={cn(
-        "relative mt-5 flex min-h-13 w-full items-center justify-between gap-3 rounded-lg bg-white px-5 py-3.5 text-sm font-semibold text-teaser-card shadow-[0_1px_2px_#00000050,inset_0_1px_0_#ffffff80] transition-[background-color,transform,box-shadow] duration-200 ease-out hover:bg-neutral-200 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-neutral-500",
+        "relative mt-5 flex min-h-13 w-full items-center justify-between gap-3 rounded-lg bg-foreground px-5 py-3.5 text-sm font-semibold text-background transition-[background-color,transform,box-shadow] duration-200 ease-out hover:bg-foreground/90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-foreground active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground",
         className
       )}
       {...props}
@@ -164,7 +164,7 @@ export function SecondaryButton({
   return (
     <button
       className={cn(
-        "relative my-3 flex min-h-12 w-full items-center justify-center gap-2 rounded-lg border border-white/15 bg-white/5 px-4 py-3 text-sm font-medium text-white shadow-[inset_0_1px_0_#ffffff08] transition-colors duration-200 ease-out hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white active:bg-white/15 disabled:opacity-50",
+        "relative my-3 flex min-h-12 w-full items-center justify-center gap-2 rounded-lg border border-border bg-transparent px-4 py-3 text-sm font-medium text-foreground transition-colors duration-200 ease-out hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground active:bg-muted disabled:opacity-50",
         className
       )}
       {...props}
@@ -175,7 +175,7 @@ export function TextButton({ className, ...props }: ComponentProps<"button">) {
   return (
     <button
       className={cn(
-        "relative flex min-h-11 items-center justify-center px-1 text-xs text-neutral-400 underline-offset-4 transition-colors duration-200 ease-out hover:text-white hover:underline focus-visible:outline-2 focus-visible:outline-white",
+        "relative flex min-h-11 items-center justify-center px-1 text-xs text-muted-foreground underline-offset-4 transition-colors duration-200 ease-out hover:text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-foreground",
         className
       )}
       {...props}
@@ -194,7 +194,7 @@ export function VerificationDetails({
   const id = useId();
   return (
     <div
-      className="mt-4 border-t border-white/10 text-neutral-400"
+      className="mt-4 border-t border-border text-muted-foreground"
       data-verification-details=""
     >
       <button
@@ -202,7 +202,7 @@ export function VerificationDetails({
         aria-expanded={open}
         aria-controls={id}
         onClick={() => setOpen((value) => !value)}
-        className="flex h-11 w-full items-center justify-between text-left text-[11px] font-medium transition-colors duration-200 ease-out hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+        className="flex h-11 w-full items-center justify-between text-left text-[11px] font-medium transition-colors duration-200 ease-out hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
       >
         {label}
         <motion.span
@@ -232,7 +232,7 @@ export function VerificationBoundary({ children }: { children: ReactNode }) {
   return (
     <p
       data-verification-boundary=""
-      className="mt-4 border-t border-white/10 pt-4 text-left text-[11px] leading-relaxed text-neutral-400"
+      className="mt-4 border-t border-border pt-4 text-left text-[11px] leading-relaxed text-muted-foreground"
     >
       {children}
     </p>
@@ -256,7 +256,7 @@ export function VerificationMark({
         [0, 1, 2].map((index) => (
           <motion.span
             key={index}
-            className="size-1.5 rounded-full bg-white"
+            className="size-1.5 rounded-full bg-foreground"
             animate={{ opacity: [0.25, 1, 0.25], scaleX: [0.8, 1, 0.8] }}
             transition={{
               duration: 1.5,
@@ -274,8 +274,8 @@ export function VerificationMark({
           className={cn(
             "flex size-5 items-center justify-center rounded-full text-sm",
             state === "success"
-              ? "bg-white text-teaser-card"
-              : "bg-white/10 text-neutral-300"
+              ? "bg-foreground text-background"
+              : "bg-muted text-muted-foreground"
           )}
         >
           {state === "success" ? "✓" : "!"}
@@ -326,14 +326,14 @@ function CopyValue({
     <div
       className={cn(
         "min-w-0 px-4 py-3.5",
-        kind === "code" ? "border-t border-white/15 bg-white/3" : ""
+        kind === "code" ? "border-t border-border bg-muted" : ""
       )}
     >
       <div className="mb-2 flex h-12 items-center justify-between gap-3">
         <span
           className={cn(
             "text-[11px] font-medium",
-            kind === "code" ? "text-white" : "text-neutral-400"
+            kind === "code" ? "text-foreground" : "text-muted-foreground"
           )}
         >
           {t(kind === "code" ? "codeLabel" : "recipientLabel")}
@@ -345,12 +345,12 @@ function CopyValue({
           disabled={busy}
           aria-label={t(kind === "code" ? "copyCode" : "copyRecipient")}
           className={cn(
-            "relative flex min-h-11 w-28 shrink-0 items-center justify-center gap-2 rounded-lg px-3 text-xs font-medium whitespace-nowrap transition-colors duration-300 ease-out focus-visible:outline-2 focus-visible:outline-white",
+            "relative flex min-h-11 w-28 shrink-0 items-center justify-center gap-2 rounded-lg px-3 text-xs font-medium whitespace-nowrap transition-colors duration-300 ease-out focus-visible:outline-2 focus-visible:outline-foreground",
             feedback === "copied"
-              ? "bg-white text-teaser-card"
+              ? "bg-foreground text-background"
               : feedback === "failed"
-                ? "bg-white/10 text-neutral-300"
-                : "bg-white/8 text-white hover:bg-white/15"
+                ? "bg-muted text-muted-foreground"
+                : "bg-transparent text-foreground hover:bg-muted"
           )}
           whileTap={{ scale: motionTokens.scale.press }}
           transition={{
@@ -384,7 +384,7 @@ function CopyValue({
       </div>
       <code
         className={cn(
-          "block font-sans tabular-nums leading-relaxed break-all text-white select-all",
+          "block font-sans tabular-nums leading-relaxed break-all text-foreground select-all",
           kind === "code" ? "text-[22px] tracking-[-0.025em]" : "text-sm"
         )}
       >
@@ -408,7 +408,7 @@ function CopyValue({
         transition={{ duration: 0.28, ease: [0.32, 0.72, 0, 1] }}
         className="overflow-hidden"
       >
-        <p className="pt-2 text-[11px] leading-relaxed text-neutral-300">
+        <p className="pt-2 text-[11px] leading-relaxed text-muted-foreground">
           {t("copyFailed")}
         </p>
       </motion.div>
@@ -425,34 +425,34 @@ export function ChallengeCard({
 }) {
   const t = useTranslations("Verification");
   return (
-    <div className="dark my-4 overflow-hidden rounded-lg border border-white/15 bg-black/20 shadow-[inset_0_1px_0_#00000030]">
+    <div className="my-4 overflow-hidden rounded-lg border border-border bg-transparent">
       <div className="min-w-0 px-4 py-3.5">
         <div className="mb-2 flex min-h-11 items-center justify-between gap-3">
-          <span className="text-[11px] font-medium text-neutral-400">{t("recipientLabel")}</span>
+          <span className="text-[11px] font-medium text-muted-foreground">{t("recipientLabel")}</span>
           <CopyButton
             key={`recipient:${recipient}`}
             value={recipient}
             label={t("copyRecipient")}
-            className="!size-11 !min-h-11 !text-white"
+            className="!size-11 !min-h-11 !text-foreground"
             iconOnly
             variant="plain"
           />
         </div>
-        <code className="block font-sans tabular-nums text-sm leading-relaxed wrap-anywhere text-white select-all">{recipient}</code>
+        <code className="block font-sans tabular-nums text-sm leading-relaxed wrap-anywhere text-foreground select-all">{recipient}</code>
       </div>
-      <div className="min-w-0 border-t border-white/15 bg-white/3 px-4 py-3.5">
+      <div className="min-w-0 border-t border-border bg-muted px-4 py-3.5">
         <div className="mb-2 flex min-h-11 items-center justify-between gap-3">
-          <span className="text-[11px] font-medium text-white">{t("codeLabel")}</span>
+          <span className="text-[11px] font-medium text-foreground">{t("codeLabel")}</span>
           <CopyButton
             key={`code:${body}`}
             value={body}
             label={t("copyCode")}
-            className="!size-11 !min-h-11 !text-white"
+            className="!size-11 !min-h-11 !text-foreground"
             variant="plain"
             iconOnly
           />
         </div>
-        <code className="block font-sans tabular-nums text-[22px] leading-relaxed tracking-[-0.025em] wrap-anywhere text-white select-all">{body}</code>
+        <code className="block font-sans tabular-nums text-[22px] leading-relaxed tracking-[-0.025em] wrap-anywhere text-foreground select-all">{body}</code>
       </div>
     </div>
   );

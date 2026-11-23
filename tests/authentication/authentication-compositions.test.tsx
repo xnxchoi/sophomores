@@ -1,4 +1,5 @@
 import { AuthenticationMessages } from "../fixtures/authentication-messages";
+import { enteredCode } from "../fixtures/code-input";
 import messages from "../../messages/en.json";
 import { EnglishMessages } from "../fixtures/english-messages";
 import assert from "node:assert/strict";
@@ -239,16 +240,17 @@ test("chooser keeps Welcome without redundant copy and centers consistent primar
           "choices stay icon-free"
         );
       }
-      for (const token of [
-        "border-white/15",
-        "bg-white/5",
-        "shadow-[inset_0_1px_0_#ffffff08]"
-      ]) {
+      // Theme tokens, no white-alpha literals or inner shadows (owner, 22 Nov).
+      for (const token of ["border-border", "bg-transparent"]) {
         assert.ok(
           choices[1].classList.contains(token),
           `secondary action restores ${token}`
         );
       }
+      assert.ok(
+        ![...choices[1].classList].some((name) => name.includes("shadow-[inset")),
+        "secondary action has no inner shadow"
+      );
     } finally {
       server.window.close();
     }
@@ -589,13 +591,16 @@ test("focused fields use one inset-aligned focus treatment rather than a double 
     'input[type="email"]'
   );
   assert.ok(input);
-  for (const token of [
-    "focus:!outline-none",
-    "focus:!border-white/45",
-    "focus:!shadow-[inset_0_0_0_1px_#ffffff24]"
-  ]) {
-    assert.ok(input.classList.contains(token), `field focus requires ${token}`);
-  }
+  // The underlined field (owner, 23 Nov): no ring or box on focus; its line draws instead.
+  assert.ok(input.classList.contains("outline-none"), "field focus requires outline-none");
+  assert.ok(
+    input.nextElementSibling?.classList.contains("peer-focus:scale-x-100"),
+    "focus draws the field's line"
+  );
+  assert.ok(
+    ![...input.classList].some((name) => name.includes("shadow-[inset") || name.includes("ring-")),
+    "no inset shadow or ring doubles the line"
+  );
   assert.ok(
     !input.classList.contains("focus:!outline-2"),
     "focus uses a subtle inset shadow instead of a thick outline"
@@ -711,8 +716,10 @@ test("separate previews keep independent state and Escape only dismisses its foc
 
 test("email code uses a centered intro, left-aligned feedback, a shared column and a wide primary before recovery", async () => {
   const { AccountPhaseStudy } = await import("@/components/Authentication/account-phase-study");
-  const { container } = ui.render(<AccountPhaseStudy flow="login" locale="en" headingId="otp-layout"
-    navigationRef={{ current: null }} initialPhase="email-code" />, { wrapper: EnglishMessages });
+  const { VerificationPresentation } = await import("@/components/Authentication/phone-verification/verification-tray");
+  // In the sign-in sheet (the code step inside a presentation); inline on a page it is left-aligned, checked below.
+  const { container } = ui.render(<VerificationPresentation value="modal"><AccountPhaseStudy flow="login" locale="en" headingId="otp-layout"
+    navigationRef={{ current: null }} initialPhase="email-code" /></VerificationPresentation>, { wrapper: EnglishMessages });
   const intro = container.querySelector<HTMLElement>("[data-phase-intro]");
   assert.ok(intro, "the code view identifies its intro");
   assert.ok(intro.classList.contains("text-center"), "the approved OTP intro stays centered");
@@ -724,10 +731,13 @@ test("email code uses a centered intro, left-aligned feedback, a shared column a
     assert.ok(column.classList.contains(token), `the OTP column retains ${token}`);
   }
   const code = container.querySelector<HTMLInputElement>('input[autocomplete="one-time-code"]')!;
+  const cells = [...container.querySelectorAll<HTMLInputElement>('[data-email-code-field] input')];
+  assert.equal(cells.length, 6);
   const feedbackId = code.getAttribute("aria-describedby");
-  assert.ok(feedbackId, "the OTP input describes its compact feedback area");
+  assert.ok(feedbackId, "the code cells describe the step's compact feedback area");
+  for (const cell of cells) assert.equal(cell.getAttribute("aria-describedby"), feedbackId, "every code cell shares the description");
   const feedback = document.getElementById(feedbackId);
-  assert.ok(feedback && container.contains(feedback));
+  assert.ok(feedback && column.contains(feedback));
   assert.ok(feedback.classList.contains("sr-only"), "empty feedback takes no visible space");
   assert.ok(!feedback.classList.contains("min-h-14"));
   assert.ok(!feedback.classList.contains("text-center"));
@@ -740,12 +750,19 @@ test("email code uses a centered intro, left-aligned feedback, a shared column a
   assert.ok(column.contains(code) && column.contains(verify) && column.contains(resendRow));
   assert.ok(verify.classList.contains("w-full") && !verify.classList.contains("w-fit"));
   assert.ok(verify.compareDocumentPosition(resendRow) & Node.DOCUMENT_POSITION_FOLLOWING);
+  ui.cleanup();
+  const inline = ui.render(<AccountPhaseStudy flow="login" locale="en" headingId="otp-inline"
+    navigationRef={{ current: null }} initialPhase="email-code" />, { wrapper: EnglishMessages });
+  const inlineIntro = inline.container.querySelector<HTMLElement>("[data-phase-intro]");
+  assert.ok(inlineIntro?.classList.contains("text-left"), "inline on a page, the code step is left-aligned like the rest of it");
+  assert.ok(!inlineIntro?.classList.contains("pl-14"), "inline, the intro has no indent for a sheet control");
 });
 
 test("failed unchanged OTP never loops after rerender or locale change", async () => {
   const { AccountPhaseStudy } = await import("@/components/Authentication/account-phase-study");
   const props = { flow: "login" as const, headingId: "otp-stability", navigationRef: { current: null }, initialPhase: "email-code" as const };
   const { container, rerender } = ui.render(<AuthenticationMessages locale="en"><AccountPhaseStudy {...props} locale="en" /></AuthenticationMessages>);
+  // The first cell of Arc's code input takes the whole code.
   const code = container.querySelector<HTMLInputElement>('input[autocomplete="one-time-code"]')!;
   ui.fireEvent.change(code, { target: { value: "000000" } });
   const verify = () => container.querySelector<HTMLButtonElement>('[data-phase-action="submit"]')!;
@@ -758,7 +775,7 @@ test("failed unchanged OTP never loops after rerender or locale change", async (
     assert.ok(!verify().disabled, "rerender does not trigger unchanged failed code");
     await ui.act(async () => { await new Promise((resolve) => setTimeout(resolve, 450)); });
     assert.ok(!verify().disabled);
-    assert.equal(code.value, "000000");
+    assert.equal(enteredCode(ui.within(container)), "000000");
     assert.equal(code.getAttribute("aria-invalid"), "true");
   }
 });

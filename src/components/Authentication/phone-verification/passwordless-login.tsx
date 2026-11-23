@@ -122,7 +122,7 @@ export function PasswordlessLoginView({
       >
         <label
           htmlFor={emailId}
-          className="mb-2 block text-xs font-medium text-neutral-300"
+          className="mb-2 block text-xs font-medium text-muted-foreground"
         >
           {text.email}
         </label>
@@ -140,7 +140,7 @@ export function PasswordlessLoginView({
           onChange={(event) => session.current?.setEmail(event.target.value)}
           aria-invalid={snapshot.error === "invalidEmail"}
           aria-describedby={snapshot.error ? errorId : undefined}
-          className="!m-0 h-14 w-full min-w-0 !rounded-xl !border !border-white/20 !bg-black/20 !px-4 !text-base !font-normal !tracking-normal !text-white !shadow-[inset_0_1px_2px_#00000040] transition-[border-color,box-shadow] duration-200 ease-out placeholder:text-neutral-500 focus:!border-white/70 focus:!outline-2 focus:!outline-offset-2 focus:!outline-white/30"
+          className="!m-0 h-14 w-full min-w-0 !rounded-xl !border !border-border !bg-transparent !px-4 !text-base !font-normal !tracking-normal !text-foreground transition-[border-color,box-shadow] duration-200 ease-out placeholder:text-muted-foreground focus:!border-foreground"
         />
         {!choice &&
           snapshot.status !== "otp" &&
@@ -164,7 +164,7 @@ export function PasswordlessLoginView({
             <p
               id={errorId}
               role="alert"
-              className="pt-3 text-xs leading-relaxed text-neutral-300"
+              className="pt-3 text-xs leading-relaxed text-muted-foreground"
             >
               {text[snapshot.error]}
             </p>
@@ -206,20 +206,20 @@ export function PasswordlessLoginView({
           <p
             role="status"
             aria-live="polite"
-            className="mt-4 text-sm leading-relaxed text-neutral-300"
+            className="mt-4 text-sm leading-relaxed text-muted-foreground"
           >
             {text.otpPending}
           </p>
         ))}
       {snapshot.status === "authenticated" && (
-        <p role="status" aria-live="polite" className="mt-4 text-sm leading-relaxed text-white">
+        <p role="status" aria-live="polite" className="mt-4 text-sm leading-relaxed text-foreground">
           {text.authenticated}
         </p>
       )}
-      <div className="my-5 flex items-center gap-3 text-[11px] text-neutral-500">
-        <span className="h-px flex-1 bg-white/10" />
+      <div className="my-5 flex items-center gap-3 text-[11px] text-muted-foreground">
+        <span className="h-px flex-1 bg-muted" />
         {text.or}
-        <span className="h-px flex-1 bg-white/10" />
+        <span className="h-px flex-1 bg-muted" />
       </div>
       <SecondaryButton
         data-login-google=""
@@ -239,7 +239,7 @@ export function PasswordlessLoginView({
         <p
           id={unavailableId}
           data-login-unavailable=""
-          className="mt-3 text-[11px] leading-relaxed text-neutral-400"
+          className="mt-3 text-[11px] leading-relaxed text-muted-foreground"
         >
           {text.unavailable}
         </p>

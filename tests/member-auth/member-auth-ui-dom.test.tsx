@@ -1,4 +1,5 @@
 import messages from "../../messages/en.json";
+import { codeCell, codeCells, enteredCode, firstCodeCell, replaceCode } from "../fixtures/code-input";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { after, afterEach, before, test } from "node:test";
@@ -298,7 +299,7 @@ test("Switch account clears the confirmed sign-in identity and retains only the 
   ui.fireEvent.submit(ui.screen.getByLabelText("Email address").closest("form")!);
   ui.fireEvent.click(await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Send sign-in code" })));
   await untilAsserted(ui, () => assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code)));
-  ui.fireEvent.change(ui.screen.getByLabelText(messages.AuthPhase.code), {
+  ui.fireEvent.change(firstCodeCell(ui.screen), {
     target: { value: "A1B2C3" }
   });
   await untilAsserted(ui, () => assert.ok(ui.screen.queryByRole("button", { name: "Switch account" })));
@@ -556,11 +557,11 @@ test("chooser closes and reopens while focused account actions preserve real ema
   ui.fireEvent.submit(ui.screen.getByLabelText(/^Email(?: address)?$/).closest("form")!);
   ui.fireEvent.click(await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Send sign-in code" })));
   await untilAsserted(ui, () => assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code)));
-  ui.fireEvent.change(ui.screen.getByLabelText(messages.AuthPhase.code), {
+  ui.fireEvent.change(firstCodeCell(ui.screen), {
     target: { value: "a1b2c" }
   });
   assert.equal(
-    (ui.screen.getByLabelText(messages.AuthPhase.code) as HTMLInputElement).value,
+    enteredCode(ui.screen),
     "A1B2C"
   );
   now += 31_000;
@@ -572,7 +573,7 @@ test("chooser closes and reopens while focused account actions preserve real ema
   // email before that races the in-flight resend, which is what left the code field in place under load.
   await untilAsserted(ui, () => {
     assert.equal(c.calls.filter(([name]) => name === "code").length, 2);
-    assert.equal((ui.screen.getByLabelText(messages.AuthPhase.code) as HTMLInputElement).value, "");
+    assert.equal(enteredCode(ui.screen), "");
   });
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Change email" }));
   assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code) === null);
@@ -582,7 +583,7 @@ test("chooser closes and reopens while focused account actions preserve real ema
   if (continueButton) ui.fireEvent.click(continueButton);
   ui.fireEvent.click(await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Send sign-in code" })));
   await untilAsserted(ui, () => assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code)));
-  ui.fireEvent.change(ui.screen.getByLabelText(messages.AuthPhase.code), {
+  ui.fireEvent.change(firstCodeCell(ui.screen), {
     target: { value: "D4E5F6" }
   });
   await untilAsserted(ui, () =>
@@ -601,6 +602,104 @@ test("chooser closes and reopens while focused account actions preserve real ema
     )
   );
 });
+test("editing one code cell keeps the other cells in place, and the full code verifies once", async () => {
+  const c = client();
+  c.value.verifyEmailCode = (...args) => {
+    c.calls.push(["verify", ...args]);
+    return new Promise<void>(() => {});
+  };
+  await choose("Sign in", c);
+  ui.fireEvent.change(ui.screen.getByLabelText(/^Email(?: address)?$/), {
+    target: { value: "member@example.com" }
+  });
+  ui.fireEvent.submit(ui.screen.getByLabelText(/^Email(?: address)?$/).closest("form")!);
+  ui.fireEvent.click(await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Send sign-in code" })));
+  await untilAsserted(ui, () => assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code)));
+  const verifies = () => c.calls.filter(([name]) => name === "verify");
+  // One character per cell, as typed.
+  ["a", "1", "b", "2", "c"].forEach((character, index) =>
+    ui.fireEvent.change(codeCell(ui.screen, index + 1), { target: { value: character } })
+  );
+  assert.deepEqual(codeCells(ui.screen), ["A", "1", "B", "2", "C", ""]);
+  // Clearing an interior cell leaves a gap; later characters do not shift left.
+  ui.fireEvent.change(codeCell(ui.screen, 2), { target: { value: "" } });
+  assert.deepEqual(codeCells(ui.screen), ["A", "", "B", "2", "C", ""]);
+  // Delete clears only its own cell; Backspace in an empty cell clears only the one before it.
+  ui.fireEvent.keyDown(codeCell(ui.screen, 4), { key: "Delete" });
+  assert.deepEqual(codeCells(ui.screen), ["A", "", "B", "", "C", ""]);
+  ui.fireEvent.keyDown(codeCell(ui.screen, 6), { key: "Backspace" });
+  assert.deepEqual(codeCells(ui.screen), ["A", "", "B", "", "", ""]);
+  // Refilling the gaps in any order: no verification until every cell holds a character.
+  ui.fireEvent.change(codeCell(ui.screen, 6), { target: { value: "3" } });
+  ui.fireEvent.change(codeCell(ui.screen, 4), { target: { value: "2" } });
+  ui.fireEvent.change(codeCell(ui.screen, 5), { target: { value: "c" } });
+  assert.deepEqual(codeCells(ui.screen), ["A", "", "B", "2", "C", "3"]);
+  assert.equal(verifies().length, 0, "a code with a gap is not complete");
+  assert.equal(
+    (ui.screen.getByRole("button", { name: messages.AuthPhase.verify }) as HTMLButtonElement).getAttribute("aria-disabled") === "true"
+      || (ui.screen.getByRole("button", { name: messages.AuthPhase.verify }) as HTMLButtonElement).disabled,
+    true,
+    "Verify waits for a full code"
+  );
+  // A character the step doesn't accept, typed into the gap, is dropped without moving the others.
+  ui.fireEvent.change(codeCell(ui.screen, 2), { target: { value: "-" } });
+  assert.deepEqual(codeCells(ui.screen), ["A", "", "B", "2", "C", "3"]);
+  assert.equal(verifies().length, 0);
+  ui.fireEvent.change(codeCell(ui.screen, 2), { target: { value: "9" } });
+  assert.equal(enteredCode(ui.screen), "A9B2C3");
+  assert.deepEqual(verifies(), [["verify", "member@example.com", "A9B2C3"]]);
+});
+// A one-time code autofilled (iOS offers codes from Mail and Messages; Android has its own autofill) or pasted arrives
+// whole in one cell, as an input event carrying every character. It fills the row from the first cell and verifies once.
+for (const [how, cell, text] of [
+  ["autofill into the first cell", 1, "A1B2C3"],
+  ["formatted autofill into the first cell", 1, " a1b-2c3 "],
+  ["autofill into another cell", 4, "a1b2c3"],
+  ["formatted paste into another cell", 3, " a1b-2c3 "]
+] as const) {
+  test(`a whole code arriving in one cell fills the row and verifies once: ${how}`, async () => {
+    const c = client();
+    c.value.verifyEmailCode = (...args) => {
+      c.calls.push(["verify", ...args]);
+      return new Promise<void>(() => {});
+    };
+    await choose("Sign in", c);
+    ui.fireEvent.change(ui.screen.getByLabelText(/^Email(?: address)?$/), {
+      target: { value: "member@example.com" }
+    });
+    ui.fireEvent.submit(ui.screen.getByLabelText(/^Email(?: address)?$/).closest("form")!);
+    ui.fireEvent.click(await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Send sign-in code" })));
+    await untilAsserted(ui, () => assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code)));
+    const target = codeCell(ui.screen, cell);
+    assert.equal(target.hasAttribute("maxlength"), false, "no cell limits what arrives in it");
+    if (how.includes("paste")) ui.fireEvent.paste(target, { clipboardData: { getData: () => text } });
+    else ui.fireEvent.input(target, { target: { value: text } });
+    assert.deepEqual(codeCells(ui.screen), ["A", "1", "B", "2", "C", "3"]);
+    assert.deepEqual(c.calls.filter(([name]) => name === "verify"), [["verify", "member@example.com", "A1B2C3"]]);
+  });
+}
+
+test("typing over a filled code cell replaces its character", async () => {
+  const c = client();
+  c.value.verifyEmailCode = (...args) => {
+    c.calls.push(["verify", ...args]);
+    return new Promise<void>(() => {});
+  };
+  await choose("Sign in", c);
+  ui.fireEvent.change(ui.screen.getByLabelText(/^Email(?: address)?$/), {
+    target: { value: "member@example.com" }
+  });
+  ui.fireEvent.submit(ui.screen.getByLabelText(/^Email(?: address)?$/).closest("form")!);
+  ui.fireEvent.click(await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Send sign-in code" })));
+  await untilAsserted(ui, () => assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code)));
+  ui.fireEvent.input(codeCell(ui.screen, 1), { target: { value: "a1b2c" } });
+  // The browser hands the cell its old character plus the typed one, on either side of the caret.
+  ui.fireEvent.input(codeCell(ui.screen, 2), { target: { value: "19" } });
+  ui.fireEvent.input(codeCell(ui.screen, 3), { target: { value: "xB" } });
+  assert.deepEqual(codeCells(ui.screen), ["A", "9", "X", "2", "C", ""]);
+  assert.equal(c.calls.filter(([name]) => name === "verify").length, 0);
+});
+
 test("completing an email code verifies once, exposes pending and failure, and retries only after editing", async () => {
   const c = client();
   let resolve!: () => void;
@@ -619,11 +718,11 @@ test("completing an email code verifies once, exposes pending and failure, and r
   ui.fireEvent.submit(ui.screen.getByLabelText(/^Email(?: address)?$/).closest("form")!);
   ui.fireEvent.click(await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Send sign-in code" })));
   await untilAsserted(ui, () => assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code)));
-  const input = ui.screen.getByLabelText(messages.AuthPhase.code) as HTMLInputElement;
-  ui.fireEvent.change(input, { target: { value: "a1b2c" } });
+  const input = firstCodeCell(ui.screen);
+  replaceCode(ui.screen, ui.fireEvent.change, "a1b2c");
   ui.fireEvent.submit(input.closest("form")!);
   assert.equal(c.calls.filter(([name]) => name === "verify").length, 0);
-  ui.fireEvent.change(input, { target: { value: "a1b2c3" } });
+  replaceCode(ui.screen, ui.fireEvent.change, "a1b2c3");
   assert.deepEqual(c.calls.filter(([name]) => name === "verify"), [
     ["verify", "member@example.com", "A1B2C3"]
   ]);
@@ -639,26 +738,29 @@ test("completing an email code verifies once, exposes pending and failure, and r
   assert.ok(ui.screen.queryByRole("alert"));
   assert.doesNotMatch(document.body.textContent!, /private invalid code/);
   assert.equal(input.disabled, false);
-  assert.equal(
+  // Arc's button carries aria-busy only while busy.
+  assert.notEqual(
     document.querySelector("[data-phase-action=submit]")?.getAttribute("aria-busy"),
-    "false"
+    "true"
   );
   await ui.act(async () => {});
-  ui.fireEvent.change(input, { target: { value: "A1B2C3!" } });
+  // The rejected code again with a stray character: still the same code, so no second attempt.
+  ui.fireEvent.change(firstCodeCell(ui.screen), { target: { value: "A1B2C3!" } });
   assert.equal(c.calls.filter(([name]) => name === "verify").length, 1);
-  ui.fireEvent.change(input, { target: { value: "D4E5F" } });
+  replaceCode(ui.screen, ui.fireEvent.change, "D4E5F");
   assert.equal(c.calls.filter(([name]) => name === "verify").length, 1);
-  ui.fireEvent.change(input, { target: { value: "D4E5F6" } });
+  replaceCode(ui.screen, ui.fireEvent.change, "D4E5F6");
   assert.deepEqual(c.calls.filter(([name]) => name === "verify"), [
     ["verify", "member@example.com", "A1B2C3"],
     ["verify", "member@example.com", "D4E5F6"]
   ]);
   await ui.act(async () => reject(Error("still invalid")));
   assert.ok(ui.screen.queryByRole("button", { name: messages.AuthPhase.verify }));
-  ui.fireEvent.change(input, { target: { value: "X7Y8Z9" } });
+  // Pasting over a full code after a failure that wasn't a rejection doesn't resend it; finishing an edit does.
+  ui.fireEvent.change(firstCodeCell(ui.screen), { target: { value: "X7Y8Z9" } });
   assert.equal(c.calls.filter(([name]) => name === "verify").length, 2);
-  ui.fireEvent.change(input, { target: { value: "X7Y8Z" } });
-  ui.fireEvent.change(input, { target: { value: "X7Y8Z9" } });
+  replaceCode(ui.screen, ui.fireEvent.change, "X7Y8Z");
+  replaceCode(ui.screen, ui.fireEvent.change, "X7Y8Z9");
   assert.deepEqual(c.calls.filter(([name]) => name === "verify").at(-1), [
     "verify", "member@example.com", "X7Y8Z9"
   ]);
@@ -689,7 +791,7 @@ test("Cancel disposes an automatic code verification before its late result", as
   ui.fireEvent.submit(ui.screen.getByLabelText(/^Email(?: address)?$/).closest("form")!);
   ui.fireEvent.click(await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Send sign-in code" })));
   await untilAsserted(ui, () => assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code)));
-  ui.fireEvent.change(ui.screen.getByLabelText(messages.AuthPhase.code), {
+  ui.fireEvent.change(firstCodeCell(ui.screen), {
     target: { value: "A1B2C3" }
   });
   assert.equal(c.calls.filter(([name]) => name === "verify").length, 1);
@@ -1177,8 +1279,9 @@ test("status retry keeps its action, feedback slot and input mounted through its
   assert.ok(pendingStatus.closest('[aria-busy="true"]') === null, "assistive technology must receive pending status outside the busy subtree");
   assert.match(pendingStatus.textContent!, /Checking sign-in options/);
   const primary = document.querySelector<HTMLButtonElement>("[data-phase-action=submit]")!;
-  assert.equal(primary.textContent?.trim(), "Send sign-in code", "a status refresh must not relabel the unrelated primary action");
-  assert.ok(primary.querySelector("svg") === null, "only the initiating refresh control spins");
+  // Arc's button lets an outgoing label fade out; its accessible name is the label in effect.
+  assert.ok(ui.screen.getByRole("button", { name: "Send sign-in code" }) === primary, "a status refresh must not relabel the unrelated primary action");
+  assert.notEqual(primary.getAttribute("aria-busy"), "true", "only the initiating refresh control spins");
   assert.equal(primary.disabled, true, "credential submission stays locked during the status request");
   assert.ok(retry.querySelector("[data-account-refresh-icon]") === icon);
   assert.ok(icon?.querySelector(".lucide-loader-circle"));

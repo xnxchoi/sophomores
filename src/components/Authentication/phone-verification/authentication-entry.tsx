@@ -178,7 +178,7 @@ function AuthenticationContent({
                   </PrimaryButton>
                   <div
                     data-authentication-alternative=""
-                    className="flex h-6 items-center justify-center text-xs text-neutral-400"
+                    className="flex h-6 items-center justify-center text-xs text-muted-foreground"
                   >
                     {t.or}
                   </div>
@@ -189,7 +189,7 @@ function AuthenticationContent({
                     }}
                     type="button"
                     data-authentication-choice="login"
-                    className="!my-0 h-13 min-h-13 rounded-[16px] border-white/10 bg-white/5 px-4 py-0 text-[15px]"
+                    className="!my-0 h-13 min-h-13 rounded-[16px] border-border bg-muted px-4 py-0 text-[15px]"
                     onClick={() => {
                       lastChoice.current = "login";
                       setVisit((current) => current + 1);

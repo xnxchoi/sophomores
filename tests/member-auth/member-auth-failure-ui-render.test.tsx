@@ -143,27 +143,27 @@ test("structured email failures replace raw duplicate feedback without claiming 
 
 test("expired and exhausted codes cannot verify and cooldown blocks resend and fresh entry", () => {
   for (const failure of ["expired-code", "attempts-exhausted"] as const) {
-    assert.match(render(failure), /data-phase-action="submit"[^>]*disabled=""/);
+    assert.match(render(failure), /<button(?=[^>]*data-phase-action="submit")(?=[^>]*disabled="")/);
   }
   const limited = render("rate-limited", true, 12, anonymous, null, 12);
-  assert.match(limited, /data-phase-action="submit"[^>]*disabled=""/);
+  assert.match(limited, /<button(?=[^>]*data-phase-action="submit")(?=[^>]*disabled="")/);
   assert.match(limited, /data-phase-action="retry"[^>]*disabled=""/);
   assert.match(
     render("rate-limited", false, 12),
-    /data-phase-action="submit"[^>]*disabled=""/
+    /<button(?=[^>]*data-phase-action="submit")(?=[^>]*disabled="")/
   );
 });
 
 test("latest network feedback does not erase persistent recovery or verification cooldown", () => {
   for (const recovery of ["expired-code", "attempts-exhausted"] as const) {
     const html = render("network", true, 0, anonymous, recovery);
-    assert.match(html, /data-phase-action="submit"[^>]*disabled=""/);
+    assert.match(html, /<button(?=[^>]*data-phase-action="submit")(?=[^>]*disabled="")/);
     assert.match(html, /<input[^>]*disabled=""/);
     assert.match(html, /connect|connection/i);
     assert.match(html, /new code/i);
   }
   const html = render("network", true, 0, anonymous, null, 12);
-  assert.match(html, /data-phase-action="submit"[^>]*disabled=""/);
+  assert.match(html, /<button(?=[^>]*data-phase-action="submit")(?=[^>]*disabled="")/);
   assert.match(html, /<input[^>]*disabled=""/);
   assert.match(html, /connect|connection/i);
   assert.ok(html.includes(messages.AuthPhase.retryIn));
@@ -172,7 +172,7 @@ test("latest network feedback does not erase persistent recovery or verification
 test("phone-selected credentials use the same guarded OTP view instead of a legacy code form", () => {
   const html = render("network", true, 0, anonymous, "expired-code", undefined, "phone");
   assert.match(html, /data-account-phase="email-code"/);
-  assert.match(html, /data-phase-action="submit"[^>]*disabled=""/);
+  assert.match(html, /<button(?=[^>]*data-phase-action="submit")(?=[^>]*disabled="")/);
   assert.match(html, /new code/i);
   assert.doesNotMatch(html, /id="member-email-code"/);
 });

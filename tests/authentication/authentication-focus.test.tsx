@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { after, afterEach, before, test } from "node:test";
 import { JSDOM } from "jsdom";
 import type { MemberClient } from "@/lib/member-auth/client";
+import { firstCodeCell } from "../fixtures/code-input";
 
 let dom: JSDOM;
 let ui: typeof import("@testing-library/react/pure");
@@ -146,11 +147,19 @@ test(`an explicit failed Verify ${userMoved ? "does not steal focus after a new 
     recipient: "", message: "", onField: noop, onCodeComplete: noop, onAction: noop
   };
   const rendered = ui.render(<AccountPhaseViews {...props} />, { wrapper: MemberAuthProviders });
-  const input = ui.screen.getByLabelText(messages.AuthPhase.code) as HTMLInputElement;
+  // The code step's Arc code input: focus and selection return to its first cell.
+  const input = firstCodeCell(ui.screen);
   const submit = ui.screen.getByRole("button", { name: messages.AuthPhase.verify });
   submit.focus();
   document.body.tabIndex = -1;
   const setAttribute = window.Element.prototype.setAttribute;
+  // Chromium never focuses a disabled control, even one with a tabindex (Arc's button sets tabindex="0"); jsdom
+  // would, so the surface's focus trap could hand focus straight back to the disabled submit.
+  const focus = window.HTMLElement.prototype.focus;
+  t.mock.method(window.HTMLElement.prototype, "focus", function (this: HTMLElement, options?: FocusOptions) {
+    if (this instanceof window.HTMLButtonElement && this.disabled) return;
+    return focus.call(this, options);
+  });
   t.mock.method(window.Element.prototype, "setAttribute", function (this: Element, name: string, value: string) {
     setAttribute.call(this, name, value);
     // Chromium blurs a focused control synchronously when React disables it,
@@ -164,7 +173,7 @@ test(`an explicit failed Verify ${userMoved ? "does not steal focus after a new 
   assert.ok(document.activeElement === (userMoved ? document.body : input));
   if (!userMoved) {
     assert.equal(input.selectionStart, 0);
-    assert.equal(input.selectionEnd, 6);
+    assert.equal(input.selectionEnd, input.value.length);
   }
   document.body.removeAttribute("tabindex");
 });

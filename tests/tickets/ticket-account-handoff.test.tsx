@@ -40,7 +40,7 @@ test("an optional completion action appears only after authoritative membership 
     assert.ok(link, "the authenticated continuation belongs inside the completed member view");
     const passkey = [...view.window.document.querySelectorAll("button")].find(e => e.textContent === "Add a passkey");
     assert.ok(passkey);
-    assert.equal(passkey.classList.contains("bg-neutral-100"), false);
+    assert.equal(passkey.classList.contains("bg-foreground"), false);
     assert.match(view.window.document.body.textContent ?? "", /Passkeys are optional/);
   } finally { view.window.close(); }
   for (const status of [null, anonymous, { ...anonymous, authenticated: true, phoneBindingAuth: "ready" as const, emailVerified: true }]) {
@@ -53,7 +53,7 @@ test("without a completion action the accepted member confirmation and primary p
   const view = new JSDOM(html);
   try {
     const passkey = [...view.window.document.querySelectorAll("button")].find(e => e.textContent === "Add a passkey");
-    assert.ok(passkey?.classList.contains("bg-neutral-100"));
+    assert.ok(passkey?.classList.contains("bg-foreground"));
     assert.match(html, /Email and phone confirmed/);
     assert.doesNotMatch(html, /Return to shop|Back to tickets/);
   } finally { view.window.close(); }
@@ -178,7 +178,7 @@ test("a provider return offers a fixed completed-member continuation and clears 
   assert.equal(ui.screen.getByRole("link", { name: "Return to account details" }).getAttribute("href"), "/me/settings/account");
   assert.equal(ui.screen.queryByRole("link", { name: "Back to tickets" }) === null, true);
   assert.ok(ui.screen.getByRole("heading", { name: "Account ready" }));
-  assert.equal(ui.screen.getByRole("button", { name: "Add a passkey" }).classList.contains("bg-neutral-100"), false);
+  assert.equal(ui.screen.getByRole("button", { name: "Add a passkey" }).classList.contains("bg-foreground"), false);
   link.addEventListener("click", event => event.preventDefault());
   ui.fireEvent.click(link);
   const result = draft.readTicketSelectionDraft(dom.window.localStorage);
@@ -284,7 +284,7 @@ test("cross-tab clearing removes a completed-member continuation without changin
   await ui.act(async () => { window.dispatchEvent(new dom.window.StorageEvent("storage", { key: null })); });
   assert.equal(ui.screen.queryByRole("link", { name: "Return to shop" }) === null, true);
   assert.ok(ui.screen.getByRole("heading", { name: "Account ready" }));
-  assert.ok(ui.screen.getByRole("button", { name: "Add a passkey" }).classList.contains("bg-neutral-100"));
+  assert.ok(ui.screen.getByRole("button", { name: "Add a passkey" }).classList.contains("bg-foreground"));
 });
 
 test("both account pages use ticket-aware composition and provider callback policy stays pinned", async () => {

@@ -150,19 +150,19 @@ export function AccountRecoveryView({
           <>
             <form noValidate onSubmit={(event) => { void submit(event); }} className="space-y-4" aria-busy={busy}>
               <div>
-                <label htmlFor={`${headingId}-phone`} className="text-[13px] text-neutral-300">{t("registeredMobileNumber")}</label>
+                <label htmlFor={`${headingId}-phone`} className="text-[13px] text-muted-foreground">{t("registeredMobileNumber")}</label>
                 <AccountInput className="tracking-normal!" ref={phoneInput} id={`${headingId}-phone`} type="tel" inputMode="tel" autoComplete="off" placeholder={t("01012345678")} maxLength={32} value={phone} disabled={busy} aria-invalid={invalid.phone} aria-describedby={invalid.phone ? `${headingId}-phone-error` : `${headingId}-claims`} onChange={(event) => { setPhone(event.target.value); setInvalid((value) => ({ ...value, phone: false })); }} />
-                {invalid.phone && <p id={`${headingId}-phone-error`} className="mt-2 text-[13px] leading-5 text-neutral-300">{t("enterAValidKorean010MobileNumber")}</p>}
+                {invalid.phone && <p id={`${headingId}-phone-error`} className="mt-2 text-[13px] leading-5 text-muted-foreground">{t("enterAValidKorean010MobileNumber")}</p>}
               </div>
               <div>
-                <label htmlFor={`${headingId}-email`} className="text-[13px] text-neutral-300">{t("contactEmail")}</label>
+                <label htmlFor={`${headingId}-email`} className="text-[13px] text-muted-foreground">{t("contactEmail")}</label>
                 <AccountInput className="tracking-normal!" id={`${headingId}-email`} type="email" inputMode="email" autoComplete="off" autoCapitalize="none" spellCheck={false} maxLength={254} value={contactEmail} disabled={busy} aria-invalid={invalid.email} aria-describedby={invalid.email ? `${headingId}-email-error` : `${headingId}-claims`} onChange={(event) => { setContactEmail(event.target.value); setInvalid((value) => ({ ...value, email: false })); }} />
-                {invalid.email && <p id={`${headingId}-email-error`} className="mt-2 text-[13px] leading-5 text-neutral-300">{t("enterAnEmailAddressYouCanAccess")}</p>}
+                {invalid.email && <p id={`${headingId}-email-error`} className="mt-2 text-[13px] leading-5 text-muted-foreground">{t("enterAnEmailAddressYouCanAccess")}</p>}
               </div>
-              <p id={`${headingId}-claims`} className="text-[13px] leading-5 text-neutral-400">{t("detailsAreUnverifiedThisRequestWontChangeYourAccountStaffMustVerifyOwnershipRestorationIsntGuaranteed")}</p>
-              {error && <p role="alert" className="rounded-xl border border-neutral-600 px-4 py-3 text-[13px] leading-5 text-neutral-200">{t(error)}</p>}
+              <p id={`${headingId}-claims`} className="text-[13px] leading-5 text-muted-foreground">{t("detailsAreUnverifiedThisRequestWontChangeYourAccountStaffMustVerifyOwnershipRestorationIsntGuaranteed")}</p>
+              {error && <p role="alert" className="rounded-xl border border-border px-4 py-3 text-[13px] leading-5 text-foreground">{t(error)}</p>}
               {!error && retryAvailableAt > 0 && (
-                <p className="min-h-5 text-[13px] leading-5 text-neutral-300">
+                <p className="min-h-5 text-[13px] leading-5 text-muted-foreground">
                   {retryRemaining > 0 && <span role="status" className="sr-only">{t("tooManyRequests")}</span>}
                   <span role={retryRemaining > 0 ? "timer" : "status"} aria-live={retryRemaining > 0 ? "off" : "polite"}>
                     {retryRemaining > 0 ? <>{t("tryAgainIn")} <span className="font-sans tabular-nums">{Math.floor(retryRemaining / 60)}:{String(retryRemaining % 60).padStart(2, "0")}</span></> : t("youCanTryAgain")}
@@ -178,8 +178,8 @@ export function AccountRecoveryView({
           </>
         ) : (
           <>
-            <p role="status" className="text-sm leading-6 text-neutral-300">{t("pendingStaffReview")}</p>
-            <p className="text-[13px] leading-5 text-neutral-400">{t("yourAccountIsUnchangedOwnershipHasNotBeenVerified")}</p>
+            <p role="status" className="text-sm leading-6 text-muted-foreground">{t("pendingStaffReview")}</p>
+            <p className="text-[13px] leading-5 text-muted-foreground">{t("yourAccountIsUnchangedOwnershipHasNotBeenVerified")}</p>
             <AccountButton type="button" onClick={backToLogin}>{t("backToLogIn")}</AccountButton>
           </>
         )}

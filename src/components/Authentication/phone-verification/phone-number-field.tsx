@@ -32,7 +32,7 @@ export function PhoneNumberField({
   return (
     <Field className="gap-2" data-invalid={Boolean(error)}>
       <FieldLabel
-        className="text-xs font-medium text-neutral-300"
+        className="text-xs font-medium text-muted-foreground"
         id="pv-phone-label"
         htmlFor="pv-phone"
       >
@@ -40,15 +40,15 @@ export function PhoneNumberField({
       </FieldLabel>
       <InputGroup
         className={cn(
-          "h-15 gap-0 rounded-lg border-white/20 bg-black/20 p-1 shadow-[inset_0_1px_2px_#00000040] transition-[border-color,box-shadow] duration-200 ease-out focus-within:!border-white focus-within:!ring-2 focus-within:!ring-white/15",
-          compact ? "h-13 rounded-xl border-neutral-700 bg-transparent shadow-none has-[[aria-invalid=true]]:border-neutral-300" : "has-[[aria-invalid=true]]:border-red-400"
+          "h-15 gap-0 rounded-lg border-border bg-transparent p-1 transition-[border-color,box-shadow] duration-200 ease-out focus-within:!border-foreground",
+          compact ? "h-13 rounded-xl border-border bg-transparent shadow-none has-[[aria-invalid=true]]:border-border" : "has-[[aria-invalid=true]]:border-foreground"
         )}
         aria-labelledby="pv-phone-label"
       >
         <InputGroupInput
           id="pv-phone"
           className={cn(
-            "!mt-0 h-12 min-w-0 !border-0 bg-transparent px-3 !text-base !font-normal !tracking-[0.02em] !text-white tabular-nums !shadow-none placeholder:text-neutral-400",
+            "!mt-0 h-12 min-w-0 !border-0 bg-transparent px-3 !text-base !font-normal !tracking-[0.02em] !text-foreground tabular-nums !shadow-none placeholder:text-muted-foreground",
             compact ? "h-10 !tracking-normal" : "sm:!text-lg sm:!tracking-wide md:!text-xl"
           )}
           ref={inputRef}
@@ -66,7 +66,7 @@ export function PhoneNumberField({
           aria-describedby={error ? "pv-error" : "pv-phone-hint"}
         />
         <InputGroupAddon
-          className={cn("w-16 flex-none flex-col gap-0.5 border-r border-white/15 px-2 text-neutral-300 sm:w-20", compact && "w-20 whitespace-nowrap")}
+          className={cn("w-16 flex-none flex-col gap-0.5 border-r border-border px-2 text-muted-foreground sm:w-20", compact && "w-20 whitespace-nowrap")}
           align="inline-start"
           aria-label={t("countryLabel")}
         >
@@ -78,7 +78,7 @@ export function PhoneNumberField({
         <FieldDescription
           aria-hidden={Boolean(error)}
           className={cn(
-            "m-0! text-xs leading-relaxed text-neutral-400 transition-opacity duration-200 ease-out",
+            "m-0! text-xs leading-relaxed text-muted-foreground transition-opacity duration-200 ease-out",
             compact ? error && "hidden" : "absolute inset-0",
             error ? "opacity-0" : "opacity-100"
           )}
@@ -95,7 +95,7 @@ export function PhoneNumberField({
         >
           {error && (
             <FieldError
-              className={cn("!m-0 text-xs leading-relaxed", compact ? "text-neutral-200" : "text-red-300")}
+              className={cn("!m-0 text-xs leading-relaxed", compact ? "text-foreground" : "text-foreground")}
               id="pv-error"
             >
               {error}

@@ -18,14 +18,12 @@ import {
 import { messagesByLocale } from "@/lib/phone-verification/i18n";
 import { readFileSync } from "node:fs";
 
-test("verification sheet is a dark surface while retaining short-screen internal scrolling", () => {
+test("verification sheet follows the page theme while retaining short-screen internal scrolling", () => {
+  // The sheet follows the page theme on tokens (owner, 22 Nov: no forced dark, no white/black literals).
   const modalMarkup = renderToStaticMarkup(<Modal />);
-  assert.match(
-    modalMarkup,
-    /(?:^|\s)!?bg-(?:teaser-card|black|neutral-9(?:00|50)|\[#(?:0[0-9a-f]|1[0-9a-f]){3}\])(?:\/95)?(?:\s|$)/i
-  );
-  assert.match(modalMarkup, /(?:^|\s)!?text-white(?:\s|$)/);
-  assert.doesNotMatch(modalMarkup, /(?:^|\s)!?bg-white(?:\s|$)/);
+  assert.match(modalMarkup, /(?:^|\s)!?bg-background(?:\/95)?(?:\s|$)/);
+  assert.match(modalMarkup, /(?:^|\s)!?text-foreground(?:\s|$)/);
+  assert.doesNotMatch(modalMarkup, /(?:^|\s)(?:dark|!?bg-white|!?bg-black|!?text-white)(?:\s|$)/);
   assert.match(modalMarkup, /max-h-\[calc\(100dvh-/);
   assert.match(modalMarkup, /(?:^|\s)overflow-y-(?:auto|scroll)(?:\s|$)/);
   assert.match(modalMarkup, /(?:^|\s)overscroll-contain(?:\s|$)/);
@@ -45,8 +43,8 @@ test("verification heading and primary action use a restrained monochrome hierar
   assert.match(headingMarkup, /(?:^|\s)text-left(?:\s|$)/);
   assert.match(headingMarkup, /(?:^|\s)font-(?:semibold|bold)(?:\s|$)/);
   assert.doesNotMatch(headingMarkup, /(?:^|\s)text-center(?:\s|$)/);
-  assert.match(primaryMarkup, /(?:^|\s)bg-white(?:\s|$)/);
-  assert.match(primaryMarkup, /(?:^|\s)text-teaser-card(?:\s|$)/);
+  assert.match(primaryMarkup, /(?:^|\s)bg-foreground(?:\s|$)/);
+  assert.match(primaryMarkup, /(?:^|\s)text-background(?:\s|$)/);
   assert.match(primaryMarkup, /focus-visible:/);
   assert.match(primaryMarkup, /disabled:/);
 });

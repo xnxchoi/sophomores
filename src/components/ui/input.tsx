@@ -1,7 +1,7 @@
 import { Input as InputPrimitive } from "@base-ui/react/input";
 import { cn } from "@/lib/utils";
 import { Label, HA_Label } from "./label";
-import { ComponentProps, type InputHTMLAttributes } from "react";
+import type { ComponentProps } from "react";
 import type * as React from "react";
 
 export function Input({ className, type, ...props }: ComponentProps<"input">) {
@@ -71,13 +71,37 @@ export { HA_Input };
 /**
  * Hideaway field order: input, then the baseline, then the label.
  * The line and the label are the sibling rules in __inputs.scss.
+ * `steady`: the label sits above at one size and the field keeps one height in every state (empty, focused, filled,
+ * invalid); the line still draws on focus and stays drawn with a value. The label focuses the field. On touch the input
+ * is 44 px tall and the label sits 4 px closer, so the box and its line stay where they are. Invalid stays monochrome
+ * (sign-in and verification use a neutral palette): the line draws at 2 px and the label darkens; the message says why.
+ * `data-arc-control` keeps the legacy global input rule (wide tracking, light weight, extra padding) off it.
  */
 export function DrawnField({
   label,
   id,
+  steady = false,
   ...props
-}: { label: string } & InputHTMLAttributes<HTMLInputElement>) {
+}: { label: string; steady?: boolean } & ComponentProps<"input">) {
   const fieldId = id ?? props.name;
+  if (steady)
+    return (
+      <div data-arc-control="" className="relative pt-7 pointer-coarse:pt-6">
+        <input
+          {...props}
+          id={fieldId}
+          placeholder=" "
+          className="peer m-0 block h-10 w-full pointer-coarse:h-11 rounded-none border-0 border-b border-border bg-transparent p-0 pb-2 text-[length:var(--step-input,1rem)] leading-6 font-normal tracking-normal text-foreground normal-case outline-none placeholder:text-transparent disabled:opacity-60"
+        />
+        <div className="pointer-events-none absolute right-0 bottom-0 left-0 h-px origin-right scale-x-0 bg-foreground transition-[transform,height] duration-[800ms] ease-[cubic-bezier(0.16,1,0.32,1)] peer-focus:origin-left peer-focus:scale-x-100 peer-not-placeholder-shown:origin-left peer-not-placeholder-shown:scale-x-100 peer-aria-invalid:h-0.5 peer-aria-invalid:origin-left peer-aria-invalid:scale-x-100" />
+        <label
+          htmlFor={fieldId}
+          className="absolute top-0 left-0 m-0 cursor-text text-[length:var(--step-body,0.875rem)] leading-5 font-normal text-muted-foreground transition-colors duration-300 peer-focus:text-foreground peer-aria-invalid:text-foreground"
+        >
+          {label}
+        </label>
+      </div>
+    );
   return (
     <div className="form-field active relative">
       <input

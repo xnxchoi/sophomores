@@ -212,7 +212,7 @@ test("a narrow desktop keeps a 40px left Close while touch uses a 48px left Clos
   assert.equal(close.classList.contains("opacity-0"), false);
   assert.ok(close.classList.contains("focus-visible:outline-none"), "compact keyboard focus stays on the inset disc, not the clipped outer target");
   const disc = close.querySelector("[data-authentication-close-disc]");
-  for (const token of ["group-focus-visible:ring-2", "group-focus-visible:ring-inset", "group-focus-visible:ring-neutral-100"]) assert.ok(disc?.classList.contains(token));
+  for (const token of ["group-focus-visible:ring-2", "group-focus-visible:ring-inset", "group-focus-visible:ring-foreground"]) assert.ok(disc?.classList.contains(token));
   for (const token of ["top-2", "left-2", "size-10"]) assert.ok(close.parentElement?.parentElement?.classList.contains(token), "desktop Close is a 40px control at the same 8px edge inset as the focused flow");
   await ui.waitFor(() => assert.equal(Math.round(parseFloat(sheet.style.bottom)), 825));
   await ui.act(async () => {
@@ -663,11 +663,11 @@ test("chooser leads with primary Sign up, separates Or, and makes Sign in second
     ["signup", "login"]
   );
   assert.ok(
-    choices[0].classList.contains("bg-white"),
-    "Sign up is the white primary action"
+    choices[0].classList.contains("bg-foreground"),
+    "Sign up is the primary action, filled with the page's foreground (white on dark, black on light)"
   );
   assert.ok(
-    !choices[1].classList.contains("bg-white"),
+    !choices[1].classList.contains("bg-foreground"),
     "Sign in is visually secondary"
   );
   const separator = ui.within(panel).getByText("Or", { exact: true });

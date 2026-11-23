@@ -320,6 +320,16 @@
     "enterAValidEmailAddress": "",
     "tooManyAttemptsWaitBeforeTryingAgain": "",
     "weCouldntCheckThisEmailTryAgain": "",
+    "couldntCheckThisEmail": "",
+    "retry": "",
+    "or": "",
+    "accountGreeting": {
+      "1": "",
+      "2": "",
+      "3": "",
+      "4": ""
+    },
+    "notYou": "",
     "signIn": "",
     "createAccount": "",
     "enterYourEmail": "",

@@ -57,7 +57,7 @@ function TrayDismissButton({
       <span
         data-authentication-close-disc=""
         aria-hidden="true"
-        className={cn("absolute inset-0 rounded-full bg-white/6 transition-colors duration-200 ease-out group-hover:bg-white/10", compact && "group-focus-visible:ring-2 group-focus-visible:ring-inset group-focus-visible:ring-neutral-100")}
+        className={cn("absolute inset-0 rounded-full bg-transparent transition-colors duration-200 ease-out group-hover:bg-muted", compact && "group-focus-visible:ring-2 group-focus-visible:ring-inset group-focus-visible:ring-foreground")}
       />
       <X className="relative" size={16} strokeWidth={1.5} aria-hidden="true" />
     </Close>
@@ -125,7 +125,7 @@ export function VerificationTray({
         repositionInputs={false}
       >
         <Drawer.Portal>
-          <Drawer.Overlay data-authentication-presentation={modal ? "modal" : "tray"} className="fixed inset-0 z-50 bg-black/55 backdrop-blur-sm data-[authentication-presentation=tray]:bg-black/30 data-[authentication-presentation=tray]:backdrop-blur-[0.5px]" />
+          <Drawer.Overlay data-authentication-presentation={modal ? "modal" : "tray"} className="fixed inset-0 z-50 bg-transparent backdrop-blur-sm data-[authentication-presentation=tray]:bg-transparent data-[authentication-presentation=tray]:backdrop-blur-[0.5px]" />
           <Drawer.Content
             asChild
             data-verification-sheet=""
@@ -160,7 +160,7 @@ export function VerificationTray({
           >
             <Modal
               data-authentication-presentation={modal ? "modal" : "tray"}
-              className="max-w-none! data-[authentication-presentation=tray]:scrollbar-none data-[authentication-presentation=tray]:backdrop-blur-[2px] data-[authentication-presentation=modal]:[scrollbar-width:thin]! data-[authentication-presentation=modal]:[&::-webkit-scrollbar]:block! data-[authentication-presentation=modal]:[&::-webkit-scrollbar]:w-1.5 data-[authentication-presentation=modal]:[&::-webkit-scrollbar-thumb]:rounded-full data-[authentication-presentation=modal]:[&::-webkit-scrollbar-thumb]:bg-neutral-600 data-[authentication-presentation=modal]:scroll-pt-14 data-[authentication-presentation=modal]:scroll-pb-4 data-[authentication-presentation=modal]:data-[state=open]:animate-in! data-[authentication-presentation=modal]:data-[state=closed]:animate-out! data-[authentication-presentation=modal]:fade-in-0 data-[authentication-presentation=modal]:fade-out-0 data-[authentication-presentation=modal]:zoom-in-95 data-[authentication-presentation=modal]:zoom-out-95 data-[authentication-presentation=modal]:animation-duration-200 data-[authentication-presentation=modal]:fill-mode-both"
+              className="max-w-none! data-[authentication-presentation=tray]:scrollbar-none data-[authentication-presentation=tray]:backdrop-blur-[2px] data-[authentication-presentation=modal]:[scrollbar-width:thin]! data-[authentication-presentation=modal]:[&::-webkit-scrollbar]:block! data-[authentication-presentation=modal]:[&::-webkit-scrollbar]:w-1.5 data-[authentication-presentation=modal]:[&::-webkit-scrollbar-thumb]:rounded-full data-[authentication-presentation=modal]:[&::-webkit-scrollbar-thumb]:bg-border data-[authentication-presentation=modal]:scroll-pt-14 data-[authentication-presentation=modal]:scroll-pb-4 data-[authentication-presentation=modal]:data-[state=open]:animate-in! data-[authentication-presentation=modal]:data-[state=closed]:animate-out! data-[authentication-presentation=modal]:fade-in-0 data-[authentication-presentation=modal]:fade-out-0 data-[authentication-presentation=modal]:zoom-in-95 data-[authentication-presentation=modal]:zoom-out-95 data-[authentication-presentation=modal]:animation-duration-200 data-[authentication-presentation=modal]:fill-mode-both"
               animate={
                 geometry
                   ? { ...geometry, borderRadius: modal && locked && !compact ? 24 : 32 }
@@ -206,7 +206,7 @@ export function VerificationTray({
                       aria-hidden="true"
                       tabIndex={-1}
                       preventCycle
-                      className={cn("!absolute left-1/2 !m-0 !h-1 !w-10 -translate-x-1/2 !bg-white/20 [&>[data-vaul-handle-hitarea]]:!size-12 [&>[data-vaul-handle-hitarea]]:!top-3", (modal || clippedChooser) && "hidden!")}
+                      className={cn("!absolute left-1/2 !m-0 !h-1 !w-10 -translate-x-1/2 !bg-muted [&>[data-vaul-handle-hitarea]]:!size-12 [&>[data-vaul-handle-hitarea]]:!top-3", (modal || clippedChooser) && "hidden!")}
                     />
                   </motion.div>
                   <div className={cn(

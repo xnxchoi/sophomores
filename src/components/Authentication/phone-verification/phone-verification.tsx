@@ -112,7 +112,7 @@ export function VerificationLocaleSelect() {
         onChange={(event) =>
           changeLocale(event.target.value === "en" ? "en" : "ko")
         }
-        className="min-h-11 appearance-none rounded-lg border-0 bg-transparent py-2 pr-7 pl-3 text-xs text-neutral-400 [color-scheme:dark] shadow-none transition-colors duration-200 ease-out hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+        className="min-h-11 appearance-none rounded-lg border-0 bg-transparent py-2 pr-7 pl-3 text-xs text-muted-foreground shadow-none transition-colors duration-200 ease-out hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
       >
         <option value="en">{t("english")}</option>
         <option value="ko">{t("korean")}</option>
@@ -121,7 +121,7 @@ export function VerificationLocaleSelect() {
         aria-hidden="true"
         size={12}
         strokeWidth={1.5}
-        className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-neutral-500"
+        className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground"
       />
     </div>
   );
@@ -141,7 +141,7 @@ export function VerificationLanguageSwitcher() {
     >
       <button
         type="button"
-        className="min-h-11 shrink-0 rounded-md px-2 text-[11px] whitespace-nowrap text-neutral-400 transition-colors duration-200 ease-out hover:bg-white/8 focus-visible:outline-2 focus-visible:outline-white aria-pressed:text-white aria-pressed:underline aria-pressed:decoration-white aria-pressed:underline-offset-4"
+        className="min-h-11 shrink-0 rounded-md px-2 text-[11px] whitespace-nowrap text-muted-foreground transition-colors duration-200 ease-out hover:bg-muted focus-visible:outline-2 focus-visible:outline-foreground aria-pressed:text-foreground aria-pressed:underline aria-pressed:decoration-current aria-pressed:underline-offset-4"
         aria-pressed={locale === "en"}
         onClick={toEn}
       >
@@ -149,7 +149,7 @@ export function VerificationLanguageSwitcher() {
       </button>
       <button
         type="button"
-        className="min-h-11 shrink-0 rounded-md px-2 text-[11px] whitespace-nowrap text-neutral-400 transition-colors duration-200 ease-out hover:bg-white/8 focus-visible:outline-2 focus-visible:outline-white aria-pressed:text-white aria-pressed:underline aria-pressed:decoration-white aria-pressed:underline-offset-4"
+        className="min-h-11 shrink-0 rounded-md px-2 text-[11px] whitespace-nowrap text-muted-foreground transition-colors duration-200 ease-out hover:bg-muted focus-visible:outline-2 focus-visible:outline-foreground aria-pressed:text-foreground aria-pressed:underline aria-pressed:decoration-current aria-pressed:underline-offset-4"
         aria-pressed={locale === "ko"}
         onClick={toKo}
       >
@@ -176,7 +176,7 @@ function StandaloneVerification() {
   const t = useTranslations("Verification");
   return (
     <div
-      className="min-h-svh bg-teaser-card p-6 font-message text-white"
+      className="min-h-svh bg-background p-6 font-message text-foreground"
       lang={locale}
     >
       <header className="h-11">
@@ -317,7 +317,7 @@ export function VerificationFlow({
             ) : (
               challenge && (
                 <>
-                  <div className="mb-4 flex items-center justify-between gap-3 text-sm text-neutral-400 [&>button]:min-h-11 [&>button]:px-2 [&>button]:text-xs [&>button]:underline">
+                  <div className="mb-4 flex items-center justify-between gap-3 text-sm text-muted-foreground [&>button]:min-h-11 [&>button]:px-2 [&>button]:text-xs [&>button]:underline">
                     <span>{displayPhone(challenge.phone)}</span>
                     <button type="button" onClick={editNumber}>
                       {t("editNumber")}
@@ -370,7 +370,7 @@ export function VerificationFlow({
                   {screen === "success" && (
                     <>
                       <Description>{t("successDescription")}</Description>
-                      <p className="my-4 text-center text-xs text-neutral-300">
+                      <p className="my-4 text-center text-xs text-muted-foreground">
                         {t("successPreview")}
                       </p>
                       <PrimaryButton
@@ -389,7 +389,7 @@ export function VerificationFlow({
                           ? t("expiredDescription")
                           : t("mismatchDescription")}
                       </Description>
-                      <p className="my-4 text-center text-xs text-neutral-300">
+                      <p className="my-4 text-center text-xs text-muted-foreground">
                         {t("resultPreview")}
                       </p>
                       <PrimaryButton
@@ -411,7 +411,7 @@ export function VerificationFlow({
                   <p
                     className={cn(
                       notice
-                        ? "my-2 text-xs leading-relaxed text-neutral-300"
+                        ? "my-2 text-xs leading-relaxed text-muted-foreground"
                         : "sr-only"
                     )}
                     role="status"
@@ -419,7 +419,7 @@ export function VerificationFlow({
                     {notice ? t(notice) : ""}
                   </p>
                   <VerificationDetails label={t("screenTests")}>
-                    <div className="[&_button]:min-h-11 [&_button]:rounded-lg [&_button]:bg-white/8 [&_button]:px-3 [&_div]:flex [&_div]:flex-wrap [&_div]:gap-2">
+                    <div className="[&_button]:min-h-11 [&_button]:rounded-lg [&_button]:bg-muted [&_button]:px-3 [&_div]:flex [&_div]:flex-wrap [&_div]:gap-2">
                       <div>
                         {(
                           [

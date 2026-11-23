@@ -56,9 +56,9 @@ export function VerificationCountdown({
   return (
     <p
       className={cn(
-        "my-3 text-left font-sans text-base text-white tabular-nums [&>span]:ml-1 [&>span]:font-message [&>span]:text-xs [&>span]:text-neutral-400",
+        "my-3 text-left font-sans text-base text-foreground tabular-nums [&>span]:ml-1 [&>span]:font-message [&>span]:text-xs [&>span]:text-muted-foreground",
         compact &&
-          "my-0 shrink-0 text-xs whitespace-nowrap text-neutral-400 [&>span]:text-[11px]"
+          "my-0 shrink-0 text-xs whitespace-nowrap text-muted-foreground [&>span]:text-[11px]"
       )}
       role="timer"
       aria-live="off"

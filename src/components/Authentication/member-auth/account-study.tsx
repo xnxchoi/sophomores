@@ -67,10 +67,10 @@ export function MemberAccountStudy({
   const trigger = useRef<HTMLButtonElement>(null);
   const providerReturnFlow = useProviderReturnFlow();
   return (
-    <main className="min-h-screen bg-neutral-950 px-6 py-8 text-white">
+    <main className="min-h-screen bg-transparent px-6 py-8 text-foreground">
       <BrandMark asChild>
         {/* Plain anchor: this study renders in node tests, where next/link touches `self`. */}
-        <Link href="/" className="text-[23px] tracking-[-1.4px] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
+        <Link href="/" className="text-[23px] tracking-[-1.4px] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-foreground">
           sophomores
         </Link>
       </BrandMark>

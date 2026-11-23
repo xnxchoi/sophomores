@@ -320,6 +320,16 @@
     "enterAValidEmailAddress": "Enter a valid email address.",
     "tooManyAttemptsWaitBeforeTryingAgain": "Too many attempts. Wait before trying again.",
     "weCouldntCheckThisEmailTryAgain": "We couldn’t check this email. Try again.",
+    "couldntCheckThisEmail": "Couldn’t check this email.",
+    "retry": "Retry",
+    "or": "or",
+    "accountGreeting": {
+      "1": "Hello",
+      "2": "Welcome",
+      "3": "Welcome back",
+      "4": "Come in"
+    },
+    "notYou": "Not you?",
     "signIn": "Sign in",
     "createAccount": "Create account",
     "enterYourEmail": "Enter your email",

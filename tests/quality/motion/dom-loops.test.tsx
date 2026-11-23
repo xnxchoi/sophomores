@@ -36,7 +36,7 @@ test("checking indicator retains its existing span geometry and partial ring", (
     </NextIntlClientProvider>
   );
   assert.match(html, /<span data-status-indicator="checking"/);
-  assert.match(html, /inline-flex size-3 items-center justify-center rounded-full border border-neutral-300 border-r-transparent/);
+  assert.match(html, /inline-flex size-3 items-center justify-center rounded-full border border-foreground border-r-transparent/);
   assert.match(html, /role="status"/);
   assert.doesNotMatch(html, /animate-spin/);
 });

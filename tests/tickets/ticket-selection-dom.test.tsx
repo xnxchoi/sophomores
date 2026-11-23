@@ -1,5 +1,6 @@
 import messages from "../../messages/en.json";
 import { EnglishMessages } from "../fixtures/english-messages";
+import { enteredCode, firstCodeCell } from "../fixtures/code-input";
 import assert from "node:assert/strict";
 import { after, afterEach, before, test } from "node:test";
 import { JSDOM } from "jsdom";
@@ -38,9 +39,10 @@ async function completeSignupEmail() {
   await ui.waitFor(() => assert.equal((email as HTMLInputElement).disabled, false));
   ui.fireEvent.change(email, { target: { value: "ticket+entry@example.com" } });
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Continue" }));
-  await ui.screen.findByRole("button", { name: /^(?:Send sign-in code|Create account & send code)$/ });
-  ui.fireEvent.submit(email.closest("form")!);
-  const otp = await ui.screen.findByLabelText(messages.AuthPhase.code);
+  // An account found turns the field into the account row; the separate press sends the code.
+  ui.fireEvent.click(await ui.screen.findByRole("button", { name: /^(?:Send sign-in code|Create account & send code)$/ }));
+  await ui.screen.findByLabelText(messages.AuthPhase.code);
+  const otp = firstCodeCell(ui.screen);
   ui.fireEvent.change(otp, { target: { value: "A1B2C3" } });
 }
 
@@ -84,16 +86,16 @@ after(() => { dom.window.close(); for (const [key, value] of previous) { if (val
 test("ticket entry starts inline email-first with no dialog, chooser, or delivery from typing", async () => {
   let sent = 0;
   const view = ui.render(<EnglishMessages><Tickets memberClient={{ ...memberActions, status: async () => anonymous, sendEmailCode: async () => { sent++; } }} /></EnglishMessages>);
-  await ui.screen.findByRole("heading", { name: "Enter your email" });
+  await ui.screen.findByRole("heading", { name: "Sign in" });
   assert.equal(ui.screen.queryByRole("dialog") === null, true);
   assert.equal(ui.screen.queryByRole("heading", { name: "Welcome" }) === null, true);
   assert.equal(ui.screen.queryByRole("textbox", { name: "Ticket quantity" }) === null, true);
   const email = ui.screen.getByRole("textbox", { name: "Email address" });
-  assert.equal(email.classList.contains("tracking-normal!"), true, "email addresses use normal tracking rather than the OTP input treatment");
+  assert.equal(email.classList.contains("tracking-normal") && email.classList.contains("normal-case"), true, "email addresses use normal tracking and case rather than the OTP input treatment");
   const emailLabel = email.closest("form")?.querySelector<HTMLLabelElement>('label[for="' + email.id + '"]');
-  assert.equal(emailLabel?.classList.contains("sr-only"), true, "checkout retains its accessible email label without repeating it visually");
+  assert.equal(emailLabel?.classList.contains("sr-only"), false, "the underlined field shows its label above the line (owner, 23 Nov)");
   assert.equal(emailLabel?.htmlFor === email.id, true);
-  assert.equal(email.getAttribute("placeholder"), null, "the email prompt is not repeated as placeholder copy");
+  assert.equal((email.getAttribute("placeholder") ?? "").trim(), "", "the email prompt is not repeated as placeholder copy");
   ui.fireEvent.change(email, { target: { value: "existing@example.com" } });
   ui.fireEvent.blur(email);
   await ui.act(async () => window.dispatchEvent(new Event("focus")));
@@ -106,7 +108,7 @@ test("ticket entry starts inline email-first with no dialog, chooser, or deliver
 test("inline email entry makes no phone promise and offers recovery without a dialog or extra primary option", async () => {
   let sent = 0;
   ui.render(<EnglishMessages><Tickets memberClient={{ ...memberActions, status: async () => anonymous, sendEmailCode: async () => { sent++; } }} /></EnglishMessages>);
-  await ui.screen.findByRole("heading", { name: "Enter your email" });
+  await ui.screen.findByRole("heading", { name: "Sign in" });
   assert.equal(ui.screen.queryByText("Email, then your mobile number.") === null, true);
   assert.equal(ui.screen.queryByRole("button", { name: "Sign in with a passkey" }) === null, true);
   const email = ui.screen.getByRole("textbox", { name: "Email address" }) as HTMLInputElement;
@@ -139,9 +141,9 @@ test("recovery detachment cannot leave a stale focus marker that steals focus af
   const resumedEmail = await ui.screen.findByRole("textbox", { name: "Email address" }) as HTMLInputElement;
   assert.equal(resumedEmail.value, "retained@example.com");
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Continue" }));
-  await ui.screen.findByRole("button", { name: "Send sign-in code" });
-  ui.fireEvent.submit(resumedEmail.closest("form")!);
-  const proof = await ui.screen.findByLabelText(messages.AuthPhase.code);
+  ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Send sign-in code" }));
+  await ui.screen.findByLabelText(messages.AuthPhase.code);
+  const proof = firstCodeCell(ui.screen);
   ui.fireEvent.change(proof, { target: { value: "A1B2C3" } });
   const back = ui.screen.getByRole("link", { name: "Back" });
   back.focus();
@@ -170,7 +172,7 @@ test("only explicit Continue classifies email and stale lookup cannot permit del
   assert.equal(continuation.disabled, false);
   ui.fireEvent.click(continuation);
   await ui.waitFor(() => assert.deepEqual(lookups, ["a@example.com"]));
-  assert.equal(continuation.disabled, true);
+  assert.equal(continuation.getAttribute("aria-disabled"), "true", "Continue is inert while the lookup is pending");
   ui.fireEvent.click(continuation);
   assert.deepEqual(lookups, ["a@example.com"], "duplicate Continue is blocked while pending");
   assert.deepEqual(delivered, []);
@@ -204,13 +206,21 @@ test("email lookup can retry after failure without sending or assuming an accoun
   ui.fireEvent.click(initialContinue);
   await ui.waitFor(() => assert.equal(lookups, 1));
   await ui.act(async () => rejectFirst(new Error("Synthetic lookup failure")));
-  await ui.screen.findByText(/couldn’t check/);
+  await ui.screen.findByText("Couldn’t check this email.");
   const retryAction = await ui.screen.findByRole("button", { name: "Try email again" });
   ui.fireEvent.click(retryAction);
   await ui.waitFor(() => assert.equal(lookups, 2));
   await ui.act(async () => retry.resolve({ account: "existing" }));
   await ui.screen.findByRole("button", { name: "Send sign-in code" });
-  ui.fireEvent.change(email, { target: { value: "new@example.com" } });
+  // Account found: the heading greets, and the field becomes the account row with what was typed.
+  await ui.screen.findByRole("heading", { name: new RegExp(`^(?:${Object.values(messages.MemberAuth.accountGreeting).join("|")})$`) });
+  assert.equal(ui.screen.queryByRole("textbox", { name: "Email address" }) === null, true);
+  assert.ok(ui.screen.getByText("existing@example.com"));
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Not you?" }));
+  const nextEmail = await ui.screen.findByRole("textbox", { name: "Email address" }) as HTMLInputElement;
+  assert.equal(nextEmail.value, "", "'Not you?' clears the address");
+  await ui.screen.findByRole("heading", { name: "Sign in" });
+  ui.fireEvent.change(nextEmail, { target: { value: "new@example.com" } });
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Continue" }));
   await ui.waitFor(() => assert.equal(lookups, 3));
   await ui.act(async () => next.resolve({ account: "new" }));
@@ -256,7 +266,7 @@ test("lookup failures and missing lookup capability never assume a new account",
   await ui.waitFor(() => assert.equal((email as HTMLInputElement).disabled, false));
   ui.fireEvent.change(email, { target: { value: "member@example.com" } });
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Continue" }));
-  await ui.screen.findByText("We couldn’t check this email. Try again.");
+  await ui.screen.findByText("Couldn’t check this email.");
   assert.equal(ui.screen.queryByRole("button", { name: "Create account & send code" }) === null, true);
   assert.equal(ui.screen.queryByRole("button", { name: "Send sign-in code" }) === null, true);
   assert.equal((ui.screen.getByRole("button", { name: "Continue" }) as HTMLButtonElement).disabled, true);
@@ -279,8 +289,8 @@ test("lookup Retry-After survives address edits but does not disable independent
   assert.equal(lookups, 1);
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Continue" }));
   assert.equal(lookups, 1, "explicit Continue also cannot bypass the shared lookup Retry-After");
-  const blockedAction = await ui.screen.findByRole("button", { name: "Try email again" }) as HTMLButtonElement;
-  assert.equal(blockedAction.disabled, true);
+  // During the wait the message says so and no retry is offered (the plain retry comes back once it's over).
+  assert.equal(ui.screen.queryByRole("button", { name: "Try email again" }) === null, true);
   const googleAction = ui.screen.getByRole("button", { name: "Continue with Google" }) as HTMLButtonElement;
   assert.equal(googleAction.disabled, false);
   ui.fireEvent.click(googleAction);
@@ -398,7 +408,7 @@ test("known member pending refresh and outage retain identity without exposing a
   assert.equal(ui.screen.queryByRole("textbox", { name: "Ticket quantity" }) === null, true);
   assert.equal(ui.screen.queryByRole("textbox", { name: "Email address" }) === null, true);
   assert.equal(ui.screen.queryByRole("button", { name: "Continue with Google" }) === null, true);
-  assert.equal(ui.screen.queryByRole("heading", { name: "Enter your email" }) === null, true);
+  assert.equal(ui.screen.queryByRole("heading", { name: "Sign in" }) === null, true);
   retryFails = true;
   // A malformed fresh status is an outage, never evidence that the known member became anonymous.
   await ui.act(async () => pending.resolve({ ...anonymous, member: true }));
@@ -415,7 +425,7 @@ test("known member pending refresh and outage retain identity without exposing a
   await ui.screen.findByRole("heading", { name: "Your tickets" });
   revoked = true;
   await ui.act(async () => window.dispatchEvent(new Event("focus")));
-  await ui.screen.findByRole("heading", { name: "Enter your email" });
+  await ui.screen.findByRole("heading", { name: "Sign in" });
   assert.equal(ui.screen.queryByRole("textbox", { name: "Ticket quantity" }) === null, true);
 });
 
@@ -736,7 +746,7 @@ test("expired sessions can reauthenticate retained checkouts beyond current limi
       checkoutCatalogue={{ orderName: "Changed sandbox admission", unitAmount: 500, currency: "USD",
         maximumQuantity: 1, saleStartsAt: "2020-01-01T00:00:00Z", saleEndsAt: "2020-01-02T00:00:00Z" }}
       checkoutReady={false} checkoutRequestPayment={async () => { opened++; return undefined; }} /></EnglishMessages>);
-    await ui.screen.findByRole("heading", { name: "Enter your email" });
+    await ui.screen.findByRole("heading", { name: "Sign in" });
     const recovery = [...view.container.querySelectorAll<HTMLButtonElement>("button")].find((button) => button.textContent === (knownReference ? "Check payment status" : "Recover checkout"))!;
     assert.equal(recovery.closest("[hidden]") !== null, true);
     assert.equal(recovery.disabled, true, "expired sessions must not bypass the canonical account gate");
@@ -772,7 +782,7 @@ test("inline account retains ticket selection and intent without URL or history 
   ui.render(<EnglishMessages><Tickets memberClient={{ ...memberActions, status: async () => anonymous }} /></EnglishMessages>);
   const main = document.querySelector("main");
   const count = document.querySelector<HTMLInputElement>('input[aria-label="Ticket quantity"]')!;
-  await ui.screen.findByRole("heading", { name: "Enter your email" });
+  await ui.screen.findByRole("heading", { name: "Sign in" });
   assert.equal(count.closest("[hidden]") !== null, true);
   assert.equal(count.value, "2");
   assert.equal(document.querySelector("main") === main, true);
@@ -805,7 +815,7 @@ test("blocked storage does not block inline email entry or leak private failure 
   Object.defineProperty(dom.window, "localStorage", { configurable: true, get() { throw new Error("private storage detail"); } });
   t.after(() => Object.defineProperty(dom.window, "localStorage", getter));
   ui.render(<EnglishMessages><Tickets memberClient={{ ...memberActions, status: async () => anonymous }} /></EnglishMessages>);
-  await ui.screen.findByRole("heading", { name: "Enter your email" });
+  await ui.screen.findByRole("heading", { name: "Sign in" });
   assert.equal((ui.screen.getByRole("textbox", { name: "Email address" }) as HTMLInputElement).disabled, false);
   assert.doesNotMatch(document.body.textContent ?? "", /private storage detail/);
   assert.match(ui.screen.getByText(/continue without saving/).textContent ?? "", /couldn’t save/);
@@ -892,16 +902,17 @@ test("inline new-account purchase retains tickets through OTP and phone binding 
     assert.ok(ui.within(main).queryByText("Account verified") === null, stage);
     assert.equal(quoteRequests.length, 0, stage);
   }
-  await ui.screen.findByRole("heading", { name: "Enter your email" });
+  await ui.screen.findByRole("heading", { name: "Sign in" });
   ineligible("direct signup");
   const email = await ui.screen.findByLabelText("Email address") as HTMLInputElement;
   await ui.waitFor(() => assert.equal(email.disabled, false));
   assert.equal(phoneRequests.length, 0, "signup does not automatically issue a phone challenge");
   ui.fireEvent.change(email, { target: { value: "ticket+signup@example.com" } });
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Continue" }));
-  await ui.screen.findByRole("button", { name: /^(?:Send sign-in code|Create account & send code)$/ });
-  ui.fireEvent.submit(email.closest("form")!);
-  const otp = await ui.screen.findByLabelText(messages.AuthPhase.code);
+  // An account found turns the field into the account row; the separate press sends the code.
+  ui.fireEvent.click(await ui.screen.findByRole("button", { name: /^(?:Send sign-in code|Create account & send code)$/ }));
+  await ui.screen.findByLabelText(messages.AuthPhase.code);
+  const otp = firstCodeCell(ui.screen);
   assert.deepEqual(calls, [["send", "ticket+signup@example.com"]]);
   ineligible("email OTP requested");
   ui.fireEvent.change(otp, { target: { value: "A1B2C3" } });
@@ -946,7 +957,7 @@ test("automatic verified advance transfers focused inline proof to the visible t
   const client: MemberClient = { ...memberActions, status: async () => verified ? pending.promise : anonymous, verifyEmailCode: async () => { verified = true; } };
   ui.render(<EnglishMessages><Tickets memberClient={client} /></EnglishMessages>);
   await completeSignupEmail();
-  const proof = ui.screen.getByLabelText(messages.AuthPhase.code);
+  const proof = firstCodeCell(ui.screen);
   proof.focus();
   assert.equal(ui.screen.queryByRole("textbox", { name: "Ticket quantity" }) === null, true);
   await ui.act(async () => pending.resolve(member));
@@ -960,7 +971,7 @@ test("automatic verified advance does not steal focus moved outside the account 
   const client: MemberClient = { ...memberActions, status: async () => verified ? pending.promise : anonymous, verifyEmailCode: async () => { verified = true; } };
   ui.render(<EnglishMessages><Tickets memberClient={client} /></EnglishMessages>);
   await completeSignupEmail();
-  const proof = ui.screen.getByLabelText(messages.AuthPhase.code);
+  const proof = firstCodeCell(ui.screen);
   proof.focus();
   assert.equal(ui.screen.queryByRole("textbox", { name: "Ticket quantity" }) === null, true);
   const back = ui.screen.getByRole("link", { name: "Back" });
@@ -987,13 +998,14 @@ test("focus refresh preserves inline email and proof without a chooser or repeat
   await ui.waitFor(() => assert.equal(email.disabled, false));
   ui.fireEvent.change(email, { target: { value: "private+customer@example.com" } });
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Continue" }));
-  await ui.screen.findByRole("button", { name: /^(?:Send sign-in code|Create account & send code)$/ });
-  ui.fireEvent.submit(email.closest("form")!);
-  const code = await ui.screen.findByLabelText(messages.AuthPhase.code) as HTMLInputElement;
+  // An account found turns the field into the account row; the separate press sends the code.
+  ui.fireEvent.click(await ui.screen.findByRole("button", { name: /^(?:Send sign-in code|Create account & send code)$/ }));
+  await ui.screen.findByLabelText(messages.AuthPhase.code);
+  const code = firstCodeCell(ui.screen);
   ui.fireEvent.change(code, { target: { value: "A1" } });
   await ui.act(async () => window.dispatchEvent(new Event("focus")));
-  assert.equal(ui.screen.getByLabelText(messages.AuthPhase.code) === code, true);
-  assert.equal(code.value, "A1");
+  assert.equal(firstCodeCell(ui.screen) === code, true);
+  assert.equal(enteredCode(ui.screen), "A1");
   assert.equal(sent, 1);
   assert.equal(ui.screen.queryByRole("heading", { name: "Welcome" }) === null, true);
 });
@@ -1007,7 +1019,7 @@ test("authoritative member refresh can revoke a previously exposed purchase with
   assert.equal(reads, 1);
   current = anonymous;
   await ui.act(async () => window.dispatchEvent(new Event("focus")));
-  await ui.screen.findByRole("heading", { name: "Enter your email" });
+  await ui.screen.findByRole("heading", { name: "Sign in" });
   assert.equal(reads, 2);
   assert.equal(ui.screen.queryByRole("button", { name: "Get test quote" }) === null, true);
 });
@@ -1131,7 +1143,7 @@ test("a draft with unknown options or unsupported line count is not silently tre
 test("storage write rejection leaves inline identity usable without leaking private failure details", async (t) => {
   t.mock.method(dom.window.Storage.prototype, "setItem", () => { throw new Error("private quota details"); });
   ui.render(<EnglishMessages><Tickets memberClient={{ ...memberActions, status: async () => anonymous }} /></EnglishMessages>);
-  await ui.screen.findByRole("heading", { name: "Enter your email" });
+  await ui.screen.findByRole("heading", { name: "Sign in" });
   await ui.waitFor(() => assert.equal(ui.screen.getAllByText(/couldn’t save/).length > 0, true));
   assert.equal((ui.screen.getByRole("textbox", { name: "Email address" }) as HTMLInputElement).disabled, false);
   assert.doesNotMatch(document.body.textContent ?? "", /private quota details/);
@@ -1296,7 +1308,7 @@ test("unavailable catalogue and stale draft cannot block inline identity or over
   saveTicketSelectionDraft(dom.window.localStorage, [{ ticketTypeId: "retired", quantity: 2 }]);
   const before = dom.window.localStorage.getItem(TICKET_SELECTION_DRAFT_KEY);
   ui.render(<EnglishMessages><Tickets catalogue={{ ...catalogue, ticketTypes: catalogue.ticketTypes.map((option) => ({ ...option, available: false })) }} memberClient={{ ...memberActions, status: async () => anonymous }} /></EnglishMessages>);
-  await ui.screen.findByRole("heading", { name: "Enter your email" });
+  await ui.screen.findByRole("heading", { name: "Sign in" });
   assert.equal(ui.screen.queryByRole("textbox", { name: "Ticket quantity" }) === null, true);
   assert.equal(dom.window.localStorage.getItem(TICKET_SELECTION_DRAFT_KEY), before);
 });

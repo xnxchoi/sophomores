@@ -82,7 +82,8 @@ test("shared email entry keeps passkey and Google as quiet passwordless alternat
   assert.match(html, /data-account-phase="entry"/);
   assert.match(html, /Email address/);
   assert.match(html, /type="email"/);
-  assert.match(html, /Continue<\/button>/);
+  // Arc's button wraps its label; the submit action reads Continue.
+  assert.match(html, /<button[^>]*data-phase-action="submit"[^>]*>(?:(?!<\/button>)[\s\S])*>Continue<\//);
   assert.doesNotMatch(html, /More options/);
   assert.match(html, /Sign in with a passkey/);
   assert.doesNotMatch(html, /Preferred for returning members/);
@@ -161,8 +162,11 @@ test("code prompts and action feedback remain accessible, errors never render as
   assert.match(html, /Change email/);
   assert.match(html, /Send new code/);
   assert.match(html, /inputMode="text"/);
-  assert.match(html, /maxLength="6"/);
-  assert.match(html, /pattern="\^\[a-zA-Z0-9\]\+\$"/);
+  // Arc's six-cell code input: six cells (letters and digits are enforced as the code is entered). No cell has a
+  // maxLength, so a whole autofilled or pasted code can arrive in any cell; each cell asks for capitals.
+  assert.equal((html.match(new RegExp(`aria-label="${messages.AuthPhase.code}, digit [1-6] of 6"`, "g")) ?? []).length, 6);
+  assert.doesNotMatch(html, /maxLength=/i);
+  assert.equal((html.match(/autoCapitalize="characters"/gi) ?? []).length, 6);
   assert.match(html, /role="alert"/);
   assert.match(html, /aria-busy="true"/);
   assert.doesNotMatch(html, />Passkey added/);
@@ -211,8 +215,10 @@ test("unsupported providers disappear while unavailable email offers contextual 
 
 test("progress belongs to the initiating method, never the unrelated email action", () => {
   const html = render(anonymous, { busy: true, pendingAction: "passkey" });
-  assert.match(html, /<button[^>]*data-phase-action="submit"[^>]*aria-busy="false"/);
-  assert.match(html, /Continue<\/button>/);
+  // Arc's button carries aria-busy only while busy: the email action isn't.
+  assert.doesNotMatch(html, /<button(?=[^>]*data-phase-action="submit")(?=[^>]*aria-busy="true")[^>]*>/);
+  // Arc's button wraps its label; the submit action reads Continue.
+  assert.match(html, /<button[^>]*data-phase-action="submit"[^>]*>(?:(?!<\/button>)[\s\S])*>Continue<\//);
   assert.doesNotMatch(html, /<section[^>]*aria-busy/);
   assert.match(html, /<button[^>]*aria-busy="true"[^>]*>/);
   const loading = render(null);

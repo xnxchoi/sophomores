@@ -1,5 +1,6 @@
 import messages from "../../messages/en.json";
 import { AuthenticationMessages } from "../fixtures/authentication-messages";
+import { codeCellsIn, codeDescriptionIn, codeIn, spokenText } from "../fixtures/code-input";
 import assert from "node:assert/strict";
 import { after, afterEach, before, test } from "node:test";
 import { createRef } from "react";
@@ -233,25 +234,33 @@ for (const flow of ["login", "signup"] as const) {
   });
 }
 
-test("email code uses six OTP slots with one labelled alphanumeric autofill input", async () => {
+// The approved sign-in step uses Arc's code input: six single-character cells in one group labelled "Code". The first
+// cell takes autofill (autocomplete one-time-code) and a whole typed, pasted or autofilled code fills the row.
+test("email code uses six OTP slots in one labelled group; the first cell takes alphanumeric autofill", async () => {
   const { container } = renderStudy({ initialPhase: "email-code" });
   const code = field(container, 'input[autocomplete="one-time-code"]');
-  const slots = container.querySelectorAll('[data-slot="input-otp-slot"]');
+  const cells = codeCellsIn(container);
 
-  assert.equal(slots.length, 6);
-  assert.equal(container.querySelectorAll("input").length, 1);
-  assert.ok(ui.within(container).getByLabelText(messages.AuthPhase.code) === code);
-  assert.equal(code.getAttribute("inputmode"), "text");
-  assert.equal(code.getAttribute("autocapitalize"), "characters");
-  assert.equal(code.maxLength, 6);
+  assert.equal(cells.length, 6);
+  assert.equal(container.querySelectorAll("input").length, 6, "the code cells are the step's only inputs");
+  assert.ok(cells[0] === code, "autofill lands in the first cell");
+  assert.equal(container.querySelectorAll('input[autocomplete="one-time-code"]').length, 1);
+  const group = ui.within(container).getByRole("group", { name: messages.AuthPhase.code });
+  assert.ok(cells.every((cell, index) => group.contains(cell)
+    && cell.getAttribute("aria-label") === `${messages.AuthPhase.code}, digit ${index + 1} of 6`));
+  for (const cell of cells) {
+    assert.equal(cell.getAttribute("inputmode"), "text");
+    assert.equal(cell.getAttribute("autocapitalize"), "characters");
+    assert.equal(cell.hasAttribute("maxlength"), false, "an autofilled or pasted code arrives whole in any cell");
+  }
   ui.fireEvent.change(code, { target: { value: "a1b2c3d" } });
   assert.equal(
-    code.value,
+    codeIn(container),
     "A1B2C3",
     "input uppercases and truncates to six characters"
   );
   assert.ok(action(container, "submit").disabled, "six characters auto-start verification");
-  assert.equal(action(container, "submit").textContent?.trim(), messages.AuthPhase.verifying);
+  assert.equal(spokenText(action(container, "submit")).trim(), messages.AuthPhase.verifying);
   await waitForPhase(container, "complete");
 });
 
@@ -261,24 +270,23 @@ test("OTP partial edits never submit; formatted paste verifies once despite manu
   await untilAsserted(ui, () => assert.ok(document.activeElement === code));
   for (const value of ["", "a", "a1b2", "a1b2c"]) {
     ui.fireEvent.change(code, { target: { value } });
-    assert.equal(code.value, value.toUpperCase());
+    assert.equal(codeIn(container), value.toUpperCase());
     assert.ok(action(container, "submit").disabled, "partial input cannot be submitted");
   }
   for (const value of ["A1B2C!", "Ａ1B2C3", "A1B2C💥", "A1B2Cé"]) {
     ui.fireEvent.change(code, { target: { value } });
-    assert.equal(code.value, "A1B2C", "non-ASCII and punctuation are rejected");
+    assert.equal(codeIn(container), "A1B2C", "non-ASCII and punctuation are rejected");
   }
   await ui.act(async () => { await new Promise((resolve) => setTimeout(resolve, 450)); });
   assert.equal(phase(container), "email-code", "partial input never advances");
   code.setSelectionRange(0, 5);
   ui.fireEvent.paste(code, { clipboardData: { getData: () => " a1b-2c3 " } });
-  assert.equal(code.value, "A1B2C3");
-  assert.deepEqual(Array.from(container.querySelectorAll('[data-slot="input-otp-slot"]'),
-    (slot) => slot.textContent), Array.from("A1B2C3"));
+  assert.equal(codeIn(container), "A1B2C3");
+  assert.deepEqual(codeCellsIn(container).map((cell) => cell.value), Array.from("A1B2C3"));
   const verify = action(container, "submit");
   assert.ok(verify.disabled);
   assert.equal(verify.getAttribute("aria-busy"), "true");
-  assert.equal(verify.textContent?.trim(), messages.AuthPhase.verifying);
+  assert.equal(spokenText(verify).trim(), messages.AuthPhase.verifying);
   ui.fireEvent.click(verify);
   submit(container);
   await waitForPhase(container, "complete");
@@ -333,25 +341,27 @@ test("wrong full codes show pending then inline error; full-length edits and man
   }
   for (const value of ["AAAAAA", "BBBBBB", "abcdef", "000000", "000001"]) {
     ui.fireEvent.change(code, { target: { value } });
-    assert.equal(code.value, value.toUpperCase());
+    assert.equal(codeIn(container), value.toUpperCase());
     assert.ok(action(container, "submit").disabled, "even a wrong full code starts pending");
-    assert.equal(code.getAttribute("aria-invalid"), "false", "no error before validation finishes");
-    assert.equal(action(container, "submit").textContent?.trim(), messages.AuthPhase.verifying);
+    // Arc's cells drop aria-invalid (rather than setting "false") while there is no error.
+    assert.ok(codeCellsIn(container).every((cell) => cell.getAttribute("aria-invalid") !== "true"), "no error before validation finishes");
+    assert.equal(spokenText(action(container, "submit")).trim(), messages.AuthPhase.verifying);
     await untilAsserted(ui, () => {
       assert.ok(!action(container, "submit").disabled);
       assert.equal(code.getAttribute("aria-invalid"), "true");
     });
-    const feedback = document.getElementById(code.getAttribute("aria-describedby")!);
-    assert.ok(feedback?.textContent?.trim(), "failed code has inline feedback");
+    assert.ok(codeDescriptionIn(container).trim(), "failed code has inline feedback, read from every cell");
     assert.equal(phase(container), "email-code");
   }
   ui.fireEvent.click(action(container, "submit"));
   assert.ok(action(container, "submit").disabled, "Verify remains an unchanged-code manual fallback");
   await untilAsserted(ui, () => assert.ok(!action(container, "submit").disabled));
   assert.equal(code.getAttribute("aria-invalid"), "true");
+  // Corrections stay editable cell by cell: empty the row from the end, enter five characters, then the last one.
+  for (const cell of codeCellsIn(container).reverse()) ui.fireEvent.change(cell, { target: { value: "" } });
   ui.fireEvent.change(code, { target: { value: "A1B2C" } });
-  assert.equal(code.value, "A1B2C", "backspace keeps corrections editable");
-  ui.fireEvent.change(code, { target: { value: "a1b2c3" } });
+  assert.equal(codeIn(container), "A1B2C", "backspace keeps corrections editable");
+  ui.fireEvent.change(codeCellsIn(container)[5], { target: { value: "3" } });
   assert.ok(action(container, "submit").disabled);
   await waitForPhase(container, "complete");
   assert.ok(ui.within(container).getByRole("heading", { name: "Preview complete" }));
@@ -600,11 +610,8 @@ test("successful inline resend returns its still-owned retry control to the pres
   assert.ok(document.activeElement === code);
   assert.equal(phase(container), "email-code");
   assert.ok(field(container, 'input[autocomplete="one-time-code"]') === code);
-  assert.equal(code.value, "");
-  assert.equal(
-    container.querySelectorAll('[data-slot="input-otp-slot"]').length,
-    6
-  );
+  assert.equal(codeIn(container), "");
+  assert.equal(codeCellsIn(container).length, 6);
   assert.ok(changes.every((next) => next === "email-code"));
   assert.ok(ui.within(document.body).queryByRole("menu") === null);
   assert.ok(ui.within(document.body).queryByRole("dialog") === null);
@@ -624,7 +631,7 @@ test("successful inline resend does not steal focus when the user leaves its ret
   assert.equal(notices.length, 1);
   assert.ok(document.activeElement === heading, "successful resend may hand off only if its triggering control still owns focus");
   assert.ok(field(container, 'input[autocomplete="one-time-code"]') === code);
-  assert.equal(code.value, "");
+  assert.equal(codeIn(container), "");
 });
 
 test("resend clears invalid code and changing email returns to an editable entry", async () => {
@@ -639,8 +646,8 @@ test("resend clears invalid code and changing email returns to an editable entry
   await waitForPhase(container, "email-code");
   code = field(container, 'input[autocomplete="one-time-code"]');
   await untilAsserted(ui, () => {
-    assert.equal(code.value, "");
-    assert.equal(code.getAttribute("aria-invalid"), "false");
+    assert.equal(codeIn(container), "");
+    assert.ok(codeCellsIn(container).every((cell) => cell.getAttribute("aria-invalid") !== "true"));
   });
   assert.equal(phase(container), "email-code");
   assert.ok(notices.some((notice) => /A1B2C3.*No email was sent/.test(notice)));
@@ -652,10 +659,7 @@ test("resend clears invalid code and changing email returns to an editable entry
   submit(container);
   await waitForPhase(container, "email-code");
   assert.ok(container.textContent?.includes("changed@example.com"));
-  assert.equal(
-    field(container, 'input[autocomplete="one-time-code"]').value,
-    ""
-  );
+  assert.equal(codeIn(container), "");
 });
 
 test("changing phone returns to editable phone and starts a fresh waiting session", async (t) => {
@@ -726,10 +730,7 @@ test("passkey fallback returns to email code without invoking device authenticat
   const { container } = renderStudy({ initialPhase: "passkey" });
   ui.fireEvent.click(action(container, "email-code"));
   await waitForPhase(container, "email-code");
-  assert.equal(
-    field(container, 'input[autocomplete="one-time-code"]').value,
-    ""
-  );
+  assert.equal(codeIn(container), "");
 });
 
 test("waiting deadline expires without checking or verifying a phone", async (t) => {

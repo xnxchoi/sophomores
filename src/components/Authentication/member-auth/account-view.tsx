@@ -2,9 +2,10 @@
 
 import { useLocale, useTranslations } from "next-intl";
 
-import { useCallback, useContext, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, type ComponentProps, type ReactNode } from "react";
 import { Check, KeyRound, LoaderCircle, RefreshCw } from "lucide-react";
-import { motion } from "motion/react";
+import { UserIcon } from "@phosphor-icons/react";
+import { AnimatePresence, motion, type Transition } from "motion/react";
 import Image from "next/image";
 import { cn } from "../../../lib/utils";
 import { VerificationPresentation, VerificationTrayTitle } from "../phone-verification/verification-tray";
@@ -14,9 +15,10 @@ import type { MemberCapabilities, MemberSocialProvider } from "../../../lib/memb
 import { AccountPhaseViews } from "@/components/Authentication/account-phase-views";
 import { normalizeLoginEmail } from "@/lib/passwordless-login";
 import { motionTokens } from "@/lib/motion-tokens";
+import { DrawnField } from "@/components/ui/input";
+import { Button } from "@/components/arc/button/button";
 
 import {
-  AccountInput,
   AccountButton,
   AccountPrimaryButton,
   AccountTextButton
@@ -152,10 +154,22 @@ export function MemberAccountView(props: MemberAccountViewProps) {
   useLayoutEffect(() => {
     if (props.reauthenticating) document.getElementById(props.headingId ?? "member-account-heading")?.focus({ preventScroll: true });
   }, [props.reauthenticating, props.headingId]);
-  const statusRetry = needsStatusRetry ? (
+  const statusRetry = needsStatusRetry ? props.presentation === "ticket-checkout" ? (
+    <RetryAction
+      data-account-status-retry=""
+      data-account-status-refresh=""
+      aria-label={t("refreshAccountStatus")}
+      pending={props.refreshingStatus === true}
+      disabled={snapshot.busy || props.refreshingStatus || (!status && snapshot.failure === "rate-limited" && Math.max(props.verificationRemaining ?? 0, props.resendRemaining ?? 0) > 0)}
+      onClick={props.onRefresh}
+      pendingLabel={t("checkingSignInOptions")}
+    >
+      {t("retry")}
+    </RetryAction>
+  ) : (
     <>
       <AccountButton
-        className={cn("gap-2 border-white/10 bg-white/[0.025] text-[13px] text-neutral-300", sharedEmail ? mobileTray ? "size-12 min-h-0 shrink-0 p-0" : "size-11 min-h-0 shrink-0 p-0" : "min-h-12 w-auto px-4 py-3", !sharedEmail && mobileTray && "mx-auto flex")}
+        className={cn("gap-2 border-border bg-transparent text-[13px] text-muted-foreground", sharedEmail ? mobileTray ? "size-12 min-h-0 shrink-0 p-0" : "size-11 min-h-0 shrink-0 p-0" : "min-h-12 w-auto px-4 py-3", !sharedEmail && mobileTray && "mx-auto flex")}
         type="button"
         data-account-status-retry=""
         data-account-status-refresh={sharedEmail ? "" : undefined}
@@ -184,13 +198,16 @@ export function MemberAccountView(props: MemberAccountViewProps) {
     ) : null;
   if (props.presentation === "ticket-checkout" && status?.member) {
     if (!snapshot.busy && !snapshot.error) return null;
-    return <Panel ref={capturePanel} data-member-account-check="" className="px-0! pt-0! pb-0! [font-family:system-ui]">
-      {snapshot.busy ? <p role="status" className="m-0 flex items-center gap-2 text-[14px] leading-6 text-neutral-300"><LoaderCircle aria-hidden="true" className="size-4 animate-spin" />  {t("checkingYourAccount")}</p> : snapshot.error && <p role="alert" className="m-0 text-[14px] leading-6 text-neutral-300">{error}</p>}
-      {statusRetry && <div className="mt-3">{statusRetry}</div>}
+    return <Panel ref={capturePanel} data-member-account-check="" className="px-0! pt-0! pb-0!">
+      {/* One row: what happened, and the refresh beside it. */}
+      <div className="flex min-h-11 flex-wrap items-center gap-x-4">
+        {snapshot.busy ? <p role="status" className="m-0 flex items-center gap-2 text-sm leading-6 text-muted-foreground"><LoaderCircle aria-hidden="true" className="size-4 animate-spin" />  {t("checkingYourAccount")}</p> : snapshot.error && <p role="alert" className="m-0 text-sm leading-6 text-foreground">{error}</p>}
+        {statusRetry}
+      </div>
     </Panel>;
   }
   return (
-    <Panel ref={capturePanel} data-authentication-presentation={presentation ?? undefined} className={cn("!px-6 !pb-6 [font-family:system-ui] data-[authentication-presentation=modal]:[@media(max-height:600px)]:pt-4! data-[authentication-presentation=modal]:[@media(max-height:600px)]:pb-4!", mobileTray ? "!pt-0" : "!pt-6")} data-member-account-flow="">
+    <Panel ref={capturePanel} data-authentication-presentation={presentation ?? undefined} className={cn(props.presentation === "ticket-checkout" ? "!px-0 !pt-0 !pb-0" : "!px-6 !pb-6 [font-family:system-ui] data-[authentication-presentation=modal]:[@media(max-height:600px)]:pt-4! data-[authentication-presentation=modal]:[@media(max-height:600px)]:pb-4!", props.presentation !== "ticket-checkout" && (mobileTray ? "!pt-0" : "!pt-6"))} data-member-account-flow="">
       <motion.div
         key={phase}
         data-member-account-phase={phase}
@@ -203,14 +220,14 @@ export function MemberAccountView(props: MemberAccountViewProps) {
           <Heading
             id={props.headingId ?? "member-account-heading"}
             tabIndex={-1}
-            className={cn("!text-[24px] !leading-[30px] !font-medium", mobileTray ? "!mt-0" : "pl-14", pendingSetup && !embeddedPhone && "mt-0! mb-2!", status?.member && "!mt-0 !mb-4 flex items-center gap-2.5", embeddedPhone && "sr-only")}
+            className={cn("!text-[24px] !leading-[30px] !font-medium", mobileTray || props.presentation === "ticket-checkout" ? "!mt-0" : "pl-14", pendingSetup && !embeddedPhone && "mt-0! mb-2!", status?.member && "!mt-0 !mb-4 flex items-center gap-2.5", embeddedPhone && "sr-only")}
           >
-            {status?.member && <Check aria-hidden="true" data-account-confirmed="" className="size-5 shrink-0 text-neutral-200" strokeWidth={1.5} />}
+            {status?.member && <Check aria-hidden="true" data-account-confirmed="" className="size-5 shrink-0 text-foreground" strokeWidth={1.5} />}
             {heading}
           </Heading>
         </VerificationTrayTitle>
       )}
-        <div className={cn(!sharedEmail && (status?.member ? "space-y-4" : "space-y-5"), !mobileTray && "[&>p:first-child]:pl-14")}>
+        <div className={cn(!sharedEmail && (status?.member ? "space-y-4" : "space-y-5"), !mobileTray && props.presentation !== "ticket-checkout" && "[&>p:first-child]:pl-14")}>
           {embeddedPhone ? (
             <>
               <div hidden={props.reauthenticating} inert={props.reauthenticating}>
@@ -226,7 +243,7 @@ export function MemberAccountView(props: MemberAccountViewProps) {
               </div>
               {props.reauthenticating && <div data-member-registration-reauth="" className="space-y-4">
                 <VerificationTrayTitle><Heading id={props.headingId ?? "member-account-heading"} tabIndex={-1} className="mt-0 mb-2 text-center text-[24px] leading-[30px] font-medium sm:text-[24px]">{t("signInAgain")}</Heading></VerificationTrayTitle>
-                <p className="w-full text-center text-sm leading-6 text-neutral-400">{t("continueRegistrationAfterSigningIn")}</p>
+                <p className="w-full text-center text-sm leading-6 text-muted-foreground">{t("continueRegistrationAfterSigningIn")}</p>
                 <IdentityStep {...props} flow="login" presentation={undefined} headingId={(props.headingId ?? "member-account-heading") + "-reauth-entry"} reauthenticating locked={locked} reserveFeedback={needsStatusRetry} feedbackAction={statusRetry} />
               </div>}
             </>
@@ -239,12 +256,12 @@ export function MemberAccountView(props: MemberAccountViewProps) {
             />
           ) : status.member ? (
             <>
-              <p role={bindingConfirmed ? "status" : undefined} className="text-sm leading-5 text-neutral-400">
+              <p role={bindingConfirmed ? "status" : undefined} className="text-sm leading-5 text-muted-foreground">
                 {t("emailAndPhoneConfirmed")}
               </p>
               {props.completionAction}
               {passkeyAction}
-              <p className="text-sm leading-6 text-neutral-400">
+              <p className="text-sm leading-6 text-muted-foreground">
                 {t("passkeysAreOptionalThisLocalPasskeyWontTransferToTheHostedSite")}
               </p>
               <AccountButton
@@ -261,7 +278,7 @@ export function MemberAccountView(props: MemberAccountViewProps) {
                 props.phoneStep
               ) : (
                 <>
-                  <p className="text-sm leading-6 text-neutral-400">
+                  <p className="text-sm leading-6 text-muted-foreground">
                     {t("verifyYourPhoneToFinishLabel")}
                   </p>
                   <AccountPrimaryButton
@@ -285,7 +302,7 @@ export function MemberAccountView(props: MemberAccountViewProps) {
             </>
           ) : (
             <>
-              <p className="text-sm leading-6 text-neutral-400">
+              <p className="text-sm leading-6 text-muted-foreground">
                 {t("signOutAndVerifyYourEmailBeforeContinuing")}
               </p>
               <AccountButton
@@ -304,20 +321,20 @@ export function MemberAccountView(props: MemberAccountViewProps) {
       {!embeddedPhone && (!sharedEmail || (!snapshot.failure && !needsStatusRetry)) && (notice || snapshot.error || (!status && !sharedEmail) || (props.refreshingStatus && !sharedEmail)) && (
         <div className="mt-4 space-y-2 text-[13px] leading-5" aria-live="polite">
           {notice && (
-            <p role="status" className="text-neutral-300">
+            <p role="status" className="text-muted-foreground">
               {notice}
             </p>
           )}
           {(snapshot.error || props.refreshingStatus) && (
             <p
               role={props.refreshingStatus ? undefined : "alert"}
-              className={cn("text-neutral-200", needsStatusRetry ? "min-h-10" : "rounded-xl border border-neutral-500 px-4 py-3")}
+              className={cn("text-foreground", needsStatusRetry ? "min-h-10" : "rounded-xl border border-border px-4 py-3")}
             >
               {!props.refreshingStatus && error}
             </p>
           )}
           {!status && !sharedEmail && !snapshot.error && (
-            <p role="status" className="flex items-center gap-2 text-neutral-400">
+            <p role="status" className="flex items-center gap-2 text-muted-foreground">
               <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />
               <span className="sr-only">{t("checkingSignInOptions")}</span>
             </p>
@@ -331,6 +348,12 @@ export function MemberAccountView(props: MemberAccountViewProps) {
   );
 }
 
+const GREETINGS = 4;
+// One motion for an account found: heading, field and row move on springs tuned together (no fixed durations).
+const headingMotion: Transition = { type: "spring", visualDuration: 0.5, bounce: 0, filter: { type: "spring", visualDuration: 0.35, bounce: 0 } };
+const rowMotion: Transition = { type: "spring", visualDuration: 0.55, bounce: 0 };
+const fadeMotion: Transition = { type: "spring", visualDuration: 0.4, bounce: 0 };
+
 function TicketEmailEntry(props: MemberAccountViewProps & { locked: boolean; visibleError: string | null; visibleFailure: MemberSnapshot["failure"]; feedbackAction?: ReactNode }) {
   const t = useTranslations("MemberAuth");
   const { snapshot, locked } = props;
@@ -339,58 +362,111 @@ function TicketEmailEntry(props: MemberAccountViewProps & { locked: boolean; vis
   const fieldId = (props.headingId ?? "member-account-heading") + "-email";
   const lookupFailed = props.emailEntry?.state === "error";
   const lookupBlocked = Boolean(props.emailEntry?.retryAt && props.emailEntry.retryAt > Date.now());
+  const pending = props.emailEntry?.state === "pending";
   const classified = props.emailEntry?.state === "existing" || props.emailEntry?.state === "new";
   const noAccount = props.emailEntry?.state === "new";
-  const feedback = props.invalidEmail
-    ? t("enterAValidEmailAddress")
-    : (props.resendRemaining ?? 0) > 0
-      ? t("retryAfterSeconds", { seconds: props.resendRemaining ?? 0 })
-      : lookupFailed
-        ? lookupBlocked ? t("tooManyAttemptsWaitBeforeTryingAgain") : t("weCouldntCheckThisEmailTryAgain")
-        : noAccount ? props.noAccountMessage ?? <NoAccountMessage capabilities={capabilities} />
-        : props.visibleError && props.visibleFailure ? t(`failures.${props.visibleFailure}`) : props.visibleError;
+  // Account found (owner, 23 Nov): the heading greets, and the field becomes an account row. Only what the visitor
+  // typed is shown (the lookup returns no profile data). The greeting is drawn once per email: a per-visit seed
+  // plus the address, so it stays put through re-renders and comes back to 'Sign in' when the email changes.
+  const typed = normalizeLoginEmail(props.email)?.toLowerCase();
+  const classifiedExisting = props.emailEntry?.state === "existing" && Boolean(typed) && typed === props.emailEntry.email;
+  // Back from the code step ("Change email"), the address is there to edit: the row and greeting belong to a lookup
+  // made on this visit, not to one carried in from before.
+  const [carriedIn] = useState(() => classifiedExisting ? typed : undefined);
+  const found = classifiedExisting && typed !== carriedIn;
+  const [seed] = useState(() => Math.floor(Math.random() * GREETINGS));
+  const greeting = found && typed ? ([...typed].reduce((sum, character) => (sum * 31 + character.charCodeAt(0)) % 997, seed) % GREETINGS) + 1 : 0;
+  const heading = greeting ? t(`accountGreeting.${greeting}` as "accountGreeting.1") : t("signIn");
+  const refocus = useRef(false);
+  useEffect(() => {
+    if (found || !refocus.current) return;
+    refocus.current = false;
+    emailInput.current?.focus({ preventScroll: true });
+  }, [found]);
+  const retryLookup = () => {
+    emailInput.current?.focus({ preventScroll: true });
+    props.onLookupRetry?.();
+  };
+  // One row under the line: a mistake in the field, or what failed with its refresh beside it.
+  const invalid = Boolean(props.invalidEmail);
+  const message = invalid ? t("enterAValidEmailAddress")
+    : (props.resendRemaining ?? 0) > 0 ? t("retryAfterSeconds", { seconds: props.resendRemaining ?? 0 })
+    : lookupFailed ? lookupBlocked ? t("tooManyAttemptsWaitBeforeTryingAgain") : t("couldntCheckThisEmail")
+    : noAccount ? props.noAccountMessage ?? <NoAccountMessage capabilities={capabilities} />
+    : props.visibleError && props.visibleFailure ? t(`failures.${props.visibleFailure}`) : props.visibleError;
+  const action = lookupFailed && !lookupBlocked ? (
+    <RetryAction aria-label={t("tryEmailAgain")} disabled={locked} onClick={retryLookup}>{t("retry")}</RetryAction>
+  ) : props.feedbackAction;
 
   return (
-    <div data-account-email-entry="" className="flex flex-col gap-6">
-      <Heading id={props.headingId ?? "member-account-heading"} tabIndex={-1} className="m-0 text-[24px] leading-[30px] font-medium tracking-[-0.025em]">
-        {props.emailEntry?.state === "existing" ? t("signIn") : noAccount ? t("signUp") : t("enterYourEmail")}
+    <div data-account-email-entry="" className="flex flex-col">
+      <Heading id={props.headingId ?? "member-account-heading"} tabIndex={-1} className="m-0 mb-6 text-[length:var(--step-heading)] leading-tight font-normal tracking-normal sm:text-[length:var(--step-heading)]">
+        {/* 'Sign in' in every state but one: an account found swaps in a greeting, in the same motion as the row. The
+            slot is one line high, so nothing below moves. */}
+        <span className="grid h-[1.25em] overflow-hidden">
+          <AnimatePresence initial={false} mode="popLayout">
+            <motion.span key={heading} className="col-start-1 row-start-1 whitespace-nowrap" initial={{ opacity: 0, y: "0.6em", filter: "blur(4px)" }} animate={{ opacity: 1, y: 0, filter: "blur(0px)" }} exit={{ opacity: 0, y: "-0.6em", filter: "blur(4px)" }} transition={headingMotion}>
+              {heading}
+            </motion.span>
+          </AnimatePresence>
+        </span>
       </Heading>
       <form onSubmit={(event) => {
         event.preventDefault();
-        if (locked || !capabilities?.emailOtp || props.emailEntry?.state === "pending" || lookupFailed || noAccount) return;
-        if (!classified) {
-          emailInput.current?.focus({ preventScroll: true });
-          props.onLookupRetry?.();
-        }
+        if (locked || !capabilities?.emailOtp || pending || lookupFailed || noAccount) return;
+        if (!classified) retryLookup();
         else if ((props.resendRemaining ?? 0) === 0) props.onCode();
-      }} noValidate>
-        <div data-ticket-email-field="" className="grid gap-2">
-          <label htmlFor={fieldId} className="sr-only">{t("emailAddress")}</label>
-          <div className="relative">
-            <AccountInput ref={emailInput} className="mt-0! pr-12! tracking-normal!" id={fieldId} type="email" inputMode="email" autoComplete="email" autoCapitalize="none" spellCheck={false} value={props.email} disabled={snapshot.busy} aria-invalid={props.invalidEmail} aria-describedby={fieldId + "-feedback"} onChange={(event) => props.onEmail(event.target.value)} />
-            <div data-ticket-email-adornment="" className="absolute inset-y-0 right-1 flex w-11 items-center justify-center">
-              {lookupFailed ? (
-                <button type="button" aria-label={t("tryEmailAgain")} disabled={locked || lookupBlocked} onClick={() => {
-                  emailInput.current?.focus({ preventScroll: true });
-                  props.onLookupRetry?.();
-                }} className="flex size-11 items-center justify-center rounded-lg text-neutral-400 transition-colors hover:bg-white/5 hover:text-neutral-100 focus-visible:outline-2 focus-visible:outline-neutral-100 disabled:opacity-40">
-                  <RefreshCw aria-hidden="true" className="size-4" strokeWidth={1.5} />
+      }} noValidate className="flex flex-col">
+        {/* The Hideaway's underlined field (owner, 23 Nov: "the underlined one we have - one that fills the line on entry or
+            click"): the line draws on focus and stays drawn while there is a value. Steady: one height in every state. */}
+        <div data-ticket-email-field="" className="relative h-[68px]">
+          <AnimatePresence initial={false}>
+            {found ? (
+              // The field becomes the account row: the label fades, an avatar circle grows in from the left, the typed email
+              // slides across to make room, and the drawn line stays where it was.
+              <motion.div key="row" data-account-row="" className="absolute inset-0 flex items-end gap-3 border-b border-foreground pb-[11.5px] pointer-coarse:pb-[13.5px]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={fadeMotion}>
+                <motion.span aria-hidden="true" className="mb-[-4px] grid size-8 shrink-0 place-items-center rounded-full bg-muted text-foreground" initial={{ opacity: 0, scale: 0.4 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.4 }} transition={rowMotion}>
+                  {/* A generic person, the header account button's icon (owner, tentative: "the avatar icon with the circle.. maybe?"). */}
+                  <UserIcon className="size-4" />
+                </motion.span>
+                <motion.span className="min-w-0 flex-1 truncate text-[length:var(--step-input)] leading-6 text-foreground" initial={{ x: -44 }} animate={{ x: 0 }} exit={{ x: -44 }} transition={rowMotion}>
+                  {props.email.trim()}
+                </motion.span>
+                <button type="button" disabled={locked} onClick={() => { refocus.current = true; props.onEmail(""); }} className="inline-flex min-h-11 shrink-0 items-center text-[length:var(--step-body)] leading-6 text-muted-foreground underline decoration-border underline-offset-4 transition-colors duration-200 hover:text-foreground disabled:opacity-40 -mb-[10px]">
+                  {t("notYou")}
                 </button>
-              ) : props.feedbackAction ? props.feedbackAction : props.emailEntry?.state === "pending" ? (
-                <LoaderCircle aria-hidden="true" className="size-4 animate-spin text-neutral-400" strokeWidth={1.5} />
-              ) : null}
-            </div>
-          </div>
+              </motion.div>
+            ) : (
+              <motion.div key="field" className="absolute inset-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={fadeMotion}>
+                <DrawnField steady ref={emailInput} label={t("emailAddress")} id={fieldId} type="email" inputMode="email" autoComplete="email" autoCapitalize="none" spellCheck={false} value={props.email} disabled={snapshot.busy} aria-invalid={props.invalidEmail} aria-describedby={fieldId + "-feedback"} onChange={(event) => props.onEmail(event.target.value)} />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-        <div id={fieldId + "-feedback"} data-ticket-email-feedback="" className="mt-2 min-h-10 text-[13px] leading-5 text-neutral-400" aria-live="polite" aria-atomic="true">
-          {feedback ? <p role={props.invalidEmail || lookupFailed || props.visibleError ? "alert" : "status"} className="m-0">{feedback}</p> : props.emailEntry?.state === "pending" ? <span className="sr-only">{t("checkingEmail")}</span> : null}
+        <div id={fieldId + "-feedback"} data-ticket-email-feedback="" className="mt-1 flex h-11 items-center gap-x-4 text-[length:var(--step-body)] leading-5" aria-live="polite" aria-atomic="true">
+          {/* A fixed slot: messages swap in place (up to two lines), so nothing below moves. */}
+          {message ? <p role={invalid || lookupFailed || props.visibleError ? "alert" : "status"} className="m-0 line-clamp-2 min-w-0 text-muted-foreground">{message}</p> : pending ? <span className="sr-only">{t("checkingEmail")}</span> : null}
+          {action}
         </div>
         {/* An email with no account cannot receive a sign-in code. */}
-        {!noAccount && <AccountPrimaryButton type="submit" className="mt-1 min-h-12 w-full" disabled={locked || !capabilities?.emailOtp || props.emailEntry?.state === "pending" || lookupFailed || (classified && (props.resendRemaining ?? 0) > 0)} aria-busy={props.emailEntry?.state === "pending" || (snapshot.busy && snapshot.pendingAction === "send-code")}>
+        {!noAccount && <Button type="submit" variant="primary" size="lg" className="w-full" loading={pending || (snapshot.busy && snapshot.pendingAction === "send-code")} disabled={locked || !capabilities?.emailOtp || lookupFailed || (classified && (props.resendRemaining ?? 0) > 0)}>
           {props.emailEntry?.state === "existing" ? t("sendSignInCode") : t("continue")}
-        </AccountPrimaryButton>}
+        </Button>}
       </form>
     </div>
+  );
+}
+
+/** Retry in place: a plain refresh, no box (owner, 22 Nov: error and retry are inline text plus a plain refresh action). */
+function RetryAction({ pending = false, pendingLabel, children, className, ...props }: ComponentProps<"button"> & { pending?: boolean; pendingLabel?: string }) {
+  return (
+    <>
+      <button type="button" aria-busy={pending || undefined} className={cn("inline-flex min-h-11 shrink-0 items-center gap-1.5 text-sm text-foreground transition-opacity duration-200 hover:opacity-70 disabled:opacity-40", className)} {...props}>
+        {pending ? <LoaderCircle aria-hidden="true" className="size-4 animate-spin" strokeWidth={1.5} /> : <RefreshCw aria-hidden="true" className="size-4" strokeWidth={1.5} />}
+        {children}
+      </button>
+      {pendingLabel && <span role="status" className="sr-only">{pending ? pendingLabel : null}</span>}
+    </>
   );
 }
 
@@ -415,7 +491,7 @@ function AccountPasskeyAction({ primary, snapshot, onAdd, onCheck }: {
         {checking && <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />}
         {t(pending ? "checkPasskeySession" : "addAPasskey")}
       </Button>
-      <div role="status" className="text-[13px] leading-5 text-neutral-300 [&:empty]:sr-only">
+      <div role="status" className="text-[13px] leading-5 text-muted-foreground [&:empty]:sr-only">
         {pending ? t("passkeyRegistrationUnconfirmed") :
           snapshot.noticeCode === "passkey-added" ? t("notices.passkey-added") :
           snapshot.failure === "passkey-cancelled" ? t("passkeyRegistrationInterrupted") : null}
@@ -449,19 +525,19 @@ function AccountEntryAlternatives(props: Pick<MemberAccountViewProps, "snapshot"
         className={cn("grid items-stretch gap-2", props.underHeading ? "pt-0" : "pt-[var(--account-action-gap)]")}
       >
         {props.passkeyAvailable && (
-          <AccountButton
-            className="min-h-12 min-w-0 w-full gap-2 border-white/10 bg-white/[0.025] px-3 py-2 text-[13px] text-neutral-300 focus-visible:-outline-offset-2 aria-busy:opacity-80"
+          <Button
             type="button"
+            variant="secondary"
+            size="lg"
+            className="w-full"
             aria-label={t("signInWithAPasskey")}
             disabled={props.locked}
-            aria-busy={props.snapshot.pendingAction === "passkey" && props.snapshot.busy}
+            loading={props.snapshot.pendingAction === "passkey" && props.snapshot.busy}
             onClick={props.onPasskey}
           >
-            {props.snapshot.busy && props.snapshot.pendingAction === "passkey" ? (
-              <LoaderCircle aria-hidden="true" className="size-4 animate-spin" strokeWidth={1.5} />
-            ) : <KeyRound aria-hidden="true" className="size-4" strokeWidth={1.5} />}
+            <KeyRound aria-hidden="true" className="size-4" strokeWidth={1.5} />
             {t("passkey")}
-          </AccountButton>
+          </Button>
         )}
         {props.providers.map((provider) => (
           <ProviderButton
@@ -478,12 +554,21 @@ function AccountEntryAlternatives(props: Pick<MemberAccountViewProps, "snapshot"
 }
 
 /**
- * Each provider's own button, per its guideline (read 2026-11-16; sources in
- * docs/design/provider-marks/SOURCES.md). Apple: white on a dark surface, Apple's
- * logo file as tall as the button, title at 43% of the button height. Google: the
- * dark theme with the full-colour "G", scaled from the 40 px spec. Kakao: #FEE500
- * with its symbol, a 12 px radius and Kakao's own label. Everything else stays monochrome.
+ * Apple and Google as Arc buttons, the same size and type as Continue (owner, 23 Nov: "Arc block, underlined field").
+ * Each provider's colours come in as Arc tokens on a wrapper, per its guideline (read 2026-11-16; sources in
+ * docs/design/provider-marks/SOURCES.md): Apple is its white button with a black outline on light pages and on
+ * dark ones, black logo file inside; Google is its light theme on light pages and its dark theme on dark ones, with
+ * the matching published "G". Kakao keeps its own #FEE500 button, symbol and label.
  */
+function OrDivider() {
+  const t = useTranslations("MemberAuth");
+  return (
+    <div aria-hidden="true" className="my-5 flex items-center gap-3 text-[length:var(--step-body)] leading-none text-muted-foreground before:h-px before:flex-1 before:bg-border after:h-px after:flex-1 after:bg-border">
+      {t("or")}
+    </div>
+  );
+}
+
 function ProviderButton({ provider, disabled, busy, onClick }: {
   provider: MemberSocialProvider;
   disabled: boolean;
@@ -492,27 +577,39 @@ function ProviderButton({ provider, disabled, busy, onClick }: {
 }) {
   const t = useTranslations("MemberAuth");
   const label = provider === "apple" ? t("continueWithApple") : provider === "google" ? t("continueWithGoogle") : t("loginWithKakao");
+  if (provider === "kakao")
+    return (
+      <AccountButton
+        data-social-provider={provider}
+        type="button"
+        aria-label={label}
+        disabled={disabled}
+        aria-busy={busy}
+        onClick={onClick}
+        className="relative h-12 min-h-12 w-full min-w-0 gap-2 rounded-[12px] border-[#FEE500] bg-[#FEE500] px-4 py-0 text-[15px] leading-5 whitespace-nowrap text-black/85 hover:bg-[#FEE500] focus-visible:outline-offset-2 aria-busy:opacity-80"
+      >
+        <Image src="/auth-providers/kakao-symbol.svg" alt="" aria-hidden="true" width={15} height={15} unoptimized className="size-[14.6px] shrink-0" />
+        <span>{label}</span>
+        {busy && <LoaderCircle aria-hidden="true" className="absolute right-4 size-4 animate-spin" strokeWidth={1.5} />}
+      </AccountButton>
+    );
   return (
-    <AccountButton
-      data-social-provider={provider}
-      type="button"
-      aria-label={label}
-      disabled={disabled}
-      aria-busy={busy}
-      onClick={onClick}
+    <div
       className={cn(
-        "relative h-12 min-h-12 min-w-0 w-full gap-0 rounded-xl px-4 py-0 whitespace-nowrap focus-visible:outline-offset-2 aria-busy:opacity-80",
-        provider === "apple" && "border-white bg-white text-[20.6px] leading-none font-medium text-black hover:bg-white",
-        provider === "google" && "gap-3 border-[#8E918F] bg-[#131314] text-[16.8px] leading-6 font-medium text-[#E3E3E3] hover:bg-[#131314]",
-        provider === "kakao" && "gap-2 rounded-[12px] border-[#FEE500] bg-[#FEE500] text-[15px] leading-5 text-black/85 hover:bg-[#FEE500]"
+        "contents",
+        provider === "apple" && "[--border:#000000] [--foreground:#000000] [--surface-muted:#FFFFFF] [--surface:#FFFFFF] dark:[--border:#FFFFFF]",
+        provider === "google" && "[--border:#747775] [--foreground:#1F1F1F] [--surface-muted:#FFFFFF] [--surface:#FFFFFF] dark:[--border:#8E918F] dark:[--foreground:#E3E3E3] dark:[--surface-muted:#131314] dark:[--surface:#131314]"
       )}
     >
-      {provider === "apple" && <Image src="/auth-providers/apple-logo.svg" alt="" aria-hidden="true" width={34} height={48} unoptimized className="h-12 w-auto shrink-0" />}
-      {provider === "google" && <Image src="/auth-providers/google-g.svg" alt="" aria-hidden="true" width={24} height={24} unoptimized className="size-6 shrink-0" />}
-      {provider === "kakao" && <Image src="/auth-providers/kakao-symbol.svg" alt="" aria-hidden="true" width={15} height={15} unoptimized className="size-[14.6px] shrink-0" />}
-      <span>{label}</span>
-      {busy && <LoaderCircle aria-hidden="true" className="absolute right-4 size-4 animate-spin" strokeWidth={1.5} />}
-    </AccountButton>
+      <Button data-social-provider={provider} type="button" variant="secondary" size="lg" className="w-full" aria-label={label} disabled={disabled} loading={busy} onClick={onClick}>
+        {provider === "apple" && <Image src="/auth-providers/apple-logo.svg" alt="" aria-hidden="true" width={31} height={44} unoptimized className="-my-2 -mr-1 h-11 w-auto" />}
+        {provider === "google" && <>
+          <Image src="/auth-providers/google-g-light.svg" alt="" aria-hidden="true" width={20} height={20} unoptimized className="size-5 dark:hidden" />
+          <Image src="/auth-providers/google-g.svg" alt="" aria-hidden="true" width={20} height={20} unoptimized className="hidden size-5 dark:block" />
+        </>}
+        {label}
+      </Button>
+    </div>
   );
 }
 
@@ -539,8 +636,11 @@ function IdentityStep(props: MemberAccountViewProps & { locked: boolean; reserve
   const visibleError = props.refreshingStatus ? settledFeedback.error : snapshot.error;
   // Sign-up says what is unavailable in its own words; specific causes keep theirs.
   const signupUnavailable = socialSignup && visibleFailure === "unavailable";
+  // Arc's Sign in block: the email form, "or", then the other ways in. Not once the email turns out to have no account.
+  const orDivider = props.presentation === "ticket-checkout" && !snapshot.codeRequested && props.emailEntry?.state !== "new"
+    && ((props.flow !== "signup" && Boolean(capabilities?.passkey)) || providers.length > 0);
   return (
-    <div data-account-identity="" data-authentication-presentation={presentation ?? undefined} className="flex flex-col [--account-action-gap:20px] data-[authentication-presentation=modal]:[@media(max-height:600px)]:[--account-action-gap:12px]">
+    <div data-account-identity="" data-authentication-presentation={presentation ?? undefined} className={cn("flex flex-col [--account-action-gap:20px] data-[authentication-presentation=modal]:[@media(max-height:600px)]:[--account-action-gap:12px]", props.presentation === "ticket-checkout" && "[--step-body:0.875rem] [--step-heading:1.5rem] [--step-input:1rem]")}>
       {props.presentation === "ticket-checkout" && !snapshot.codeRequested ? (
         <TicketEmailEntry {...props} visibleError={visibleError} visibleFailure={visibleFailure} />
       ) : <AccountPhaseViews
@@ -549,8 +649,9 @@ function IdentityStep(props: MemberAccountViewProps & { locked: boolean; reserve
         locale="en"
         headingId={props.headingId ?? "member-account-heading"}
         renderHeading={(heading) => (
-          props.reauthenticating ? <div className="sr-only">{heading}</div> : props.presentation === "ticket-checkout" && !snapshot.codeRequested
-            ? <Heading id={props.headingId ?? "member-account-heading"} tabIndex={-1} className="m-0 text-[24px] leading-[30px] font-medium tracking-[-0.025em]">{t("enterYourEmail")}</Heading>
+          props.reauthenticating ? <div className="sr-only">{heading}</div> : props.presentation === "ticket-checkout"
+            // The code step keeps the step's one heading.
+            ? <Heading id={props.headingId ?? "member-account-heading"} tabIndex={-1} className="m-0 text-[length:var(--step-heading)] leading-tight font-normal tracking-normal sm:text-[length:var(--step-heading)]">{t("signIn")}</Heading>
             : <VerificationTrayTitle>{heading}</VerificationTrayTitle>
         )}
         email={props.email}
@@ -624,22 +725,23 @@ function IdentityStep(props: MemberAccountViewProps & { locked: boolean; reserve
         onEditEmail={props.onEditEmail}
       />}
       {socialSignup && snapshot.status && providers.length === 0 && (
-        <p role="status" className="mt-[var(--account-action-gap)] min-h-10 text-center text-[13px] leading-5 text-neutral-400">{t("signUpIsUnavailableTryAgainShortly")}</p>
+        <p role="status" className="mt-[var(--account-action-gap)] min-h-10 text-center text-[13px] leading-5 text-muted-foreground">{t("signUpIsUnavailableTryAgainShortly")}</p>
       )}
+      {orDivider && <OrDivider />}
       {!snapshot.codeRequested && ((props.flow !== "signup" && capabilities?.passkey) || providers.length > 0) && (
         <AccountEntryAlternatives
           snapshot={snapshot}
           locked={locked}
           passkeyAvailable={Boolean(props.flow !== "signup" && capabilities?.passkey)}
           providers={providers}
-          underHeading={socialSignup}
+          underHeading={socialSignup || orDivider}
           onPasskey={props.onPasskey}
           onSocial={props.onSocial}
         />
       )}
       {snapshot.codeRequested && capabilities?.magicLink && (
         <AccountTextButton
-          className="mx-auto mt-[var(--account-action-gap)] flex min-h-11 gap-2 px-3 aria-busy:opacity-80"
+          className={cn("mt-[var(--account-action-gap)] flex min-h-11 gap-2 aria-busy:opacity-80", props.presentation === "ticket-checkout" ? "mr-auto px-0 text-[length:var(--step-body)]" : "mx-auto px-3")}
           type="button"
           disabled={locked || !props.email.trim() || (props.resendRemaining ?? 0) > 0}
           aria-busy={snapshot.busy && snapshot.pendingAction === "magic-link"}
@@ -653,7 +755,7 @@ function IdentityStep(props: MemberAccountViewProps & { locked: boolean; reserve
       )}
       {!props.reauthenticating && (props.presentation === "ticket-checkout" || props.flow !== "signup") && props.onRecover && (
         <AccountTextButton
-          className="mx-auto mt-[var(--account-action-gap)] flex min-h-11 px-3"
+          className={cn("mt-[var(--account-action-gap)] flex min-h-11", props.presentation === "ticket-checkout" ? "mr-auto px-0 text-[length:var(--step-body)]" : "mx-auto px-3")}
           type="button"
           disabled={snapshot.busy}
           onClick={props.onRecover}

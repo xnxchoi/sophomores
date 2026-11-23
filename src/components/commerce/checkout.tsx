@@ -33,6 +33,8 @@ type CommerceAccountGateProps = {
   signInOffInReview?: boolean;
   /** Checkout page only: show the step indicator and the flat two-column layout. */
   progress?: boolean;
+  /** The purchase step Apple and Google sign-in return to (Auth owns the exact paths). */
+  returnTo?: "ticket-checkout" | "shop-cart";
 };
 
 export function CommerceAccountGate({ signInOffInReview, ...props }: CommerceAccountGateProps) {
@@ -41,15 +43,15 @@ export function CommerceAccountGate({ signInOffInReview, ...props }: CommerceAcc
 }
 
 /** Account flow stays mounted; only fresh authoritative membership reveals commerce. */
-function EnabledCommerceAccountGate({ initialCapabilities, children, inlineEmailOnly = false, accountIntroduction, identityCheckDetails, noAccountMessage, progress = false }: CommerceAccountGateProps) {
+function EnabledCommerceAccountGate({ initialCapabilities, children, inlineEmailOnly = false, accountIntroduction, identityCheckDetails, noAccountMessage, progress = false, returnTo = "ticket-checkout" }: CommerceAccountGateProps) {
   const headingID = useId();
   const client = useMemo(() => {
-    const source = createMemberClient(undefined, undefined, "ticket-checkout");
+    const source = createMemberClient(undefined, undefined, returnTo);
     return { ...source, status: async () => {
       const status = parseMemberStatus(await source.status());
       return inlineEmailOnly ? { ...status, capabilities: { ...status.capabilities, apple: false, google: false, kakao: false, magicLink: false } } : status;
     } };
-  }, [inlineEmailOnly]);
+  }, [inlineEmailOnly, returnTo]);
   const [eligible, setEligible] = useState(false);
   const [started, setStarted] = useState(false);
   const [accountGeneration, setAccountGeneration] = useState(0);

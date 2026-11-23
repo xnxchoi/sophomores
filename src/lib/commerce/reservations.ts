@@ -68,6 +68,8 @@ export async function lockOrderReservation({ req, orderID }: { req: PayloadReque
  * or invitation, is independent. A key whose order is missing or unreadable
  * fails closed. System read under the account's allowance lock.
  */
+const LIVE_MEMBERSHIP_KEY = "An earlier membership key is not yet cancelled";
+
 async function assertNoLiveMembershipKey(req: PayloadRequest, customerID: string): Promise<void> {
   const live = keyGrantStates.filter((state) => state !== "cancelled");
   const pageSize = 50;
@@ -76,19 +78,43 @@ async function assertNoLiveMembershipKey(req: PayloadRequest, customerID: string
       where: { and: [{ beneficiaryUser: { equals: customerID } }, { state: { in: live } }, ...(after === null ? [] : [{ id: { greater_than: after } }])] } });
     const docs = found.docs as unknown as CommerceDocument[];
     for (const intent of docs) {
-      if (intent.order == null) throw new Error("An earlier membership key is not yet cancelled");
+      if (intent.order == null) throw new Error(LIVE_MEMBERSHIP_KEY);
       // A missing or unreadable order throws here, so the purchase fails closed.
       const order = await readCommerce(req, "orders", relationshipID(intent.order));
       if (order.commerceVersion === "commerce-v1") {
         const snapshot = purchaseSnapshotSchema.safeParse(order.commerceSnapshot);
         // A key attributed to a book-only order is itself an integrity failure.
         if (snapshot.success && snapshot.data.eventID === null) throw new Error("Unexpected grant on a book-only order");
-        throw new Error("An earlier membership key is not yet cancelled");
+        throw new Error(LIVE_MEMBERSHIP_KEY);
       }
     }
     if (docs.length < pageSize) return;
     after = String(docs[docs.length - 1].id);
   }
+}
+
+/** The account's allowance row for this product's namespace (SYSTEM: the allowance ledger is server-only). */
+async function readAccountAllowance(req: PayloadRequest, customerID: string, productID: string, eventID: string | null) {
+  const namespace = reservationAllowance(productID, eventID);
+  const key = allowanceKey(customerID, namespace);
+  const allowance = await findCommerce(req, "commerce-allowances", "accountReleaseKey", key);
+  return { namespace, key, allowance, reserved: allowance ? counter(allowance.reservedQuantity) : 0, paid: allowance ? counter(allowance.paidQuantity) : 0 };
+}
+
+/**
+ * Whether `quantity` more units fit the account, under the same rule reservePurchase enforces: reserved + paid within the
+ * limit and, for the membership token, no live earlier key. Read-only and unlocked, so it is advisory: the cart uses it to
+ * refuse a line early with a clear reason, and reservePurchase, under its locks, stays authoritative. SYSTEM reads of
+ * server-only ledgers; it answers yes or no and never returns them. Integrity and storage failures propagate (fail closed).
+ */
+export async function accountAllowanceAdmits(req: PayloadRequest, { customerID, productID, eventID, quantity, accountLimit }:
+  { customerID: string; productID: string; eventID: string | null; quantity: number; accountLimit: number }): Promise<boolean> {
+  const { namespace, reserved, paid } = await readAccountAllowance(req, customerID, productID, eventID);
+  if (reserved + paid + quantity > accountLimit) return false;
+  if (namespace !== MEMBERSHIP_RELEASE) return true;
+  try { await assertNoLiveMembershipKey(req, customerID); }
+  catch (error) { if (error instanceof Error && error.message === LIVE_MEMBERSHIP_KEY) return false; throw error; }
+  return true;
 }
 
 export async function reservePurchase(input: ReservationInput): Promise<CommerceDocument> {
@@ -122,11 +148,7 @@ export async function reservePurchase(input: ReservationInput): Promise<Commerce
   const productReserved = counter(product.reservedQuantity);
   if (counter((variant ?? product).inventory) - productReserved < quantity ||
     (event && counter(event.capacity) - counter(event.committedQuantity) - counter(event.reservedQuantity) < quantity)) throw new Error("Insufficient product or guaranteed admission capacity");
-  const namespace = reservationAllowance(productID, eventID);
-  const key = allowanceKey(customerID, namespace);
-  const allowance = await findCommerce(req, "commerce-allowances", "accountReleaseKey", key);
-  const reserved = allowance ? counter(allowance.reservedQuantity) : 0;
-  const paid = allowance ? counter(allowance.paidQuantity) : 0;
+  const { namespace, key, allowance, reserved, paid } = await readAccountAllowance(req, customerID, productID, eventID);
   // Single membership token per account (owner, 22 Nov), under the snapshot's recorded limit.
   if (reserved + paid + quantity > accountLimit) throw new Error("Account membership allowance exceeded");
   if (namespace === MEMBERSHIP_RELEASE) await assertNoLiveMembershipKey(req, customerID);

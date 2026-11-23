@@ -39,6 +39,12 @@ const proofs = [
     container: "sphmrs-setlist-slots-20261122", port: 55492, database: "setlist_slots_proof",
   },
   {
+    // The browser-held cart written into the member's own cart after sign-in, and the users.cart join (saved cart reload).
+    file: "tests/commerce/core/cart-write-through.db.test.ts",
+    flag: "CART_WRITE_THROUGH_DATABASE_TESTS",
+    container: "sphmrs-cart-write-through-20261123", port: 55514, database: "cart_write_through_proof",
+  },
+  {
     file: "tests/commerce/editions/native-settlement.db.test.ts",
     flag: "NATIVE_EDITION_DATABASE_TESTS", explicit: true,
     container: `sphmrs-native-edition-${randomUUID()}`, port: 55512, database: "native_edition_proof",

@@ -8,7 +8,7 @@ import { postgresAdapter, sql, type PostgresAdapter } from "@payloadcms/db-postg
 import { buildConfig, createLocalReq, getPayload, type CollectionConfig, type CollectionSlug, type Endpoint, type JobsConfig, type Payload, type PayloadRequest, type TypedUser } from "payload";
 import { Pool } from "pg";
 import type { TestContext } from "node:test";
-import { commercePlugin } from "../../../src/lib/commerce/ecommerce";
+import { commercePlugin, createSecureCart } from "../../../src/lib/commerce/ecommerce";
 import { commerceDomainPlugin } from "../../../src/lib/commerce/domain";
 import { CommercePublication } from "../../../src/lib/commerce/catalogue";
 import { inPaymentEndpoint, inPaymentTransaction } from "../../../src/lib/commerce/_shared/transaction";
@@ -68,7 +68,9 @@ export function isolateTransport(t: TestContext, allowedPort = i0Target.port) {
 }
 
 export async function openProofDatabase(push = true, continuations: ReadonlySet<Promise<unknown>> = new Set(), target: ProofTarget = i0Target,
-  hooks: { jobs?: JobsConfig; checkpointWritten?: (req: PayloadRequest) => Promise<void>; query?: (text: string, params: unknown[]) => void } = {},
+  hooks: { jobs?: JobsConfig; checkpointWritten?: (req: PayloadRequest) => Promise<void>; query?: (text: string, params: unknown[]) => void;
+    /** Stands in for the browser member authority (origin, session, active membership) so the cart guard's member branch runs. */
+    cartAuthorizer?: (req: PayloadRequest) => Promise<string> } = {},
 ) {
   const databaseURL = targetURL(target);
   const sqlTrace: string[] = [];
@@ -109,6 +111,7 @@ export async function openProofDatabase(push = true, continuations: ReadonlySet<
     jobs: { ...walletCatchUpJobs, ...hooks.jobs, deleteJobOnComplete: false },
     globals: [CommercePublication], plugins: [commercePlugin, commerceDomainPlugin, (config) => ({ ...config,
       collections: config.collections?.map((collection): CollectionConfig => ({ ...collection, hooks: { ...collection.hooks,
+        ...(collection.slug === "carts" && hooks.cartAuthorizer ? { beforeChange: [createSecureCart(hooks.cartAuthorizer)] } : {}),
         afterChange: [...(collection.hooks?.afterChange ?? []), async ({ doc, req }) => {
           if (collection.slug === "member-wallet-catch-up") await hooks.checkpointWritten?.(req);
           await effectHooks.get(req)?.(collection.slug, req);

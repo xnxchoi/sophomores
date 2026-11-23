@@ -2,7 +2,7 @@ import { denyReviewCustomerOperation } from "@/lib/auth/review-editor-policy";
 import english from "../../../messages/en.json";
 import { randomUUID } from "node:crypto";
 import { ecommercePlugin } from "@payloadcms/plugin-ecommerce";
-import { APIError, type CollectionBeforeChangeHook, type CollectionBeforeOperationHook, type CollectionConfig, type Endpoint, type Field, type PayloadRequest, type Plugin, type Where } from "payload";
+import { APIError, type CollectionBeforeChangeHook, type CollectionBeforeOperationHook, type CollectionConfig, type CollectionSlug, type Endpoint, type Field, type PayloadRequest, type Plugin, type Where } from "payload";
 import { z } from "zod";
 import { isCmsSuperAdmin } from "../auth/access";
 import { CommerceEditionCollections, CommerceEditionProductFields } from "../../payload/collections/commerce-editions";
@@ -11,11 +11,12 @@ import { Orders } from "../../payload/collections/orders";
 import { assertCommerceBrowserMutation, commerceAdmin, commerceAdminField, commerceAttemptCreate, commerceOwnerRead, commerceServerField, commerceServerWrite } from "./access";
 import { commerceProductSchema, commercePublicationSchema, loadCommerceCatalogue } from "./catalogue";
 import { MEMBERSHIP_ACCOUNT_LIMIT, shippingAddressSchema } from "./contracts";
+import { cartRefusalData } from "./cart-refusal";
 import { purchaseSnapshotSchema } from "./purchase-snapshot";
 import { preserveNativeCheckoutHold } from "./_shared/native-checkout-hold";
 import { readCommerceJSON } from "./_shared/request-body";
 import { inPaymentEndpoint, lockCommerce, readCommerce, relationshipID } from "./_shared/transaction";
-import { settleReservation } from "./reservations";
+import { accountAllowanceAdmits, settleReservation } from "./reservations";
 import { grantOrderAdmissions } from "./guests";
 import { grantMembershipOnPayment } from "./membership";
 import { recordSettlementWalletGrants } from "./keys/wallet-attachment";
@@ -43,23 +44,24 @@ const immutableFields = (fields: Field[]): Field[] => fields.map((field): Field 
   return { ...field, access: { ...field.access, create: commerceServerField, update: commerceServerField }, admin: { ...field.admin, readOnly: true } } as Field;
 });
 
-const secureCart: CollectionBeforeChangeHook = async ({ req, data, originalDoc, operation }) => {
+/** The cart guard; the authorizer is a seam for tests (as in secureCommerceEndpoint), never a caller override. */
+export const createSecureCart = (authorizeMutation: (req: PayloadRequest) => Promise<string> = assertCommerceBrowserMutation): CollectionBeforeChangeHook => async ({ req, data, originalDoc, operation }) => {
   const internal = commerceServerWrite(req);
-  const owner = internal ? req.user?.id : await assertCommerceBrowserMutation(req);
+  const owner = internal ? req.user?.id : await authorizeMutation(req);
   if (!owner || req.user?.collection !== "users") throw new APIError("Cart ownership required", 403);
   let current = originalDoc;
   if (operation === "update") {
     await lockCommerce(req, [`cart:${originalDoc.id}`]);
     current = await readCommerce(req, "carts", String(originalDoc.id));
   }
-  if (current?.purchasedAt || (current?.customer && relationshipID(current.customer) !== String(owner))) throw new APIError("Cart is locked", 409);
+  if (current?.purchasedAt || (current?.customer && relationshipID(current.customer) !== String(owner))) throw new APIError("Cart is locked", 409, cartRefusalData("cart-locked"));
   // Official finalization owns purchasedAt and inventory. A reserved sold-out
   // item must still settle at its immutable charge, not at a fresh quotation.
   if (internal && data.purchasedAt) return { ...data, customer: String(owner), currency: "KRW", items: current.items, subtotal: current.subtotal };
   if (!internal && operation === "update") {
     const active = await req.payload.find({ collection: "transactions" as never, req, overrideAccess: true, depth: 0, limit: 1,
       where: { and: [{ cart: { equals: current.id } }, { status: { in: ["pending", "processing"] } }] } });
-    if (active.docs.length) throw new APIError("Resolve the existing payment before editing this cart", 409);
+    if (active.docs.length) throw new APIError("Resolve the existing payment before editing this cart", 409, cartRefusalData("payment-in-progress"));
   }
   if (data.customer && relationshipID(data.customer) !== String(owner)) throw new APIError("Cart ownership mismatch", 403);
   // Payload beforeValidate restores omitted fields from the document (including
@@ -73,7 +75,13 @@ const secureCart: CollectionBeforeChangeHook = async ({ req, data, originalDoc, 
   for (const item of items) {
     if (item.variant != null) throw new APIError("Variants unavailable", 409);
     const offer = await loadCommerceCatalogue({ req, productID: relationshipID(item.product) });
-    if (!offer || item.quantity > offer.availableQuantity) throw new APIError("Offer unavailable", 409);
+    if (!offer || item.quantity > offer.availableQuantity) throw new APIError("Offer unavailable", 409, cartRefusalData("offer-unavailable"));
+    // A browser line that is new or larger is refused early at the account limit. Removing or clearing is never blocked.
+    const previous = (current?.items ?? []).find((line: { product?: unknown }) => relationshipID(line.product) === offer.productID);
+    if (!internal && item.quantity > (previous?.quantity ?? 0) && !await accountAllowanceAdmits(req, { customerID: String(owner),
+      productID: offer.productID, eventID: offer.event.id, quantity: item.quantity, accountLimit: MEMBERSHIP_ACCOUNT_LIMIT })) {
+      throw new APIError("Account membership allowance exceeded", 409, cartRefusalData("limit-reached"));
+    }
     subtotal += offer.priceKRW * item.quantity;
   }
   return { ...data, ...(operation === "create" ? { id: randomUUID() } : {}), customer: String(owner), currency: "KRW", items, subtotal };
@@ -282,6 +290,16 @@ export const secureCommerceEndpoint = (endpoint: Endpoint, authorizeMutation: (r
 } });
 const secureEndpoint = (endpoint: Endpoint): Endpoint => secureCommerceEndpoint(endpoint);
 
+/**
+ * The plugin's client finds a signed-in member's saved cart through users.cart (GET /users/me, select cart, first doc).
+ * Virtual join, no column: only the open cart (never a purchased one), newest first, read under the carts' own access.
+ */
+const memberCartJoin: Field = { name: "cart", type: "join", collection: "carts" as CollectionSlug, on: "customer",
+  where: { purchasedAt: { exists: false } }, defaultSort: "-updatedAt", defaultLimit: 1, maxDepth: 1, admin: { hidden: true } };
+const withMemberCartJoin = (collection: CollectionConfig): CollectionConfig => collection.slug !== "users"
+  || collection.fields.some((field) => "name" in field && field.name === "cart") ? collection
+  : { ...collection, fields: [...collection.fields, memberCartJoin] };
+
 export const commercePlugin: Plugin = async (config) => {
   const plugin = ecommercePlugin({
     access: { isAdmin: commerceAdmin, adminOnlyFieldAccess: commerceAdminField,
@@ -309,11 +327,11 @@ export const commercePlugin: Plugin = async (config) => {
         && ["secret", "purchasedAt", "customer"].includes(field.name) ? { ...field, access: { ...field.access,
           create: field.name === "secret" ? deny : commerceServerField, update: field.name === "secret" ? deny : commerceServerField } } : field),
       endpoints: (Array.isArray(defaultCollection.endpoints) ? defaultCollection.endpoints : []).filter((endpoint) => !endpoint.path.includes("merge")).map(secureEndpoint),
-      hooks: { ...defaultCollection.hooks, beforeChange: [secureCart] } }) },
+      hooks: { ...defaultCollection.hooks, beforeChange: [createSecureCart()] } }) },
     orders: { ordersCollectionOverride: ({ defaultCollection }) => ordersOverride(defaultCollection) },
     transactions: { transactionsCollectionOverride: ({ defaultCollection }) => transactionsOverride(defaultCollection) },
     payments: { paymentMethods: [portonePaymentAdapter] },
   });
   const result = await plugin({ ...config, collections: [...(config.collections ?? [])], endpoints: [...(config.endpoints ?? [])] });
-  return { ...result, collections: [...(result.collections ?? []), ...CommerceEditionCollections], endpoints: (result.endpoints ?? []).map((endpoint) => endpoint.path.startsWith("/payments/") ? secureEndpoint(endpoint) : endpoint) };
+  return { ...result, collections: [...(result.collections ?? []).map(withMemberCartJoin), ...CommerceEditionCollections], endpoints: (result.endpoints ?? []).map((endpoint) => endpoint.path.startsWith("/payments/") ? secureEndpoint(endpoint) : endpoint) };
 };

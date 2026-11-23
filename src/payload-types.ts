@@ -128,6 +128,7 @@ export interface Config {
     users: {
       account: 'accounts';
       session: 'sessions';
+      cart: 'carts';
     };
     setlists: {
       runningOrder: 'setlist-positions';
@@ -356,6 +357,11 @@ export interface User {
     hasNextPage?: boolean;
     totalDocs?: number;
   };
+  cart?: {
+    docs?: (string | Cart)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
   collection: 'users';
 }
 /**
@@ -439,6 +445,158 @@ export interface Session {
    * The user that the session belongs to
    */
   user: string | User;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "carts".
+ */
+export interface Cart {
+  id: string;
+  items?:
+    | {
+        product?: (string | null) | Product;
+        quantity: number;
+        variant?: (string | null) | Variant;
+        id?: string | null;
+      }[]
+    | null;
+  secret?: string | null;
+  customer?: (string | null) | User;
+  purchasedAt?: string | null;
+  status?: ('active' | 'purchased' | 'abandoned') | null;
+  subtotal?: number | null;
+  currency?: 'KRW' | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "products".
+ */
+export interface Product {
+  id: string;
+  inventory?: number | null;
+  priceInKRWEnabled?: boolean | null;
+  priceInKRW?: number | null;
+  commerceModel: 'legacy-v1' | 'native-edition-v2';
+  enableVariants?: boolean | null;
+  variantTypes?: (string | VariantType)[] | null;
+  variants?: {
+    docs?: (string | Variant)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  title: string;
+  description: string;
+  images?:
+    | {
+        image: string | Media;
+        id?: string | null;
+      }[]
+    | null;
+  event?: (string | null) | CommerceEvent;
+  saleStartsAt?: string | null;
+  saleEndsAt?: string | null;
+  dispatchSchedule?: string | null;
+  shippingFeeKRW?: number | null;
+  publicationApproved?: boolean | null;
+  reservedQuantity?: number | null;
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "variantTypes".
+ */
+export interface VariantType {
+  id: string;
+  label: string;
+  name: string;
+  options?: {
+    docs?: (string | VariantOption)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "variantOptions".
+ */
+export interface VariantOption {
+  id: string;
+  _variantOptions_options_order?: string | null;
+  variantType: string | VariantType;
+  label: string;
+  /**
+   * should be defaulted or dynamic based on label
+   */
+  value: string;
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "variants".
+ */
+export interface Variant {
+  id: string;
+  /**
+   * Used for administrative purposes, not shown to customers. This is populated by default.
+   */
+  title?: string | null;
+  product: string | Product;
+  options: (string | VariantOption)[];
+  inventory?: number | null;
+  priceInKRWEnabled?: boolean | null;
+  priceInKRW?: number | null;
+  publicationApproved?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media".
+ */
+export interface Media {
+  id: string;
+  alt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "commerce-events".
+ */
+export interface CommerceEvent {
+  id: string;
+  name: string;
+  publicationApproved?: boolean | null;
+  capacity: number;
+  transportCapacity: number;
+  partIStartsAt: string;
+  partIEndsAt: string;
+  claimCutoffAt: string;
+  reservedQuantity: number;
+  committedQuantity: number;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * Verifications are used to verify authentication requests
@@ -732,25 +890,6 @@ export interface Category {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "media".
- */
-export interface Media {
-  id: string;
-  alt?: string | null;
-  updatedAt: string;
-  createdAt: string;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "posts".
  */
 export interface Post {
@@ -932,24 +1071,6 @@ export interface Setlist {
    */
   needsSync?: boolean | null;
   lastSyncedAt?: string | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "commerce-events".
- */
-export interface CommerceEvent {
-  id: string;
-  name: string;
-  publicationApproved?: boolean | null;
-  capacity: number;
-  transportCapacity: number;
-  partIStartsAt: string;
-  partIEndsAt: string;
-  claimCutoffAt: string;
-  reservedQuantity: number;
-  committedQuantity: number;
   updatedAt: string;
   createdAt: string;
 }
@@ -1145,121 +1266,6 @@ export interface Address {
     | 'SE'
     | 'CH';
   phone?: string | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "products".
- */
-export interface Product {
-  id: string;
-  inventory?: number | null;
-  priceInKRWEnabled?: boolean | null;
-  priceInKRW?: number | null;
-  commerceModel: 'legacy-v1' | 'native-edition-v2';
-  enableVariants?: boolean | null;
-  variantTypes?: (string | VariantType)[] | null;
-  variants?: {
-    docs?: (string | Variant)[];
-    hasNextPage?: boolean;
-    totalDocs?: number;
-  };
-  title: string;
-  description: string;
-  images?:
-    | {
-        image: string | Media;
-        id?: string | null;
-      }[]
-    | null;
-  event?: (string | null) | CommerceEvent;
-  saleStartsAt?: string | null;
-  saleEndsAt?: string | null;
-  dispatchSchedule?: string | null;
-  shippingFeeKRW?: number | null;
-  publicationApproved?: boolean | null;
-  reservedQuantity?: number | null;
-  updatedAt: string;
-  createdAt: string;
-  deletedAt?: string | null;
-  _status?: ('draft' | 'published') | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "variantTypes".
- */
-export interface VariantType {
-  id: string;
-  label: string;
-  name: string;
-  options?: {
-    docs?: (string | VariantOption)[];
-    hasNextPage?: boolean;
-    totalDocs?: number;
-  };
-  updatedAt: string;
-  createdAt: string;
-  deletedAt?: string | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "variantOptions".
- */
-export interface VariantOption {
-  id: string;
-  _variantOptions_options_order?: string | null;
-  variantType: string | VariantType;
-  label: string;
-  /**
-   * should be defaulted or dynamic based on label
-   */
-  value: string;
-  updatedAt: string;
-  createdAt: string;
-  deletedAt?: string | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "variants".
- */
-export interface Variant {
-  id: string;
-  /**
-   * Used for administrative purposes, not shown to customers. This is populated by default.
-   */
-  title?: string | null;
-  product: string | Product;
-  options: (string | VariantOption)[];
-  inventory?: number | null;
-  priceInKRWEnabled?: boolean | null;
-  priceInKRW?: number | null;
-  publicationApproved?: boolean | null;
-  updatedAt: string;
-  createdAt: string;
-  deletedAt?: string | null;
-  _status?: ('draft' | 'published') | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "carts".
- */
-export interface Cart {
-  id: string;
-  items?:
-    | {
-        product?: (string | null) | Product;
-        quantity: number;
-        variant?: (string | null) | Variant;
-        id?: string | null;
-      }[]
-    | null;
-  secret?: string | null;
-  customer?: (string | null) | User;
-  purchasedAt?: string | null;
-  status?: ('active' | 'purchased' | 'abandoned') | null;
-  subtotal?: number | null;
-  currency?: 'KRW' | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1947,6 +1953,7 @@ export interface UsersSelect<T extends boolean = true> {
   verified?: T;
   account?: T;
   session?: T;
+  cart?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

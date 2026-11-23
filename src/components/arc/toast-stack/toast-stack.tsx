@@ -7,6 +7,8 @@ import type { HTMLMotionProps, MotionProps, TargetAndTransition, Transition } fr
 import { CircleCheck, CircleX, Info, TriangleAlert, X } from "lucide-react";
 import { motionTokens } from "../_shared/motion-tokens";
 import styles from "./toast-stack.module.css";
+import { cn } from "@/lib/utils";
+// Sophomores change: the buttons below carry their own keyboard focus cue on the visible shape (owner, 23 Nov: focus rings for keyboard focus only, on the visible control).
 
 export type ToastType = "success" | "info" | "warning" | "error" | "loading";
 
@@ -369,10 +371,10 @@ function ToastItem({ toast, target, expanded, front, hidden, paused, store, onMe
         {/* The action folds its width away when an update removes it, so the copy widens instead of snapping. */}
         <AnimatePresence initial={false}>
           {toast.action ? <motion.div key="action" ref={actionRef} className={styles.actionSlot} initial={{ width: 0, opacity: 0 }} animate={{ width: "auto", opacity: 1 }} exit={{ width: 0, opacity: 0 }} transition={{ width: motionTokens.spring.smooth, opacity: fade }} onAnimationStart={() => markMoving(true)} onAnimationComplete={() => markMoving(false)}>
-            <button type="button" className={styles.action} onClick={runAction}>{toast.action.label}</button>
+            <button type="button" className={cn(styles.action, "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground")} onClick={runAction}>{toast.action.label}</button>
           </motion.div> : null}
         </AnimatePresence>
-        <button ref={closeRef} type="button" className={styles.close} aria-label="Dismiss notification" onClick={() => store.dismiss(id)}>
+        <button ref={closeRef} type="button" className={cn(styles.close, "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground")} aria-label="Dismiss notification" onClick={() => store.dismiss(id)}>
           <X width={16} height={16} strokeWidth={1.75} aria-hidden="true" />
         </button>
       </motion.div>

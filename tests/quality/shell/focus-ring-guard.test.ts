@@ -260,7 +260,7 @@ function hasBaseRule(): boolean {
 // focus. Arc internals are Arc's (their roots take the ring through ArcFocus); these files' controls render inside
 // `.teaser`, whose stylesheet rings every button and link on keyboard focus.
 // core/Button's MotionPillButton renders only inside the header's ring wrappers (legacy .rp_btn sets outline: none).
-const cueExempt = [/^src\/components\/arc\//, /^src\/components\/teaser\/(chapter-nav|story|narrative)\.tsx$/, /^src\/components\/Warp\/index\.tsx$/, /^src\/components\/core\/Button\/index\.tsx$/];
+const cueExempt = [/^src\/components\/arc\/(?!pagination\/|toast-stack\/|expandable-card\/)/, /^src\/components\/teaser\/(chapter-nav|story|narrative)\.tsx$/, /^src\/components\/Warp\/index\.tsx$/, /^src\/components\/core\/Button\/index\.tsx$/];
 const controlTags = new Set(["a", "button", "summary", "Link", "NextLink", "m.a", "m.button", "motion.a", "motion.button"]);
 
 export function controlsWithoutCue(file: string): string[] {
@@ -349,7 +349,10 @@ const arcDirect: Record<string, string> = {
   Progress: "no controls",
   ConfirmMorph: "its module CSS fills each button on :focus-visible",
   NumberField: "a text field: border-colour cue on focus; its steppers fill on :focus-visible",
-  OtpInput: "a text field: its cell border is the cue (the ring is the cell's own box; see the OTP test)"
+  Pagination: "its page and arrow buttons carry focus-visible rings in our vendored copy",
+  ToastStack: "its action and close buttons carry focus-visible rings in our vendored copy",
+  ExpandableCard: "its trigger takes the pressed fill on focus-visible in our vendored copy (a ring would box inside the card)",
+  OtpInput: "a text field: the text-field exception, its cell border is the focus cue on keyboard and pointer alike (the ring is the cell's own box; see the OTP test)"
 };
 
 export function arcImportProblems(file: string): string[] {
@@ -380,18 +383,18 @@ test("the Arc import check flags a direct Arc control and passes hooks and parts
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "focus-guard-"));
   const direct = path.join(dir, "direct.tsx");
   const fine = path.join(dir, "fine.tsx");
-  fs.writeFileSync(direct, 'import { Pagination } from "@/components/arc/pagination/pagination";\nexport const x = Pagination;\n');
+  fs.writeFileSync(direct, 'import { Button } from "@/components/arc/button/button";\nexport const x = Button;\n');
   fs.writeFileSync(fine, 'import { Badge } from "@/components/arc/badge/badge";\nimport { useCopyFeedback } from "@/components/arc/copy-button/use-copy-feedback";\nimport { ToastStackProvider } from "@/components/arc/toast-stack/toast-stack";\nexport const y = [Badge, useCopyFeedback, ToastStackProvider];\n');
   assert.equal(arcImportProblems(direct).length, 1);
   assert.deepEqual(arcImportProblems(fine), []);
 });
 
-test("the essay pagination, toast stack and expandable card take their keyboard cue through ArcFocus", () => {
-  const arcFocus = fs.readFileSync(path.join(root, "src/components/core/ArcFocus/ArcFocus.tsx"), "utf8");
-  assert.match(arcFocus, /export function Pagination[\s\S]*?\[&_button:focus-visible\]:outline-2/);
-  assert.match(arcFocus, /export function ToastStack[\s\S]*?\[&_button:focus-visible\]:outline-2/);
-  assert.match(arcFocus, /export function ExpandableCard[\s\S]*?\[&_button\[aria-expanded\]:focus-visible\]:bg-/);
-  assert.match(fs.readFileSync(path.join(root, "src/components/reading/essay-pagination.tsx"), "utf8"), /import \{ Pagination \} from "@\/components\/core\/ArcFocus\/ArcFocus"/);
+test("Arc's pagination, toast stack and expandable card carry their keyboard cue on their own buttons", () => {
+  const read = (file: string) => fs.readFileSync(path.join(root, "src/components/arc", file), "utf8");
+  assert.equal(read("pagination/pagination.tsx").match(/focus-visible:outline-2/g)?.length, 3);
+  assert.equal(read("toast-stack/toast-stack.tsx").match(/focus-visible:outline-2/g)?.length, 2);
+  assert.match(read("expandable-card/expandable-card.tsx"), /cn\(styles\.trigger, "focus-visible:bg-/);
+  assert.doesNotMatch(fs.readFileSync(path.join(root, "src/components/core/ArcFocus/ArcFocus.tsx"), "utf8"), /\[&_button/);
 });
 
 test("Arc's OTP focus ring is the code cell's own box, never a larger hit area", () => {

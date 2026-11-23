@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { useTransitionRouter } from "next-transition-router";
-import { Pagination } from "@/components/core/ArcFocus/ArcFocus";
+import { Pagination } from "@/components/arc/pagination/pagination";
 
 /** The listing's page control: each page lives at /essays/in/[pageNumber], as in The Hideaway. */
 export function EssayPagination({ page, totalPages }: { page: number; totalPages: number }) {

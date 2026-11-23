@@ -7,6 +7,8 @@ import type { Transition, Variants } from "motion/react";
 import { ChevronDown as NavArrowDown } from "lucide-react";
 import { motionTokens } from "../_shared/motion-tokens";
 import styles from "./expandable-card.module.css";
+import { cn } from "@/lib/utils";
+// Sophomores change: the buttons below carry their own keyboard focus cue on the visible shape (owner, 23 Nov: focus rings for keyboard focus only, on the visible control).
 
 export interface ExpandableCardProps extends Omit<ComponentPropsWithoutRef<"article">, "title" | "children" | "onAnimationStart" | "onAnimationEnd" | "onAnimationIteration" | "onDrag" | "onDragStart" | "onDragEnd" | "onDragOver" | "onDragLeave" | "onDragEnter" | "onDragExit" | "onDrop"> {
   title: string;
@@ -112,7 +114,7 @@ export function ExpandableCard({ title, description, children, defaultExpanded =
       style={{ ...style, ...capVars, width: boxWidthValue }}
       onKeyDown={handleKeyDown}
     >
-      <button ref={triggerRef} type="button" className={styles.trigger} aria-expanded={expanded} aria-controls={panelId} onClick={() => toggle(!expanded)}>
+      <button ref={triggerRef} type="button" className={cn(styles.trigger, "focus-visible:bg-(--surface-muted)!")} aria-expanded={expanded} aria-controls={panelId} onClick={() => toggle(!expanded)}>
         <span className={styles.copy}><strong>{title}</strong>{description && <span className={styles.description}><RollingText text={description} /></span>}</span>
         <motion.span className={styles.arrow} initial={false} animate={{ rotate: expanded ? 180 : 0 }} transition={boxTransition(expanded, hold)}><NavArrowDown width={18} height={18} aria-hidden="true" /></motion.span>
       </button>

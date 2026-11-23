@@ -4,9 +4,6 @@ import type { ComponentProps } from "react";
 import { ActionButton as ArcActionButton } from "@/components/arc/action-button/action-button";
 import { Button as ArcButton } from "@/components/arc/button/button";
 import { CopyButton as ArcCopyButton } from "@/components/arc/copy-button/copy-button";
-import { ExpandableCard as ArcExpandableCard } from "@/components/arc/expandable-card/expandable-card";
-import { Pagination as ArcPagination } from "@/components/arc/pagination/pagination";
-import { ToastStack as ArcToastStack } from "@/components/arc/toast-stack/toast-stack";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { cn } from "@/lib/utils";
 
@@ -36,30 +33,4 @@ export function CopyButton({ variant = "outline", className, ...props }: Compone
 
 export function ActionButton({ className, ...props }: ComponentProps<typeof ArcActionButton>) {
   return <ArcActionButton {...props} className={cn("focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground", className)} />;
-}
-
-/**
- * Arc's page control. Its page and arrow buttons are the drawn squares (Arc fills them on hover), but they take no
- * className, so a contents-only wrapper rings each button on keyboard focus (Review-B, r3: Tab showed nothing).
- */
-export function Pagination(props: ComponentProps<typeof ArcPagination>) {
-  return (
-    <div className="contents [&_button:focus-visible]:outline-2 [&_button:focus-visible]:outline-offset-2 [&_button:focus-visible]:outline-foreground">
-      <ArcPagination {...props} />
-    </div>
-  );
-}
-
-/** Arc's toast stack: the action pill and the 28 px close are the drawn shapes, so they take the ring themselves. */
-export function ToastStack({ className, ...props }: ComponentProps<typeof ArcToastStack>) {
-  return <ArcToastStack {...props} className={cn("[&_button:focus-visible]:outline-2 [&_button:focus-visible]:outline-offset-2 [&_button:focus-visible]:outline-foreground", className)} />;
-}
-
-/**
- * Arc's expandable card: its trigger is the card's whole header row inside the card's own border, so a ring would
- * draw a second box inside the card. Keyboard focus shows Arc's pressed fill instead, as the controlbar rows do
- * (important: Arc's unlayered module CSS sets the trigger's resting background).
- */
-export function ExpandableCard({ className, ...props }: ComponentProps<typeof ArcExpandableCard>) {
-  return <ArcExpandableCard {...props} className={cn("[&_button[aria-expanded]:focus-visible]:bg-(--surface-muted)!", className)} />;
 }

@@ -127,8 +127,7 @@ test("keyboard focus and the open menu (#24) win over a slide or fade", () => {
   assert.equal(headerInternalOpacity("slide", true, false), 0);
   assert.equal(headerRowY(-100, false), -100);
   assert.match(header, /const revealed = focused \|\| open;/);
-  assert.match(header, /const internalOpacity = useTransform\(\(\) => \(revealState\.get\(\) \? 1 : springOpacity\.get\(\)\)\);/);
-  assert.match(header, /const sectionTranslate = useTransform\(\(\) => \(revealState\.get\(\) \? 0 : springTranslate\.get\(\)\)\);/);
+  // The Motion lifecycle (reveal on and off over live springs) is in site-header-motion.test.tsx.
 });
 
 test("starting a tween stops the lerp's scheduled writer", () => {

@@ -89,6 +89,43 @@ export function headerRowY(innerTranslate: number, revealed: boolean) {
 }
 
 /**
+ * The sides' slide, fade and row offset: The Hideaway's springs (HeaderClient.tsx:195-215, 244), with the kept reveal
+ * (#24) holding them at rest at once. Motion's function-form useTransform subscribes only to the values whose get()
+ * ran during the render-time compute (motion use-computed.mjs:10-12, use-combine-values.mjs:27), so every computed
+ * transform in this header reads all of its inputs before it branches; a branch that skipped one left it unsubscribed.
+ */
+export function useHeaderSides({
+  transitionVariant,
+  visibleness,
+  revealState,
+  innerTranslate
+}: {
+  transitionVariant: MotionValue<HeaderVariant>;
+  visibleness: MotionValue<boolean>;
+  revealState: MotionValue<boolean>;
+  innerTranslate: MotionValue<number>;
+}) {
+  const springTranslate = useSpring(
+    useTransform(() => headerSectionTranslate(transitionVariant.get(), visibleness.get(), revealState.get())),
+    { visualDuration: 0.4, ...SPRING_EASE.power4.inOut }
+  );
+  const springOpacity = useSpring(
+    useTransform(() => headerInternalOpacity(transitionVariant.get(), visibleness.get(), revealState.get())),
+    { ...SPRING_EASE.power2.inOut, visualDuration: 0.3 }
+  );
+  const sectionTranslate = useTransform(() => {
+    const translate = springTranslate.get();
+    return revealState.get() ? 0 : translate;
+  });
+  const internalOpacity = useTransform(() => {
+    const opacity = springOpacity.get();
+    return revealState.get() ? 1 : opacity;
+  });
+  const rowY = useTransform(() => headerRowY(innerTranslate.get(), revealState.get()));
+  return { springTranslate, springOpacity, sectionTranslate, internalOpacity, rowY };
+}
+
+/**
  * Guards the lerp's frame writer: a writer writes only while it is the latest one, so starting a tween (or another
  * lerp) stops a writer already scheduled, which otherwise kept pulling the scrub for up to a second.
  */
@@ -237,9 +274,15 @@ export function SiteHeader({ member: memberProp }: { member?: Promise<HeaderMemb
     return from + (from - to) * progress;
   });
   const scrollToBtbgop = useTransform(scrubPosition, [0, 1], [0.25, 0.1]);
-  const btbgop = useTransform(() => (navState.get() ? 0 : scrollToBtbgop.get()));
+  const btbgop = useTransform(() => {
+    const alpha = scrollToBtbgop.get();
+    return navState.get() ? 0 : alpha;
+  });
   const btBackground = useMotionTemplate`oklch(${themeOK}% 0.008 176.48/${btbgop})`;
-  const btBlurPx = useTransform(() => (navState.get() ? 0 : 4 + scrubPosition.get() * 10));
+  const btBlurPx = useTransform(() => {
+    const progress = scrubPosition.get();
+    return navState.get() ? 0 : 4 + progress * 10;
+  });
   const btBlur = useMotionTemplate`${btBlurPx}px`;
   const logoSize = useTransform(scrubPosition, [0.1, 0.3], [28, 22]);
   const logoPx = useMotionTemplate`${logoSize}px`;
@@ -277,18 +320,8 @@ export function SiteHeader({ member: memberProp }: { member?: Promise<HeaderMemb
   useEffect(() => {
     revealState.set(revealed);
   }, [revealed, revealState]);
-  const springTranslate = useSpring(
-    useTransform(() => headerSectionTranslate(transitionVariant.get(), visibleness.get(), revealState.get())),
-    { visualDuration: 0.4, ...SPRING_EASE.power4.inOut }
-  );
-  const springOpacity = useSpring(
-    useTransform(() => headerInternalOpacity(transitionVariant.get(), visibleness.get(), revealState.get())),
-    { ...SPRING_EASE.power2.inOut, visualDuration: 0.3 }
-  );
-  // While revealed the sides are at rest at once, not after the springs settle.
-  const sectionTranslate = useTransform(() => (revealState.get() ? 0 : springTranslate.get()));
-  const internalOpacity = useTransform(() => (revealState.get() ? 1 : springOpacity.get()));
   const innerTranslate = useMotionValue(0);
+  const { sectionTranslate, internalOpacity, rowY } = useHeaderSides({ transitionVariant, visibleness, revealState, innerTranslate });
   useMotionValueEvent(transitionVariant, "change", (latestValue) => {
     const { y, delay, duration } = headerInnerTranslate(latestValue, visibleness.get());
     animate(innerTranslate, y, { delay, duration, type: "tween", ease: TWEEN_EASE.power4.inOut });
@@ -296,7 +329,6 @@ export function SiteHeader({ member: memberProp }: { member?: Promise<HeaderMemb
   const sectionY = useMotionTemplate`-${sectionTranslate}%`;
   const sectionLX = useMotionTemplate`-${sectionTranslate}%`;
   const sectionRX = useMotionTemplate`${sectionTranslate}%`;
-  const rowY = useTransform(() => headerRowY(innerTranslate.get(), revealState.get()));
   const innerY = useMotionTemplate`${rowY}%`;
   const scy = useTransform(() => headerLogoY(sectionTranslate.get(), mobileState.get(), scrubPosition.get()));
   const sectionCY = useMotionTemplate`translate(-50%,${scy}%)`;
@@ -310,7 +342,12 @@ export function SiteHeader({ member: memberProp }: { member?: Promise<HeaderMemb
   const bsBlur = useTransform(() => 1.2 * scrubPosition.get());
   const bsOKOp = useTransform(() => 0.7 * scrubPosition.get());
   const mainBS = useMotionTemplate`0 0 ${bsSpread}px ${bsBlur}px oklch(36.76% 0.003 58.67/${bsOKOp})`;
-  const boxShadow = useTransform(() => (scrubPosition.get() > 0.3 && themeValue.get() === "dark" ? mainBS.get() : "none"));
+  const boxShadow = useTransform(() => {
+    const progress = scrubPosition.get();
+    const dark = themeValue.get() === "dark";
+    const shadow = mainBS.get();
+    return progress > 0.3 && dark ? shadow : "none";
+  });
 
   const tweenNumber = useRef(0);
   const halted = useRef(false);

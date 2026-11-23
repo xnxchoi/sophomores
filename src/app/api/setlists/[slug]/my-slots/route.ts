@@ -48,7 +48,8 @@ export async function GET(
           id: user.id,
           name: user.name,
           email: user.email,
-          isPlaylistEligible: Boolean(user.isPlaylistEligible)
+          // Same key, now the live per-event answer (the stored flag is no longer used).
+          isPlaylistEligible: eligibility.isEligible
         }
       : null,
     eligibility,

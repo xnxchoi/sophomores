@@ -920,5 +920,34 @@ test('I2 disposable PostgreSQL admission, accounting, native fencing and restart
       await assert.rejects(buyerAdmissions({ req: await as(b), orderID }), /^Error: Order admissions unavailable$/)
     }
   })
+  await t.test('music Hardening C: playlist eligibility follows a live admission for the event, on every read', async () => {
+    // Owner, 23 Nov: no event admits no one; a refunded or revoked ticket loses access on the next read.
+    const { hasEventAdmission } = await import('../../../src/lib/music/eligibility')
+    await setTimeout(1100)
+    const s = await seedAttempt(db.payload, new Date(Date.now() - 31 * 60000).toISOString()), attempt = await confirmation(db.payload, s)
+    const paymentID = s.transactionID.replaceAll('-', '')
+    assert.equal((await runReconciliation(attempt.req, { transactionID: s.transactionID, paymentID, cartID: s.cartID }, 'confirm', async () => {
+      assert.equal(await readSettlementProof(attempt.req, paymentID, attempt.deps), 'provider-paid')
+      return attempt.run()
+    }, attempt.deps)).status, 200)
+    const admission = (await db.payload.find({ collection: 'commerce-admissions' as never, overrideAccess: true, limit: 1, depth: 0,
+      where: { and: [{ buyer: { equals: s.customerID } }, { unit: { equals: 1 } }] } })).docs[0] as unknown as { id: string; event: string }
+    assert.ok(admission)
+    const eventID = s.eventID
+    assert.equal(admission.event, eventID)
+    const other = await seedAttempt(db.payload)
+    assert.equal(await hasEventAdmission(db.payload, s.customerID, eventID), true)
+    assert.equal(await hasEventAdmission(db.payload, s.customerID, null), false)
+    assert.equal(await hasEventAdmission(db.payload, s.customerID, other.eventID), false)
+    assert.equal(await hasEventAdmission(db.payload, other.customerID, eventID), false)
+    // A refund on a used ticket keeps its status but holds the benefit: no playlist.
+    await db.payload.db.updateOne({ collection: 'commerce-admissions' as never, id: admission.id, data: { benefitReview: true } })
+    assert.equal(await hasEventAdmission(db.payload, s.customerID, eventID), false)
+    await db.payload.db.updateOne({ collection: 'commerce-admissions' as never, id: admission.id, data: { benefitReview: false } })
+    assert.equal(await hasEventAdmission(db.payload, s.customerID, eventID), true)
+    // Revocation (what release and returns write) loses access on the very next read.
+    await db.payload.db.updateOne({ collection: 'commerce-admissions' as never, id: admission.id, data: { status: 'revoked', eventAccountKey: null } })
+    assert.equal(await hasEventAdmission(db.payload, s.customerID, eventID), false)
+  })
   t.diagnostic('Real PostgreSQL/native Payload Local API, shipped additive migration and separate OS processes; provider evidence synthetic; no production/provider acceptance')
 })

@@ -2,6 +2,7 @@ import type { Payload } from "payload";
 import type { User } from "@/payload-types";
 import { inRunningOrder, runningOrder } from "./running-order";
 import type { UserEligibility } from "./types";
+import { eventAccountKey } from "@/lib/commerce/event-account";
 
 /**
  * Checks whether a user account is activated (i.e. has a valid non-placeholder
@@ -50,62 +51,40 @@ export function isAccountActivated(user: User | null | undefined): boolean {
 }
 
 /**
- * Checks whether an event ticket is bound to this account via:
- * 1. An explicit playlist eligibility flag.
- * 2. An event admission in commerce-admissions (claimed or buyer).
- * 3. A completed/paid order in orders.
+ * Hardening C: a read-only, event-scoped projection decided on every read. The account
+ * occupies a live admission for this setlist's event: the occupancy key for (event, account),
+ * not revoked and not held for benefit review (refunds and provider risk set that hold).
+ * A setlist without an event admits no one (owner, 23 Nov: "Nobody until set").
+ * SYSTEM projection: commerce-admissions stays server-only; this read is bound to the
+ * account and event and returns only a yes or no.
  */
-export async function hasBoundTicket(
-  payload: Payload,
-  userId: string,
-  user?: User | null
-): Promise<boolean> {
-  if (user?.isPlaylistEligible) return true;
-
-  // Check commerce-admissions
+export async function hasEventAdmission(payload: Payload, userId: string, eventID: string | null): Promise<boolean> {
+  if (!eventID || !userId) return false;
   try {
-    const admissions = await payload.find({
+    const found = await payload.count({
       collection: "commerce-admissions" as never,
       where: {
         and: [
-          {
-            or: [
-              { claimedAccount: { equals: userId } },
-              { buyer: { equals: userId } }
-            ]
-          },
-          { status: { not_equals: "revoked" } }
+          { event: { equals: eventID } },
+          { eventAccountKey: { equals: eventAccountKey(eventID, userId) } },
+          { status: { not_equals: "revoked" } },
+          { or: [{ benefitReview: { equals: false } }, { benefitReview: { exists: false } }] }
         ]
       },
-      limit: 1,
-      depth: 0,
       overrideAccess: true
     });
-    if (admissions.totalDocs > 0) return true;
+    return found.totalDocs > 0;
   } catch {
-    // fallback if admissions check fails
+    // Fail closed: an unreadable admission never grants a playlist.
+    console.error("Playlist eligibility could not be read.");
+    return false;
   }
+}
 
-  // Check paid orders
-  try {
-    const orders = await payload.find({
-      collection: "orders",
-      where: {
-        and: [
-          { user: { equals: userId } },
-          { status: { equals: "paid" } }
-        ]
-      },
-      limit: 1,
-      depth: 0,
-      overrideAccess: true
-    });
-    if (orders.totalDocs > 0) return true;
-  } catch {
-    // fallback if orders check fails
-  }
-
-  return false;
+/** The setlist's event id, whether the relationship is populated or not. */
+export function setlistEventID(event: string | { id: string } | null | undefined): string | null {
+  if (!event) return null;
+  return typeof event === "string" ? event : event.id ?? null;
 }
 
 /**
@@ -130,6 +109,7 @@ export async function evaluateUserEligibility(
     deadline: string | Date;
     status: string;
     maxSlotsPerUser?: number | null;
+    event?: string | { id: string } | null;
   }
 ): Promise<UserEligibility> {
   const maxSlots = entryCap(setlist);
@@ -184,7 +164,7 @@ export async function evaluateUserEligibility(
   }
 
   // 2. Gate 1: Check if ticket is bound to this account
-  const ticketBound = await hasBoundTicket(payload, user.id, user);
+  const ticketBound = await hasEventAdmission(payload, String(user.id), setlistEventID(setlist.event));
   if (!ticketBound) {
     return {
       isEligible: false,
@@ -207,20 +187,7 @@ export async function evaluateUserEligibility(
     };
   }
 
-  // Both gates passed: user is eligible!
-  if (!user.isPlaylistEligible) {
-    try {
-      await payload.update({
-        collection: "users",
-        id: user.id,
-        data: { isPlaylistEligible: true },
-        overrideAccess: true
-      });
-    } catch {
-      // non-fatal cache update failure
-    }
-  }
-
+  // Both gates passed. Nothing is cached: the next read decides again.
   return {
     isEligible: true,
     maxSlots,

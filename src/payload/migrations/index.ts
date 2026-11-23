@@ -1,4 +1,3 @@
-import * as migration_20261121_011000_key_grant_hardening from './20261121_011000_key_grant_hardening';
 import * as migration_20261026_071140 from './20261026_071140';
 import * as migration_20261027_124500_auth_integrity from './20261027_124500_auth_integrity';
 import * as migration_20261101_000000_canonical_members from './20261101_000000_canonical_members';
@@ -17,11 +16,13 @@ import * as migration_20261119_123904_team_members from './20261119_123904_team_
 import * as migration_20261119_190000_commerce_order_payment_unique from './20261119_190000_commerce_order_payment_unique';
 import * as migration_20261120_021117_editorial_globals from './20261120_021117_editorial_globals';
 import * as migration_20261120_062810_policy_locales from './20261120_062810_policy_locales';
+import * as migration_20261121_011000_key_grant_hardening from './20261121_011000_key_grant_hardening';
 import * as migration_20261122_061613_setlist_curator_grant from './20261122_061613_setlist_curator_grant';
 import * as migration_20261122_065037_wallet_catch_up from './20261122_065037_wallet_catch_up';
 import * as migration_20261122_153000_nfc_storage from './20261122_153000_nfc_storage';
 import * as migration_20261122_160000_setlist_entries_running_order from './20261122_160000_setlist_entries_running_order';
 import * as migration_20261122_160100_native_edition_settlement from './20261122_160100_native_edition_settlement';
+import * as migration_20261122_220722_setlist_event from './20261122_220722_setlist_event';
 
 export const migrations = [
   {
@@ -112,7 +113,7 @@ export const migrations = [
   {
     up: migration_20261120_062810_policy_locales.up,
     down: migration_20261120_062810_policy_locales.down,
-    name: '20261120_062810_policy_locales'
+    name: '20261120_062810_policy_locales',
   },
   {
     up: migration_20261121_011000_key_grant_hardening.up,
@@ -143,5 +144,10 @@ export const migrations = [
     up: migration_20261122_160100_native_edition_settlement.up,
     down: migration_20261122_160100_native_edition_settlement.down,
     name: '20261122_160100_native_edition_settlement',
+  },
+  {
+    up: migration_20261122_220722_setlist_event.up,
+    down: migration_20261122_220722_setlist_event.down,
+    name: '20261122_220722_setlist_event'
   },
 ];

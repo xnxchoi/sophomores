@@ -1776,6 +1776,9 @@ export const setlists = pgTable(
     title: varchar("title").notNull(),
     slug: varchar("slug").notNull(),
     description: varchar("description"),
+    event: uuid("event_id").references(() => commerce_events.id, {
+      onDelete: "set null"
+    }),
     status: enum_setlists_status("status").notNull().default("draft"),
     deadline: timestamp("deadline", {
       mode: "string",
@@ -1817,6 +1820,7 @@ export const setlists = pgTable(
   },
   (columns) => [
     uniqueIndex("setlists_slug_idx").on(columns.slug),
+    index("setlists_event_idx").on(columns.event),
     index("setlists_status_idx").on(columns.status),
     index("setlists_updated_at_idx").on(columns.updatedAt),
     index("setlists_created_at_idx").on(columns.createdAt)
@@ -4754,7 +4758,12 @@ export const relations_setlists_rels = relations(setlists_rels, ({ one }) => ({
     relationName: "tracks"
   })
 }));
-export const relations_setlists = relations(setlists, ({ many }) => ({
+export const relations_setlists = relations(setlists, ({ one, many }) => ({
+  event: one(commerce_events, {
+    fields: [setlists.event],
+    references: [commerce_events.id],
+    relationName: "event"
+  }),
   _rels: many(setlists_rels, {
     relationName: "_rels"
   })

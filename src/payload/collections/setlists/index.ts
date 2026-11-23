@@ -49,6 +49,15 @@ export const Setlists: CollectionConfig = {
       type: "textarea"
     },
     {
+      name: "event",
+      type: "relationship",
+      relationTo: "commerce-events" as never,
+      index: true,
+      admin: {
+        description: "Ticket holders for this event can add songs. With no event, no one can."
+      }
+    },
+    {
       name: "status",
       type: "select",
       defaultValue: "draft",

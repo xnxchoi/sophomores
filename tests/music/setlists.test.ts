@@ -2,6 +2,7 @@ import test, { describe } from "node:test";
 import assert from "node:assert/strict";
 import type { Payload } from "payload";
 import { evaluateUserEligibility, isAccountActivated } from "@/lib/music/eligibility";
+import { eventAccountKey } from "@/lib/commerce/event-account";
 import { getAppleMusicPlaylist, searchAppleMusicSongs } from "@/lib/music/apple-music";
 import { isAuthorizedCurator } from "@/lib/music/curator";
 import type { User } from "@/payload-types";
@@ -48,9 +49,16 @@ test("catalog-only playlist reads use the developer credential and never the use
 });
 
 describe("Setlists & Eligibility Logic", () => {
+  // Hardening C: one live admission for the setlist's event; any write is a failure.
+  const admissionCounts: unknown[] = [];
   const mockPayload = {
     find: async () => ({ docs: [], totalDocs: 0 }),
-    update: async () => ({})
+    count: async ({ collection, where }: { collection: string; where: unknown }) => {
+      assert.equal(collection, "commerce-admissions");
+      admissionCounts.push(where);
+      return { totalDocs: 1 };
+    },
+    update: async () => assert.fail("Eligibility never writes")
   } as unknown as Payload;
 
   test("rejects unauthenticated users", async () => {
@@ -67,7 +75,8 @@ describe("Setlists & Eligibility Logic", () => {
     assert.equal(result.canEdit, false);
   });
 
-  test("rejects users without playlist eligibility flag", async () => {
+  test("a setlist with no event admits no one, even an activated account once flagged", async () => {
+    // Owner, 23 Nov: "Nobody until set". The stored flag no longer grants anything.
     const setlist = {
       id: "setlist-1",
       deadline: new Date(Date.now() + 86400000).toISOString(),
@@ -78,7 +87,8 @@ describe("Setlists & Eligibility Logic", () => {
     const user: Partial<User> = {
       id: "user-1",
       email: "guest@example.com",
-      isPlaylistEligible: false
+      emailVerified: true,
+      isPlaylistEligible: true
     };
 
     const result = await evaluateUserEligibility(mockPayload, user as User, setlist);
@@ -129,12 +139,13 @@ describe("Setlists & Eligibility Logic", () => {
     assert.equal(result.canEdit, false);
   });
 
-  test("grants 2 slots to eligible users with an active setlist", async () => {
+  test("grants 2 slots to an activated account with a live admission for the setlist's event", async () => {
     const setlist = {
       id: "setlist-1",
       deadline: new Date(Date.now() + 86400000).toISOString(),
       status: "active",
-      maxSlotsPerUser: 2
+      maxSlotsPerUser: 2,
+      event: { id: "event-1" }
     };
 
     const user: Partial<User> = {
@@ -220,7 +231,8 @@ describe("Setlists & Eligibility Logic", () => {
       id: "setlist-1",
       deadline: new Date(Date.now() + 86400000).toISOString(),
       status: "active",
-      maxSlotsPerUser: 2
+      maxSlotsPerUser: 2,
+      event: "event-1"
     };
 
     // User has a bound ticket, but their account is in unactivated gift state
@@ -236,34 +248,43 @@ describe("Setlists & Eligibility Logic", () => {
     assert.equal(result.canEdit, false);
   });
 
-  test("grants eligibility when ticket is bound via paid order and account is activated", async () => {
+  test("a legacy paid order no longer grants a playlist (owner, 22 Nov: no past orders exist)", async () => {
     const setlist = {
       id: "setlist-1",
       deadline: new Date(Date.now() + 86400000).toISOString(),
       status: "active",
-      maxSlotsPerUser: 2
+      maxSlotsPerUser: 2,
+      event: "event-1"
     };
-
-    const buyerUser: Partial<User> = {
-      id: "user-buyer-1",
-      email: "buyer@example.com",
-      emailVerified: true,
-      isPlaylistEligible: false // Not yet explicitly flagged on doc
-    };
-
+    const buyerUser: Partial<User> = { id: "user-buyer-1", email: "buyer@example.com", emailVerified: true };
+    const collections: string[] = [];
     const payloadWithOrder = {
       find: async ({ collection }: { collection: string }) => {
-        if (collection === "orders") {
-          return { docs: [{ id: "order-1", status: "paid" }], totalDocs: 1 };
-        }
-        return { docs: [], totalDocs: 0 };
+        collections.push(collection);
+        return collection === "orders" ? { docs: [{ id: "order-1", status: "paid" }], totalDocs: 1 } : { docs: [], totalDocs: 0 };
       },
-      update: async () => ({})
+      count: async () => ({ totalDocs: 0 }),
+      update: async () => assert.fail("Eligibility never writes")
     } as unknown as Payload;
-
     const result = await evaluateUserEligibility(payloadWithOrder, buyerUser as User, setlist);
-    assert.equal(result.isEligible, true);
-    assert.equal(result.maxSlots, 2);
-    assert.equal(result.canEdit, true);
+    assert.deepEqual([result.isEligible, result.reason], [false, "ineligible_product"]);
+    assert.equal(collections.includes("orders"), false);
+  });
+
+  test("only a live admission for this setlist's event and this account counts, read fresh each time", async () => {
+    // Revoked tickets (status) and refunded-but-used ones (benefitReview hold) are excluded.
+    admissionCounts.length = 0;
+    const setlist = { id: "setlist-1", deadline: new Date(Date.now() + 86400000).toISOString(), status: "active",
+      maxSlotsPerUser: 2, event: "event-1" };
+    const user: Partial<User> = { id: "user-1", email: "attendee@example.com", emailVerified: true };
+    await evaluateUserEligibility(mockPayload, user as User, setlist);
+    await evaluateUserEligibility(mockPayload, user as User, setlist);
+    const where = { and: [
+      { event: { equals: "event-1" } },
+      { eventAccountKey: { equals: eventAccountKey("event-1", "user-1") } },
+      { status: { not_equals: "revoked" } },
+      { or: [{ benefitReview: { equals: false } }, { benefitReview: { exists: false } }] }
+    ] };
+    assert.deepEqual(admissionCounts, [where, where]);
   });
 });

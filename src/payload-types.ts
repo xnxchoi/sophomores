@@ -879,6 +879,10 @@ export interface Setlist {
   title: string;
   slug: string;
   description?: string | null;
+  /**
+   * Ticket holders for this event can add songs. With no event, no one can.
+   */
+  event?: (string | null) | CommerceEvent;
   status: 'draft' | 'active' | 'locked' | 'finalized';
   /**
    * Exact UTC timestamp after which attendee slot edits are rejected
@@ -928,6 +932,24 @@ export interface Setlist {
    */
   needsSync?: boolean | null;
   lastSyncedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "commerce-events".
+ */
+export interface CommerceEvent {
+  id: string;
+  name: string;
+  publicationApproved?: boolean | null;
+  capacity: number;
+  transportCapacity: number;
+  partIStartsAt: string;
+  partIEndsAt: string;
+  claimCutoffAt: string;
+  reservedQuantity: number;
+  committedQuantity: number;
   updatedAt: string;
   createdAt: string;
 }
@@ -1217,24 +1239,6 @@ export interface Variant {
   createdAt: string;
   deletedAt?: string | null;
   _status?: ('draft' | 'published') | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "commerce-events".
- */
-export interface CommerceEvent {
-  id: string;
-  name: string;
-  publicationApproved?: boolean | null;
-  capacity: number;
-  transportCapacity: number;
-  partIStartsAt: string;
-  partIEndsAt: string;
-  claimCutoffAt: string;
-  reservedQuantity: number;
-  committedQuantity: number;
-  updatedAt: string;
-  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -2307,6 +2311,7 @@ export interface SetlistsSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
   description?: T;
+  event?: T;
   status?: T;
   deadline?: T;
   maxSlotsPerUser?: T;

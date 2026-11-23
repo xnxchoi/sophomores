@@ -6,6 +6,7 @@ import { purchaseSnapshotSchema } from "./purchase-snapshot";
 import { commerceSnapshotHash } from "./snapshot-hash";
 import { lockAdmissionBenefits } from "./_shared/benefits";
 import { createCommerce, findCommerce, lockCommerce, readCommerce, relationshipID, updateCommerce, type CommerceDocument } from "./_shared/transaction";
+import { eventAccountKey } from "./event-account";
 
 function digest(token: string): string {
   return createHash("sha256").update(token).digest("hex");
@@ -17,7 +18,7 @@ function admissionOccupancy(admission: CommerceDocument): { eventID: string; acc
   const eventID = relationshipID(admission.event);
   const claimed = admission.claimedAccount != null;
   const accountID = relationshipID(claimed ? admission.claimedAccount : admission.buyer);
-  if (!eventID || !accountID || admission.eventAccountKey !== digest(JSON.stringify([eventID, accountID])) || (!claimed && admission.unit !== 1)) throw new Error("Admission occupancy is inconsistent");
+  if (!eventID || !accountID || admission.eventAccountKey !== eventAccountKey(eventID, accountID) || (!claimed && admission.unit !== 1)) throw new Error("Admission occupancy is inconsistent");
   return { eventID, accountID };
 }
 
@@ -63,18 +64,18 @@ export async function grantOrderAdmissions({ req, orderID, transactionID }: { re
     if (existing.length !== snapshot.quantity) throw new Error("Partial admission grant requires reconciliation");
     return existing;
   }
-  const eventAccountKey = digest(JSON.stringify([snapshot.eventID, snapshot.customerID]));
+  const occupancyKey = eventAccountKey(snapshot.eventID, snapshot.customerID);
   // Last in this path's lock order, shared with claims. Never acquire existing
   // admission/order-benefit locks after this account/event authority.
-  await lockCommerce(req, [`event-account:${eventAccountKey}`]);
-  const occupied = await findCommerce(req, "commerce-admissions", "eventAccountKey", eventAccountKey);
+  await lockCommerce(req, [`event-account:${occupancyKey}`]);
+  const occupied = await findCommerce(req, "commerce-admissions", "eventAccountKey", occupancyKey);
   if (occupied) {
     const occupancy = admissionOccupancy(occupied);
     if (!occupancy || occupancy.eventID !== snapshot.eventID || occupancy.accountID !== snapshot.customerID) throw new Error("Admission occupancy is inconsistent");
   }
   const result: CommerceDocument[] = [];
   for (let unit = 1; unit <= snapshot.quantity; unit++) {
-    result.push(await createCommerce(req, "commerce-admissions", { orderUnitKey: `${orderID}:${unit}`, order: orderID, transaction: transactionID, event: snapshot.eventID, buyer: snapshot.customerID, unit, status: "available", ...(unit === 1 && !occupied ? { eventAccountKey } : {}) }));
+    result.push(await createCommerce(req, "commerce-admissions", { orderUnitKey: `${orderID}:${unit}`, order: orderID, transaction: transactionID, event: snapshot.eventID, buyer: snapshot.customerID, unit, status: "available", ...(unit === 1 && !occupied ? { eventAccountKey: occupancyKey } : {}) }));
   }
   return result;
 }

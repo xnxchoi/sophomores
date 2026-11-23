@@ -90,6 +90,8 @@ test(
         { slug: "users", auth: true, fields: [{ name: "name", type: "text" }] },
         { slug: "albums", fields: [{ name: "title", type: "text" }] },
         { slug: "tags", fields: [{ name: "title", type: "text" }] },
+        // Relationship target of setlists.event; the eligibility read is not exercised here.
+        { slug: "commerce-events", fields: [] },
         setlists,
         SetlistPositions,
         Tracks

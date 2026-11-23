@@ -322,7 +322,8 @@ test("Payload generic reads preserve the CMS exception without admitting a remov
       telemetry: false,
       typescript: { autoGenerate: false },
       admin: { user: "admins" },
-      collections: [Admins, users, Tracks, Setlists, SetlistPositions, Albums, Tags],
+      // Setlists relate to their event (music Hardening C); a minimal stand-in keeps the config valid.
+      collections: [Admins, users, Tracks, Setlists, SetlistPositions, Albums, Tags, { slug: "commerce-events", fields: [] }],
       db: postgresAdapter({ pool: {}, push: false }),
     }),
     disableDBConnect: true,

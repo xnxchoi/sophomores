@@ -2,6 +2,7 @@ import { spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
+import { portHolder, proofTargets } from "./proof-ports.mjs";
 
 // Opt-in real-PostgreSQL proofs. Each proof gets the exact disposable loopback
 // container its fixture inspects (name, port, database, 384 MiB, named volume).
@@ -12,42 +13,44 @@ import { fileURLToPath } from "node:url";
 // No application .env or DATABASE_URI is read. The I0 payment-durability and I2
 // reconciliation proofs predate the reconciliation gate and are retired with the
 // I2 machinery when the standard settle replaces it.
+// Container, port and database come from the shared map (proof-ports.mjs), which
+// the fixtures read too.
 const proofs = [
   {
     file: "tests/commerce/core/membership-grant.db.test.ts",
     flag: "SUNDAY_MEMBERSHIP_DATABASE_TESTS",
-    container: "sphmrs-sunday-membership-20261114", port: 55491, database: "sunday_membership_proof",
+    ...proofTargets.sundayMembership,
   },
   {
     // Single membership token per account: cross-product allowance, release and
     // retry, and the keyset live-key fence. Its fixture pins this exact container.
     file: "tests/commerce/domain/membership-allowance.db.test.ts",
     flag: "COMMERCE_PAYLOAD_DATABASE_TESTS",
-    container: "sphmrs-i2-c4-20261114-86c655af", port: 55491, database: "i2_proof",
+    ...proofTargets.reconciliation,
   },
   {
     // First super admin: two instances with different bootstrap addresses promote exactly one.
     file: "tests/payload/super-admin-bootstrap.db.test.ts",
     flag: "SUPERADMIN_DATABASE_TESTS",
-    container: "sphmrs-superadmin-20261122", port: 55493, database: "superadmin_proof",
+    ...proofTargets.superAdmin,
   },
   {
     // Setlist entries: fixed identity, the staff running order apart from the
     // entry, the two-entry cap and valid order keys. Its fixture pins this container.
     file: "tests/music/setlist-slots.db.test.ts",
     flag: "SETLIST_SLOTS_DATABASE_TESTS",
-    container: "sphmrs-setlist-slots-20261122", port: 55492, database: "setlist_slots_proof",
+    ...proofTargets.setlistSlots,
   },
   {
     // The browser-held cart written into the member's own cart after sign-in, and the users.cart join (saved cart reload).
     file: "tests/commerce/core/cart-write-through.db.test.ts",
     flag: "CART_WRITE_THROUGH_DATABASE_TESTS",
-    container: "sphmrs-cart-write-through-20261123", port: 55514, database: "cart_write_through_proof",
+    ...proofTargets.cartWriteThrough,
   },
   {
     file: "tests/commerce/editions/native-settlement.db.test.ts",
     flag: "NATIVE_EDITION_DATABASE_TESTS", explicit: true,
-    container: `sphmrs-native-edition-${randomUUID()}`, port: 55512, database: "native_edition_proof",
+    ...proofTargets.nativeEdition, container: `${proofTargets.nativeEdition.container}${randomUUID()}`,
   },
 ];
 const image = "postgres:16";
@@ -97,6 +100,13 @@ for (const proof of selected ? [selected] : proofs.filter(({ explicit }) => !exp
     failed = true;
     continue;
   }
+  // Fail plainly before creating anything when the port is taken, instead of a Docker start error.
+  const holder = await portHolder(proof.port);
+  if (holder) {
+    console.error(`Refusing the ${proof.container} proof: ${holder}.`);
+    failed = true;
+    continue;
+  }
   try {
     const created = docker("volume", "create", "--label", `${runLabel}=${runID}`, volume);
     if (created.status !== 0) throw new Error(`Could not create the ${volume} proof volume: ${created.stderr.trim().slice(0, 300)}`);
@@ -113,8 +123,9 @@ for (const proof of selected ? [selected] : proofs.filter(({ explicit }) => !exp
     owned.containerID = container.stdout.trim();
     const started = docker("start", owned.containerID);
     if (started.status !== 0) {
-      // The proofs share one loopback port machine-wide: say so plainly, then clean up as usual.
-      if (/port is already allocated/i.test(started.stderr)) console.error(`port ${proof.port} busy: another proof run is active`);
+      // Taken between the pre-check and the start: name the holder if it can be seen, then clean up as usual.
+      if (/port is already allocated|address already in use/i.test(started.stderr))
+        console.error((await portHolder(proof.port)) ?? `port ${proof.port} busy`);
       throw new Error(`Could not start the ${proof.container} proof database: ${started.stderr.trim().slice(0, 300)}`);
     }
     let ready = false;

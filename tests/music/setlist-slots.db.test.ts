@@ -6,16 +6,13 @@ import { pathToFileURL } from "node:url";
 import test from "node:test";
 import type { CollectionConfig, Payload } from "payload";
 import type { Pool } from "pg";
+import { proofTargets } from "../support/proof-ports.mjs";
 
 // Opt-in real-PostgreSQL proof (tests/support/database-proof.mjs). Disposable
 // loopback container created for this proof only and removed afterwards. No
 // application .env or DATABASE_URI is read. push:true proves the schema the
 // collection configs declare, not that the generated push:false migration applies.
-const target = {
-  container: "sphmrs-setlist-slots-20261122",
-  port: 55492,
-  database: "setlist_slots_proof"
-};
+const target = proofTargets.setlistSlots;
 const databaseURL = `postgres://postgres@127.0.0.1:${target.port}/${target.database}`;
 const seatIndexPath = "setlist_id, submitted_by_id, slot_index";
 const orderKey = "_setlist-positions_runningOrder_order";

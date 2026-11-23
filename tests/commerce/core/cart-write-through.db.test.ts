@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import test from "node:test";
 import type { CollectionSlug, TypedUser } from "payload";
+import { proofTargets } from "../../support/proof-ports.mjs";
 
 // The signed-out cart is held in the browser (owner, 23 Nov); after sign-in the cart page writes it into the member's
 // own server cart. This proves that write on real PostgreSQL, as the member, through the cart guard's member branch:
@@ -11,7 +12,7 @@ import type { CollectionSlug, TypedUser } from "payload";
 test("member cart write-through and saved-cart reload on real PostgreSQL", {
   skip: process.env.CART_WRITE_THROUGH_DATABASE_TESTS !== "1", timeout: 180_000,
 }, async (t) => {
-  const target = { container: "sphmrs-cart-write-through-20261123", port: 55514, database: "cart_write_through_proof" };
+  const target = proofTargets.cartWriteThrough;
   const { openProofDatabase, isolateTransport, seedCheckoutCart, initiateAttempt } = await import("./payment-postgres-fixture");
   const { createLocalReq, APIError } = await import("payload");
   isolateTransport(t, target.port);

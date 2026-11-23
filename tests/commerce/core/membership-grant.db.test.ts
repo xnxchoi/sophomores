@@ -3,9 +3,10 @@ import { setTimeout as delay } from "node:timers/promises";
 import test, { type TestContext } from "node:test";
 import type { Payload } from "payload";
 import type { Pool } from "pg";
+import { proofTargets } from "../../support/proof-ports.mjs";
 
 // Disposable loopback container created for this proof only and removed afterwards.
-const target = { container: "sphmrs-sunday-membership-20261114", port: 55491, database: "sunday_membership_proof" };
+const target = proofTargets.sundayMembership;
 const pending = { orders: 0, stock: 10, reserved: 1, allowance: 0, admissions: 0, fulfillment: 0, status: "pending" };
 const settled = { orders: 1, stock: 9, reserved: 0, allowance: 1, admissions: 1, fulfillment: 1, status: "succeeded" };
 

@@ -3,9 +3,10 @@ import { randomUUID } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { setTimeout as delay } from "node:timers/promises";
 import test from "node:test";
+import { proofTargets } from "../support/proof-ports.mjs";
 
 // Disposable loopback container created for this proof only (see tests/support/database-proof.mjs).
-const target = { container: "sphmrs-superadmin-20261122", port: 55493, database: "superadmin_proof" };
+const target = proofTargets.superAdmin;
 
 test("two instances with different bootstrap addresses promote exactly one first super admin", {
   skip: process.env.SUPERADMIN_DATABASE_TESTS !== "1", timeout: 180_000,

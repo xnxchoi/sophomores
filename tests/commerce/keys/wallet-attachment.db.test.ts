@@ -14,8 +14,9 @@ import { runReconciliation } from "@/lib/commerce/portone/admission";
 import type { KeyGrantAdapter } from "@/lib/commerce/keys/contracts";
 import { loadWalletConfig, predictMemberSafe } from "@/lib/member-auth/wallet/safe";
 import { confirmation, isolateTransport, nativeSession, openProofDatabase, seedAttempt } from "../core/payment-postgres-fixture";
+import { proofTargets } from "../../support/proof-ports.mjs";
 
-const target = { container: "sphmrs-w1-proof-ac40165f", port: 55521, database: "sphmrs_wallet_w1_proof" };
+const target = proofTargets.walletAttachment;
 const env = {
   MEMBER_WALLET_CHAIN_ID: "84532",
   MEMBER_WALLET_OWNER_ADDRESS: "0x1111111111111111111111111111111111111111",

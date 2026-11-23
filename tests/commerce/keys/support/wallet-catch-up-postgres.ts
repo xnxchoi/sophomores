@@ -2,8 +2,9 @@ import assert from "node:assert/strict";
 import type { Payload } from "payload";
 import { MEMBER_WALLET_QUEUE } from "@/payload/tasks/member-wallet-catch-up";
 import type { WalletCatchUpResult } from "@/lib/commerce/keys/wallet-catch-up";
+import { proofTargets } from "../../../support/proof-ports.mjs";
 
-export const database = { container: "sphmrs-w2-proof-82d38c7c", port: 55522, database: "sphmrs_wallet_w2_proof" };
+export const database = proofTargets.walletCatchUp;
 export const walletEnv = {
   MEMBER_WALLET_CHAIN_ID: "84532",
   MEMBER_WALLET_OWNER_ADDRESS: "0x1111111111111111111111111111111111111111",

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { setTimeout as delay } from "node:timers/promises";
 import test from "node:test";
+import { proofTargets } from "../../support/proof-ports.mjs";
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -12,7 +13,7 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
   skip: process.env.NATIVE_EDITION_DATABASE_TESTS !== "1", timeout: 220_000,
 }, async (t) => {
   const target = { container: process.env.NATIVE_EDITION_PROOF_CONTAINER ?? "", runLabel: process.env.NATIVE_EDITION_PROOF_RUN ?? "",
-    port: 55512, database: "native_edition_proof" };
+    port: proofTargets.nativeEdition.port, database: proofTargets.nativeEdition.database };
   assert.match(target.container, /^sphmrs-native-edition-[a-f0-9-]{36}$/);
   assert.match(target.runLabel, /^[a-f0-9-]{36}$/);
   const { openProofDatabase, isolateTransport, publishFixtureCatalogue, initiateAttempt, nativeSession,

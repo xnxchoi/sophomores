@@ -4,8 +4,9 @@ import { createLocalReq } from "payload";
 import { seedPreviewEditionOffers } from "../../../scripts/preview/edition-offer-fixture";
 import { loadCommerceEditionOffer } from "@/lib/commerce/editions";
 import { isolateTransport, openProofDatabase } from "../core/payment-postgres-fixture";
+import { proofTargets } from "../../support/proof-ports.mjs";
 
-const target = { container: "sphmrs-edition-seed-proof", port: 55523, database: "sphmrs_edition_seed_proof" };
+const target = proofTargets.editionSeed;
 
 test("preview editions seed through Payload once and provide all three E1 offers", {
   skip: process.env.EDITION_SEED_DATABASE_TESTS !== "1", timeout: 30_000,

@@ -27,17 +27,18 @@ import { MemberWallets } from "../../../src/payload/collections/member-wallets";
 import { MemberWalletCatchUp } from "../../../src/payload/collections/member-wallet-catch-up";
 import { walletCatchUpCursorIndex } from "../../../src/payload/collections/member-wallet-catch-up/cursor-index";
 import { walletCatchUpJobs } from "../../../src/payload/tasks/member-wallet-catch-up";
+import { proofTargets } from "../../support/proof-ports.mjs";
 
 // Fixed isolated target; neither DATABASE_URI nor application .env is consulted.
-export const databaseURL = "postgres://postgres@127.0.0.1:55476/i0db_proof_r4";
+export const databaseURL = `postgres://postgres@127.0.0.1:${proofTargets.paymentDurability.port}/${proofTargets.paymentDurability.database}`;
 /** Owned disposable loopback target; defaults keep the I0 durability proof unchanged. */
 export type ProofTarget = { container: string; port: number; database: string; runLabel?: string };
-const i0Target: ProofTarget = { container: "sphmrs-i0db-r4-20261113-eda62f07", port: 55476, database: "i0db_proof_r4" };
+const i0Target: ProofTarget = proofTargets.paymentDurability;
 const targetURL = (target: ProofTarget) => `postgres://postgres@127.0.0.1:${target.port}/${target.database}`;
 /** Mirrors the real users.membershipStatus select so settlement can grant membership. */
 export const membershipStatus = { name: "membershipStatus", type: "select" as const, defaultValue: "applicant", required: true,
   options: ["applicant", "invited", "approved", "staff", "waitlist", "suspended"] };
-export const providerConfig = { mode: "test" as const, origin: "http://127.0.0.1:55476", storeId: "fixture-store", channelKey: "fixture-channel",
+export const providerConfig = { mode: "test" as const, origin: `http://127.0.0.1:${proofTargets.paymentDurability.port}`, storeId: "fixture-store", channelKey: "fixture-channel",
   apiSecret: "unused-fixture-value", webhookSecret: "unused-fixture-value", localKpnTestCheckout: false };
 type ProofOptions = {
   expectedAmount?: number;

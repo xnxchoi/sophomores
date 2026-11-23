@@ -20,10 +20,9 @@ import { proveColdNfcInspection } from "./cold-tap-fixture";
 import { resolveEditionRule } from "../../src/lib/commerce/edition-rules";
 import { nativePurchaseSnapshotHash, projectNativeEditionReceipt } from "../../src/lib/commerce/native-edition-receipt";
 import type { MemberPrincipal } from "../../src/lib/member-auth/contracts";
+import { proofTargets } from "../support/proof-ports.mjs";
 
-const name = "sphmrs-nfc-storage-20261122";
-const port = 55516;
-const database = "nfc_storage_proof";
+const { container: name, port, database } = proofTargets.nfcStorage;
 const url = `postgres://postgres@127.0.0.1:${port}/${database}`;
 
 test("NFC storage: real migrated Payload/Postgres, synthetic keys", {

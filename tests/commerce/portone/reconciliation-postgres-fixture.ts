@@ -13,11 +13,13 @@ import { capturePayloadTestLifecycle } from '../../support/payload-lifecycle'
 import { payloadOnInit } from '../core/payload-on-init-fixture'
 import type { ReconciliationIdentity } from '../../../src/lib/commerce/portone/accounting'
 import { membershipStatus, type Attempt } from '../core/payment-postgres-fixture'
+import { proofTargets } from '../../support/proof-ports.mjs'
 
 // The database proof runner names a per-run volume; a standalone run keeps the fixed name.
-export const target = { name: 'sphmrs-i2-c4-20261114-86c655af',
-  volume: process.env.SPHMRS_PROOF_VOLUME || 'sphmrs-i2-c4-20261114-86c655af-data',
-  port: 55491, database: 'i2_proof', url: 'postgres://postgres@127.0.0.1:55491/i2_proof' }
+const { container, port, database } = proofTargets.reconciliation
+export const target = { name: container,
+  volume: process.env.SPHMRS_PROOF_VOLUME || `${container}-data`,
+  port, database, url: `postgres://postgres@127.0.0.1:${port}/${database}` }
 
 /** Real Payload/PG only, fixed isolated target, no application config or env loader. */
 export async function openReconciliationDatabase(prepare = false) {

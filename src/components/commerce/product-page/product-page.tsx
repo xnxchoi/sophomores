@@ -84,18 +84,20 @@ export function ProductPage({ product, offer, content, shelf }: { product: Editi
       </ColumnSection>}
     </div>
 
-    {hasFullWidth && <div data-covers-stage className="relative z-1 mt-24 bg-background pt-1 lg:col-span-full lg:row-start-2 lg:mt-0">
+    {hasFullWidth && <div data-covers-stage className="relative z-1 bg-background pt-10 lg:col-span-full lg:row-start-2 lg:pt-1">
       {content.praise.length > 0 && <section aria-label={t("praise")} className="border-t border-foreground pt-3">
         <Label>{t("praise")}</Label>
-        <ul className="mt-6 grid gap-x-10 md:grid-cols-2">
-          {content.praise.map((entry) => <li key={entry.name + entry.quote.slice(0, 24)} className="border-b border-dotted border-foreground/40 py-8">
+        <ul className="mt-3 grid gap-x-10 md:grid-cols-2">
+          {/* One block per quote: the mark opens the quote, the name and role follow it (coordinator on r3: no dead space). */}
+          {content.praise.map((entry) => <li key={entry.name + entry.quote.slice(0, 24)} className="border-b border-dotted border-foreground/40 py-5">
             <figure>
-              <span aria-hidden="true" className="block font-display text-5xl leading-none text-muted-foreground">“</span>
-              <figcaption className="mt-3 text-[11px] uppercase tracking-[0.06em]">
-                {entry.url ? <a href={entry.url} target="_blank" rel="noreferrer" className="underline decoration-current/40 underline-offset-4 hover:decoration-current">{entry.name}</a> : entry.name}
+              <blockquote className="max-w-[38rem] text-[15px] leading-[1.5] text-pretty">
+                <span aria-hidden="true" className="mr-1 inline-block align-[-0.35em] font-display text-[2rem] leading-none text-muted-foreground">“</span>{entry.quote}
+              </blockquote>
+              <figcaption className="mt-2 flex flex-wrap gap-x-2 text-[11px] uppercase tracking-[0.06em]">
+                {entry.url ? <a href={entry.url} target="_blank" rel="noreferrer" className="underline decoration-current/40 underline-offset-4 hover:decoration-current">{entry.name}</a> : <span>{entry.name}</span>}
+                {entry.role && <span className="text-muted-foreground">{entry.role}</span>}
               </figcaption>
-              <blockquote className="mt-3 max-w-[38rem] text-[15px] leading-[1.5] text-pretty">{entry.quote}</blockquote>
-              {entry.role && <p className="mt-4 text-[11px] uppercase tracking-[0.06em] text-muted-foreground">{entry.role}</p>}
             </figure>
           </li>)}
         </ul>
@@ -109,7 +111,7 @@ export function ProductPage({ product, offer, content, shelf }: { product: Editi
           <DetailRow label={t("materials")} items={content.materials.map(({ item }) => item)} />
           <DetailRow label={t("techniques")} items={content.techniques.map(({ item }) => item)} />
         </dl>
-        {content.gallery.length > 0 && <div className="flex min-w-0 flex-col justify-end">
+        {content.gallery.length > 0 && <div className="min-w-0 border-t border-foreground pt-4">
           <Label>{t("gallery")}</Label>
           <ul className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-5">
             {content.gallery.map(({ image, caption }) => <li key={image.url}>

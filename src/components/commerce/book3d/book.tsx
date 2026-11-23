@@ -56,9 +56,10 @@ const SHARE = [0.6, 0.1, 0.1, 0.1, 0.1];
 const DRAG_RATE = 0.01125, MOUSE_MUL = 0.75, FLING_MAX = 0.42, FLING_DECAY = 0.95, TOUCH_PITCH_ARM_PX = 10;
 const CLICK_PX = 5, CLICK_MS = 500, FLAP_GAIN = 0.037, FLAP_MAX = 0.35 * MathUtils.degToRad(80), FLAP_K = 40;
 const PEEK = MathUtils.degToRad(5), PEEK_EASE = 0.075, REST_YAW = 0.5;
-// The closed book's framing, as stripe.press sets it on the art: large, on a diagonal, running past the stage's lower
-// edge. Tuned live against the stage; the open pose is centred and upright as before.
-const REST_PITCH = 0.32, REST_ROLL = -0.55, CLOSED_X = 1.4, CLOSED_Y = -2.4, CLOSED_Z = 12;
+// The closed book's framing, as stripe.press sets it on the art: large and on a diagonal, its lower corner at the
+// stage's lower edge. At z 0 the camera sees 17.1 units, so the turned book (about 13.2 tall, 11.9 wide) stays whole
+// on a 4:5 phone stage and on the wide desktop one (r3 shots: z 12 cropped it on every side). The open pose is as before.
+const REST_PITCH = 0.32, REST_ROLL = -0.55, CLOSED_X = 0.6, CLOSED_Y = -2, CLOSED_Z = 0;
 // Look inside pose (map §C2 #16): tilted back 22° (12.5° on touch); pointer height adds up to +10° / −12°.
 const OPEN_TILT = MathUtils.degToRad(22), OPEN_TILT_TOUCH = MathUtils.degToRad(12.5), POINTER_UP = MathUtils.degToRad(10), POINTER_DOWN = MathUtils.degToRad(12);
 

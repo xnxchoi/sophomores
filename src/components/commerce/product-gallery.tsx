@@ -35,10 +35,13 @@ export function CommerceProductGallery({ images, title }: {
 
   if (media.length === 1) return (
     // Preserve the configured media host and the first usable image loading priority.
-    // eslint-disable-next-line @next/next/no-img-element
-    <img src={media[0].src} alt={media[0].alt} loading="eager"
-      ref={(element) => checkImage(element, media[0].src)} onError={() => markUnavailable(media[0].src)}
-      className="aspect-square w-full bg-[url(/textures/travertine.webp)] bg-cover bg-center dark:bg-muted dark:bg-blend-multiply object-contain" />
+    // Mersi M1: the same flat plate as the multi-image stage (a blend can't reach an img's own background).
+    <div className="aspect-square w-full overflow-hidden bg-(image:--texture-travertine) bg-cover bg-center dark:bg-muted dark:bg-blend-multiply">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={media[0].src} alt={media[0].alt} loading="eager"
+        ref={(element) => checkImage(element, media[0].src)} onError={() => markUnavailable(media[0].src)}
+        className="size-full object-contain mix-blend-multiply dark:mix-blend-normal" />
+    </div>
   );
 
   return (
@@ -66,7 +69,7 @@ export function CommerceProductGallery({ images, title }: {
           <Tabs.Panel key={`${image.id}:${image.sourceIndex}`} value={index} keepMounted
             className="col-start-1 row-start-1 min-w-0 outline-offset-4 transition-opacity duration-250 ease-out focus-visible:outline-2 data-hidden:hidden data-starting-style:opacity-0 data-ending-style:opacity-0">
             {/* Mersi M1 (owner: "4. M1, M2."): the art sits on a material plate, flat, with no frame or card. */}
-            <div className="aspect-square overflow-hidden bg-[url(/textures/travertine.webp)] bg-cover bg-center dark:bg-muted dark:bg-blend-multiply">
+            <div className="aspect-square overflow-hidden bg-(image:--texture-travertine) bg-cover bg-center dark:bg-muted dark:bg-blend-multiply">
               {failed.has(image.src) ? (
                 <p className="flex size-full items-center justify-center px-6 text-center text-sm leading-relaxed text-muted-foreground">
                   {t("imagesUnavailable")}

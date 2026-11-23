@@ -142,9 +142,11 @@
    (ledger F8: adopt the visuals, don't port components). A texture lays over its own colour; it adds no colour.
    - texture-grain: Mersi's film grain, a 300px monochrome speckle shown at 150px (their .grain-bg). Mersi dodges it over
      creme; dodge can't show on our white or near-black pages, so light uses multiply and dark uses screen.
-     Used on the footer only (owner, 21 Nov), so the footer keeps the page colour and still reads apart from the top. */
+     Used on the footer only (owner, 21 Nov), so the footer keeps the page colour and still reads apart from the top.
+   - texture-travertine: Mersi's travertine (mersi-matble1), the plate behind commerce product art (owner, 23 Nov, M1). */
 :root {
   --texture-grain: url("/assets/textures/texture-grain.webp");
+  --texture-travertine: url("/assets/textures/texture-travertine.webp");
 }
 /* Teaser-specific roles retain the approved palette independently of the app theme. */
 

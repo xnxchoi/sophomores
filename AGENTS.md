@@ -262,9 +262,9 @@ Use actual production import sites to choose the lowest sensible shared ownershi
 
 Group, position, and nest code by scope and use. Do not create single-depth catch-all directories mixing unrelated domains or dumping every helper/component into one flat list. Broad shared code stays at an appropriately broad level; feature-specific code, hooks, tests, and fixtures live in cohesive nested feature/domain directories. Prefer the repo's existing structure over introducing a competing hierarchy, and avoid meaningless single-file nesting or re-export chains.
 
-## Skills: load before you start (owner-approved routing, 2026-11-23)
+## Skills: load before you start (working process, 2026-11-23)
 
-Load the listed skills before the first edit or draft in that area. Where a skill disagrees with an owner rule in this file, the owner rule wins. Claude loads them with the `Skill` tool; Codex reads project skills from `.agents/skills/<name>/SKILL.md` and checks plugin skills through the packet line below. For Claude only, project hooks in `.claude/settings.json` remind once per session per area and log each reminder (`reminded:<area>`) and each loaded skill to `.tmp/skills-used/<session-id>.log`, so a reminder with no matching skill shows as ignored. Codex has no such hook; its packet line is its attestation.
+This section is agent-authored process, adopted through the coordinator on 23 Nov; it is not an owner rule. Owner rules elsewhere in this file, and the owner baseline in the next section, win wherever they differ. Load the listed skills before the first edit or draft in that area. Claude loads them with the `Skill` tool; Codex reads project skills from `.agents/skills/<name>/SKILL.md` and checks plugin skills through the packet line below. For Claude only, project hooks in `.claude/settings.json` remind once per session per area and log each reminder (`reminded:<area>`) and each loaded skill to `.tmp/skills-used/<session-id>.log`, so a reminder with no matching skill shows as ignored. Codex has no such hook; its packet line is its attestation.
 
 | When the task is… | Load first | Then, as needed |
 |---|---|---|
@@ -286,7 +286,16 @@ Load the listed skills before the first edit or draft in that area. Where a skil
 | Self-review before a packet | built-in `code-review` | `simplify`; `ecc:santa-method`; `ecc:astra-review` |
 | Harness, settings or hooks | `update-config`, `ecc:hookify-rules` | `ecc:security-scan` |
 
-**Packet line.** Every worker packet and `worker_done` ends with `Skills used: <comma list>`, attested per host: a Claude session adds `(log: .tmp/skills-used/<session-id>.log)` from its hooks; a Codex session gives the line alone. Reviewers compare it with the area rows above, and with the log where there is one. A missing skill or a missing log is a note, not a FAIL. What fails a packet is substance: a change that exposes personal data or alters its lifecycle without a safeguard from `sphmrs-personal-data-pages` that applies to it.
+**Packet line.** Every worker packet and `worker_done` ends with `Skills used: <comma list>`, attested per host: a Claude session adds `(log: .tmp/skills-used/<session-id>.log)` from its hooks; a Codex session gives the line alone. Reviewers compare it with the area rows above, and with the log where there is one. A missing skill or a missing log is a note, never a FAIL.
+
+## Personal-data baseline (owner, 2026-11-23)
+
+Owner, 23 Nov 2026, verbatim: "Isn't this like web security 101? Why are we like treating this like some pioneering shit?"
+
+Standard web-security patterns are built in from the first edit, not researched case by case. The checklist lives in the `sphmrs-personal-data-pages` skill (`.claude/skills/` and `.agents/skills/`). Agent-authored application of the owner's direction:
+- It applies to any change that exposes personal data or alters its lifecycle (collection, storage, caching, sharing, retention, deletion), wherever the file lives; a change that touches no personal data does not trigger it.
+- Proof is our code's reaction (headers set, handlers hide and re-check, sign-out clears), never a browser-behaviour experiment; tests still never block progress.
+- Reviewers fail such a change when it lacks a checklist safeguard that applies to it. That is a check on the code, not on the packet line above.
 
 <!-- BEGIN:nextjs-agent-upgrade -->
 

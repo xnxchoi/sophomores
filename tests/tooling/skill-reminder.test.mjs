@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, readdirSync, readFileSync, symlinkSync, existsSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readdirSync, readFileSync, symlinkSync, existsSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -45,4 +45,15 @@ test("a symlinked log directory is refused", () => {
   symlinkSync(elsewhere, join(root, ".tmp/skills-used"));
   run(root, "log", { session_id: "abc", tool_input: { skill: "payload" } });
   assert.deepEqual(readdirSync(elsewhere), []);
+});
+
+test("a symlinked log file is never read into the packet reminder", () => {
+  const root = mkdtempSync(join(tmpdir(), "skill-reminder-"));
+  const elsewhere = mkdtempSync(join(tmpdir(), "skill-reminder-target-"));
+  writeFileSync(join(elsewhere, "abc.log"), "x\tsecret-skill\n");
+  mkdirSync(join(root, ".tmp/skills-used"), { recursive: true });
+  symlinkSync(join(elsewhere, "abc.log"), join(root, ".tmp/skills-used/abc.log"));
+  const packet = run(root, "packet", { session_id: "abc", tool_input: { command: "orca orchestration send --body hi" } }).stdout;
+  assert.match(packet, /none recorded/);
+  assert.doesNotMatch(packet, /secret-skill/);
 });

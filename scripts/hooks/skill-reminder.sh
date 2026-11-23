@@ -31,6 +31,16 @@ ensure_logdir() {
   [ -d "$logdir" ] && [ ! -L "$logdir" ]
 }
 
+# A log file may be read only when the session id is valid and no part of the path
+# (.tmp, the log directory, the file) is a symlink: the same checks as for writes.
+safe_read() { # $1 file name
+  [ -n "$sid" ] || return 1
+  [ -L "$root/.tmp" ] && return 1
+  [ -L "$logdir" ] && return 1
+  [ -L "$logdir/$1" ] && return 1
+  [ -f "$logdir/$1" ]
+}
+
 # Append one line to a file in the log directory; never through a symlink.
 append() { # $1 file name, $2 line
   ensure_logdir || return 0
@@ -48,21 +58,21 @@ case "$mode" in
     case "$f" in
       */src/lib/member-auth/*|*/src/lib/phone-verification/*|*/src/lib/auth/*|*/src/lib/commerce/*|*/src/lib/tickets/*|*/src/lib/invitation/*|*/src/app/api/*|*/src/app/\(auth\)/*|*/src/app/\(site\)/tickets/payment/*|*/src/app/\(site\)/shop/*|*/src/app/\(site\)/account/*|*/src/payload/collections/commerce-*|*/src/payload/collections/orders*)
         d=security
-        t="Security-sensitive path. Before editing, load ecc:security-review. If the change exposes personal data or alters its lifecycle, also load sphmrs-personal-data-pages and apply its checklist (routing: AGENTS.md, \"Skills: load before you start\"): Cache-Control private,no-store; persisted-pageshow hide + session re-check; clear client copies on sign-out/switch; no personal data in URLs; CSRF + cookie flags; deterministic tests of our reaction." ;;
+        t="Security-sensitive path. Routing (agent-authored process): load ecc:security-review. Owner baseline, 23 Nov (AGENTS.md, \"Personal-data baseline\"): if the change exposes personal data or alters its lifecycle, also load sphmrs-personal-data-pages and build in its checklist: Cache-Control private,no-store; persisted-pageshow hide + session re-check; clear client copies on sign-out/switch; no personal data in URLs; CSRF + cookie flags; deterministic tests of our reaction." ;;
       */messages/en.json|*/messages/ko.json)
         d=catalogue
-        t="Copy catalogue. Load sphmrs-catalogue-copy-pass and ux-writing first. ko mirrors en structure with \"\"; never translate or overwrite Korean without an owner request; never ecc:i18n-sync." ;;
+        t="Copy catalogue. Routing (agent-authored process): load sphmrs-catalogue-copy-pass and ux-writing first; agent note: do not use ecc:i18n-sync. Owner rules (AGENTS.md, \"Canonical UI copy and Korean authoring policy\"): ko mirrors en structure with \"\" for new keys; never translate or overwrite Korean without an owner request." ;;
       */src/components/*|*/src/app/\(site\)/*|*/src/hideaway/*)
         d=ui
-        t="UI path. Load better-ui, ecc:make-interfaces-feel-better and ecc:frontend-design-direction (motion: ecc:motion-foundations; copy: ux-writing). Owner overrides win: Hideaway design, Arc for primitives/forms only, Tailwind-only, full motion (drop reduced-motion branches), colour hold, no mono." ;;
+        t="UI path. Routing (agent-authored process): load better-ui, ecc:make-interfaces-feel-better and ecc:frontend-design-direction (motion: ecc:motion-foundations; copy: ux-writing). Owner rules (AGENTS.md): The Hideaway is the design default; Arc for primitives and forms only; Tailwind-only styling; full motion, no reduced-motion branches. Owner, colours on hold (plan, 14-16 Nov). Owner, 21 Nov, verbatim: 'Didn't I tell you guys to, like, don't fucking use mono as a default anywhere besides the places that I explicitly tell you to?' So: no mono as a default; mono only where he names it." ;;
       */src/payload/*)
         d=payload
-        t="Payload path. Load payload (migrations: also ecc:database-migrations). Payload-native first; land with test:database-proofs:guarded." ;;
+        t="Payload path. Routing (agent-authored process): load payload (migrations: also ecc:database-migrations). Owner rule (AGENTS.md, \"Database: Payload-native first\"): no quick-tweak direct edits on Payload data. Agent note, a recommendation and not a gate: commerce, auth, wallet and NFC landings also run test:database-proofs:guarded; tests never block progress (AGENTS.md, ADR-0015)." ;;
       *) exit 0 ;;
     esac
     # Once per session per area. Without a valid session id, remind every time and log nothing.
     if [ -n "$sid" ]; then
-      grep -qx "$d" "$logdir/.reminded-$sid" 2>/dev/null && exit 0
+      safe_read ".reminded-$sid" && grep -qx "$d" "$logdir/.reminded-$sid" 2>/dev/null && exit 0
       append ".reminded-$sid" "$d"
       # Record the reminder too, so reviewers see "reminded but not loaded" directly.
       append "$sid.log" "$(date -u +%FT%TZ)	reminded:$d"
@@ -79,8 +89,8 @@ case "$mode" in
     printf '%s' "$c" | grep -qE 'orca orchestration (send|reply|ask)|worker_done' || exit 0
     printf '%s' "$c" | grep -q 'Skills used:' && exit 0
     used=""
-    [ -n "$sid" ] && [ ! -L "$logdir/$sid.log" ] && used="$(cut -f2 "$logdir/$sid.log" 2>/dev/null | grep -v '^reminded:' | sort -u | paste -sd, - | sed 's/,/, /g')"
-    emit PreToolUse "Packet without a 'Skills used:' line. Add: Skills used: ${used:-none recorded}${sid:+ (log: .tmp/skills-used/$sid.log)}. Reviewers compare it with the routing rows in AGENTS.md."
+    safe_read "$sid.log" && used="$(cut -f2 "$logdir/$sid.log" 2>/dev/null | grep -v '^reminded:' | sort -u | paste -sd, - | sed 's/,/, /g')"
+    emit PreToolUse "Process note (agent-authored): end the packet with a 'Skills used:' line. Add: Skills used: ${used:-none recorded}${sid:+ (log: .tmp/skills-used/$sid.log)}. A missing line is a note for reviewers, not a FAIL."
     ;;
 esac
 exit 0

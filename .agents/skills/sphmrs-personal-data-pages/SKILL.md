@@ -26,4 +26,4 @@ Most such changes sit in the mechanism-owned paths (AGENTS.md, "Auth, payment an
 
 ## Review
 
-Codex Review-A/B: FAIL a change that exposes personal data or alters its lifecycle when it lacks a checklist item that applies to it (for example, a new private page without `Cache-Control: private, no-store`). Judge the safeguards in the code, not the paperwork: a missing or incomplete `Skills used:` line is a note, never a FAIL on its own.
+The owner's direction is the quote above (AGENTS.md, "Personal-data baseline"); this enforcement is agent-authored. Codex Review-A/B: FAIL a change that exposes personal data or alters its lifecycle when it lacks a checklist item that applies to it (for example, a new private page without `Cache-Control: private, no-store`). Judge the safeguards in the code, not the paperwork: a missing or incomplete `Skills used:` line is a note, never a FAIL on its own.

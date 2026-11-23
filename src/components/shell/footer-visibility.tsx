@@ -64,8 +64,8 @@ export const useFXFrameOff = create<{ held: number; hold: () => void; release: (
 
 /**
  * Drop `<FXFrameOff />` anywhere in a page to keep the band off while the page is mounted. It holds in a layout
- * effect, so the store changes in the same commit that mounts the page, and FXFrame re-renders before the browser
- * paints the page's art (Review-B P2). It lets go when the page unmounts (the site swaps a pathname-keyed page, so
+ * effect, so the band starts its fade-out in the same commit that mounts the page and never lingers (Review-B P2; the
+ * owner accepts the brief filtered moment while it fades). It lets go when the page unmounts (the site swaps a pathname-keyed page, so
  * unmounting is the page's exit), and the next page gets the band back unless it holds it too. Where a presence
  * boundary does wrap a page, it also lets go as that exit starts.
  */

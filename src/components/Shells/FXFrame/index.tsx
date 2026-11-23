@@ -1,5 +1,6 @@
 "use client";
-import { SPRING_EASE, TWEEN_EASE } from "@/constants/animations";
+import { SPRING_EASE } from "@/constants/animations";
+import { motionTokens } from "@/components/arc/_shared/motion-tokens";
 import { cn } from "@/lib/utils";
 import { useFrameState, useRPStore } from "@/providers/RP_Pro";
 import { AnimatePresence, useMotionValue, useSpring } from "motion/react";
@@ -33,31 +34,23 @@ export const FXFrame = () => {
     ...SPRING_EASE.power3.inOut,
     visualDuration: 0.4
   });
-  // Held off by a page: gone at once, presence boundary and all, so no exit fade keeps its backdrop filters on over
-  // the page's art (Review-B P2). The footer's own on/off below keeps its fade.
-  if (heldOff) return null;
+  // One motion both ways, whatever switches it (the footer, or a page holding it off): the band fades in and out on
+  // the house `smooth` spring, so leaving for an opted-out page and coming back read the same (owner, 23 Nov: "I hope
+  // you added transitions for switching.."; a brief filtered moment while it fades is fine).
   return (
     <AnimatePresence>
-      {showFXFrame && showHeader && (
+      {showFXFrame && showHeader && !heldOff && (
         <m.div
           ref={fxWrapperRef}
           initial={{ visibility: "hidden", opacity: 0 }}
           animate={{
             visibility: "visible",
             opacity: 1,
-            transition: {
-              duration: 0.3,
-              ease: TWEEN_EASE.power3.inOut,
-              type: "tween"
-            }
+            transition: motionTokens.spring.smooth
           }}
           exit={{
             opacity: 0,
-            transition: {
-              duration: 0.2,
-              ease: TWEEN_EASE.power2.out,
-              type: "tween"
-            }
+            transition: motionTokens.spring.smooth
           }}
           className={cn(
             "pointer-events-none fixed inset-0 z-10 mx-auto data-[visible=false]:animate-out data-[visible=false]:fade-out-0 data-[visible=true]:animate-in data-[visible=true]:fade-in-0"

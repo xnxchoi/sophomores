@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowClockwiseIcon, ArrowLeftIcon } from "@phosphor-icons/react";
-import { useCart, useEcommerce } from "@payloadcms/plugin-ecommerce/client/react";
+import { useEcommerce } from "@payloadcms/plugin-ecommerce/client/react";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "@/components/core/Link/Link";
@@ -9,7 +9,8 @@ import { PageFrame } from "@/components/commerce/page-frame";
 import { CommerceAccountGate, CommerceProvider } from "@/components/commerce/checkout";
 import { CommerceCart } from "@/components/commerce/cart";
 import type { CommerceOffer } from "@/lib/commerce/catalogue";
-import { writeThroughGuestCart, type WriteThroughResult } from "@/lib/commerce/browser-cart";
+import { z } from "zod";
+import { listGuestCart, writeThroughGuestCart, type MemberCartView, type WriteThroughResult } from "@/lib/commerce/browser-cart";
 import type { MemberCapabilities } from "@/lib/member-auth/contracts";
 
 /**
@@ -48,34 +49,78 @@ function SignedIn({ onReady }: { onReady: () => void }) {
   return null;
 }
 
+const id = z.union([z.string().min(1), z.number()]);
+const memberRead = z.object({ user: z.object({ id, cart: z.object({ docs: z.array(z.union([id, z.object({ id })])) }).optional() }).nullable() });
+const cartRead = z.object({ id, items: z.array(z.object({ product: z.unknown().optional() })).nullish() });
+
+/**
+ * One write-through, as Auth's r3 contract asks: confirm who is signed in (the page's member, or nothing is written), read
+ * that member's open cart fresh from the server (never the provider's possibly older copy), then call
+ * writeThroughGuestCart pinned to them. A read that doesn't settle keeps the browser line for a later try.
+ */
+export async function confirmAndWriteThrough(expectedMemberID: string, options: { fetcher?: typeof fetch; storage?: Parameters<typeof listGuestCart>[0] } = {}): Promise<WriteThroughResult> {
+  const [line] = listGuestCart(options.storage);
+  if (!line) return { outcome: "nothing" };
+  const fetcher = options.fetcher ?? fetch;
+  const retry = { outcome: "retry", productID: line.productID } as const;
+  const read = async <T,>(url: string, schema: z.ZodType<T>) => {
+    try {
+      const response = await fetcher(url, { credentials: "include", cache: "no-store" });
+      if (!response.ok) return undefined;
+      const body = schema.safeParse(await response.json());
+      return body.success ? body.data : undefined;
+    } catch { return undefined; }
+  };
+  const me = await read("/api/users/me?depth=0&select[id]=true&select[cart]=true", memberRead);
+  if (!me) return retry;
+  if (!me.user || String(me.user.id) !== expectedMemberID) return { outcome: "account-changed", productID: line.productID };
+  // The users.cart join lists the member's newest open cart first, never a purchased one.
+  const open = me.user.cart?.docs[0];
+  let cart: MemberCartView = null;
+  if (open != null) {
+    const found = await read(`/api/carts/${encodeURIComponent(String(typeof open === "object" ? open.id : open))}?depth=0`, cartRead);
+    if (!found) return retry;
+    cart = found;
+  }
+  return writeThroughGuestCart(cart, { memberID: expectedMemberID, fetcher, storage: options.storage });
+}
+
 /**
  * After sign-in (email code here, or an Apple/Google return to /shop/cart): put the browser cart's line into the member's
- * cart once, through Auth's writeThroughGuestCart, after the provider has read the member and their saved cart.
- * The member state comes from the server (the same read as the header), so the identity is already confirmed.
+ * cart once. If the signed-in account changed under the page, nothing was written: re-read the member and try again as
+ * them (twice at most, then the Try again button).
  */
 function GuestCartWriteThrough() {
   const t = useTranslations("Customer.components_commerce_cart");
-  const { cart } = useCart();
   const { user, clearSession, onLogin } = useEcommerce();
+  const memberID = user?.id == null ? undefined : String(user.id);
   const [result, setResult] = useState<WriteThroughResult | null>(null);
   const [attempt, setAttempt] = useState(0);
   const ran = useRef(-1);
+  const rechecks = useRef(0);
   const mounted = useRef(true);
+  const latest = useRef(memberID);
+  useEffect(() => { latest.current = memberID; }, [memberID]);
   useEffect(() => () => { mounted.current = false; }, []);
-  const savedCarts = (user as { cart?: { docs?: unknown[] } } | null | undefined)?.cart?.docs?.length ?? 0;
-  const ready = !!user && (savedCarts === 0 || !!cart);
   useEffect(() => {
-    if (!ready || ran.current === attempt) return;
+    const expected = latest.current;
+    if (!expected || ran.current === attempt) return;
     ran.current = attempt;
-    void writeThroughGuestCart(cart ?? null).then(async (next) => {
+    void confirmAndWriteThrough(expected).then(async (next) => {
       if (!mounted.current) return;
+      if (next.outcome === "account-changed" && rechecks.current < 2) {
+        rechecks.current += 1;
+        clearSession(); await onLogin();
+        if (mounted.current) setAttempt((value) => value + 1);
+        return;
+      }
       setResult(next);
       // Re-read the member and their cart so the page shows what was written.
       if (next.outcome === "written") { clearSession(); await onLogin(); }
     });
-  }, [ready, attempt, cart, clearSession, onLogin]);
+  }, [memberID, attempt, clearSession, onLogin]);
   if (!result || result.outcome === "nothing" || result.outcome === "already-in-cart" || result.outcome === "written") return null;
-  const message = result.outcome === "retry" ? t("writeRetry")
+  const message = result.outcome === "retry" || result.outcome === "account-changed" ? t("writeRetry")
     : result.reason === "offer-unavailable" ? t("writeOfferUnavailable")
     : result.reason === "limit-reached" ? t("writeLimitReached")
     : result.reason === "payment-in-progress" ? t("writePaymentInProgress")
@@ -85,7 +130,7 @@ function GuestCartWriteThrough() {
     <p>{message}</p>
     {result.outcome === "refused" && result.reason === "payment-in-progress" && <Link href="/shop/payment"
       className="inline-flex min-h-11 items-center underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t("checkPayment")}</Link>}
-    {result.outcome === "retry" && <button type="button" onClick={() => { setResult(null); setAttempt((value) => value + 1); }}
+    {(result.outcome === "retry" || result.outcome === "account-changed") && <button type="button" onClick={() => { rechecks.current = 0; setResult(null); setAttempt((value) => value + 1); }}
       className="inline-flex min-h-11 items-center gap-1.5 text-muted-foreground outline-offset-4 transition-colors hover:text-foreground focus-visible:outline-2">
       <ArrowClockwiseIcon aria-hidden="true" className="size-4" />{t("tryAgain")}
     </button>}

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
+import { AppRouterContext, type AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import type { ReactNode } from "react";
 import { listCommerceEditionProducts, type CommerceEditionShop } from "@/lib/commerce/editions";
 import { BookUnavailable, CommerceShopView } from "@/components/commerce/book-offer";
@@ -63,6 +64,15 @@ test("an unavailable shop or missing product shows unavailable information, not 
     assert.match(html, /href="\/help"/);
     assert.doesNotMatch(html, /sold out|35,000|82,000|329,000|<button\b/i);
   }
+});
+
+test("a failed shop read keeps the unavailable page and adds a retry in place; a missing product has none", () => {
+  const refresh = () => undefined;
+  const router = { back: refresh, forward: refresh, refresh, push: refresh, replace: refresh, prefetch: refresh } as unknown as AppRouterInstance;
+  const html = render(<AppRouterContext.Provider value={router}><BookUnavailable retry /></AppRouterContext.Provider>);
+  assert.match(html, /Book information is unavailable/);
+  assert.match(html, /<button\b[^>]*type="button"[^>]*>.*Try again/);
+  assert.doesNotMatch(render(<BookUnavailable />), /Try again/);
 });
 
 test("a product with content fields shows its shelf, sections and table; malformed fields drop out", async () => {

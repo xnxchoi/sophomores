@@ -6,7 +6,7 @@ import { getPayload } from "payload";
 import config from "@payload-config";
 import { loadCommerceOffer, type CommerceOffer } from "@/lib/commerce/catalogue";
 import { listCommerceEditionProducts, type CommerceEditionShop } from "@/lib/commerce/editions";
-import { CommerceShopView } from "@/components/commerce/book-offer";
+import { BookUnavailable, CommerceShopView } from "@/components/commerce/book-offer";
 import { loadPublicMemberCapabilities } from "@/lib/member-auth/public-capabilities.server";
 import { CommerceAccountGate, CommerceCheckout, type PurchaseAllowance } from "@/components/commerce/checkout";
 import { legacyPurchaseAllowance } from "../_commerce/purchase-allowance";
@@ -22,6 +22,8 @@ export default async function ShopPage() {
   let offer: CommerceOffer | null = null;
   let editions: CommerceEditionShop | null = null;
   let showLegacy = false;
+  // A read that threw is a failure to show with a retry, never the closed shop (Review-B).
+  let failed = false;
   let allowance: PurchaseAllowance | null = null;
   try {
     const payload = await getPayload({ config });
@@ -32,15 +34,16 @@ export default async function ShopPage() {
       (editions.reason === "native-schema-unregistered" || editions.reason === "product-unpublished");
     if (showLegacy) {
       try { offer = await loadCommerceOffer(payload); if (offer) allowance = legacyPurchaseAllowance; }
-      catch { offer = null; allowance = null; console.error("Published commerce information is unavailable."); }
+      catch { offer = null; allowance = null; failed = true; console.error("Published commerce information is unavailable."); }
     }
   } catch {
+    failed = true;
     console.error("Published book information is unavailable.");
   }
 
   return (
     <div className="min-h-dvh bg-background text-foreground">
-      {!showLegacy ? (
+      {failed ? <BookUnavailable retry /> : !showLegacy ? (
         <CommerceShopView shop={editions} />
       ) : (
         <CommerceOfferView offer={offer}>

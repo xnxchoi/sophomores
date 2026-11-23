@@ -1295,7 +1295,6 @@
       "backToCart": "Back to cart",
       "accountAndOrder": "Account and order",
       "loadFailedTitle": "We couldn't load the purchase information.",
-      "loadFailedDescription": "Return to the shop or visit Help before continuing.",
       "checkPaymentStatus": "Check payment status",
       "backToShop": "Back to shop"
     },

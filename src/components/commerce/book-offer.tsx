@@ -4,6 +4,7 @@ import { Link } from "@/components/core/Link/Link";
 import { PageInset } from "@/components/core/PageInset/PageInset";
 import { Badge } from "@/components/arc/badge/badge";
 import { ArcRoles } from "./arc-roles";
+import { CommerceLoadRetry } from "./load-retry";
 
 type EditionProduct = Extract<CommerceEditionCatalogue, { status: "displayable" }>["product"];
 
@@ -80,12 +81,14 @@ function ProductCover({ product }: { product: EditionProduct }) {
 }
 
 /** No published product to show (also the product page's fail-closed state). */
-export function BookUnavailable() {
+/** `retry`: the read failed (not a closed or missing product), so it can be tried again in place. */
+export function BookUnavailable({ retry = false }: { retry?: boolean }) {
   const t = useTranslations("Customer.components_commerce_book_offer");
   return <PageInset as="main" className="min-h-[70svh] pt-36 pb-24 text-foreground sm:pt-44">
     <p className="text-xs uppercase tracking-[0.04em] text-muted-foreground">{t("book")}</p>
     <h1 className="mt-5 max-w-3xl font-display text-[2.5rem] font-normal leading-[1.05] tracking-[-0.02em]">{t("unavailableTitle")}</h1>
     <p className="mt-4 max-w-lg text-base leading-6 text-muted-foreground">{t("unavailableDetail")}</p>
+    {retry && <CommerceLoadRetry className="mt-4" />}
     <nav aria-label={t("information")} className="mt-8 flex flex-wrap gap-x-6 gap-y-1">
       <Link href="/help" className="inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t("help")}</Link>
       <Link href="/me/orders" className="inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t("orders")}</Link>

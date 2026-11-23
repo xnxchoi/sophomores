@@ -7,6 +7,7 @@ import config from "@payload-config";
 import { PageFrame } from "@/components/commerce/page-frame";
 import { Link } from "@/components/core/Link/Link";
 import { CommerceAccountGate, CommerceCheckout, type PurchaseAllowance } from "@/components/commerce/checkout";
+import { CommerceLoadRetry } from "@/components/commerce/load-retry";
 import { SummaryCard } from "@/components/commerce/summary-card";
 import { legacyPurchaseAllowance } from "../../_commerce/purchase-allowance";
 import { loadCommerceEditionOffer, loadPublishedCommerceEditions, type CommerceEditionOffer } from "@/lib/commerce/editions";
@@ -79,7 +80,9 @@ export default async function CheckoutPage({ searchParams }: { searchParams?: Pr
       {(offer.availableQuantity <= 0 || signInOffInReview) && <SummaryCard className="mt-6">{orderDetails}</SummaryCard>}
     </> : <section aria-labelledby="checkout-unavailable-heading" className="border-t border-border pt-6">
       <h2 id="checkout-unavailable-heading" className="text-2xl">{loadFailed ? t("loadFailedTitle") : offerCopy("purchasingIsNotOpen")}</h2>
-      <p className="mt-4 max-w-lg text-sm leading-relaxed text-muted-foreground">{loadFailed ? t("loadFailedDescription") : offerCopy("productDeliveryAndPurchaseInformationWillAppearHereWhen")}</p>
+      {/* A failed load retries in place (Review-B); a closed offer says what is true. */}
+      {loadFailed ? <CommerceLoadRetry className="mt-3" />
+        : <p className="mt-4 max-w-lg text-sm leading-relaxed text-muted-foreground">{offerCopy("productDeliveryAndPurchaseInformationWillAppearHereWhen")}</p>}
     </section>}
 
     {/* One quiet row at the foot (spec §7); terms, privacy and refunds stay in the business footer. */}

@@ -1,5 +1,6 @@
 "use client";
 
+import { cn } from "@/lib/utils";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { CustomEase } from "gsap/CustomEase";
@@ -49,8 +50,12 @@ const STAR_MOTION = [
   { scale: 0.7, delay: 2, duration: 7, repeatDelay: 2 }
 ] as const;
 
-/** Travelling lines over the repeating star field. */
-export function Starliner() {
+/**
+ * Travelling lines over the repeating star field, on its own (owner, 24 Nov: off the reading pages, "make it their own,
+ * like, actually usable components"). Tailwind only; its stars read --starliner-star, set here from the global
+ * --faded-white with a literal fallback, so it renders the same on any page.
+ */
+export function Starliner({ className }: { className?: string }) {
   const frame = useRef<HTMLDivElement>(null);
   const twinkle = useRef<HTMLDivElement>(null);
   const container = useRef<HTMLDivElement>(null);
@@ -126,30 +131,16 @@ export function Starliner() {
   }, [inView]);
 
   return (
-    <div ref={frame} className="starliner-field bg-[radial-gradient(at_left_top,rgba(179,16,21,0.75)_4%,rgba(179,16,21,0.44)_12%,rgba(179,16,21,0.3)_20%,rgba(179,16,21,0.2)_30%,rgba(0,0,0,0.96)_75%)] relative mx-auto h-72 w-full max-w-3xl overflow-hidden">
+    <div ref={frame} className={cn("relative mx-auto h-72 w-full max-w-3xl overflow-hidden bg-[radial-gradient(at_left_top,rgba(179,16,21,0.75)_4%,rgba(179,16,21,0.44)_12%,rgba(179,16,21,0.3)_20%,rgba(179,16,21,0.2)_30%,rgba(0,0,0,0.96)_75%)] [--starliner-star:var(--faded-white,oklch(97.5%_0.003_58.67))]", className)}>
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0"
-        style={{
-          backgroundImage: 'url("/assets/starliner-backdrop.svg")',
-          backgroundRepeat: "repeat",
-          backgroundSize: "220px auto",
-          backgroundPosition: "center",
-          opacity: 0.85
-        }}
+        className="pointer-events-none absolute inset-0 bg-[url(/assets/starliner-backdrop.svg)] bg-[length:220px_auto] bg-center bg-repeat opacity-85"
       />
+      {/* GSAP fades this layer in and out; it starts hidden. */}
       <div
         ref={twinkle}
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0"
-        style={{
-          backgroundImage: 'url("/assets/starliner-backdrop.svg")',
-          backgroundRepeat: "repeat",
-          backgroundSize: "220px auto",
-          backgroundPosition: "center",
-          mixBlendMode: "screen",
-          opacity: 0
-        }}
+        className="pointer-events-none absolute inset-0 bg-[url(/assets/starliner-backdrop.svg)] bg-[length:220px_auto] bg-center bg-repeat opacity-0 mix-blend-screen"
       />
       <div ref={container} className="absolute inset-2.5 overflow-hidden">
         {STAR_ORIGINS.map((origin, index) => (
@@ -158,11 +149,12 @@ export function Starliner() {
             ref={(element) => {
               lines.current[index] = element;
             }}
-            className="starline absolute h-px w-[100px]"
+            data-starline=""
+            className="absolute h-px w-[100px]"
             style={{ left: origin.left, top: origin.top, transform: "rotate(22.6deg)" }}
           >
-            <div className="port-star-tail bg-[linear-gradient(270deg,oklch(from_var(--port-shade)_l_c_h_/_0.6)_0%,oklch(from_var(--port-shade)_l_c_h_/_0)_100%)] relative h-px w-[100px] overflow-visible">
-              <div className="port-star-head bg-[oklch(from_var(--port-shade)_l_c_h_/_0.85)] shadow-[0_0_6px_1px_oklch(from_var(--port-shade)_l_c_h_/_0.6)] absolute top-0 right-0 h-[2px] w-[2px] rounded-sm" />
+            <div className="relative h-px w-[100px] overflow-visible bg-[linear-gradient(270deg,oklch(from_var(--starliner-star)_l_c_h_/_0.6)_0%,oklch(from_var(--starliner-star)_l_c_h_/_0)_100%)]">
+              <div className="absolute top-0 right-0 h-[2px] w-[2px] rounded-sm bg-[oklch(from_var(--starliner-star)_l_c_h_/_0.85)] shadow-[0_0_6px_1px_oklch(from_var(--starliner-star)_l_c_h_/_0.6)]" />
             </div>
           </div>
         ))}

@@ -29,13 +29,14 @@ const post: PostCard = {
   publishedAt: "2026-11-04T00:00:00.000Z"
 };
 
-test("an archive row links to its essay with title, author, category and date", () => {
+test("an archive row links to its essay with title, author and date, and no category tag", () => {
   const html = render(<ArchiveRow post={post} />);
   assert.ok(html.includes('href="/essays/stored"'));
+  // Category tags came off reading (owner, 24 Nov); they live in CategoryTag now.
+  assert.equal(html.includes(">Essays<"), false);
   for (const text of [
     "Stored essay",
     "Desk",
-    "Essays",
     "A dek",
     'dateTime="2026-11-04T00:00:00.000Z"'
   ])

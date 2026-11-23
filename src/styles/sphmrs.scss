@@ -10,7 +10,7 @@
 
 /* ==========================================================================
    1. Form Inputs & Graphic Fields
-   (Tailwind mirrored in second-factor.tsx, starliner.tsx, input.tsx)
+   (Tailwind mirrored in second-factor.tsx, input.tsx)
    ========================================================================== */
 
 input.code-field,
@@ -27,16 +27,6 @@ input.code-field:not([type="checkbox"]) {
   border-radius: 8px;
 }
 
-.starliner-field {
-  background: radial-gradient(
-    at left top,
-    rgba(179, 16, 21, 0.75) 4%,
-    rgba(179, 16, 21, 0.44) 12%,
-    rgba(179, 16, 21, 0.3) 20%,
-    rgba(179, 16, 21, 0.2) 30%,
-    rgba(0, 0, 0, 0.96) 75%
-  );
-}
 
 /* Arc controls (inside [data-arc-control]) keep their own field styles; :where() keeps this rule's specificity unchanged.
    In Tailwind's base layer (globals.css declares the layer order and loads first), so an input with no utilities keeps
@@ -184,18 +174,7 @@ input.code-field:not([type="checkbox"]) {
   background-color: oklch(from var(--port-shade) l c h / 0.9);
 }
 
-.port-star-tail {
-  background-image: linear-gradient(
-    270deg,
-    oklch(from var(--port-shade) l c h / 0.6) 0%,
-    oklch(from var(--port-shade) l c h / 0) 100%
-  );
-}
 
-.port-star-head {
-  background-color: oklch(from var(--port-shade) l c h / 0.85);
-  box-shadow: 0 0 6px 1px oklch(from var(--port-shade) l c h / 0.6);
-}
 
 @font-face {
   font-family: "Doto";

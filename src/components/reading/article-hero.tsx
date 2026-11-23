@@ -1,7 +1,6 @@
 
 import { useTranslations } from "next-intl";
 import { Link } from "@/components/core/Link/Link";
-import { RP_BadgeTag } from "@/components/UX/RP_BadgeTag";
 import type { PostCard } from "@/lib/content/slots";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -50,12 +49,6 @@ function Lead({ post, span }: { post: PostCard; span: "with-rail" | "solo" }) {
       />
       <MediaWell ratio="video" src={post.heroUrl} />
       <div className="flex flex-col gap-3 p-5 xl:p-6">
-        {post.tags[0] ? (
-          <RP_BadgeTag
-            content={post.tags[0]}
-            className="border-foreground/40 px-1.5 py-1 text-faded-fg"
-          />
-        ) : null}
         <span className="font-serif text-4xl leading-[1.05] font-light tracking-tight text-balance">
           {post.title}
         </span>
@@ -94,12 +87,6 @@ function Secondary({
       />
       <MediaWell ratio="square" src={post.heroUrl} />
       <div className="flex flex-col justify-center gap-2">
-        {post.tags[0] ? (
-          <RP_BadgeTag
-            content={post.tags[0]}
-            className="border-foreground/40 px-1.5 py-1 text-faded-fg"
-          />
-        ) : null}
         <span className="text-base leading-snug font-medium tracking-tight xl:text-lg">
           {post.title}
         </span>

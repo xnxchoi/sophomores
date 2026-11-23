@@ -35,12 +35,6 @@ for (const [key, expected] of Object.entries(approvedCopy)) {
   });
 }
 
-test("real radio controls pass the same step to translated labels and directional seek actions", () => {
-  const source = readFileSync("src/components/radio/track-player.tsx", "utf8");
-  assert.equal(/label=\{t\("rewind",\s*\{\s*seconds:\s*SEEK_STEP_SECONDS\s*\}\)\}[^>]*onClick=\{\(\)\s*=>\s*seek\(-SEEK_STEP_SECONDS\)\}/.test(source), true);
-  assert.equal(/label=\{t\("forward",\s*\{\s*seconds:\s*SEEK_STEP_SECONDS\s*\}\)\}[^>]*onClick=\{\(\)\s*=>\s*seek\(SEEK_STEP_SECONDS\)\}/.test(source), true);
-});
-
 test("the not-found recovery label names its existing home destination", () => {
   const source = readFileSync("src/components/layouts/Missing/not-found-screen.tsx", "utf8");
   assert.equal(/<LinkUnderlined\b[^>]*href="\/"[^>]*>\s*\{t\("returnHome"\)\}/.test(source), true);

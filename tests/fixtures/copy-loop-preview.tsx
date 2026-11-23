@@ -5,7 +5,6 @@ import { LazyMotion, domAnimation } from "motion/react";
 import { EnglishMessages } from "./english-messages";
 import { SearchPanel, NotificationPanel } from "@/components/shell/header-panels";
 import { NotificationProvider } from "@/components/notifications/notification-inbox";
-import { NotificationList } from "@/components/notifications/notification-list";
 import { CommerceOfferView } from "@/components/commerce/offer";
 import { PolicyPage } from "@/app/(site)/_commerce/policy-page";
 import type { CommerceOffer } from "@/lib/commerce/catalogue";
@@ -15,7 +14,6 @@ import SecuritySettings from "@/app/(site)/me/settings/security/page.client";
 import { SettingsNavProvider } from "@/components/settings/SettingsNav";
 import PreviewLogin from "@/app/(auth)/login/page";
 import { PhoneVerification } from "@/components/Authentication/phone-verification/phone-verification";
-import { TrackPlayer } from "@/components/radio/track-player";
 import { CopyButton } from "@/components/arc/copy-button/copy-button";
 import { NotFoundPage } from "@/components/layouts/Missing/not-found-screen";
 import type { User } from "@/payload-types";
@@ -41,17 +39,15 @@ function Preview({ login }: { login: ReactNode }) {
     <main className="min-h-screen bg-background p-6 text-foreground">
       <aside className="relative z-40 mx-auto mb-8 max-w-3xl space-y-3 rounded-xl border border-neutral-700 bg-neutral-950 p-4 text-xs">
         <p>Synthetic copy loop. Real components; routing, identity, server actions, address provider and artwork/media are stubbed. No production or full-flow acceptance.</p>
-        <nav className="flex flex-wrap gap-2">{["notifications", "settings", "preview-login", "phone-help", "radio-copy", "missing", "front-account", "front-security", "front-offer", "front-search", "front-policy"].map((id) => <button key={id} type="button" className="min-h-12 rounded border px-3" aria-pressed={view === id} onClick={() => setView(id)}>{id}</button>)}</nav>
+        <nav className="flex flex-wrap gap-2">{["notifications", "settings", "preview-login", "phone-help", "missing", "front-account", "front-security", "front-offer", "front-search", "front-policy"].map((id) => <button key={id} type="button" className="min-h-12 rounded border px-3" aria-pressed={view === id} onClick={() => setView(id)}>{id}</button>)}</nav>
       </aside>
       <div className="mx-auto max-w-3xl space-y-8">
         {view === "notifications" && <NotificationProvider userId="synthetic-user" notifications={notifications}>
           <section className="relative min-h-[380px]" aria-label="Synthetic notification panel"><div className="relative"><NotificationPanel onClose={() => {}} /></div></section>
-          <section aria-label="Synthetic full notification list"><NotificationList notifications={notifications} /></section>
         </NotificationProvider>}
         {view === "settings" && <><GeneralSettings user={user} /><SecuritySettings user={user} initialSessions={[]} initialAccounts={[]} /></>}
         {view === "preview-login" && <section className="mx-auto max-w-md" aria-label="Synthetic preview login">{login}</section>}
         {view === "phone-help" && <PhoneVerification initialLocale="en" />}
-        {view === "radio-copy" && <><TrackPlayer track={{ id: "synthetic-track", title: "Synthetic track", artist: "Synthetic artist", slug: "synthetic-track", coverUrl: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E", audioUrl: "/synthetic-audio-disabled.wav", duration: 120 }} /><CopyButton value="synthetic value" /></>}
         {view === "missing" && <NotFoundPage />}
         {view === "front-account" && <AccountSettings user={user} />}
         {view === "front-security" && <SecuritySettings user={user} initialAccounts={[]} initialSessions={[

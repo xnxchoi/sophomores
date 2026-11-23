@@ -14,8 +14,6 @@ test('non-React sibling-shared component modules use only the approved scoped ex
     'Authentication/member-auth/_shared/session.ts',
     // AGENTS.md: a narrow documented exception for a small pure module shared by siblings (header-actions, UX/Menu).
     'shell/_shared/escape-layers.ts',
-    // Server shell, client island and mesh consume one serializable config.
-    'shell/ticker/_shared/field-config.ts',
     // Checkout and result must validate the same persisted recovery record.
     'tickets/_shared/checkout-intent.ts',
     // TickIndicator and TickDial share one feature-private geometry contract.
@@ -37,8 +35,6 @@ test('retained React hook modules contain actual lifecycle code rather than cosm
     'src/components/UX/Tour/hooks/useAnchoredRect.tsx',
     'src/components/UX/Tour/hooks/useTourTarget.tsx',
     'src/components/gl/canvas-frameloop.tsx',
-    'src/components/shell/ticker/useBezelDisplacementTexture.tsx',
-    'src/components/shell/ticker/useLaneScheduler.tsx',
     'src/components/ui/tick-indicator/useSyncedMotionValue.tsx',
   ]) {
     const source = readFileSync(resolve(repositoryRoot, file), 'utf8');

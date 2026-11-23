@@ -12,11 +12,9 @@ import { PageLinks } from "@/components/reading/page-links";
 import { ArticleHero } from "@/components/reading/article-hero";
 import { MEMBER_BADGE_URL } from "@/lib/content/assets";
 import { PostCardView } from "@/components/reading/post-card";
-import { TrackRow } from "@/components/radio/track-row";
 import { creditFixtures, notificationFixtures, parallaxFixtures, postFixtures, trackFixtures } from "../fixtures/reading/content";
 import { getHeaderScrollProgress } from "@/components/shell/site-header";
 import { spawnConfetti, stepConfetti } from "@/lib/content/confetti";
-import { clampSeek, counterReadout, playbackProgress, reelPack, SEEK_STEP_SECONDS } from "@/lib/content/transport";
 import { isSixDigitCode } from "@/lib/content/auth-code";
 import { rangeForQuote, sliceBody } from "@/lib/content/highlight";
 import { fromCredit, fromParallax, fromPost, fromTrack } from "@/lib/content/map";
@@ -64,7 +62,7 @@ test("credits, parallax, and starliner render from slots", () => {
   assert.match(credits, /Editor/);
   assert.equal(credits.includes("profilePic"), false);
   assert.match(grid, /Still frames/);
-  assert.equal((stars.match(/starline /g) ?? []).length, 17);
+  assert.equal((stars.match(/data-starline=""/g) ?? []).length, 17);
   assert.match(stars, /left:-110px/);
   assert.match(stars, /left:290px/);
   assert.match(stars, /starliner-backdrop\.svg/);
@@ -103,27 +101,11 @@ test("header scrub progress clamps to the compact range", () => {
   assert.equal(getHeaderScrollProgress(700), 1);
 });
 
-test("a track fixture maps to a row without a collection", () => {
+// The tape player that rendered this row is stashed for the first release (owner, 24 Nov); the mapping stays.
+test("a track fixture maps without a collection", () => {
   const track = fromTrack(trackFixtures[0]);
   assert.equal(track.audioUrl, "/audio/night-desk.mp3");
-  const html = renderToStaticMarkup(<EnglishMessages><TrackRow track={track} /></EnglishMessages>);
-  assert.match(html, /Night desk/);
-  assert.match(html, /Fixture Ensemble/);
-});
-
-test("transport seek stays inside the track", () => {
-  assert.equal(SEEK_STEP_SECONDS, 10);
-  assert.equal(clampSeek(3, -10, 180), 0);
-  assert.equal(clampSeek(175, 10, 180), 180);
-  assert.equal(playbackProgress(45, 180), 0.25);
-  assert.equal(playbackProgress(10, 0), 0);
-  assert.deepEqual(counterReadout(65, 186), { elapsed: "01:05", remaining: "02:01" });
-  assert.deepEqual(counterReadout(0, 0), { elapsed: "00:00", remaining: "00:00" });
-  const start = reelPack(0);
-  const end = reelPack(1);
-  assert.ok(start.supply > start.takeup);
-  assert.ok(end.takeup > end.supply);
-  assert.equal(start.supply, end.takeup);
+  assert.equal(track.title, "Night desk");
 });
 
 test("patron confetti launches upward from the bottom", () => {

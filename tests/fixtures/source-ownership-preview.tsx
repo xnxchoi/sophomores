@@ -5,15 +5,12 @@ import { domAnimation, LazyMotion } from "motion/react";
 import { SharedCanvas } from "@/components/gl/shared-canvas";
 import { useCanvasFrameloopStore } from "@/components/gl/canvas-frameloop";
 import { MenuGradient } from "@/components/shell/menu-gradient";
-import { TickerCrown } from "@/components/shell/ticker/TickerCrown";
-import { ProgressRail } from "@/components/radio/progress-rail";
 import { TickDial } from "@/components/ui/tick-indicator/TickDial";
 
 function Preview() {
   const eventSource = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(true);
   const [gradient, setGradient] = useState(true);
-  const [ticker, setTicker] = useState(true);
   const [progress, setProgress] = useState(0.25);
   const claims = useCanvasFrameloopStore((state) => state.activeClaims);
   return (
@@ -26,7 +23,6 @@ function Preview() {
             <h1 className="w-full text-lg">Synthetic Batch7c graphics fixture</h1>
             <button className="min-h-12 rounded border px-4" onClick={() => setMounted((value) => !value)}>Synthetic mount: {mounted ? "on" : "off"}</button>
             <button className="min-h-12 rounded border px-4" onClick={() => setGradient((value) => !value)}>Synthetic gradient: {gradient ? "on" : "off"}</button>
-            <button className="min-h-12 rounded border px-4" onClick={() => setTicker((value) => !value)}>Synthetic ticker: {ticker ? "on" : "off"}</button>
             <button className="min-h-12 rounded border px-4" onClick={() => setProgress(0.25)}>Synthetic progress 25%</button>
             <button className="min-h-12 rounded border px-4" onClick={() => setProgress(0.75)}>Synthetic progress 75%</button>
             <output className="w-full" data-active-claims={claims}>Actual active claims: {claims}</output>
@@ -34,11 +30,8 @@ function Preview() {
           <section className="relative h-64 overflow-hidden rounded-xl border" aria-label="Synthetic menu gradient viewport">
             {mounted && gradient ? <Suspense fallback={<p>Loading local texture</p>}><MenuGradient /></Suspense> : null}
           </section>
-          <section className="relative z-10 flex min-h-24 items-center rounded-xl border p-6" aria-label="Synthetic ticker viewport">
-            {mounted && ticker ? <TickerCrown /> : null}
-          </section>
           <section className="relative z-10 flex flex-col items-center gap-6 rounded-xl border bg-background p-6" aria-label="Synthetic progress indicators">
-            {mounted ? <><ProgressRail progress={progress} /><TickDial value={progress} aria-label="Synthetic dial progress" /></> : null}
+            {mounted ? <TickDial value={progress} aria-label="Synthetic dial progress" /> : null}
           </section>
         </main>
       </div>

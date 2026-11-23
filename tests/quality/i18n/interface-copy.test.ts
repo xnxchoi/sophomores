@@ -20,10 +20,11 @@ test("site guide: a visible opener, one settled announcement, and close keeps th
 });
 
 test("residual UI preserves notification and seller content values", () => {
-  const notifications = readFileSync("src/components/notifications/notification-list.tsx", "utf8");
-  assert.match(notifications, /\{notification.title\}/);
-  assert.match(notifications, /\{notification.body\}/);
-  assert.match(notifications, /t\("empty"\)/);
+  // The header inbox (control bar view) is the one notification list; the /essays copy of it came out (owner, 24 Nov).
+  const notifications = readFileSync("src/components/shell/controlbar/views.tsx", "utf8");
+  assert.match(notifications, /\{item.title\}/);
+  assert.match(notifications, /\{item.body\}/);
+  assert.match(notifications, /list\("empty"\)/);
   const seller = readFileSync("src/app/(site)/_commerce/seller-disclosure.tsx", "utf8");
   // The fields render from one list of [field, value] pairs; each value is the seller's own data, not catalogue copy.
   for (const field of ["name", "registrationNumber", "representative", "address", "phone", "mailOrderRegistrationNumber"]) assert.ok(seller.includes(`seller.${field}`), field);

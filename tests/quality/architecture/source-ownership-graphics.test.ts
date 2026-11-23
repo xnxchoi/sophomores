@@ -16,7 +16,6 @@ const current = (base: string) => read(`${base}.${exists(`${base}.tsx`) ? "tsx" 
 test("graphics hook relocation preserves lifecycle and frame-claim implementations", () => {
   for (const [path, expected] of [
   ["src/components/gl/canvas-frameloop", "0617a1e8b9dc626342a5c34992412931e656dbe069aa95b13309e3c6d72f598c"],
-  ["src/components/shell/ticker/useBezelDisplacementTexture", "acc31af1f3b1b398c4f462575a652786d396ac52c85d6225dcededca34e1f369"],
   ["src/components/ui/tick-indicator/useSyncedMotionValue", "a8ee432e2b7ded719cc1bb4e267efb3c3aa99590fd6c16ed5d7490d82caeb7be"],
   ]) assert.equal(digest(current(path)), expected, path);
 });
@@ -40,16 +39,8 @@ test("menu shader strings preserve every original GLSL byte", () => {
   }
 });
 
-test("scheduler math, frame ordering, pause restoration and snap code remain unchanged", () => {
-  const source = current("src/components/shell/ticker/useLaneScheduler");
-  assert.equal(digest(source.slice(source.indexOf("/**\n * Bezel-feel"))), "21b626f6907f20a5d9f6c65b675de59e73e153b75e5c4549f3d2b5c916ce2209");
-});
-
-test("ticker defaults and geometry remain exact", () => {
-  const config = read(exists("src/components/shell/ticker/_shared/field-config.ts")
-    ? "src/components/shell/ticker/_shared/field-config.ts" : "src/components/shell/ticker/field-config.ts");
-  assert.equal(digest(config.slice(config.indexOf("export interface FieldConfig"))), "dd8372842bb4b8ae1d6dd4f9297be80f4a6cdd017635bae3690ebaab6b1658b6");
-  const scheduler = config.includes("export const DEFAULT_SCHEDULER_BOUNDS") ? config : current("src/components/shell/ticker/useLaneScheduler");
-  assert.equal(digest(scheduler.slice(scheduler.indexOf("export interface SchedulerBounds"), scheduler.indexOf("/**\n * Bezel-feel") >= 0 ? scheduler.indexOf("/**\n * Bezel-feel") : scheduler.indexOf("export interface FieldConfig")).trim()), "ca7d55e57ea839a9fd4f730e4b24ad9dd1c14ae20a1dc489dd70957e534c2376");
+// The ticker crown's scheduler and field config are stashed with it (owner, 24 Nov: out of scope for the first release;
+// branch xnxchoi/stash-ticker-tape-20261124 keeps them and these digests' sources).
+test("menu gradient geometry remains exact", () => {
   assert.match(read("src/components/shell/menu-gradient.tsx"), /planeGeometry args=\{\[1\.5, 1\.5, 128, 128\]\}/);
 });

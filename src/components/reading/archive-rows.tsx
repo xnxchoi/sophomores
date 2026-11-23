@@ -3,7 +3,6 @@ import Image from "next/image";
 import { DateTime } from "luxon";
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/components/core/Link/Link";
-import { RP_BadgeTag } from "@/components/UX/RP_BadgeTag";
 import type { PostCard } from "@/lib/content/slots";
 
 /**
@@ -27,11 +26,6 @@ export function ArchiveRow({ post }: { post: PostCard }) {
       <div className="relative col-[1] row-[1/6] aspect-[3/2] min-h-px min-w-px overflow-hidden rounded-[10px] bg-[var(--faded-bg)] lg:col-[3/6] lg:row-[1/7]">
         {post.heroUrl ? <Image src={post.heroUrl} alt="" fill sizes="(min-width: 1024px) 25vw, 50vw" className="object-cover" /> : null}
       </div>
-      {post.category ? (
-        <div className="order-2 col-[2] row-[2] text-[10px] uppercase lg:col-[1/3] lg:mb-[16px]">
-          <RP_BadgeTag content={post.category} />
-        </div>
-      ) : null}
       {post.publishedAt ? (
         <time dateTime={post.publishedAt} className="col-[2] row-[5] mt-[6px] opacity-90 lg:col-[1/3] lg:row-[4]">
           {DateTime.fromISO(post.publishedAt).setLocale(locale).toLocaleString(DateTime.DATE_HUGE)}

@@ -42,7 +42,9 @@ test("a product page shows one product, its facts and that purchase is not open,
   assert.match(html, /One per account/);
   assert.match(html, /Release pending/);
   assert.match(html, /href="\/shop"/);
-  assert.doesNotMatch(html, /Book only|Premium edition|<button\b|<input\b|<form\b|href="[^"]*(?:checkout|payment)/i);
+  // The only button is the 3D book's own Look inside control; nothing buys, carts or pays.
+  assert.deepEqual(html.match(/<button\b[^>]*>/g)?.map((tag) => tag.includes("data-book-ui")), [true]);
+  assert.doesNotMatch(html, /Book only|Premium edition|<input\b|<form\b|href="[^"]*(?:checkout|payment)/i);
 });
 
 test("the first resolved image is the card cover; no image means no fake cover", async () => {

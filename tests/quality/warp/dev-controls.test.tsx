@@ -174,12 +174,24 @@ test("Escape closes only the inspector and returns keyboard focus to its launche
 
 test("copy reports success only after clipboard acceptance and exposes failures", async () => {
   const copied: string[] = [];
+  // Each copy settles inside act(): the clipboard promise is awaited there, so the
+  // component's catch/finally updates commit within act. Settled outside act, that
+  // commit leaves React's passive-effect task queued on the Scheduler (setImmediate);
+  // under load it ran after the file's teardown and read the deleted `window`.
+  let write: Promise<void> | undefined;
+  const copy = async () => {
+    await ui.act(async () => {
+      ui.fireEvent.click(view.getByRole("button", { name: "Copy settings" }));
+      await write?.catch(() => {});
+    });
+  };
   Object.defineProperty(dom.window.navigator, "clipboard", {
     configurable: true,
     value: {
-      writeText: async (value: string) => {
-        copied.push(value);
-      }
+      writeText: (value: string) =>
+        (write = (async () => {
+          copied.push(value);
+        })())
     }
   });
   const view = renderWithMessages(
@@ -194,28 +206,30 @@ test("copy reports success only after clipboard acceptance and exposes failures"
     />
   );
   ui.fireEvent.click(view.getByRole("button", { name: "Warp controls" }));
-  ui.fireEvent.click(view.getByRole("button", { name: "Copy settings" }));
-  await ui.waitFor(() =>
-    assert.match(
-      view.getByRole("status", { name: "Settings feedback" }).textContent ?? "",
-      /Copied/
-    )
+  await copy();
+  assert.match(
+    view.getByRole("status", { name: "Settings feedback" }).textContent ?? "",
+    /Copied/
   );
   assert.deepEqual(JSON.parse(copied[0]), defaults);
   Object.defineProperty(dom.window.navigator, "clipboard", {
     configurable: true,
     value: {
-      writeText: async () => {
-        throw new Error("denied");
-      }
+      writeText: () =>
+        (write = (async () => {
+          throw new Error("denied");
+        })())
     }
   });
-  ui.fireEvent.click(view.getByRole("button", { name: "Copy settings" }));
-  await ui.waitFor(() =>
-    assert.match(
-      view.getByRole("status", { name: "Settings feedback" }).textContent ?? "",
-      /Could not copy/
-    )
+  await copy();
+  assert.match(
+    view.getByRole("status", { name: "Settings feedback" }).textContent ?? "",
+    /Could not copy/
+  );
+  assert.equal(
+    view.getByRole("button", { name: "Copy settings" }).hasAttribute("disabled"),
+    false,
+    "copying has finished before the test ends"
   );
 });
 

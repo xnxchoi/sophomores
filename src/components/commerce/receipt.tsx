@@ -1,7 +1,8 @@
 import { getLocale, getTranslations } from "next-intl/server";
 import type { OrderReceipt, OrderRecord } from "@/lib/commerce/receipt/order-receipt";
 import { Link } from "@/components/core/Link/Link";
-import { CopyButton } from "@/components/arc/copy-button/copy-button";
+import { CopyButton } from "@/components/core/ArcFocus/ArcFocus";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { ReceiptShare } from "./receipt-share";
 import { ReceiptDelivery } from "./receipt-delivery";
 
@@ -19,8 +20,8 @@ export async function InvoiceCertificate({ receipt, principal }: {
       <h2 id="order-receipt-heading" className="mt-2 font-display text-3xl sm:text-4xl">{receipt.name}</h2>
       {receipt.edition && receipt.edition !== receipt.name && <p className="mt-2 text-sm text-muted-foreground">{receipt.edition}</p>}
       <div className="mt-3 flex flex-wrap items-center gap-x-5">
-        <a href={download} className="inline-flex min-h-12 items-center text-sm underline underline-offset-4 focus-visible:outline-2">{t("receipt.download")}</a>
-        <a href={download + "&view=inline"} className="inline-flex min-h-12 items-center text-sm underline underline-offset-4 focus-visible:outline-2">{t("receipt.open")}</a>
+        <a href={download} className="group/focus inline-flex min-h-12 items-center text-sm underline underline-offset-4"><FocusShape className="outline-offset-4">{t("receipt.download")}</FocusShape></a>
+        <a href={download + "&view=inline"} className="group/focus inline-flex min-h-12 items-center text-sm underline underline-offset-4"><FocusShape className="outline-offset-4">{t("receipt.open")}</FocusShape></a>
         <ReceiptShare orderID={receipt.id} label={t("receipt.copyLink")} />
       </div>
     </header>
@@ -49,7 +50,7 @@ async function InvoicePanel({ receipt }: { receipt: Omit<OrderReceipt, "address"
         {benefits.membershipSignet && <li>{t("receipt.signet")}</li>}
         {benefits.freeLaunchTicket && <li>{t("receipt.ticket")}</li>}
       </ul>
-      {benefits.freeLaunchTicket && <Link href={"/shop/orders/" + receipt.id} prefetch={false} className="mt-2 inline-flex min-h-12 items-center text-sm underline underline-offset-4 focus-visible:outline-2">{t("openAdmissions")}</Link>}
+      {benefits.freeLaunchTicket && <Link href={"/shop/orders/" + receipt.id} prefetch={false} className="group/focus mt-2 inline-flex min-h-12 items-center text-sm underline underline-offset-4"><FocusShape className="outline-offset-4">{t("openAdmissions")}</FocusShape></Link>}
     </section>}
   </div>;
 }

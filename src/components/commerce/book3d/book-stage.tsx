@@ -6,7 +6,7 @@ import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useInView } from "react-intersection-observer";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/arc/button/button";
+import { Button } from "@/components/core/ArcFocus/ArcFocus";
 import { ArcRoles } from "../arc-roles";
 import { useTheme } from "@/providers/Theme";
 import type { BookSignals, BookTextures } from "./book";

@@ -4,6 +4,7 @@ import { Tabs } from "@base-ui/react/tabs";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import type { CommerceOffer } from "@/lib/commerce/catalogue";
 
 export function CommerceProductGallery({ images, title, fill = false, emptyNote = true }: {
@@ -56,13 +57,15 @@ export function CommerceProductGallery({ images, title, fill = false, emptyNote 
         {media.map((image, index) => (
           <Tabs.Tab key={`${image.id}:${image.sourceIndex}`} value={index}
             aria-label={t("gallerySelectImage", { number: index + 1, count: media.length })}
-            className="relative flex size-18 min-h-12 min-w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border-2 border-transparent bg-transparent p-1 text-foreground transition-colors outline-offset-4 hover:border-border focus-visible:outline-2 data-active:border-foreground">
-            {!failed.has(image.src) && (
-              // The tab's accessible name replaces this duplicate thumbnail description.
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={image.src} alt="" loading="lazy" ref={(element) => checkImage(element, image.src)} onError={() => markUnavailable(image.src)}
-                className="size-full rounded-sm object-contain" />
-            )}
+            className="group/focus relative flex size-18 min-h-12 min-w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border-2 border-transparent bg-transparent p-1 text-foreground transition-colors hover:border-border data-active:border-foreground">
+            <FocusShape className="flex size-full">
+              {!failed.has(image.src) && (
+                // The tab's accessible name replaces this duplicate thumbnail description.
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={image.src} alt="" loading="lazy" ref={(element) => checkImage(element, image.src)} onError={() => markUnavailable(image.src)}
+                  className="size-full rounded-sm object-contain" />
+              )}
+            </FocusShape>
             <span aria-hidden="true" className="absolute right-1 bottom-1 flex min-w-5 items-center justify-center rounded-sm bg-background/90 px-1 text-[10px] leading-5 tabular-nums">
               {index + 1}
             </span>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CopyButton } from "@/components/arc/copy-button/copy-button";
+import { CopyButton } from "@/components/core/ArcFocus/ArcFocus";
 
 export function ReceiptShare({ orderID, label }: { orderID: string; label: string }) {
   const [link, setLink] = useState("");

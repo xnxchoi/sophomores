@@ -6,6 +6,7 @@ import Script from "next/script";
 import { useEffect, useId, useRef, useState, type ComponentProps } from "react";
 import { DrawnField } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import type { ShippingAddress } from "@/lib/commerce/contracts";
 
 type PostcodeResult = { zonecode: string; roadAddress?: string; jibunAddress?: string; address?: string };
@@ -62,8 +63,8 @@ export function ShippingAddressForm({ value, onChange, disabled = false }: {
       {/* An in-place action (spec §4): tracked caps with a dotted underline. */}
       <button type="button" aria-expanded={searchOpen} aria-controls={id + "-search"}
         onClick={() => { setSearchError(false); searching.current = !searchOpen; setSearchOpen(!searchOpen); }}
-        className="inline-flex min-h-11 items-center text-xs uppercase tracking-[0.04em] underline decoration-dotted underline-offset-4 outline-offset-4 hover:decoration-solid focus-visible:outline-2 disabled:opacity-40">
-        {searchOpen ? t('closeSearch') : t('searchAddress')}
+        className="group/focus inline-flex min-h-11 items-center text-xs uppercase tracking-[0.04em] underline decoration-dotted underline-offset-4 hover:decoration-solid disabled:opacity-40">
+        <FocusShape className="outline-offset-4">{searchOpen ? t('closeSearch') : t('searchAddress')}</FocusShape>
       </button>
     </div>
     {searchOpen && <div id={id + "-search"} className="overflow-hidden rounded-xl border border-border bg-white md:col-span-2">

@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import type { CommerceEditionCatalogue, CommerceEditionOffer } from "@/lib/commerce/editions";
 import { Link } from "@/components/core/Link/Link";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { PageInset } from "@/components/core/PageInset/PageInset";
 import { cn } from "@/lib/utils";
 import { PurchaseNotOpen } from "../book-offer";
@@ -45,8 +46,8 @@ export function ProductPage({ product, offer, content, shelf }: { product: Editi
 
     <div className="relative z-1 min-w-0 bg-background pt-6 lg:col-start-2 lg:row-start-1 lg:min-h-[calc(100svh-5.5rem)] lg:bg-transparent lg:pt-0">
       <div className="flex h-14 items-center">
-        <Link href="/shop" className="inline-flex min-h-11 items-center gap-1.5 text-[13px] text-muted-foreground outline-offset-2 transition-colors hover:text-foreground focus-visible:outline-2">
-          <ArrowLeftIcon aria-hidden="true" className="size-3.5" />{t("allProducts")}
+        <Link href="/shop" className="group/focus inline-flex min-h-11 items-center gap-1.5 text-[13px] text-muted-foreground transition-colors hover:text-foreground">
+          <FocusShape className="inline-flex items-center gap-[inherit]"><ArrowLeftIcon aria-hidden="true" className="size-3.5" />{t("allProducts")}</FocusShape>
         </Link>
       </div>
       <header className="border-t border-foreground pt-3">
@@ -76,8 +77,8 @@ export function ProductPage({ product, offer, content, shelf }: { product: Editi
         {content.about.body && <Prose data={content.about.body} />}
         {content.about.links.length > 0 && <ul className="mt-5 border-t border-dotted border-foreground/40">
           {content.about.links.map((link) => <li key={link.url} className="border-b border-dotted border-foreground/40">
-            <a href={link.url} target="_blank" rel="noreferrer" className="flex min-h-10 items-center justify-between gap-4 text-[13px] outline-offset-2 transition-colors hover:text-muted-foreground focus-visible:outline-2 pointer-coarse:min-h-11">
-              {link.label}<ArrowUpRightIcon aria-hidden="true" className="size-3.5 text-muted-foreground" />
+            <a href={link.url} target="_blank" rel="noreferrer" className="group/focus flex min-h-10 items-center justify-between gap-4 text-[13px] transition-colors hover:text-muted-foreground pointer-coarse:min-h-11">
+              <FocusShape className="flex min-w-0 flex-1 items-center justify-between gap-[inherit]">{link.label}<ArrowUpRightIcon aria-hidden="true" className="size-3.5 text-muted-foreground" /></FocusShape>
             </a>
           </li>)}
         </ul>}
@@ -95,7 +96,7 @@ export function ProductPage({ product, offer, content, shelf }: { product: Editi
                 <span aria-hidden="true" className="mr-1 font-display text-[1.75em] leading-[0] text-muted-foreground">“</span>{entry.quote}
               </blockquote>
               <figcaption className="mt-2 flex flex-wrap gap-x-2 text-[11px] uppercase tracking-[0.06em]">
-                {entry.url ? <a href={entry.url} target="_blank" rel="noreferrer" className="underline decoration-current/40 underline-offset-4 hover:decoration-current">{entry.name}</a> : <span>{entry.name}</span>}
+                {entry.url ? <a href={entry.url} target="_blank" rel="noreferrer" className="rounded-xs underline decoration-current/40 underline-offset-4 outline-offset-2 hover:decoration-current focus-visible:outline-2 focus-visible:outline-current">{entry.name}</a> : <span>{entry.name}</span>}
                 {entry.role && <span className="text-muted-foreground">{entry.role}</span>}
               </figcaption>
             </figure>
@@ -162,7 +163,7 @@ function ColumnSection({ label, children }: { label: string; children: ReactNode
 
 /** Rich text from Payload (paragraphs, italics, links), set like the column's body. */
 function Prose({ data }: { data: SerializedEditorState }) {
-  return <div className="text-[15px] leading-[1.5] text-pretty [overflow-wrap:anywhere] [&_a]:underline [&_a]:underline-offset-4 [&_p+p]:mt-4">
+  return <div className="text-[15px] leading-[1.5] text-pretty [overflow-wrap:anywhere] [&_a]:rounded-xs [&_a]:underline [&_a]:underline-offset-4 [&_a:focus-visible]:outline-2 [&_a:focus-visible]:outline-offset-2 [&_a:focus-visible]:outline-current [&_p+p]:mt-4">
     <RichText data={data} disableContainer />
   </div>;
 }

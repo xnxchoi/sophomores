@@ -267,7 +267,7 @@ function PaymentPanel({ shippingAddress, disabled = false, onBusyChange, onAttem
     {!retained && discovery.attempts.length > 0 && <div><h3 className="pb-3 text-base">{t('existingPaymentAttempts')}</h3>
       {discovery.attempts.map((attempt) => <button key={attempt.transactionID} type="button" disabled={unavailable}
         onClick={() => { try { saveIntent({ version: 1, cartID: attempt.cartID, transactionID: attempt.transactionID, paymentID: attempt.paymentID }); setMessage(""); } catch { fail(t('paymentNeedsBrowserStorageEnableItAndReload')); } }}
-        className="grid min-h-12 w-full grid-cols-1 items-center gap-x-4 gap-y-2 border-t border-border py-4 last:border-b sm:grid-cols-[minmax(0,1fr)_auto] text-left text-sm outline-offset-4 transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-foreground disabled:opacity-40">
+        className="grid min-h-12 w-full grid-cols-1 items-center gap-x-4 gap-y-2 border-t border-border py-4 last:border-b sm:grid-cols-[minmax(0,1fr)_auto] text-left text-sm transition-colors hover:bg-muted focus-visible:bg-muted disabled:opacity-40">
         <span className="min-w-0 tabular-nums">{attempt.orderName && <span className="mb-1 block font-medium wrap-anywhere">{attempt.orderName}</span>}{attempt.totalAmount.toLocaleString("ko-KR")} KRW <span className="mt-1 block wrap-anywhere text-xs text-muted-foreground">{t('referenceEnding')}{attempt.paymentID.slice(-6)}</span></span><span className="font-medium">{attempt.reviewHold || attempt.resolutionConflict ? t('reviewNeeded') : t('viewAttempt')}</span>
       </button>)}
     </div>}
@@ -278,7 +278,7 @@ function PaymentPanel({ shippingAddress, disabled = false, onBusyChange, onAttem
     {retained && !orderID && <div className="grid gap-3">
       <button type="button" disabled={unavailable} onClick={() => void run("check")} className="h-10 rounded-full border border-foreground bg-transparent px-5 text-[13px] uppercase tracking-[0.04em] text-foreground outline-offset-4 transition-colors hover:bg-foreground hover:text-background focus-visible:outline-2 focus-visible:outline-foreground disabled:opacity-40 pointer-coarse:h-11">{busy ? t('checking') : t('checkPayment')}</button>
 
-      <button type="button" disabled={unavailable || reviewHold} onClick={() => void run("resume")} className="inline-flex min-h-11 items-center text-xs uppercase tracking-[0.04em] underline decoration-dotted underline-offset-4 outline-offset-4 hover:decoration-solid focus-visible:outline-2 disabled:opacity-40">{t('resumeSamePayment')}</button>
+      <button type="button" disabled={unavailable || reviewHold} onClick={() => void run("resume")} className="group/focus inline-flex min-h-11 items-center text-xs uppercase tracking-[0.04em] underline decoration-dotted underline-offset-4 hover:decoration-solid disabled:opacity-40"><FocusShape className="outline-offset-4">{t('resumeSamePayment')}</FocusShape></button>
       {/* Cancelling retires the attempt for good, so it asks first and offers no undo. Its own row, so the question has room. */}
       {retirableTransactionID === intent?.transactionID && <ConfirmMorph className="justify-self-start" label={t('cancelThisAttempt')} prompt={t('cancelThisAttemptQuestion')} confirmLabel={t('cancelAttempt')}
         cancelLabel={t('keepAttempt')} pendingLabel={t('cancellingAttempt')} doneLabel={t('attemptCancelled')} errorLabel={t('couldNotCancelAttempt')} retryLabel={t('tryAgain')}

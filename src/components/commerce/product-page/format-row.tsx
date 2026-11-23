@@ -2,6 +2,7 @@
 
 import { ArrowUpRightIcon } from "@phosphor-icons/react";
 import type { ReactNode } from "react";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 
 /**
  * One ruled format row (stripe.press's Hardcover / E-book / Audiobook rows). Hovering a row with an effect tells the 3D
@@ -17,7 +18,7 @@ export function FormatRow({ label, note, url, effect }: { label: string; note?: 
   </>;
   return <li onPointerEnter={() => signal(true)} onPointerLeave={() => signal(false)} className="border-b border-dotted border-foreground/40">
     {url
-      ? <a href={url} target="_blank" rel="noreferrer" className="flex min-h-10 items-center justify-between gap-4 text-[13px] leading-5 outline-offset-2 transition-colors hover:text-muted-foreground focus-visible:outline-2 pointer-coarse:min-h-11">{content}</a>
+      ? <a href={url} target="_blank" rel="noreferrer" className="group/focus flex min-h-10 items-center justify-between gap-4 text-[13px] leading-5 transition-colors hover:text-muted-foreground pointer-coarse:min-h-11"><FocusShape className="flex min-w-0 flex-1 items-center justify-between gap-[inherit]">{content}</FocusShape></a>
       : <div className="flex min-h-10 items-center justify-between gap-4 text-[13px] leading-5 pointer-coarse:min-h-11">{content}</div>}
   </li>;
 }

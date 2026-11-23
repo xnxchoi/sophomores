@@ -122,8 +122,8 @@ export function CommerceCart({ offer, wide = false, signedIn = true, onSignIn }:
                 {matching ? <p className="mt-1 text-xs tabular-nums">{t("unitPrice", { amount: offer.priceKRW.toLocaleString("ko-KR") })}</p>
                   : <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{t("itemDetailsUnavailable")}</p>}
                 <button type="button" aria-label={t("removeNamed", { title })} disabled={busy || !item.id || !!cart?.purchasedAt || cart?.status === "purchased"}
-                  onClick={() => item.id && void remove(item.id)} className={cn("-ml-3 mt-1 inline-flex size-11 items-center justify-center rounded-full outline-offset-2 transition-opacity hover:opacity-70 focus-visible:outline-2 disabled:opacity-40", action?.kind === "removing" && action.itemID === item.id && "animate-pulse")}>
-                  <XCircleIcon aria-hidden="true" className="size-5" /></button>
+                  onClick={() => item.id && void remove(item.id)} className={cn("group/focus -ml-3 mt-1 inline-flex size-11 items-center justify-center rounded-full transition-opacity hover:opacity-70 disabled:opacity-40", action?.kind === "removing" && action.itemID === item.id && "animate-pulse")}>
+                  <FocusShape className="flex rounded-full"><XCircleIcon aria-hidden="true" className="size-5" /></FocusShape></button>
               </div>
             </li>;
           })}
@@ -134,7 +134,7 @@ export function CommerceCart({ offer, wide = false, signedIn = true, onSignIn }:
         <p role="status" aria-atomic="true" className="sr-only">
           {quoted ? t("estimatedTotalAnnouncement", { amount: total.toLocaleString("ko-KR") }) : ""}
         </p>
-        {cart && <button type="button" disabled={busy} onClick={() => void refresh()} className="inline-flex min-h-11 items-center text-xs uppercase tracking-[0.04em] underline decoration-dotted underline-offset-4 outline-offset-4 hover:decoration-solid focus-visible:outline-2 disabled:opacity-40">{action?.kind === "refreshing" ? t("refreshing") : t("refresh")}</button>}
+        {cart && <button type="button" disabled={busy} onClick={() => void refresh()} className="group/focus inline-flex min-h-11 items-center text-xs uppercase tracking-[0.04em] underline decoration-dotted underline-offset-4 hover:decoration-solid disabled:opacity-40"><FocusShape className="outline-offset-4">{action?.kind === "refreshing" ? t("refreshing") : t("refresh")}</FocusShape></button>}
       </div>
     </div>
     <div className="min-w-0 space-y-6">

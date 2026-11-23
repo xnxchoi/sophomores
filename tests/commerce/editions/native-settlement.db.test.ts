@@ -23,8 +23,10 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
   const { loadCommerceEditionOffer } = await import("../../../src/lib/commerce/editions");
   const { nativePurchaseSnapshotSchema } = await import("../../../src/lib/commerce/native-edition-receipt");
   const { createLocalReq } = await import("payload");
+  const { sql } = await import("@payloadcms/db-postgres");
   const { inCommerceTransaction, inPaymentTransaction } = await import("../../../src/lib/commerce/_shared/transaction");
   const { up, down } = await import("../../../src/payload/migrations/20261122_160100_native_edition_settlement");
+  const { down: downTicketTargets } = await import("../../../src/payload/migrations/20261123_040000_event_ticket_targets");
   isolateTransport(t, target.port);
   const { payload, pool, control, close, version } = await openProofDatabase(true, new Set(), target);
   t.after(close);
@@ -56,11 +58,29 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
     assert.equal((await orders(control, donor.transactionID)).length, 1);
   });
 
-  await t.test("Guest settlement pins two buyer-owned admissions and replays without granting membership", async () => {
-    const conf = { chainID: 137 as const, lock: "0x" + "b".repeat(40), memberLock: "0x" + "a".repeat(40) };
+  const conf = { chainID: 137 as const, lock: "0x" + "b".repeat(40), memberLock: "0x" + "a".repeat(40) };
+  async function guestAttempt() {
     const guest = await seedConfiguredAttempt(payload, undefined, conf);
     const { user, customerID, cartID, transactionID, snapshot } = guest;
-    const attempt = { user, customerID, cartID, transactionID, paymentID: transactionID.replaceAll("-", ""), total: snapshot.totalAmount };
+    return { ...guest, attempt: { user, customerID, cartID, transactionID, paymentID: transactionID.replaceAll("-", ""), total: snapshot.totalAmount } };
+  }
+  const guestState = (guest: Awaited<ReturnType<typeof guestAttempt>>) => control.query(`SELECT
+      t.status, t.order_id, c.purchased_at, p.inventory::int, p.reserved_quantity::int AS product_reserved,
+      e.reserved_quantity::int AS event_reserved, e.committed_quantity::int AS event_committed,
+      r.state AS reservation_state, r.order_id AS reservation_order, r.ticket_target AS reservation_target,
+      a.reserved_quantity::int AS allowance_reserved, a.paid_quantity::int AS allowance_paid, u.membership_status
+    FROM transactions t JOIN carts c ON c.id = t.cart_id
+    JOIN commerce_reservations r ON r.attempt_i_d = t.id::text
+    JOIN users u ON u.id = r.customer_id JOIN products p ON p.id = r.product_id
+    JOIN commerce_events e ON e.id = r.event_id
+    JOIN commerce_allowances a ON a.customer_id = u.id AND a.release_i_d = $2
+    WHERE t.id = $1`, [guest.transactionID, `guest:${guest.eventID}`]).then(({ rows }) => {
+    assert.equal(rows.length, 1);
+    return rows[0];
+  });
+
+  await t.test("Guest settlement pins two buyer-owned admissions and replays without granting membership", async () => {
+    const { attempt, ...guest } = await guestAttempt();
     await settleOne(payload, attempt);
     await settleOne(payload, attempt);
     const settled = await orders(control, guest.transactionID);
@@ -75,6 +95,128 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
       claimed_account_id: null, event_account_key: null, beneficiary_user_id: guest.customerID,
       recipient_mode: "member_safe", state: "awaiting_wallet", membership_status: "applicant",
     })));
+  });
+
+  await t.test("overlapping Guest confirmations cannot settle twice and replay one receipt", async () => {
+    const guest = await guestAttempt();
+    const before = await guestState(guest);
+    const entered = deferred<void>();
+    const release = deferred<void>();
+    let paused = false;
+    await delay(1100);
+    const first = settle(payload, guest.attempt, async (collection) => {
+      if (collection !== "commerce-key-grant-intents" || paused) return;
+      paused = true;
+      entered.resolve();
+      await release.promise;
+    });
+    const watchdog = new AbortController();
+    try {
+      await Promise.race([
+        entered.promise,
+        first.then(() => assert.fail("First confirmation finished before its intent hook")),
+        delay(8_000, undefined, { signal: watchdog.signal }).then(() => assert.fail("First intent hook was not reached")),
+      ]);
+      assert.deepEqual(await guestState(guest), before, "The independent observer cannot see uncommitted settlement");
+      assert.deepEqual(await effects(control, guest.transactionID), { grants: [], tickets: [] });
+      const duplicate = await settle(payload, guest.attempt);
+      assert.equal(duplicate.status, 202);
+      // The open settlement holds the attempt lock; the duplicate must not
+      // enter a second financial transaction while that lock is held.
+      assert.equal((await duplicate.json()).outcome, "busy");
+    } finally {
+      watchdog.abort();
+      release.resolve();
+      await Promise.allSettled([first]);
+    }
+    const completed = await first;
+    assert.equal(completed.status, 200);
+    const committed = await orders(control, guest.transactionID);
+    assert.equal(committed.length, 1);
+    const recorded = await effects(control, guest.transactionID);
+    assert.equal(recorded.tickets.length, 2);
+    assert.equal(recorded.grants.length, 2);
+    const settledState = await guestState(guest);
+    assert.ok(Number.isFinite(new Date(settledState.purchased_at).getTime()) && settledState.purchased_at != null);
+    assert.deepEqual(settledState, {
+      ...before, status: "succeeded", order_id: committed[0].id,
+      purchased_at: settledState.purchased_at, inventory: before.inventory - 2,
+      product_reserved: before.product_reserved - 2, event_reserved: before.event_reserved - 2,
+      event_committed: before.event_committed + 2, reservation_state: "settled", reservation_order: committed[0].id,
+      allowance_reserved: before.allowance_reserved - 2, allowance_paid: before.allowance_paid + 2,
+    });
+    const replay = await settle(payload, guest.attempt);
+    assert.equal(replay.status, 200);
+    assert.equal((await replay.json()).orderID, committed[0].id);
+    assert.deepEqual(await orders(control, guest.transactionID), committed);
+    assert.deepEqual(await effects(control, guest.transactionID), recorded);
+  });
+
+  await t.test("failure after the second Guest grant intent rolls back every settlement effect", async () => {
+    const guest = await guestAttempt();
+    const before = await guestState(guest);
+    let intentWrites = 0;
+    let staged: unknown;
+    await delay(1100);
+    const result = await settle(payload, guest.attempt, async (collection, req) => {
+      if (collection !== "commerce-key-grant-intents" || ++intentWrites !== 2) return;
+      const session = await nativeSession(req);
+      const { rows } = await session.execute(sql`SELECT
+        (SELECT count(*)::int FROM commerce_admissions WHERE transaction_id = ${guest.transactionID}::uuid) AS tickets,
+        (SELECT count(*)::int FROM commerce_key_grant_intents WHERE payment_id = ${guest.transactionID}::uuid) AS intents`);
+      staged = rows[0];
+      throw new Error("Fixture fault after the second Guest intent");
+    }).then((response) => ({ ok: response.ok }), () => ({ ok: false }));
+    assert.equal(result.ok, false, "A failed transaction must not acknowledge settlement");
+    assert.equal(intentWrites, 2);
+    assert.deepEqual(staged, { tickets: 2, intents: 2 }, "The failure happened after real writes in the owned transaction");
+    assert.deepEqual(await orders(control, guest.transactionID), []);
+    assert.deepEqual(await effects(control, guest.transactionID), { grants: [], tickets: [] });
+    assert.deepEqual(await guestState(guest), before);
+    // The independent observer proves storage rollback, not an acknowledged
+    // endpoint outcome. An immediate retry must respect the reconciliation fence.
+    const retry = await settle(payload, guest.attempt);
+    assert.equal(retry.status, 202);
+    assert.ok(["ownership-unknown", "cooldown"].includes((await retry.json()).outcome));
+    assert.deepEqual(await orders(control, guest.transactionID), []);
+    assert.deepEqual(await effects(control, guest.transactionID), { grants: [], tickets: [] });
+    assert.deepEqual(await guestState(guest), before);
+  });
+
+  await t.test("Guest target DOWN refuses recorded ticket data without removing columns or changing rows", async () => {
+    const guest = await guestAttempt();
+    await settleOne(payload, guest.attempt);
+    const stored = () => control.query(`SELECT
+        (SELECT jsonb_build_array(check_in_authority, unlock_ticket_configuration) FROM commerce_events WHERE id = $1) AS event,
+        (SELECT ticket_target FROM commerce_reservations WHERE attempt_i_d = $2::text) AS reservation,
+        (SELECT jsonb_agg(jsonb_build_array(id, ticket_tier, ticket_target) ORDER BY unit)
+          FROM commerce_admissions WHERE transaction_id = $2::uuid) AS tickets`,
+      [guest.eventID, guest.transactionID]).then(({ rows }) => rows[0]);
+    const columns = () => control.query(`SELECT table_name, column_name FROM information_schema.columns
+      WHERE table_schema = 'public' AND (
+        (table_name = 'commerce_events' AND column_name IN ('check_in_authority', 'unlock_ticket_configuration'))
+        OR (table_name = 'commerce_reservations' AND column_name = 'ticket_target')
+        OR (table_name = 'commerce_admissions' AND column_name IN ('ticket_tier', 'ticket_target')))
+      ORDER BY table_name, column_name`).then(({ rows }) => rows);
+    const before = await stored();
+    const schema = await columns();
+    assert.equal(schema.length, 5);
+    assert.equal(before.tickets.length, 2);
+    const req = await createLocalReq({}, payload);
+    await assert.rejects(inPaymentTransaction(req, async () => {
+      const db = await nativeSession(req);
+      // Remove the other refusal conditions in this disposable transaction so
+      // a broken admission guard cannot pass because event settings still exist.
+      await db.execute(sql`UPDATE commerce_events SET check_in_authority = NULL, unlock_ticket_configuration = NULL
+        WHERE check_in_authority IS NOT NULL OR unlock_ticket_configuration IS NOT NULL`);
+      await db.execute(sql`UPDATE commerce_reservations SET ticket_target = NULL WHERE ticket_target IS NOT NULL`);
+      await downTicketTargets({ db, payload, req });
+      throw new Error("Fixture rollback: DOWN unexpectedly accepted retained admissions");
+    }), (error: unknown) =>
+      error instanceof Error && error.cause instanceof Error &&
+      /Cannot remove configured or recorded event ticket targets/.test(error.cause.message));
+    assert.deepEqual(await columns(), schema);
+    assert.deepEqual(await stored(), before);
   });
 
   for (const edition of editions) await t.test(`09: ${edition.kind} binds the actual SKU and replays frozen obligations`, async () => {

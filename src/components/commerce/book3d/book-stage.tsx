@@ -1,5 +1,7 @@
 "use client";
 
+import { XIcon } from "@phosphor-icons/react";
+import { useTranslations } from "next-intl";
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useInView } from "react-intersection-observer";
@@ -28,10 +30,22 @@ export const TEMPORARY_BOOK_TEXTURES: BookTextures = {
  *
  * The page talks to the book through window events, so a row or the cart can drive it without importing three:
  * `book3d:spin` ({ direction: 1 | -1 }, add or remove) and `book3d:effect` ({ hologram?, radio? }, row hovers).
+ *
+ * Look inside opens from the pill or a click on the book, in the stage (full screen on a phone). Close sits on the left;
+ * Esc, ← and h close it too, as does a click on empty canvas or a tap past either end.
  */
-export function BookStage({ className, textures = TEMPORARY_BOOK_TEXTURES, children }: { className?: string; textures?: BookTextures; children?: ReactNode }) {
+export function BookStage({ id, className, textures = TEMPORARY_BOOK_TEXTURES, pageTextures = [], children }: {
+  /** The product, so each book keeps its own saved page. */
+  id: string;
+  className?: string; textures?: BookTextures;
+  /** Page images in reading order (two per leaf); none yet, so the pages are blank. */
+  pageTextures?: string[];
+  children?: ReactNode;
+}) {
+  const t = useTranslations("Customer.components_commerce_book_offer");
+  const [open, setOpen] = useState(false);
   const stage = useRef<HTMLDivElement>(null);
-  const signals = useRef<BookSignals>({ scroll: 0, hologram: false, radio: false, spins: [] });
+  const signals = useRef<BookSignals>({ scroll: 0, hologram: false, radio: false, spins: [], look: false, peek: false });
   const { ref: inViewRef, inView } = useInView({ initialInView: true });
   const [covered, setCovered] = useState(false);
   const dark = useTheme((store) => store.theme) === "dark";
@@ -64,11 +78,30 @@ export function BookStage({ className, textures = TEMPORARY_BOOK_TEXTURES, child
     };
   }, []);
 
-  return <div ref={(element) => { stage.current = element; inViewRef(element); }}
-    className={cn("touch-pan-y data-[book=drag]:cursor-grabbing data-[book=hover]:cursor-grab", className)}>
+  useEffect(() => {
+    signals.current.look = open;
+    if (!open) return;
+    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape" || event.key === "ArrowLeft" || event.key === "h") setOpen(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
+  return <div data-open={open} ref={(element) => { stage.current = element; inViewRef(element); }}
+    className={cn("touch-pan-y data-[book=drag]:cursor-grabbing data-[book=hover]:cursor-grab data-[open=true]:touch-none max-lg:data-[open=true]:fixed max-lg:data-[open=true]:inset-0 max-lg:data-[open=true]:z-50 max-lg:data-[open=true]:h-dvh max-lg:data-[open=true]:bg-background", className)}>
     {children}
     <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-      <BookCanvas eventSource={stage} signals={signals} textures={textures} frameloop={inView && !covered ? "always" : "never"} dark={dark} />
+      <BookCanvas eventSource={stage} signals={signals} textures={textures} frameloop={inView && !covered ? "always" : "never"} dark={dark}
+        onOpen={() => setOpen(true)} onClose={() => setOpen(false)} storageKey={"book3d:" + id} pageTextures={pageTextures} />
     </div>
+    {open
+      ? <button type="button" data-book-ui onClick={() => setOpen(false)}
+          className="absolute top-3 left-3 z-1 inline-flex size-11 items-center justify-center rounded-full bg-background text-foreground outline-offset-2 focus-visible:outline-2 max-lg:top-auto max-lg:bottom-[max(1rem,env(safe-area-inset-bottom))]">
+          <XIcon aria-hidden="true" className="size-5" /><span className="sr-only">{t("closeBook")}</span>
+        </button>
+      : <button type="button" data-book-ui onClick={() => setOpen(true)}
+          onPointerEnter={() => { signals.current.peek = true; }} onPointerLeave={() => { signals.current.peek = false; }}
+          className="absolute bottom-4 left-1/2 z-1 inline-flex h-10 -translate-x-1/2 items-center rounded-full border border-foreground bg-background px-4 text-[13px] uppercase tracking-[0.04em] outline-offset-2 focus-visible:outline-2 pointer-coarse:h-11">
+          {t("lookInside")}
+        </button>}
   </div>;
 }

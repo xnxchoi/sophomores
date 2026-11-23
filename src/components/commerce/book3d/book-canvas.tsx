@@ -35,17 +35,22 @@ function PointerSpot({ dark }: { dark: boolean }) {
 }
 
 /** The book's canvas, loaded lazily by BookStage (three, R3F and drei stay out of the page's first load). */
-export default function BookCanvas({ eventSource, signals, textures, frameloop, dark, onOpen }: {
+export default function BookCanvas({ eventSource, signals, textures, frameloop, dark, onOpen, onClose, storageKey, pageTextures }: {
   eventSource: RefObject<HTMLElement | null>;
   signals: RefObject<BookSignals>;
   textures: BookTextures;
   frameloop: "always" | "never";
   dark: boolean;
   onOpen?: () => void;
+  onClose?: () => void;
+  storageKey?: string;
+  pageTextures?: string[];
 }) {
   const small = typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
   return <Canvas frameloop={frameloop} dpr={[1, small ? 1.5 : 2]} shadows={dark} eventSource={eventSource as RefObject<HTMLElement>} eventPrefix="client"
-    camera={{ fov: 18, position: [0, 0, 174], near: 1, far: 400 }} gl={{ antialias: true, alpha: true }}>
+    camera={{ fov: 18, position: [0, 0, 174], near: 1, far: 400 }} gl={{ antialias: true, alpha: true }}
+    // A click on empty canvas closes Look inside (#25), unless it was on the stage's own controls.
+    onPointerMissed={(event) => { if (signals.current.look && !(event.target as Element | null)?.closest?.("[data-book-ui]")) onClose?.(); }}>
     <ambientLight intensity={0.6} />
     <directionalLight position={[10, 14, 30]} intensity={1.1} />
     <PointerSpot dark={dark} />
@@ -55,7 +60,7 @@ export default function BookCanvas({ eventSource, signals, textures, frameloop, 
       <Lightformer form="rect" intensity={1} position={[-20, -4, 10]} rotation-y={Math.PI / 3} scale={[20, 6, 1]} />
     </Environment>
     <Suspense fallback={null}>
-      <Intro><Book textures={textures} signals={signals} onOpen={onOpen} small={small} /></Intro>
+      <Intro><Book textures={textures} signals={signals} onOpen={onOpen} onClose={onClose} small={small} storageKey={storageKey} pageTextures={pageTextures} /></Intro>
     </Suspense>
     {dark && <mesh position={[0, 0, -4]} receiveShadow>
       <planeGeometry args={[120, 120]} />

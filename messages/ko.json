@@ -812,7 +812,9 @@
       "includesBookOnly": "",
       "onePerAccount": "",
       "description": "",
-      "otherEditions": ""
+      "otherEditions": "",
+      "lookInside": "",
+      "closeBook": ""
     },
     "components_commerce_checkout": {
       "customerSignInIsOffInThisReviewCopy": "",

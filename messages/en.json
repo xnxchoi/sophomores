@@ -812,7 +812,9 @@
       "includesBookOnly": "The book only. No membership token or ticket.",
       "onePerAccount": "One per account",
       "description": "Description",
-      "otherEditions": "Other editions"
+      "otherEditions": "Other editions",
+      "lookInside": "Look inside",
+      "closeBook": "Close"
     },
     "components_commerce_checkout": {
       "customerSignInIsOffInThisReviewCopy": "Customer sign-in is off in this review copy.",

@@ -47,7 +47,7 @@ export function CommerceProductView({ product, offer, others = [] }: { product: 
   const t = useTranslations("Customer.components_commerce_book_offer");
   if (!product || !offer) return <BookUnavailable />;
   return <PageInset as="main" className="pt-[4.5rem] pb-24 text-foreground lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start lg:gap-x-6 lg:pt-[5.5rem]">
-    <BookStage className="sticky top-[4.5rem] min-w-0 lg:row-span-2 lg:top-[5.5rem] lg:h-[calc(100svh-7rem)]">
+    <BookStage id={product.productID} className="sticky top-[4.5rem] min-w-0 lg:row-span-2 lg:top-[5.5rem] lg:h-[calc(100svh-7rem)]">
       <CommerceProductGallery key={product.productID} images={product.images} title={product.title} fill />
     </BookStage>
     <div className="relative z-1 min-w-0 bg-background pt-8 lg:min-h-[calc(100svh-7rem)] lg:bg-transparent lg:pt-0">

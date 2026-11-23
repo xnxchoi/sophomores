@@ -5,7 +5,8 @@
 ## Files
 - **`book-stage.tsx`:** the product page's stage, holding the art with the book over it. It lazy-loads the canvas, renders only while the stage is in view, and passes the page's scroll and events to the book.
 - **`book-canvas.tsx`:** the canvas, intro dolly, pointer spotlight, reflections and shadow catcher (dark theme only).
-- **`book.tsx`:** the geometry, cover material and closed-book interactions.
+- **`book.tsx`:** the geometry, cover material, closed-book interactions, and the Look inside timeline and pose.
+- **`look-inside.tsx`:** the leaves (12, so 24 pages), their bend shader, page physics and page gestures.
 
 ## Texture slots
 Pass these to `<BookStage textures={…}>`. Any slot left out falls back to a plain surface.
@@ -23,7 +24,7 @@ Pass these to `<BookStage textures={…}>`. Any slot left out falls back to a pl
 - The covers fill the top 79% (v 0.21–1): back cover u 0–0.455, spine u 0.455–0.57, front cover u 0.57–1.
 - The bottom strip (v 0–0.1) holds the page edges: the fore edge at u 0.575–1, and the head and tail at u 0.15–0.57.
 
-**Look inside** (a later commit) adds page slots: `pageFront[i]` and `pageBack[i]`, about 1200×1600 each.
+**Pages:** `<BookStage pageTextures={[...]}>` takes page images in reading order, two per leaf (front, back), about 1200×1600 each. With none, the pages are blank.
 
 ## TEMPORARY: Stripe Press textures, replace before publishing
 `TEMPORARY_BOOK_TEXTURES` in `book-stage.tsx` points at copies of Stripe Press's cover maps. The owner said, 23 Nov: "use stripe's for now". The copies are:
@@ -50,3 +51,16 @@ The originals in `references/StripePress/book/cover/` are untouched. Replace all
 - **Scroll coupling.** As the page scrolls, the book eases back and turns away.
 
 stripe.press's numbers (map §C1) are the tuning reference. The code is ours.
+
+## Look inside
+- **Opening.** The Look inside pill or a click on the book opens it. The book turns to the reader, tilts back and centres on the spread. The cover swings flat, and the pages fan up and drop.
+- **Turning pages:**
+  - drag a page (where you grab sets the curl; dragging up or down tilts the fold);
+  - click either half;
+  - flick the fore edge to riffle several pages;
+  - swipe sideways on a trackpad.
+- **Page behaviour.** Pages in flight can be caught, and they never pass each other.
+- **Hover.** The page under the cursor lifts and its corner curls. Near the screen's edge, the block on that side is pushed.
+- **Closing.** Close (left), Esc, ← and h close the book. So does a click on empty canvas or a tap past either end.
+- **Saved page.** The page you leave is kept for the visit (sessionStorage `book3d:<product id>`).
+- **Phone.** The stage covers the screen while the book is open.

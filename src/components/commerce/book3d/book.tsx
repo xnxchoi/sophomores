@@ -8,12 +8,14 @@ import {
   CanvasTexture,
   Group,
   MathUtils,
+  Mesh,
   MeshPhysicalMaterial,
   RepeatWrapping,
   SRGBColorSpace,
   Vector2,
   type Texture
 } from "three";
+import { createLookState, LEAVES, LookInside, OPEN_SECONDS, openCurves, type LookState } from "./look-inside";
 
 /**
  * The texture slots (README.md in this folder lists names, sizes and the atlas layout). Every cover slot uses one
@@ -29,7 +31,7 @@ export type BookTextures = {
 };
 
 /** What the page tells the book, read every frame (no re-render): scroll progress, hover effects, add-to-cart spins. */
-export type BookSignals = { scroll: number; hologram: boolean; radio: boolean; spins: number[] };
+export type BookSignals = { scroll: number; hologram: boolean; radio: boolean; spins: number[]; look: boolean; peek: boolean };
 
 // Proportions from the atlas: each cover 826×1264 px, the spine 224 px. World units; the camera sees 17.1 units tall.
 const H = 11, W = H * (826 / 1264), BOARD = 0.08, T = W * (224 / 826) - 2 * BOARD, SEGMENTS = 5, SEG = W / SEGMENTS;
@@ -41,6 +43,13 @@ const SHARE = [0.6, 0.1, 0.1, 0.1, 0.1];
 const DRAG_RATE = 0.01125, MOUSE_MUL = 0.75, FLING_MAX = 0.42, FLING_DECAY = 0.95, TOUCH_PITCH_ARM_PX = 10;
 const CLICK_PX = 5, CLICK_MS = 500, FLAP_GAIN = 0.037, FLAP_MAX = 0.35 * MathUtils.degToRad(80), FLAP_K = 40;
 const PEEK = MathUtils.degToRad(5), PEEK_EASE = 0.075, REST_YAW = 0.35;
+// Look inside pose (map §C2 #16): tilted back 22° (12.5° on touch); pointer height adds up to +10° / −12°.
+const OPEN_TILT = MathUtils.degToRad(22), OPEN_TILT_TOUCH = MathUtils.degToRad(12.5), POINTER_UP = MathUtils.degToRad(10), POINTER_DOWN = MathUtils.degToRad(12);
+
+function readSavedSpread(key?: string) {
+  if (!key) return 0;
+  try { return Number(window.sessionStorage.getItem(key)) || 0; } catch { return 0; }
+}
 
 type Face = "front" | "back" | "spine" | "pages";
 
@@ -149,6 +158,9 @@ function Board({ geometries, segments, material, k = 0 }: { geometries: BoxGeome
   return <group ref={(group) => { segments.current[k] = group; }} position={[k === 0 ? 0 : SEG, 0, 0]}>
     <mesh geometry={geometries[k]} material={material} castShadow />
     <Board geometries={geometries} segments={segments} material={material} k={k + 1} />
+    <LookInside look={look} root={root} width={W - 0.15} height={H - 0.3} thickness={T} pageTextures={pageTextures}
+      onClose={() => onClose?.()}
+      onSpread={(spread) => { if (storageKey) try { window.sessionStorage.setItem(storageKey, String(spread)); } catch { /* storage unavailable */ } }} />
   </group>;
 }
 
@@ -160,8 +172,14 @@ const easeInOutQuint = (x: number) => x < 0.5 ? 16 * x ** 5 : 1 - (-2 * x + 2) *
  * The closed book and everything you can do to it (map §C1): drag to turn and fling, pitch easing home, covers that
  * swing open with spin and spring shut, a lift while held, the cover peek on hover, the add-to-cart spin and dip, scroll
  * coupling, and the hologram and radio effects. `onOpen` gets a click (a press under 5 px and 500 ms).
+ * Look inside (signals.look) opens the book in place; the pages are LookInside's. The spread you leave is saved.
  */
-export function Book({ textures, signals, onOpen, small }: { textures: BookTextures; signals: RefObject<BookSignals>; onOpen?: () => void; small: boolean }) {
+export function Book({ textures, signals, onOpen, onClose, small, storageKey, pageTextures = [] }: {
+  textures: BookTextures; signals: RefObject<BookSignals>; onOpen?: () => void; onClose?: () => void; small: boolean;
+  /** sessionStorage key for the saved spread (#26). */
+  storageKey?: string;
+  pageTextures?: string[];
+}) {
   const slots = useMemo(() => Object.fromEntries(Object.entries(textures).filter(([, url]) => url)) as Record<string, string>, [textures]);
   const maps = useTexture(slots) as unknown as Record<string, Texture>;
   const uniforms = useMemo(createUniforms, []);
@@ -178,18 +196,23 @@ export function Book({ textures, signals, onOpen, small }: { textures: BookTextu
   }, [geometry, material]);
 
   const root = useRef<Group>(null), front = useRef<(Group | null)[]>([]), back = useRef<(Group | null)[]>([]);
+  const frontHinge = useRef<Group>(null), closedPages = useRef<Mesh>(null);
+  const look = useRef<LookState | null>(null);
   const source = useThree((state) => state.events.connected) as HTMLElement | undefined;
   const physics = useRef({
     yaw: 0, pitch: 0, velYaw: 0, velPitch: 0, lastYaw: 0, spinSpeed: 0, dragging: false, hovered: false,
     released: -Infinity, pitchFrom: 0, returning: false, touch: false, armed: false, totalX: 0, lastX: 0, lastY: 0,
     downX: 0, downY: 0, downAt: 0, frontA: 0, frontV: 0, backA: 0, backV: 0, peek: 0, lift: 0, liftT: 0,
-    spin: null as null | { dir: number; t: number }, scroll: 0, holo: 0, holoSince: -1, radio: 0, clock: 0
+    spin: null as null | { dir: number; t: number }, scroll: 0, holo: 0, holoSince: -1, radio: 0, clock: 0, openTilt: 0
   });
 
   const setCursor = (value: "" | "hover" | "drag") => { if (source) source.dataset.book = value; };
 
   function onPointerDown(event: ThreeEvent<PointerEvent>) {
+    // The stage's own controls (Look inside, Close) sit over the canvas; presses on them aren't for the book.
+    if ((event.nativeEvent.target as Element | null)?.closest?.("[data-book-ui]")) return;
     event.stopPropagation();
+    if ((look.current?.t ?? 0) > 0) return; // open or opening: the pages take the pointer
     const s = physics.current;
     const e = event.nativeEvent;
     Object.assign(s, { dragging: true, touch: e.pointerType !== "mouse", armed: false, totalX: 0, lastX: e.clientX, lastY: e.clientY,
@@ -215,6 +238,23 @@ export function Book({ textures, signals, onOpen, small }: { textures: BookTextu
   useFrame((state, delta) => {
     const dt = Math.min(delta, 0.05), f = dt * 60, sig = signals.current, s = physics.current;
     s.clock += dt; uniforms.uTime.value = s.clock;
+    const l = (look.current ??= createLookState(readSavedSpread(storageKey)));
+
+    // Look inside timeline (#15): opens over OPEN_SECONDS, closes over 1.88 s.
+    const want = sig.look ? 1 : -1;
+    if (want !== l.dir) {
+      l.dir = want; l.active = false;
+      if (want > 0) {
+        // Turn the shortest way to the reading pose, and stop any fling.
+        const yaw = REST_YAW + s.yaw; s.yaw = Math.atan2(Math.sin(yaw), Math.cos(yaw)) - REST_YAW; s.velYaw = 0; s.velPitch = 0; s.lastYaw = s.yaw;
+      }
+    }
+    l.t = MathUtils.clamp(l.t + (l.dir > 0 ? dt : -dt * OPEN_SECONDS / 1.88), 0, OPEN_SECONDS);
+    if (l.dir > 0 && l.t >= OPEN_SECONDS && !l.active) {
+      l.active = true; l.angle.forEach((_, i) => { l.target[i] = i < l.spread ? Math.PI : 0; });
+    }
+    const open = openCurves(l.t);
+    if (closedPages.current) closedPages.current.visible = l.t === 0;
 
     // Fling and pitch return: yaw stays where it's left; pitch eases home after 2 s (touch 0.6 s) over 5 s (2.5 s).
     if (!s.dragging) {
@@ -230,11 +270,13 @@ export function Book({ textures, signals, onOpen, small }: { textures: BookTextu
     // Covers swing open with spin speed and spring back (critically damped, k 40); the back board swings 1.5×.
     const speed = Math.abs(s.yaw - s.lastYaw) / Math.max(dt, 1e-4); s.lastYaw = s.yaw;
     s.spinSpeed += (speed - s.spinSpeed) * (1 - Math.exp(-11 * dt));
-    s.peek += ((s.hovered ? PEEK : 0) - s.peek) * (1 - (1 - PEEK_EASE) ** f);
+    s.peek += (((s.hovered || sig.peek) && l.t === 0 ? PEEK : 0) - s.peek) * (1 - (1 - PEEK_EASE) ** f);
     const flap = Math.min(s.spinSpeed * FLAP_GAIN, FLAP_MAX), damping = 2 * Math.sqrt(FLAP_K);
     s.frontV += (FLAP_K * (flap + s.peek - s.frontA) - damping * s.frontV) * dt; s.frontA += s.frontV * dt;
     s.backV += (FLAP_K * (flap * 1.5 - s.backA) - damping * s.backV) * dt; s.backA += s.backV * dt;
-    front.current.forEach((g, k) => { if (g) g.rotation.y = -Math.max(s.frontA, 0) * SHARE[k]; });
+    // Opening swings the front cover flat to the left and drops its hinge to the back cover's level.
+    front.current.forEach((g, k) => { if (g) g.rotation.y = -Math.max(s.frontA, 0) * SHARE[k] - (k === 0 ? open.cover * Math.PI : 0); });
+    if (frontHinge.current) frontHinge.current.position.z = MathUtils.lerp(T / 2, -T / 2, open.cover);
     back.current.forEach((g, k) => { if (g) g.rotation.y = Math.max(s.backA, 0) * SHARE[k]; });
 
     // Lift towards the camera while held: 0.3 s with a small overshoot; it falls back at 2 per second.
@@ -242,6 +284,7 @@ export function Book({ textures, signals, onOpen, small }: { textures: BookTextu
     else { s.lift = Math.max(s.lift - 2 * dt, 0); s.liftT = s.lift; }
 
     // Add-to-cart: a full turn (removal turns back) with a dip on a sine; 0.9 s is ours (stripe.press's isn't in its code).
+    if (!s.spin && sig.spins.length && l.t > 0) sig.spins.length = 0; // stripe.press skips the spin while Look inside is open
     if (!s.spin && sig.spins.length) s.spin = { dir: Math.sign(sig.spins.shift() ?? 1) || 1, t: 0 };
     let spinYaw = 0, dip = 0;
     if (s.spin) {
@@ -263,9 +306,21 @@ export function Book({ textures, signals, onOpen, small }: { textures: BookTextu
     // stripe.press drops the canvas to 0.9 while the hologram shows.
     state.gl.domElement.style.opacity = String(1 - 0.1 * s.holo);
 
+    // Open pose (#16): tilted back, following the pointer's height (6/s, 0.4× on touch), centred on the spread and
+    // popped towards the camera; the book counter-turns a little as reading progresses (tuned to this model).
+    const pointerTilt = state.pointer.y > 0 ? state.pointer.y * POINTER_UP : state.pointer.y * POINTER_DOWN;
+    s.openTilt += (pointerTilt * (small ? 0.4 : 1) - s.openTilt) * (1 - Math.exp(-6 * dt));
+    const b = open.book, closedYaw = REST_YAW + s.yaw + spinYaw + s.scroll * 0.9, progress = l.spread / LEAVES;
     if (root.current) {
-      root.current.rotation.set(s.pitch, REST_YAW + s.yaw + spinYaw + s.scroll * 0.9, 0);
-      root.current.position.set(0, 0, s.lift - dip - s.scroll * 6);
+      root.current.rotation.set(
+        MathUtils.lerp(s.pitch, -(small ? OPEN_TILT_TOUCH : OPEN_TILT) + s.openTilt, b),
+        MathUtils.lerp(closedYaw, -0.1 * (progress * 2 - 1), b), 0);
+      root.current.position.set(MathUtils.lerp(0, W / 2, b), 0, MathUtils.lerp(s.lift - dip - s.scroll * 6, 4, b));
+    }
+    // The open spread is twice as wide: on a narrow stage the camera backs off until it fits (after the intro dolly).
+    if (s.clock > 2) {
+      const aspect = state.size.width / Math.max(state.size.height, 1), fit = Math.max(54, (W * 1.1) / (Math.tan(MathUtils.degToRad(9)) * aspect) + 4);
+      state.camera.position.z = MathUtils.lerp(54, fit, b);
     }
   });
 
@@ -274,8 +329,8 @@ export function Book({ textures, signals, onOpen, small }: { textures: BookTextu
     onPointerOver={(e) => { e.stopPropagation(); physics.current.hovered = true; if (!physics.current.dragging) setCursor("hover"); }}
     onPointerOut={() => { physics.current.hovered = false; if (!physics.current.dragging) setCursor(""); }}>
     <mesh geometry={geometry.spine} material={material} position={[-W / 2 - BOARD / 2, 0, 0]} castShadow />
-    <mesh geometry={geometry.pages} material={material} position={[-0.075, 0, 0]} castShadow />
-    <group position={[-W / 2, 0, T / 2]}><Board geometries={geometry.front} segments={front} material={material} /></group>
+    <mesh ref={closedPages} geometry={geometry.pages} material={material} position={[-0.075, 0, 0]} castShadow />
+    <group ref={frontHinge} position={[-W / 2, 0, T / 2]}><Board geometries={geometry.front} segments={front} material={material} /></group>
     <group position={[-W / 2, 0, -T / 2]}><Board geometries={geometry.back} segments={back} material={material} /></group>
   </group>;
 }

@@ -189,6 +189,12 @@ export function LookInside({ look, root, signals, sound, width, height, thicknes
     for (let n = 0; n < count; n++) { const i = dir > 0 ? firstForward() : lastBack(); if (i < 0 || !look.current) break; look.current.target[i] = dir > 0 ? PI : 0; }
   };
 
+  /** Drop the page gesture in hand, sending its page back to where it was. */
+  const cancelGesture = () => {
+    const g = gesture.current, l = look.current; gesture.current = null;
+    if (g && l && g.leaf >= 0 && !g.edge) l.target[g.leaf] = g.startAngle > PI / 2 ? PI : 0;
+  };
+
   /** The pointer on the pages: which side of the spine, and how far up the page (0 bottom, 1 top). */
   function pageCoords(event: ThreeEvent<PointerEvent>) {
     const local = root.current ? root.current.worldToLocal(event.point.clone()) : event.point;
@@ -200,6 +206,8 @@ export function LookInside({ look, root, signals, sound, width, height, thicknes
     const l = look.current;
     if (!l?.active || signals.current.view.panning || (event.nativeEvent.target as Element | null)?.closest?.("[data-book-ui]")) return;
     event.stopPropagation();
+    // A second finger is a pinch: the page in hand goes back, and the stage's pinch takes over (Review-B r2).
+    if (gesture.current || painting.current) { cancelGesture(); painting.current = null; return; }
     const { side, u, v } = pageCoords(event), e = event.nativeEvent, now = performance.now();
     // Highlighter on: a press paints on the top page of that side instead of turning it.
     const ink = signals.current.marker;
@@ -210,7 +218,8 @@ export function LookInside({ look, root, signals, sound, width, height, thicknes
       strokes.current.push(stroke); paint(stroke, 0);
       painting.current = { stroke, at: now, x: e.clientX, y: e.clientY };
       const target = source ?? (e.target as HTMLElement);
-      const end = () => {
+      const end = (ev: PointerEvent) => {
+        if (ev.pointerId !== e.pointerId) return;
         target.removeEventListener("pointerup", end); target.removeEventListener("pointercancel", end); target.removeEventListener("lostpointercapture", end);
         if (!painting.current) return;
         painting.current = null; saveMarks();
@@ -229,6 +238,7 @@ export function LookInside({ look, root, signals, sound, width, height, thicknes
     sound.play("grab");
     const pageWidthPx = Math.max(160, (source?.clientWidth ?? 800) / 2);
     const move = (m: PointerEvent) => {
+      if (m.pointerId !== e.pointerId) return;
       const g = gesture.current; if (!g) return;
       // A pinch or a held pan took over: the page goes back to where it was.
       if (signals.current.view.panning) {
@@ -251,12 +261,14 @@ export function LookInside({ look, root, signals, sound, width, height, thicknes
     // Captured on the stage: the page follows the drag past the stage until release; no window listeners.
     const target = source ?? (e.target as HTMLElement);
     const up = (u: PointerEvent) => {
+      if (u.pointerId !== e.pointerId) return;
       target.removeEventListener("pointermove", move); target.removeEventListener("pointerup", up); target.removeEventListener("pointercancel", up);
       target.removeEventListener("lostpointercapture", up);
       if (source) source.dataset.book = "";
       const g = gesture.current; gesture.current = null; if (!g) return;
       // A cancelled pointer (a touch scroll, lost capture) is not a click, flick or release: the page goes back.
-      if (u.type !== "pointerup") { if (g.leaf >= 0 && !g.edge) l.target[g.leaf] = g.startAngle > PI / 2 ? PI : 0; return; }
+      // A held pan or pinch took over: not a tap either.
+      if (u.type !== "pointerup" || signals.current.view.panning) { if (g.leaf >= 0 && !g.edge) l.target[g.leaf] = g.startAngle > PI / 2 ? PI : 0; return; }
       const quick = g.moved < 5 && performance.now() - g.downAt < 400;
       if (quick && !g.braked) { turn(g.dir); return; } // click to turn (#21)
       if (g.edge && g.speed > 0.7) { turnMany(g.dir, MathUtils.clamp(Math.round(g.speed * 3), 2, 8)); return; } // riffle (#23)

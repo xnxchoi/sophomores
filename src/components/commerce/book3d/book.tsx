@@ -51,14 +51,24 @@ export type BookSignals = {
    * own projected bounds each frame, or to the whole stage while Look inside is open.
    */
   hitRect: HTMLElement | null;
+  /** Asks the canvas for a frame (on-demand rendering); the book writes it, the stage calls it on scroll, effects, theme. */
+  invalidate: (() => void) | null;
 };
 
-const hitBox = new Box3(), hitCorner = new Vector3();
+const hitBox = new Box3(), hitPart = new Box3(), hitCorner = new Vector3();
 /** Fit the hit-rect to the book's on-screen bounds (padded 6%), writing to the DOM only when it moved a pixel. */
 function fitHitRect(element: HTMLElement, root: Group, camera: PerspectiveCamera, width: number, height: number, full: boolean) {
   let box = "0,0," + width + "," + height;
   if (!full) {
-    hitBox.setFromObject(root);
+    // Visible meshes only: the closed book's hidden parts (Look inside's leaves and its double-width hit plane) don't count.
+    hitBox.makeEmpty();
+    root.traverseVisible((object) => {
+      const mesh = object as Mesh;
+      if (!mesh.isMesh || !mesh.geometry) return;
+      if (!mesh.geometry.boundingBox) mesh.geometry.computeBoundingBox();
+      if (mesh.geometry.boundingBox) hitBox.union(hitPart.copy(mesh.geometry.boundingBox).applyMatrix4(mesh.matrixWorld));
+    });
+    if (hitBox.isEmpty()) return;
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     for (let i = 0; i < 8; i++) {
       hitCorner.set(i & 1 ? hitBox.max.x : hitBox.min.x, i & 2 ? hitBox.max.y : hitBox.min.y, i & 4 ? hitBox.max.z : hitBox.min.z).project(camera);
@@ -243,6 +253,8 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
   const frontHinge = useRef<Group>(null), closedPages = useRef<Mesh>(null);
   const look = useRef<LookState | null>(null);
   const source = useThree((state) => state.events.connected) as HTMLElement | undefined;
+  const invalidate = useThree((state) => state.invalidate);
+  useEffect(() => { const sig = signals.current; sig.invalidate = () => invalidate(); return () => { sig.invalidate = null; }; }, [invalidate, signals]);
   const physics = useRef({
     yaw: 0, pitch: 0, velYaw: 0, velPitch: 0, lastYaw: 0, spinSpeed: 0, dragging: false, hovered: false,
     released: -Infinity, pitchFrom: 0, returning: false, touch: false, armed: false, totalX: 0, lastX: 0, lastY: 0,
@@ -266,10 +278,12 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
     if ((look.current?.t ?? 0) > 0) return; // open or opening: the pages take the pointer
     const s = physics.current;
     const e = event.nativeEvent;
+    if (s.dragging) return; // one pointer owns the drag; a second finger is ignored
     Object.assign(s, { dragging: true, touch: e.pointerType !== "mouse", armed: false, totalX: 0, lastX: e.clientX, lastY: e.clientY,
       downX: e.clientX, downY: e.clientY, downAt: performance.now(), velYaw: 0, velPitch: 0, returning: false });
     setCursor("drag");
     const move = (m: PointerEvent) => {
+      if (m.pointerId !== e.pointerId) return;
       const dx = m.clientX - s.lastX, dy = m.clientY - s.lastY, rate = DRAG_RATE * (s.touch ? 1 : MOUSE_MUL);
       s.lastX = m.clientX; s.lastY = m.clientY; s.totalX += dx;
       // Touch turns the book first; tilt joins at half rate once the finger has moved 10 px sideways.
@@ -281,6 +295,7 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
     // The drag follows the pointer by capture on the stage (it keeps going past the stage until release); no window listeners.
     const target = source ?? (e.target as HTMLElement);
     const up = (u: PointerEvent) => {
+      if (u.pointerId !== e.pointerId) return;
       target.removeEventListener("pointermove", move); target.removeEventListener("pointerup", up); target.removeEventListener("pointercancel", up);
       target.removeEventListener("lostpointercapture", up);
       if (!s.dragging) return;

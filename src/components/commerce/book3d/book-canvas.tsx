@@ -1,7 +1,7 @@
 "use client";
 
 import { Environment, Lightformer, useFBO } from "@react-three/drei";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Canvas, events as createPointerEvents, useFrame, useThree } from "@react-three/fiber";
 import { Suspense, useEffect, useMemo, useRef, type ReactNode, type RefObject } from "react";
 import { MathUtils, Mesh, OrthographicCamera, PlaneGeometry, Scene, ShaderMaterial, Vector2, type Group, type SpotLight } from "three";
 import { Book, type BookSignals, type BookTextures } from "./book";
@@ -105,7 +105,17 @@ export default function BookCanvas({ eventSource, signals, textures, frameloop, 
   magnifier?: boolean;
 }) {
   const small = typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
-  return <Canvas frameloop={frameloop} dpr={[1, small ? 1.5 : 2]} shadows={dark} eventSource={eventSource as RefObject<HTMLElement>} eventPrefix="client"
+  return <Canvas frameloop={frameloop} dpr={[1, small ? 1.5 : 2]} shadows={dark} eventSource={eventSource as RefObject<HTMLElement>}
+    // The pointer from client coordinates against the stage's own rect (R3F's client prefix doesn't subtract the offset);
+    // pointers over the stage's controls are sent off-screen, so they never hover or pick the book.
+    events={(store) => ({ ...createPointerEvents(store), compute(event, state) {
+      const stage = state.events.connected as HTMLElement | undefined;
+      if (!stage) return;
+      const rect = stage.getBoundingClientRect();
+      if ((event.target as Element | null)?.closest?.("[data-book-ui]")) state.pointer.set(4, 4);
+      else state.pointer.set(((event.clientX - rect.left) / Math.max(rect.width, 1)) * 2 - 1, -((event.clientY - rect.top) / Math.max(rect.height, 1)) * 2 + 1);
+      state.raycaster.setFromCamera(state.pointer, state.camera);
+    } })}
     camera={{ fov: 18, position: [0, 0, 174], near: 1, far: 400 }} gl={{ antialias: true, alpha: true }}
     // A click on empty canvas closes Look inside (#25), unless it was on the stage's own controls.
     onPointerMissed={(event) => { if (signals.current.look && !(event.target as Element | null)?.closest?.("[data-book-ui]")) onClose?.(); }}>

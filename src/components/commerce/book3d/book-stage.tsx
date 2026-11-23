@@ -53,27 +53,19 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
   const pickInk = (next: "pink" | "yellow") => setInk((current) => current === next ? null : next);
   const stage = useRef<HTMLDivElement>(null);
   const signals = useRef<BookSignals>({ scroll: 0, hologram: false, radio: false, spins: [], look: false, peek: false, commands: [],
-    view: { zoom: 1, x: 0, y: 0, panning: false, unitsPerPx: 0.02 }, marker: null, hitRect: null });
+    view: { zoom: 1, x: 0, y: 0, panning: false, unitsPerPx: 0.02 }, marker: null, hitRect: null, invalidate: null });
   useEffect(() => { signals.current.marker = ink; }, [ink]);
   const { ref: inViewRef, inView } = useInView({ initialInView: true });
   const [covered, setCovered] = useState(false);
-  // The render loop runs only while the book is engaged (pointer in its hit-rect, a drag, Look inside open) or settling
-  // after a change (scroll, a row's effect, the theme, the intro); otherwise it renders on demand, so an idle page draws
-  // nothing (stripe.press idles its product page the same way). Full motion: every movement still plays out.
-  const [awake, setAwake] = useState(true);
-  const engaged = useRef(false), napTimer = useRef(0), openSeen = useRef(false);
-  const nap = (ms = 2500) => {
-    window.clearTimeout(napTimer.current); setAwake(true);
-    napTimer.current = window.setTimeout(() => { if (!engaged.current) setAwake(false); }, ms);
-  };
-  const engage = () => { engaged.current = true; window.clearTimeout(napTimer.current); setAwake(true); };
-  const release = () => { if (signals.current.look) return; engaged.current = false; nap(); };
   const dark = useTheme((store) => store.theme) === "dark";
-  // The intro plays out, then the loop rests; the theme's change re-lights the book.
-  useEffect(() => {
-    const id = window.setTimeout(() => nap(3000), 0);
-    return () => { window.clearTimeout(id); window.clearTimeout(napTimer.current); };
-  }, [dark]);
+  // The loop runs ('always') only while the book is engaged: the pointer on its hit-rect or controls, or Look inside open.
+  // Otherwise it renders on demand: a scroll, a row's effect or the theme asks for a frame, and the book keeps asking only
+  // while something it shows still moves (book.tsx), so an idle page draws nothing (Review-B r2: demand on release).
+  const [hovering, setHovering] = useState(false);
+  const engage = () => setHovering(true), release = () => setHovering(false);
+  const poke = () => signals.current.invalidate?.();
+  // The theme's change re-lights the book.
+  useEffect(() => { signals.current.invalidate?.(); }, [dark]);
 
   useEffect(() => {
     const main = stage.current?.closest("main");
@@ -81,14 +73,14 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
       // Progress through the page's own scroll range: 0 at the top, 1 where the page ends.
       const range = main ? main.offsetHeight + main.offsetTop - window.innerHeight : 0;
       const scroll = range > 0 ? Math.min(Math.max(window.scrollY / range, 0), 1) : 0;
-      if (scroll !== signals.current.scroll) nap();
+      if (scroll !== signals.current.scroll) poke();
       signals.current.scroll = scroll;
       const cover = main?.querySelector("[data-covers-stage]"), top = stage.current?.getBoundingClientRect().top;
       setCovered(cover !== null && cover !== undefined && top !== undefined && cover.getBoundingClientRect().top <= top);
     };
-    const onSpin = (event: Event) => { nap(); signals.current.spins.push((event as CustomEvent<{ direction?: number }>).detail?.direction ?? 1); };
+    const onSpin = (event: Event) => { poke(); signals.current.spins.push((event as CustomEvent<{ direction?: number }>).detail?.direction ?? 1); };
     const onEffect = (event: Event) => {
-      nap(4000);
+      poke();
       const detail = (event as CustomEvent<{ hologram?: boolean; radio?: boolean }>).detail ?? {};
       if (detail.hologram !== undefined) signals.current.hologram = detail.hologram;
       if (detail.radio !== undefined) signals.current.radio = detail.radio;
@@ -109,12 +101,10 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
   useEffect(() => {
     signals.current.look = open;
     if (open) signals.current.peek = false;
-    const changed = openSeen.current !== open; openSeen.current = open;
-    const wake = changed ? window.setTimeout(() => { if (open) engage(); else { engaged.current = false; nap(); } }, 0) : 0;
-    if (!open) { Object.assign(signals.current.view, { zoom: 1, x: 0, y: 0, panning: false }); return () => window.clearTimeout(wake); }
+    if (!open) { Object.assign(signals.current.view, { zoom: 1, x: 0, y: 0, panning: false }); return; }
     const onKey = (event: KeyboardEvent) => { if (event.key === "Escape" || event.key === "ArrowLeft" || event.key === "h") close(); };
     window.addEventListener("keydown", onKey);
-    return () => { window.clearTimeout(wake); window.removeEventListener("keydown", onKey); };
+    return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
   // Touch zoom and pan of the open book (#27): pinch between 1× and 2× (rubber 0.35 beyond), two fingers or a 300 ms
@@ -182,13 +172,14 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
     className={cn("pointer-events-none select-none [-webkit-touch-callout:none] [-webkit-user-drag:none] [&_img]:[-webkit-user-drag:none] max-lg:data-[open=true]:fixed max-lg:data-[open=true]:inset-0 max-lg:data-[open=true]:z-50 max-lg:data-[open=true]:h-dvh max-lg:data-[open=true]:bg-background", className)}>
     {children}
     <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-      <BookCanvas eventSource={stage} signals={signals} textures={textures} frameloop={inView && !covered ? (awake ? "always" : "demand") : "never"} dark={dark}
+      <BookCanvas eventSource={stage} signals={signals} textures={textures} frameloop={inView && !covered ? (hovering || open ? "always" : "demand") : "never"} dark={dark}
         onOpen={() => setOpen(true)} onClose={close} storageKey={"book3d:" + id} pageTextures={pageTextures} magnifier={magnifier} />
     </div>
     {/* The hit-rect (stripe.press's pattern): the only part of the stage that takes the pointer, fitted by the book to
-        its own bounds each frame (the whole stage while Look inside is open). Pointer engagement wakes the loop. */}
+        its own visible bounds each frame (the whole stage while Look inside is open); it starts empty, so it takes nothing
+        until the book has fitted it. Pointer engagement runs the loop. */}
     <div ref={(element) => { signals.current.hitRect = element; }} aria-hidden="true" onPointerEnter={engage} onPointerDown={engage} onPointerLeave={release}
-      className="pointer-events-auto absolute inset-0 touch-pan-y in-data-[open=true]:touch-none in-data-[book=hover]:cursor-grab in-data-[book=drag]:cursor-grabbing in-data-[book=mark]:cursor-none" />
+      className="pointer-events-auto absolute top-0 left-0 size-0 touch-pan-y in-data-[open=true]:touch-none in-data-[book=hover]:cursor-grab in-data-[book=drag]:cursor-grabbing in-data-[book=mark]:cursor-none" />
     {open
       ? <ArcRoles><div data-book-ui role="group" aria-label={t("lookInside")}
           className="pointer-events-auto absolute bottom-4 left-1/2 z-1 flex -translate-x-1/2 items-center gap-2 max-lg:bottom-[calc(max(var(--bar-target),var(--frame-bottom))+1rem+env(safe-area-inset-bottom))]">

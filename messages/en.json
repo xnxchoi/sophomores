@@ -26,6 +26,10 @@
     "staff": "Staff",
     "member": "Member"
   },
+  "InlineRetry": {
+    "retry": "Try again",
+    "retrying": "Trying again…"
+  },
   "Auth": {
     "welcome": "Welcome",
     "staffBadge": "Staff Member",

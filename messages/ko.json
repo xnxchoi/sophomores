@@ -26,6 +26,10 @@
     "staff": "스태프",
     "member": "회원"
   },
+  "InlineRetry": {
+    "retry": "",
+    "retrying": ""
+  },
   "Auth": {
     "welcome": "환영합니다",
     "staffBadge": "스태프 멤버",

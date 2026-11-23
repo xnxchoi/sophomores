@@ -89,9 +89,18 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
     };
     onScroll();
     // Moves over the stage's own controls stay out of R3F (Review-B r2): stopped in the stage's capture phase, before
-    // R3F's listener on the stage sees them. Presses and clicks still pass (sound unlock, the controls' own handlers).
+    // R3F's listener on the stage sees them. The first such move tells R3F the pointer left the book (its own
+    // pointerleave), so hover clears. Presses and clicks still pass; R3F keeps the last book pointer for them.
     const node = stage.current;
-    const shield = (event: PointerEvent) => { if ((event.target as Element | null)?.closest?.("[data-book-ui]")) event.stopPropagation(); };
+    let onControls = false;
+    const shield = (event: PointerEvent) => {
+      const over = Boolean((event.target as Element | null)?.closest?.("[data-book-ui]"));
+      if (over) {
+        event.stopPropagation();
+        if (!onControls) node?.dispatchEvent(new PointerEvent("pointerleave", { pointerId: event.pointerId, pointerType: event.pointerType, clientX: event.clientX, clientY: event.clientY }));
+      }
+      onControls = over;
+    };
     node?.addEventListener("pointermove", shield, { capture: true });
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll);

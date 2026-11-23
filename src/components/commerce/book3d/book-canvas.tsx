@@ -68,7 +68,8 @@ function Magnifier({ touch }: { touch: boolean }) {
     // The stage (the canvas's event source) takes the pointer, not the canvas. Releases arrive there too: a press on
     // the book captures the pointer to the stage, so no window listener is needed.
     if (!source) return;
-    const down = () => { pressed.current = true; }, up = () => { pressed.current = false; };
+    const down = (event: Event) => { if (!(event.target as Element | null)?.closest?.("[data-book-ui]")) pressed.current = true; };
+    const up = () => { pressed.current = false; };
     source.addEventListener("pointerdown", down);
     for (const type of ["pointerup", "pointercancel", "lostpointercapture"]) source.addEventListener(type, up);
     return () => { source.removeEventListener("pointerdown", down); for (const type of ["pointerup", "pointercancel", "lostpointercapture"]) source.removeEventListener(type, up); };
@@ -107,12 +108,13 @@ export default function BookCanvas({ eventSource, signals, textures, frameloop, 
   const small = typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
   return <Canvas frameloop={frameloop} dpr={[1, small ? 1.5 : 2]} shadows={dark} eventSource={eventSource as RefObject<HTMLElement>}
     // The pointer from client coordinates against the stage's own rect (R3F's client prefix doesn't subtract the offset).
-    // Moves over the stage's controls never get here: the stage stops them before R3F (book-stage.tsx).
+    // Moves over the stage's own controls never get here (book-stage.tsx); their presses and clicks do, and keep the last
+    // book pointer, so a tap on a control doesn't move the lens, light or tilt.
     events={(store) => ({ ...createPointerEvents(store), compute(event, state) {
       const stage = state.events.connected as HTMLElement | undefined;
       if (!stage) return;
       const rect = stage.getBoundingClientRect();
-      state.pointer.set(((event.clientX - rect.left) / Math.max(rect.width, 1)) * 2 - 1, -((event.clientY - rect.top) / Math.max(rect.height, 1)) * 2 + 1);
+      if (!(event.target as Element | null)?.closest?.("[data-book-ui]")) state.pointer.set(((event.clientX - rect.left) / Math.max(rect.width, 1)) * 2 - 1, -((event.clientY - rect.top) / Math.max(rect.height, 1)) * 2 + 1);
       state.raycaster.setFromCamera(state.pointer, state.camera);
     } })}
     camera={{ fov: 18, position: [0, 0, 174], near: 1, far: 400 }} gl={{ antialias: true, alpha: true }}

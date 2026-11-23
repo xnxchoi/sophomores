@@ -3,8 +3,6 @@ import type { CommerceEditionCatalogue, CommerceEditionOffer, CommerceEditionSho
 import { Link } from "@/components/core/Link/Link";
 import { PageInset } from "@/components/core/PageInset/PageInset";
 import { Badge } from "@/components/arc/badge/badge";
-import { CommerceProductGallery } from "./product-gallery";
-import { BookStage } from "./book3d/book-stage";
 import { ArcRoles } from "./arc-roles";
 
 type EditionProduct = Extract<CommerceEditionCatalogue, { status: "displayable" }>["product"];
@@ -25,7 +23,7 @@ export function CommerceShopView({ shop }: { shop: CommerceEditionShop | null })
 
 type ShopEntry = Extract<CommerceEditionShop, { status: "displayable" }>["products"][number];
 
-/** One product in a list (the shop, and Other editions on a product page): cover, title and facts, linking to its page. */
+/** One product in the shop list: cover, title and facts, linking to its page. */
 function ProductCard({ product, offer }: ShopEntry) {
   return <li className="min-w-0">
     <Link href={"/shop/products/" + encodeURIComponent(product.productID)} className="group block min-w-0 outline-offset-4 focus-visible:outline-2">
@@ -34,48 +32,6 @@ function ProductCard({ product, offer }: ShopEntry) {
       <ProductFacts offer={offer} className="mt-3" />
     </Link>
   </li>;
-}
-
-/**
- * One product's page, laid out like stripe.press's (map 23 Nov, owner: "a full-enough port of the Product page layout"):
- * the stage (the art and the 3D book) holds the left 60% and stays pinned under the header while the purchase column on
- * the right 40% scrolls. On a phone the stage sits at the top and stays pinned while the column scrolls up over it, as
- * stripe.press's art does. Full-width sections after the column (Other editions) scroll over the pinned stage, as
- * stripe.press's praise and production sections do (owner: "As stripe.press does!").
- */
-export function CommerceProductView({ product, offer, others = [] }: { product: EditionProduct | null; offer: CommerceEditionOffer | null; others?: readonly ShopEntry[] }) {
-  const t = useTranslations("Customer.components_commerce_book_offer");
-  if (!product || !offer) return <BookUnavailable />;
-  return <PageInset as="main" className="pt-[4.5rem] pb-24 text-foreground lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start lg:gap-x-6 lg:pt-[5.5rem]">
-    <BookStage id={product.productID} className="sticky top-[4.5rem] min-w-0 lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:top-[5.5rem] lg:h-[calc(100svh-7rem)]">
-      <CommerceProductGallery key={product.productID} images={product.images} title={product.title} fill emptyNote={false} />
-    </BookStage>
-    <div className="relative z-1 min-w-0 bg-background pt-8 lg:col-start-2 lg:row-start-1 lg:min-h-[calc(100svh-7rem)] lg:bg-transparent lg:pt-0">
-      <Link href="/shop" className="inline-flex min-h-12 items-center text-sm text-muted-foreground underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2 lg:-mt-3">{t("allProducts")}</Link>
-      <header className="mt-6">
-        <p className="text-xs uppercase tracking-[0.04em] text-muted-foreground">{t("book")}</p>
-        <h1 className="mt-3 font-display text-[2.5rem] font-normal leading-[1.08] tracking-[-0.02em] text-balance [overflow-wrap:anywhere]">{product.title}</h1>
-      </header>
-      <section aria-labelledby="product-description-heading" className="mt-10">
-        <h2 id="product-description-heading" className="text-xs uppercase tracking-[0.04em] text-muted-foreground">{t("description")}</h2>
-        <p className="mt-3 max-w-prose whitespace-pre-line text-base leading-6 [overflow-wrap:anywhere]">{product.description}</p>
-      </section>
-      <div className="mt-10">
-        <PurchaseNotOpen priceKRW={offer.priceKRW} />
-        <p className="mt-3 max-w-prose text-xs leading-5 text-muted-foreground">
-          {offer.editionEntitlements.membershipSignet ? t("includesBundle") : t("includesBookOnly")}
-          {offer.maximumQuantity === 1 && <> {t("onePerAccount")}.</>}
-        </p>
-      </div>
-    </div>
-    {others.length > 0 && <section data-covers-stage aria-labelledby="other-editions-heading"
-      className="relative z-1 mt-24 bg-background pt-3 lg:col-span-full lg:row-start-2 lg:mt-16 lg:pb-24">
-      <h2 id="other-editions-heading" className="border-b border-foreground pb-3 text-xs uppercase tracking-[0.04em]">{t("otherEditions")}</h2>
-      <ul className="mt-10 grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
-        {others.map((entry) => <ProductCard key={entry.product.productID} {...entry} />)}
-      </ul>
-    </section>}
-  </PageInset>;
 }
 
 /** Price, what the product includes and the per-account limit, from E1's server offer. Shared by the shop, product and checkout. */
@@ -123,7 +79,8 @@ function ProductCover({ product }: { product: EditionProduct }) {
     : <div aria-hidden="true" className="aspect-square w-full rounded-xl border border-border bg-muted" />;
 }
 
-function BookUnavailable() {
+/** No published product to show (also the product page's fail-closed state). */
+export function BookUnavailable() {
   const t = useTranslations("Customer.components_commerce_book_offer");
   return <PageInset as="main" className="min-h-[70svh] pt-36 pb-24 text-foreground sm:pt-44">
     <p className="text-xs uppercase tracking-[0.04em] text-muted-foreground">{t("book")}</p>

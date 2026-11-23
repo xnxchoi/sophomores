@@ -3,7 +3,9 @@ import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { ReactNode } from "react";
 import { listCommerceEditionProducts, type CommerceEditionShop } from "@/lib/commerce/editions";
-import { CommerceProductView, CommerceShopView } from "@/components/commerce/book-offer";
+import { BookUnavailable, CommerceShopView } from "@/components/commerce/book-offer";
+import { ProductPage } from "@/components/commerce/product-page/product-page";
+import { readProductPageContent } from "@/components/commerce/product-page/_shared/content";
 import { EnglishMessages } from "../../fixtures/english-messages";
 import { ReadingFixture } from "../../fixtures/reading-layout";
 import { nativeEditionsPayload } from "../../fixtures/commerce/native-editions-payload";
@@ -34,7 +36,7 @@ test("the shop lists three separate products, each linking to its own page, with
 
 test("a product page shows one product, its facts and that purchase is not open, with no cart or payment", async () => {
   const { product, offer } = (await shop()).products[1]!;
-  const html = render(<CommerceProductView product={product} offer={offer} />);
+  const html = render(<ProductPage product={product} offer={offer} content={readProductPageContent(null)} shelf={[]} />);
   assert.match(html, /Édition personnelle/);
   assert.match(html, /₩82,000/);
   assert.match(html, /One per account/);
@@ -54,9 +56,29 @@ test("the first resolved image is the card cover; no image means no fake cover",
 test("an unavailable shop or missing product shows unavailable information, not a sample or a sale", () => {
   for (const html of [render(<CommerceShopView shop={null} />),
     render(<CommerceShopView shop={{ status: "unavailable", reason: "invalid-configuration", purchaseReady: false }} />),
-    render(<CommerceProductView product={null} offer={null} />)]) {
+    render(<BookUnavailable />)]) {
     assert.match(html, /Book information is unavailable/);
     assert.match(html, /href="\/help"/);
     assert.doesNotMatch(html, /sold out|35,000|82,000|329,000|<button\b/i);
   }
+});
+
+test("a product with content fields shows its shelf, sections and table; malformed fields drop out", async () => {
+  const { product, offer } = (await shop()).products[1]!;
+  const content = readProductPageContent({ page: {
+    shelfTitle: "Personnelle", kicker: "PREVIEW", byline: "A. Writer",
+    formats: [{ label: "Hardcover", note: "₩82,000" }, { label: "E-book", url: "http://insecure.example" }],
+    praise: [{ quote: "PREVIEW praise.", name: "R. Reader", role: "Critic" }, { quote: "" }],
+    details: { pages: 240, trimWidthMM: 140, trimHeightMM: 210 },
+    typefaces: [{ name: "Display Serif", foundry: "Foundry" }], materials: [{ item: "Cloth" }], techniques: "not a list"
+  } });
+  const html = render(<ProductPage product={product} offer={offer} content={content}
+    shelf={[{ productID: "book", title: "Book only", current: false }, { productID: "personal", title: "Personnelle", current: true }]} />);
+  for (const text of [/PREVIEW/, /by A\. Writer/, /Hardcover/, /PREVIEW praise\./, /R\. Reader/, /240 pages/, /Display Serif/, /Cloth/]) assert.match(html, text);
+  assert.match(html, /href="\/shop\/products\/book"/);
+  assert.match(html, /E-book/);
+  assert.doesNotMatch(html, /insecure\.example/, "a non-https link is dropped; the row stays as text");
+  assert.equal((html.match(/R\. Reader/g) ?? []).length, 1, "the empty quote is dropped");
+  assert.equal(content.techniques.length, 0);
+  assert.doesNotMatch(html, /<form\b|<input\b|href="[^"]*(?:checkout|payment)/i);
 });

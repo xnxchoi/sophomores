@@ -3,7 +3,7 @@
 import { CaretLeftIcon, CaretRightIcon, MagnifyingGlassIcon, XIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
 import dynamic from "next/dynamic";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useInView } from "react-intersection-observer";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/arc/button/button";
@@ -39,7 +39,7 @@ export const TEMPORARY_BOOK_TEXTURES: BookTextures = {
  * Esc, ← and h close it too, as does a click on empty canvas or a tap past either end. The control bar turns pages and
  * switches the magnifier; on touch, two fingers zoom and pan the open book, and a 300 ms hold pans with one.
  */
-export function BookStage({ id, className, textures = TEMPORARY_BOOK_TEXTURES, pageTextures = [], children }: {
+export function BookStage({ id, className, textures: own = {}, pageTextures: pageList = [], children }: {
   /** The product, so each book keeps its own saved page. */
   id: string;
   className?: string; textures?: BookTextures;
@@ -48,6 +48,14 @@ export function BookStage({ id, className, textures = TEMPORARY_BOOK_TEXTURES, p
   children?: ReactNode;
 }) {
   const t = useTranslations("Customer.components_commerce_book_offer");
+  // The product's own textures where it has them; the TEMPORARY Stripe Press ones fill every empty slot.
+  const ownKey = JSON.stringify(own);
+  // Keyed by content, not identity: the server sends a new object each render, and the book rebuilds its material on change.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const textures = useMemo<BookTextures>(() => ({ ...TEMPORARY_BOOK_TEXTURES, ...Object.fromEntries(Object.entries(own).filter(([, url]) => url)) }), [ownKey]);
+  const pagesKey = pageList.join("|");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const pageTextures = useMemo(() => pageList, [pagesKey]);
   const [open, setOpen] = useState(false);
   const [magnifier, setMagnifier] = useState(false);
   const [ink, setInk] = useState<null | "pink" | "yellow">(null);

@@ -10,7 +10,7 @@ import { getMenuPagePreviewKey, getPageTypeFromUrl } from "@/utilities/Helpers";
 import { HelpPill } from "./help-pill";
 import { RP_Menu } from "@/components/UX/Menu";
 import { RPage } from "@/components/UX/Transition";
-import { isSettingsPath } from "@/components/UX/Transition/useTransitionSetter";
+import { isSettingsPath, isShopShelfPath } from "@/components/UX/Transition/useTransitionSetter";
 import { TourOrchestrator } from "@/components/UX/Tour";
 import { CanvasBoundary } from "@/components/gl/canvas-boundary";
 import { SharedCanvas } from "@/components/gl/shared-canvas";
@@ -64,8 +64,9 @@ function SitePage({ children }: { children: ReactNode }) {
   const slug = pathname.split("/").filter(Boolean);
   // One page per pathname, except settings: its layout (rail and pane) stays across tabs and the pane owns
   // the fade (SHELL), as in The Hideaway, where RPage sits inside each settings page under a persistent layout.
+  // The shop shelf and its product pages are one page too, so the shop layout's book canvas stays mounted.
   return (
-    <RPage key={isSettingsPath(pathname) ? "/me/settings" : pathname} type="pages" slug={slug.length > 0 ? slug : ["home"]} headerVisibility={!hidesHeader(pathname)}>
+    <RPage key={isSettingsPath(pathname) ? "/me/settings" : isShopShelfPath(pathname) ? "/shop" : pathname} type="pages" slug={slug.length > 0 ? slug : ["home"]} headerVisibility={!hidesHeader(pathname)}>
       {children}
     </RPage>
   );

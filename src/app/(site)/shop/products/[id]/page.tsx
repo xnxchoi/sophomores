@@ -32,9 +32,13 @@ export default async function ShopProductPage({ params }: { params: Promise<{ id
       // The page's content fields (spec 23 Nov) and the shelf. Either failing leaves the page with its facts only.
       const shop = await listCommerceEditionProducts(payload).catch(() => null);
       const listed = shop?.status === "displayable" ? shop.products : [];
-      // Published, access-checked data only, stated rather than left to Local API defaults (which override access).
-      const documents = await payload.find({ collection: "products" as CollectionSlug, depth: 1, limit: 20, pagination: false, draft: false, overrideAccess: false,
-        where: { id: { in: [...new Set([id, ...listed.map((entry) => entry.product.productID)])] } } })
+      // Published, approved products only, stated in the query, as the edition loaders do (lib/commerce/editions.ts). Access
+      // is overridden on purpose: anonymous product reads open only once the commerce-publication global is approved, and the
+      // page shows before purchasing opens. Only the page group is read.
+      const documents = await payload.find({ collection: "products" as CollectionSlug, depth: 1, limit: 20, pagination: false,
+        draft: false, overrideAccess: true, select: { page: true },
+        where: { and: [{ id: { in: [...new Set([id, ...listed.map((entry) => entry.product.productID)])] } },
+          { _status: { equals: "published" } }, { publicationApproved: { equals: true } }] } })
         .then((result) => result.docs as unknown[]).catch(() => [] as unknown[]);
       const contentOf = (productID: string) => readProductPageContent(documents.find((document) => String((document as { id?: unknown }).id) === productID));
       content = contentOf(id);

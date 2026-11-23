@@ -50,15 +50,16 @@ export default async function CheckoutPage({ searchParams }: { searchParams?: Pr
   // Summary content only; each state places it in its SummaryCard (the checkout adds the live total inside the same card).
   // The price, delivery and dispatch rows. The checkout's summary card names the product itself; the account step adds a heading.
   const orderRows = offer ? <>
-    <dl className="text-sm leading-relaxed">
-      <div className="flex min-w-0 flex-wrap justify-between gap-x-3 gap-y-1 border-t border-border py-3"><dt className="text-muted-foreground">{offerCopy("price")}</dt><dd className="tabular-nums">{krw(offer.priceKRW)}</dd></div>
-      <div className="flex min-w-0 flex-wrap justify-between gap-x-3 gap-y-1 border-t border-border py-3"><dt className="text-muted-foreground">{offerCopy("delivery")}</dt><dd className="tabular-nums">{krw(offer.shippingFeeKRW)}</dd></div>
-      <div className="min-w-0 border-t border-border py-3"><dt className="text-muted-foreground">{offerCopy("dispatchSchedule")}</dt><dd className="mt-1 whitespace-pre-line wrap-anywhere">{offer.dispatchSchedule}</dd></div>
+    {/* stripe.press spec §2: one ruled totals block in tracked caps, lines stacked tight. */}
+    <dl className="border-y border-foreground/50 py-3 pl-3.5 text-xs uppercase leading-[1.6] tracking-[0.04em]">
+      <div className="flex min-w-0 flex-wrap justify-between gap-x-3"><dt className="text-muted-foreground">{offerCopy("price")}</dt><dd className="tabular-nums">{krw(offer.priceKRW)}</dd></div>
+      <div className="flex min-w-0 flex-wrap justify-between gap-x-3"><dt className="text-muted-foreground">{offerCopy("delivery")}</dt><dd className="tabular-nums">{krw(offer.shippingFeeKRW)}</dd></div>
+      <div className="min-w-0 pt-2"><dt className="text-muted-foreground">{offerCopy("dispatchSchedule")}</dt><dd className="whitespace-pre-line normal-case tracking-normal wrap-anywhere">{offer.dispatchSchedule}</dd></div>
     </dl>
   </> : null;
   const orderDetails = offer ? <section aria-label={offer.title} className="min-w-0">
-    <h2 className="text-xl leading-tight wrap-anywhere">{offer.title}</h2>
-    <div className="mt-4">{orderRows}</div>
+    <h2 className="text-[15px] leading-[21px] wrap-anywhere">{offer.title}</h2>
+    <div className="mt-3">{orderRows}</div>
   </section> : null;
   const policies: { href: string; label: string }[] = [
     { href: "/help/shipping", label: offerCopy("shippingAndReturns") },
@@ -89,7 +90,7 @@ export default async function CheckoutPage({ searchParams }: { searchParams?: Pr
 
     <footer className="mt-16 grid gap-10 border-t border-border pt-8 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,26rem)] xl:grid-cols-[minmax(0,1fr)_28rem] lg:gap-x-16 xl:gap-x-24">
       <aside aria-labelledby="checkout-payment-recovery" className="min-w-0">
-        <h2 id="checkout-payment-recovery" className="text-base">{t("paymentRecoveryTitle")}</h2>
+        <h2 id="checkout-payment-recovery" className="text-xs uppercase tracking-[0.04em]">{t("paymentRecoveryTitle")}</h2>
         <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted-foreground">{t("paymentRecoveryDescription")}</p>
         <Link href="/shop/payment" prefetch={false} className="mt-2 inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t("checkPaymentStatus")}</Link>
       </aside>

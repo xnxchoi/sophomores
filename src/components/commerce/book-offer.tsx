@@ -13,8 +13,8 @@ export function CommerceShopView({ shop }: { shop: CommerceEditionShop | null })
   const t = useTranslations("Customer.components_commerce_book_offer");
   if (!shop || shop.status === "unavailable" || shop.products.length === 0) return <BookUnavailable />;
   return <PageInset as="main" className="pt-28 pb-24 text-foreground sm:pt-36 lg:pt-[clamp(7rem,18svh,9rem)]">
-    <header className="border-b border-border pb-10">
-      <h1 className="font-display text-[clamp(2.6rem,7vw,7rem)] font-normal leading-[0.95] tracking-tight">{t("book")}</h1>
+    <header className="border-b border-foreground pb-3">
+      <h1 className="font-display text-[2.5rem] font-normal leading-[1.05] tracking-[-0.02em]">{t("book")}</h1>
     </header>
     <ul className="mt-10 grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
       {shop.products.map(({ product, offer }) => <li key={product.productID} className="min-w-0">
@@ -36,7 +36,7 @@ export function CommerceProductView({ product, offer }: { product: EditionProduc
     <div className="grid items-start gap-8 border-b border-border pb-10 lg:min-h-[calc(100svh-9rem)] lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:items-center lg:gap-14 lg:pb-16">
       <header className="min-w-0">
         <Link href="/shop" className="inline-flex min-h-12 items-center text-sm text-muted-foreground underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t("allProducts")}</Link>
-        <h1 className="mt-5 font-display text-[clamp(2.6rem,7vw,7rem)] font-normal leading-[0.95] tracking-tight text-balance [overflow-wrap:anywhere]">{product.title}</h1>
+        <h1 className="mt-5 font-display text-[clamp(2.5rem,4vw,3.5rem)] font-normal leading-[1.08] tracking-[-0.02em] text-balance [overflow-wrap:anywhere]">{product.title}</h1>
         <ProductFacts offer={offer} className="mt-6" />
       </header>
       <div className="min-w-0 lg:w-full lg:max-w-[max(14rem,calc(100svh-21rem))] lg:justify-self-end lg:[&_[role=tablist]]:flex-nowrap lg:[&_[role=tablist]]:overflow-x-auto lg:[&_[role=tablist]]:p-1.5">
@@ -44,7 +44,7 @@ export function CommerceProductView({ product, offer }: { product: EditionProduc
       </div>
     </div>
     <div className="mt-10 grid items-start gap-x-16 gap-y-10 sm:mt-16 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
-      <p className="max-w-prose whitespace-pre-line text-lg leading-relaxed text-muted-foreground [overflow-wrap:anywhere] lg:text-xl">{product.description}</p>
+      <p className="max-w-prose whitespace-pre-line text-base leading-6 text-muted-foreground [overflow-wrap:anywhere]">{product.description}</p>
       <PurchaseNotOpen />
     </div>
   </PageInset>;
@@ -55,8 +55,8 @@ export function ProductFacts({ offer, className }: { offer: CommerceEditionOffer
   const t = useTranslations("Customer.components_commerce_book_offer");
   const locale = useLocale();
   return <ArcRoles><div className={className}>
-    <p className="text-lg tabular-nums">{new Intl.NumberFormat(locale, { style: "currency", currency: "KRW", maximumFractionDigits: 0 }).format(offer.priceKRW)}</p>
-    <p className="mt-2 max-w-prose text-sm leading-6 text-muted-foreground">{offer.editionEntitlements.membershipSignet ? t("includesBundle") : t("includesBookOnly")}</p>
+    <p className="text-[15px] leading-[21px] tabular-nums">{new Intl.NumberFormat(locale, { style: "currency", currency: "KRW", maximumFractionDigits: 0 }).format(offer.priceKRW)}</p>
+    <p className="mt-2 max-w-prose text-xs leading-5 text-muted-foreground">{offer.editionEntitlements.membershipSignet ? t("includesBundle") : t("includesBookOnly")}</p>
     {offer.maximumQuantity === 1 && <div className="mt-3"><Badge size="md">{t("onePerAccount")}</Badge></div>}
   </div></ArcRoles>;
 }
@@ -66,7 +66,7 @@ export function ProductFacts({ offer, className }: { offer: CommerceEditionOffer
 export function NativeCheckoutSummary({ title, offer }: { title: string; offer: CommerceEditionOffer }) {
   return <section aria-labelledby="native-checkout-heading" className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,26rem)] xl:grid-cols-[minmax(0,1fr)_28rem] lg:gap-x-16 xl:gap-x-24">
     <div className="min-w-0">
-      <h2 id="native-checkout-heading" className="text-2xl leading-tight tracking-tight [overflow-wrap:anywhere]">{title}</h2>
+      <h2 id="native-checkout-heading" className="text-[15px] leading-[21px] [overflow-wrap:anywhere]">{title}</h2>
       <ProductFacts offer={offer} className="mt-4" />
     </div>
     <PurchaseNotOpen help={false} />
@@ -98,9 +98,9 @@ function ProductCover({ product }: { product: EditionProduct }) {
 function BookUnavailable() {
   const t = useTranslations("Customer.components_commerce_book_offer");
   return <PageInset as="main" className="min-h-[70svh] pt-36 pb-24 text-foreground sm:pt-44">
-    <p className="text-sm text-muted-foreground">{t("book")}</p>
-    <h1 className="mt-6 max-w-3xl font-display text-4xl font-normal leading-tight tracking-tight sm:text-6xl">{t("unavailableTitle")}</h1>
-    <p className="mt-6 max-w-lg text-base leading-relaxed text-muted-foreground">{t("unavailableDetail")}</p>
+    <p className="text-xs uppercase tracking-[0.04em] text-muted-foreground">{t("book")}</p>
+    <h1 className="mt-5 max-w-3xl font-display text-[2.5rem] font-normal leading-[1.05] tracking-[-0.02em]">{t("unavailableTitle")}</h1>
+    <p className="mt-4 max-w-lg text-base leading-6 text-muted-foreground">{t("unavailableDetail")}</p>
     <nav aria-label={t("information")} className="mt-8 flex flex-wrap gap-x-6 gap-y-1">
       <Link href="/help" className="inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t("help")}</Link>
       <Link href="/me/orders" className="inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t("orders")}</Link>

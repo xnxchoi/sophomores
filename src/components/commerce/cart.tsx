@@ -115,9 +115,9 @@ export function CommerceCart({ offer, wide = false, signedIn = true, onSignIn }:
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={image.url} alt={image.alt || title} className="size-20 shrink-0 rounded-lg border border-border bg-muted object-contain sm:size-28" />}
               <div className="min-w-0 flex-1">
-                <h2 className="text-xl [overflow-wrap:anywhere] sm:text-2xl">{title}</h2>
-                <p className="mt-3 text-sm text-muted-foreground">{Number.isSafeInteger(item.quantity) && item.quantity > 0 ? t("quantity", { count: item.quantity }) : t("quantityUnavailable")}</p>
-                {matching ? <p className="mt-2 text-sm tabular-nums">{t("unitPrice", { amount: offer.priceKRW.toLocaleString("ko-KR") })}</p>
+                <h2 className="text-xs uppercase leading-[1.6] tracking-[0.04em] [overflow-wrap:anywhere]">{title}</h2>
+                <p className="mt-2 text-xs text-muted-foreground">{Number.isSafeInteger(item.quantity) && item.quantity > 0 ? t("quantity", { count: item.quantity }) : t("quantityUnavailable")}</p>
+                {matching ? <p className="mt-1 text-xs tabular-nums">{t("unitPrice", { amount: offer.priceKRW.toLocaleString("ko-KR") })}</p>
                   : <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{t("itemDetailsUnavailable")}</p>}
                 <button type="button" aria-label={t("removeNamed", { title })} disabled={busy || !item.id || !!cart?.purchasedAt || cart?.status === "purchased"}
                   onClick={() => item.id && void remove(item.id)} className="mt-3 inline-flex min-h-12 items-center justify-center rounded-full border border-border px-5 text-sm outline-offset-4 transition-colors hover:bg-muted focus-visible:outline-2 disabled:opacity-40">{action?.kind === "removing" && action.itemID === item.id ? t("removing") : t("remove")}</button>
@@ -136,16 +136,17 @@ export function CommerceCart({ offer, wide = false, signedIn = true, onSignIn }:
     </div>
     <div className="min-w-0 space-y-6">
       {items.length > 0 && <section aria-labelledby="cart-summary-heading" className="border-t border-border pt-5 sm:pt-6">
-        <h2 id="cart-summary-heading" className="text-xl">{t("summary")}</h2>
+        <h2 id="cart-summary-heading" className="text-xs uppercase tracking-[0.04em]">{t("summary")}</h2>
         {quoted ? <>
           <NumberFlowGroup>
-            <dl className="mt-6 space-y-4 text-sm">
+            {/* stripe.press spec §2: one ruled totals block, lines stacked tight, in tracked caps. */}
+            <dl className="mt-3 border-y border-foreground/50 py-3 pl-3.5 text-xs uppercase leading-[1.6] tracking-[0.04em]">
               <div className="grid gap-1 sm:grid-cols-[minmax(0,1fr)_minmax(16ch,max-content)] sm:gap-4"><dt className="text-muted-foreground">{t("subtotal")}</dt><dd className="min-w-0 tabular-nums sm:text-right"><NumberFlow value={subtotal} locales="ko-KR" suffix=" KRW" respectMotionPreference={false} /></dd></div>
               <div className="grid gap-1 sm:grid-cols-[minmax(0,1fr)_minmax(16ch,max-content)] sm:gap-4"><dt className="text-muted-foreground">{t("shipping")}</dt><dd className="min-w-0 tabular-nums sm:text-right"><NumberFlow value={offer.shippingFeeKRW} locales="ko-KR" suffix=" KRW" respectMotionPreference={false} /></dd></div>
-              <div className="grid gap-1 border-t border-border pt-5 text-base sm:grid-cols-[minmax(0,1fr)_minmax(16ch,max-content)] sm:gap-4 sm:text-lg"><dt>{t("estimatedTotal")}</dt><dd className="min-w-0 tabular-nums sm:text-right"><NumberFlow value={total} locales="ko-KR" suffix=" KRW" respectMotionPreference={false} /></dd></div>
+              <div className="grid gap-1 sm:grid-cols-[minmax(0,1fr)_minmax(16ch,max-content)] sm:gap-4"><dt>{t("estimatedTotal")}</dt><dd className="min-w-0 tabular-nums sm:text-right"><NumberFlow value={total} locales="ko-KR" suffix=" KRW" respectMotionPreference={false} /></dd></div>
             </dl>
           </NumberFlowGroup>
-          <p className="mt-5 text-sm leading-relaxed text-muted-foreground">{t("estimateDetail")}</p>
+          <p className="mt-3 text-xs leading-5 text-muted-foreground">{t("estimateDetail")}</p>
         </> : <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{t("priceUnavailable")}</p>}
       </section>}
       <nav aria-label={t("nextSteps")} className="flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-border pt-6">

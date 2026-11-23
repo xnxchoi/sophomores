@@ -85,7 +85,7 @@ Tick a box to accept what I propose. To answer differently, comment on the item 
   - **Observed, not a new decision:** the on-chain name is `SIGNET - SPHMRS`, not `Signet` as written in ADR-0011. The adapter was tested on Base Sepolia; Auth still needs to confirm compatibility with this v15 lock in Slice 3. This deployment does not approve enabling Polygon in the application.
 - [x] **22. Live grant signer funded.** The owner sent 2 POL to `0x2CDb060E373F0EFE93BefFD1478cdE739cBc5336` for grant gas. The coordinator verified a balance of 2.000000 POL on 20 Nov (`msg_2e81e351e856`); this is a dated balance, not a continuing guarantee.
 - [ ] **Polygon one-grant check (owner-run).** Run the dry run, the single broadcast and the finality check in [Polygon owner commands](polygon-owner-commands.md); no agent broadcasts or moves funds.
-- [ ] Create both locks per event in Unlock's EVENTS app from MetaMask, once you have POL: one for members, one for guests. Add the live grant signer 0x2CDb060E373F0EFE93BefFD1478cdE739cBc5336 to each as a key granter, turn off self-serve sign-up and make tickets non-transferable on both, and send me both lock addresses. Owner, 23 Nov: "locks indeed are twofold" ([23 Nov rulings](#23-nov-owner-rulings)).
+- [ ] Create one event in Unlock's EVENTS app from MetaMask, once you have POL, and create both locks on it: one for members, one for guests. Add the live grant signer 0x2CDb060E373F0EFE93BefFD1478cdE739cBc5336 to each as a key granter, turn off self-serve sign-up and make tickets non-transferable on both, and send me both lock addresses. Owner, 23 Nov: "locks indeed are twofold" ([23 Nov rulings](#23-nov-owner-rulings)).
 - [x] **24. Wallet owner key approved, created offline, and backed up.** The owner approved creation (`msg_1c3474f51a6f`). Public address: `0xe2f6f26929a4f27cd39aa24a850dbf285ab81fc7`. It is separate from the grant signer and lock manager. It signs nothing at launch, but every member Safe address depends on it. On 20 Nov the owner confirmed an owner-held password-manager backup (`msg_f6812d705807`); the original remains on this Mac. No restore test was performed. This is not approval to enable Polygon or to use the key on chain.
 
 ### Open follow-through from the 21 Nov owner answers
@@ -589,7 +589,7 @@ This is the ledger everything else is checked against. A decision you made expli
 | 2026-11-21 | [Owner answers: sourcing, UI review, main push, auth adoption and admin setup](#21-nov-owner-answers). All 22 [retained items](#open-work-retained-by-the-owner-21-nov) marked Keep. | Owner answers to master plan sections 3–4 |
 | 2026-11-21 | "all lanes, Claude only writes files". Codex sessions read and review, reporting by message only; main's single writer is a Claude Maintenance session. Widens the 18 Nov UI-workflow rule. | Owner chat (relayed by the coordinator) |
 | 2026-11-22 | [Owner rulings: no blocking gates, forward-compatible orders, single membership token, editions, frame and controls, checkout, policy pages, idle Codex lanes](#22-nov-owner-rulings) | Owner chat (relayed by the coordinator) |
-| 2026-11-23 | [Owner rulings: /vault, `.history` kept, mechanism branch retired, `.inbox/` ignored, headings, local database migrated, legacy tickets server deleted, 8 GB builds, two locks per event](#23-nov-owner-rulings) | Owner chat (relayed by the coordinator) |
+| 2026-11-23 | [Owner rulings: /vault, `.history` kept, mechanism branch retired, `.inbox/` ignored, headings, local database migrated, legacy tickets server deleted, 8 GB builds, two locks per event, guest ticket plan, Unlock-hosted passes](#23-nov-owner-rulings) | Owner chat (relayed by the coordinator) |
 
 ### Member and guest event tickets (20 Nov)
 
@@ -606,7 +606,7 @@ This is the ledger everything else is checked against. A decision you made expli
 
 > "locks indeed are twofold"
 
-**Coordinator implementation note (ours, not an owner quote):** Each event has two Unlock locks, one for member tickets and one for guest tickets. Design and test against two lock addresses per event; never assume a single lock. The grant signer issues the free member ticket. Guest pricing is an unset sale fact for later; it does not block launch. The exact Part II drink benefit for guests stays open by the owner's choice.
+**Coordinator implementation note (ours, not an owner quote):** Each event has two Unlock locks, one for member tickets and one for guest tickets. Design and test against two lock addresses per event; never assume a single lock. The guest ticket plan and Unlock-hosted passes were approved on 23 Nov; see the [23 Nov rulings](#23-nov-owner-rulings). The grant signer issues the free member ticket. Guest pricing is an unset sale fact for later; it does not block launch. The exact Part II drink benefit for guests stays open by the owner's choice.
 
 **Owner, verbatim (20 Nov):**
 
@@ -682,6 +682,8 @@ Same columns as above. Quotes come from the coordinator's relay of the owner's c
 | The legacy PortOne tickets server is deleted | "Yes, delete it" | Removed from `main` (`b02f50fd`). |
 | Builds get 8 GB | "Yes, 8 GB for builds" | `build:guarded` runs with `--max-gib 8`; checks stay at 4 GiB and dev at 6 GiB. AGENTS.md states the new default. Builds still run one at a time, inside the 15 GiB aggregate and 10 GiB headroom. |
 | Two locks per event | "locks indeed are twofold" | Each event has two Unlock locks, one for members and one for guests. Design and test against two lock addresses per event; never assume one. The owner to-do and the event lock settings now say so. |
+| Guest ticket plan approved | "Okay, push and go ahead with the guest ticket plan and use unlocks passes." | NFC's plan (`msg_dd86bc386137`). When a registered guest's claim succeeds, the same transaction records one Guest Ticket grant intent. It is idempotent per admission and binds the recipient only through the verified claimant. A separate authorised worker dispatches it later. No QR or pass is shown before a matching receipt. Activation and the door resolve the lock by entitlement tier. One EVENTS event holds both locks, and capacity is shared. |
+| Unlock-hosted passes | "Okay, push and go ahead with the guest ticket plan and use unlocks passes." (same message) | Wallet passes come from Unlock (Locksmith `/v2/pass/{network}/{lock}/{keyId}/ios` and `/android`), not from an issuer of our own. To confirm with Unlock before launch: what the pass route exposes (privacy), whether Google pass object IDs collide across the event's two locks, and how check-in behaves in the native EVENTS app. |
 
 ## Change log
 
@@ -689,6 +691,7 @@ Every change with its impact, newest first.
 
 | Date | Change | Touches | Breaks or kept | Status |
 | --- | --- | --- | --- | --- |
+| 2026-11-23 | Guest ticket plan approved; passes are Unlock-hosted (owner) | Guest claim transaction, Guest Ticket grant intent and its worker, activation and door lock resolution, wallet passes, the owner's Unlock to-do (one event, both locks) | No pass issuer of our own; no QR or pass before a matching receipt; three Unlock questions stay open until launch | Recorded; NFC and Auth build it |
 | 2026-11-23 | Two Unlock locks per event, members and guests (owner) | Event lock setup, the owner to-do, ticket grant and check-in design | The single-lock assumption is gone; every lock-address setting and test takes two addresses per event | Recorded; mechanism work follows |
 | 2026-11-23 | `build:guarded` cap 6 → 8 GiB (owner) | `package.json`, the tooling test, AGENTS.md | Other guards unchanged; cold builds (6–7 GiB) no longer stop | Landed |
 | 2026-11-23 | The CMS moves from `/admin` to `/vault`, with no redirect (owner) | Payload `routes.admin`, the `(payload)/vault` route, staff login and magic-link callbacks, the deployment route table, the codemap | `/admin` bookmarks and staff links already sent stop working (404); everything else follows the new path | Landed with Auth's `/vault` packet |

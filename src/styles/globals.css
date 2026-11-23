@@ -454,6 +454,15 @@
     @apply border-border outline-ring/10;
   }
 
+  /* No browser focus outline, on click or on keyboard (owner, 23 Nov: a ring must never reveal a hit area larger
+     than what is drawn). Keyboard rings are drawn by focus-visible utilities, which sit in the utilities layer and
+     win; a control whose hit box is larger than its visible shape draws its ring through FocusShape. Only the
+     style is reset, so a utility ring keeps the colour this layer gives it. */
+  :focus,
+  :focus-visible {
+    outline-style: none;
+  }
+
   body {
     @apply bg-background text-foreground;
   }

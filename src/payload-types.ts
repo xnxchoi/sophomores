@@ -501,6 +501,120 @@ export interface Product {
   shippingFeeKRW?: number | null;
   publicationApproved?: boolean | null;
   reservedQuantity?: number | null;
+  page?: {
+    shelfTitle?: string | null;
+    shelfOrder?: number | null;
+    kicker?: string | null;
+    byline?: string | null;
+    stageArt?: (string | null) | Media;
+    longDescription?: {
+      root: {
+        type: string;
+        children: {
+          type: any;
+          version: number;
+          [k: string]: unknown;
+        }[];
+        direction: ('ltr' | 'rtl') | null;
+        format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+        indent: number;
+        version: number;
+      };
+      [k: string]: unknown;
+    } | null;
+    about?: {
+      heading?: string | null;
+      body?: {
+        root: {
+          type: string;
+          children: {
+            type: any;
+            version: number;
+            [k: string]: unknown;
+          }[];
+          direction: ('ltr' | 'rtl') | null;
+          format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+          indent: number;
+          version: number;
+        };
+        [k: string]: unknown;
+      } | null;
+      links?:
+        | {
+            label: string;
+            url: string;
+            id?: string | null;
+          }[]
+        | null;
+    };
+    formats?:
+      | {
+          label: string;
+          url?: string | null;
+          note?: string | null;
+          effect?: ('none' | 'hologram' | 'radio') | null;
+          id?: string | null;
+        }[]
+      | null;
+    praise?:
+      | {
+          quote: string;
+          name: string;
+          role?: string | null;
+          url?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+    details?: {
+      trimWidthMM?: number | null;
+      trimHeightMM?: number | null;
+      spineMM?: number | null;
+      weightG?: number | null;
+      pages?: number | null;
+      words?: number | null;
+    };
+    typefaces?:
+      | {
+          name: string;
+          foundry?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+    materials?:
+      | {
+          item: string;
+          id?: string | null;
+        }[]
+      | null;
+    techniques?:
+      | {
+          item: string;
+          id?: string | null;
+        }[]
+      | null;
+    gallery?:
+      | {
+          image: string | Media;
+          caption?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+    book?: {
+      coverDiffuse?: (string | null) | Media;
+      coverBumpBase?: (string | null) | Media;
+      coverBumpCustom?: (string | null) | Media;
+      coverFoil?: (string | null) | Media;
+      coverGloss?: (string | null) | Media;
+      coverGlitter?: (string | null) | Media;
+      pages?:
+        | {
+            front?: (string | null) | Media;
+            back?: (string | null) | Media;
+            id?: string | null;
+          }[]
+        | null;
+    };
+  };
   updatedAt: string;
   createdAt: string;
   deletedAt?: string | null;
@@ -2516,6 +2630,100 @@ export interface ProductsSelect<T extends boolean = true> {
   shippingFeeKRW?: T;
   publicationApproved?: T;
   reservedQuantity?: T;
+  page?:
+    | T
+    | {
+        shelfTitle?: T;
+        shelfOrder?: T;
+        kicker?: T;
+        byline?: T;
+        stageArt?: T;
+        longDescription?: T;
+        about?:
+          | T
+          | {
+              heading?: T;
+              body?: T;
+              links?:
+                | T
+                | {
+                    label?: T;
+                    url?: T;
+                    id?: T;
+                  };
+            };
+        formats?:
+          | T
+          | {
+              label?: T;
+              url?: T;
+              note?: T;
+              effect?: T;
+              id?: T;
+            };
+        praise?:
+          | T
+          | {
+              quote?: T;
+              name?: T;
+              role?: T;
+              url?: T;
+              id?: T;
+            };
+        details?:
+          | T
+          | {
+              trimWidthMM?: T;
+              trimHeightMM?: T;
+              spineMM?: T;
+              weightG?: T;
+              pages?: T;
+              words?: T;
+            };
+        typefaces?:
+          | T
+          | {
+              name?: T;
+              foundry?: T;
+              id?: T;
+            };
+        materials?:
+          | T
+          | {
+              item?: T;
+              id?: T;
+            };
+        techniques?:
+          | T
+          | {
+              item?: T;
+              id?: T;
+            };
+        gallery?:
+          | T
+          | {
+              image?: T;
+              caption?: T;
+              id?: T;
+            };
+        book?:
+          | T
+          | {
+              coverDiffuse?: T;
+              coverBumpBase?: T;
+              coverBumpCustom?: T;
+              coverFoil?: T;
+              coverGloss?: T;
+              coverGlitter?: T;
+              pages?:
+                | T
+                | {
+                    front?: T;
+                    back?: T;
+                    id?: T;
+                  };
+            };
+      };
   updatedAt?: T;
   createdAt?: T;
   deletedAt?: T;

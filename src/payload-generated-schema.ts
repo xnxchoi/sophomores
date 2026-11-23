@@ -21,6 +21,7 @@ import {
   serial,
   jsonb,
   type AnyPgColumn,
+  text,
   pgEnum
 } from "@payloadcms/db-postgres/drizzle/pg-core";
 import { sql, relations } from "@payloadcms/db-postgres/drizzle";
@@ -164,6 +165,10 @@ export const enum_addresses_country = pgEnum("enum_addresses_country", [
   "SE",
   "CH"
 ]);
+export const enum_products_page_formats_effect = pgEnum(
+  "enum_products_page_formats_effect",
+  ["none", "hologram", "radio"]
+);
 export const enum_products_commerce_model = pgEnum(
   "enum_products_commerce_model",
   ["legacy-v1", "native-edition-v2"]
@@ -172,6 +177,10 @@ export const enum_products_status = pgEnum("enum_products_status", [
   "draft",
   "published"
 ]);
+export const enum__products_v_version_page_formats_effect = pgEnum(
+  "enum__products_v_version_page_formats_effect",
+  ["none", "hologram", "radio"]
+);
 export const enum__products_v_version_commerce_model = pgEnum(
   "enum__products_v_version_commerce_model",
   ["legacy-v1", "native-edition-v2"]
@@ -2220,6 +2229,177 @@ export const products_images = pgTable(
   ]
 );
 
+export const products_page_about_links = pgTable(
+  "products_page_about_links",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: uuid("_parent_id").notNull(),
+    id: varchar("id").primaryKey(),
+    label: varchar("label"),
+    url: varchar("url")
+  },
+  (columns) => [
+    index("products_page_about_links_order_idx").on(columns._order),
+    index("products_page_about_links_parent_id_idx").on(columns._parentID),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [products.id],
+      name: "products_page_about_links_parent_id_fk"
+    }).onDelete("cascade")
+  ]
+);
+
+export const products_page_formats = pgTable(
+  "products_page_formats",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: uuid("_parent_id").notNull(),
+    id: varchar("id").primaryKey(),
+    label: varchar("label"),
+    url: varchar("url"),
+    note: varchar("note"),
+    effect: enum_products_page_formats_effect("effect").default("none")
+  },
+  (columns) => [
+    index("products_page_formats_order_idx").on(columns._order),
+    index("products_page_formats_parent_id_idx").on(columns._parentID),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [products.id],
+      name: "products_page_formats_parent_id_fk"
+    }).onDelete("cascade")
+  ]
+);
+
+export const products_page_praise = pgTable(
+  "products_page_praise",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: uuid("_parent_id").notNull(),
+    id: varchar("id").primaryKey(),
+    quote: varchar("quote"),
+    name: varchar("name"),
+    role: varchar("role"),
+    url: varchar("url")
+  },
+  (columns) => [
+    index("products_page_praise_order_idx").on(columns._order),
+    index("products_page_praise_parent_id_idx").on(columns._parentID),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [products.id],
+      name: "products_page_praise_parent_id_fk"
+    }).onDelete("cascade")
+  ]
+);
+
+export const products_page_typefaces = pgTable(
+  "products_page_typefaces",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: uuid("_parent_id").notNull(),
+    id: varchar("id").primaryKey(),
+    name: varchar("name"),
+    foundry: varchar("foundry")
+  },
+  (columns) => [
+    index("products_page_typefaces_order_idx").on(columns._order),
+    index("products_page_typefaces_parent_id_idx").on(columns._parentID),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [products.id],
+      name: "products_page_typefaces_parent_id_fk"
+    }).onDelete("cascade")
+  ]
+);
+
+export const products_page_materials = pgTable(
+  "products_page_materials",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: uuid("_parent_id").notNull(),
+    id: varchar("id").primaryKey(),
+    item: varchar("item")
+  },
+  (columns) => [
+    index("products_page_materials_order_idx").on(columns._order),
+    index("products_page_materials_parent_id_idx").on(columns._parentID),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [products.id],
+      name: "products_page_materials_parent_id_fk"
+    }).onDelete("cascade")
+  ]
+);
+
+export const products_page_techniques = pgTable(
+  "products_page_techniques",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: uuid("_parent_id").notNull(),
+    id: varchar("id").primaryKey(),
+    item: varchar("item")
+  },
+  (columns) => [
+    index("products_page_techniques_order_idx").on(columns._order),
+    index("products_page_techniques_parent_id_idx").on(columns._parentID),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [products.id],
+      name: "products_page_techniques_parent_id_fk"
+    }).onDelete("cascade")
+  ]
+);
+
+export const products_page_gallery = pgTable(
+  "products_page_gallery",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: uuid("_parent_id").notNull(),
+    id: varchar("id").primaryKey(),
+    image: uuid("image_id").references(() => media.id, {
+      onDelete: "set null"
+    }),
+    caption: varchar("caption")
+  },
+  (columns) => [
+    index("products_page_gallery_order_idx").on(columns._order),
+    index("products_page_gallery_parent_id_idx").on(columns._parentID),
+    index("products_page_gallery_image_idx").on(columns.image),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [products.id],
+      name: "products_page_gallery_parent_id_fk"
+    }).onDelete("cascade")
+  ]
+);
+
+export const products_page_book_pages = pgTable(
+  "products_page_book_pages",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: uuid("_parent_id").notNull(),
+    id: varchar("id").primaryKey(),
+    front: uuid("front_id").references(() => media.id, {
+      onDelete: "set null"
+    }),
+    back: uuid("back_id").references(() => media.id, {
+      onDelete: "set null"
+    })
+  },
+  (columns) => [
+    index("products_page_book_pages_order_idx").on(columns._order),
+    index("products_page_book_pages_parent_id_idx").on(columns._parentID),
+    index("products_page_book_pages_front_idx").on(columns.front),
+    index("products_page_book_pages_back_idx").on(columns.back),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [products.id],
+      name: "products_page_book_pages_parent_id_fk"
+    }).onDelete("cascade")
+  ]
+);
+
 export const products = pgTable(
   "products",
   {
@@ -2251,6 +2431,61 @@ export const products = pgTable(
     reservedQuantity: numeric("reserved_quantity", { mode: "number" }).default(
       0
     ),
+    page_shelfTitle: varchar("page_shelf_title"),
+    page_shelfOrder: numeric("page_shelf_order", { mode: "number" }),
+    page_kicker: varchar("page_kicker"),
+    page_byline: varchar("page_byline"),
+    page_stageArt: uuid("page_stage_art_id").references(() => media.id, {
+      onDelete: "set null"
+    }),
+    page_longDescription: jsonb("page_long_description"),
+    page_about_heading: varchar("page_about_heading"),
+    page_about_body: jsonb("page_about_body"),
+    page_details_trimWidthMM: numeric("page_details_trim_width_m_m", {
+      mode: "number"
+    }),
+    page_details_trimHeightMM: numeric("page_details_trim_height_m_m", {
+      mode: "number"
+    }),
+    page_details_spineMM: numeric("page_details_spine_m_m", { mode: "number" }),
+    page_details_weightG: numeric("page_details_weight_g", { mode: "number" }),
+    page_details_pages: numeric("page_details_pages", { mode: "number" }),
+    page_details_words: numeric("page_details_words", { mode: "number" }),
+    page_book_coverDiffuse: uuid("page_book_cover_diffuse_id").references(
+      () => media.id,
+      {
+        onDelete: "set null"
+      }
+    ),
+    page_book_coverBumpBase: uuid("page_book_cover_bump_base_id").references(
+      () => media.id,
+      {
+        onDelete: "set null"
+      }
+    ),
+    page_book_coverBumpCustom: uuid(
+      "page_book_cover_bump_custom_id"
+    ).references(() => media.id, {
+      onDelete: "set null"
+    }),
+    page_book_coverFoil: uuid("page_book_cover_foil_id").references(
+      () => media.id,
+      {
+        onDelete: "set null"
+      }
+    ),
+    page_book_coverGloss: uuid("page_book_cover_gloss_id").references(
+      () => media.id,
+      {
+        onDelete: "set null"
+      }
+    ),
+    page_book_coverGlitter: uuid("page_book_cover_glitter_id").references(
+      () => media.id,
+      {
+        onDelete: "set null"
+      }
+    ),
     updatedAt: timestamp("updated_at", {
       mode: "string",
       withTimezone: true,
@@ -2274,6 +2509,25 @@ export const products = pgTable(
   },
   (columns) => [
     index("products_event_idx").on(columns.event),
+    index("products_page_page_stage_art_idx").on(columns.page_stageArt),
+    index("products_page_book_page_book_cover_diffuse_idx").on(
+      columns.page_book_coverDiffuse
+    ),
+    index("products_page_book_page_book_cover_bump_base_idx").on(
+      columns.page_book_coverBumpBase
+    ),
+    index("products_page_book_page_book_cover_bump_custom_idx").on(
+      columns.page_book_coverBumpCustom
+    ),
+    index("products_page_book_page_book_cover_foil_idx").on(
+      columns.page_book_coverFoil
+    ),
+    index("products_page_book_page_book_cover_gloss_idx").on(
+      columns.page_book_coverGloss
+    ),
+    index("products_page_book_page_book_cover_glitter_idx").on(
+      columns.page_book_coverGlitter
+    ),
     index("products_updated_at_idx").on(columns.updatedAt),
     index("products_created_at_idx").on(columns.createdAt),
     index("products_deleted_at_idx").on(columns.deletedAt),
@@ -2331,6 +2585,202 @@ export const _products_v_version_images = pgTable(
   ]
 );
 
+export const _products_v_version_page_about_links = pgTable(
+  "_products_v_version_page_about_links",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: uuid("_parent_id").notNull(),
+    id: uuid("id").defaultRandom().primaryKey(),
+    label: varchar("label"),
+    url: varchar("url"),
+    _uuid: varchar("_uuid")
+  },
+  (columns) => [
+    index("_products_v_version_page_about_links_order_idx").on(columns._order),
+    index("_products_v_version_page_about_links_parent_id_idx").on(
+      columns._parentID
+    ),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [_products_v.id],
+      name: "_products_v_version_page_about_links_parent_id_fk"
+    }).onDelete("cascade")
+  ]
+);
+
+export const _products_v_version_page_formats = pgTable(
+  "_products_v_version_page_formats",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: uuid("_parent_id").notNull(),
+    id: uuid("id").defaultRandom().primaryKey(),
+    label: varchar("label"),
+    url: varchar("url"),
+    note: varchar("note"),
+    effect:
+      enum__products_v_version_page_formats_effect("effect").default("none"),
+    _uuid: varchar("_uuid")
+  },
+  (columns) => [
+    index("_products_v_version_page_formats_order_idx").on(columns._order),
+    index("_products_v_version_page_formats_parent_id_idx").on(
+      columns._parentID
+    ),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [_products_v.id],
+      name: "_products_v_version_page_formats_parent_id_fk"
+    }).onDelete("cascade")
+  ]
+);
+
+export const _products_v_version_page_praise = pgTable(
+  "_products_v_version_page_praise",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: uuid("_parent_id").notNull(),
+    id: uuid("id").defaultRandom().primaryKey(),
+    quote: varchar("quote"),
+    name: varchar("name"),
+    role: varchar("role"),
+    url: varchar("url"),
+    _uuid: varchar("_uuid")
+  },
+  (columns) => [
+    index("_products_v_version_page_praise_order_idx").on(columns._order),
+    index("_products_v_version_page_praise_parent_id_idx").on(
+      columns._parentID
+    ),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [_products_v.id],
+      name: "_products_v_version_page_praise_parent_id_fk"
+    }).onDelete("cascade")
+  ]
+);
+
+export const _products_v_version_page_typefaces = pgTable(
+  "_products_v_version_page_typefaces",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: uuid("_parent_id").notNull(),
+    id: uuid("id").defaultRandom().primaryKey(),
+    name: varchar("name"),
+    foundry: varchar("foundry"),
+    _uuid: varchar("_uuid")
+  },
+  (columns) => [
+    index("_products_v_version_page_typefaces_order_idx").on(columns._order),
+    index("_products_v_version_page_typefaces_parent_id_idx").on(
+      columns._parentID
+    ),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [_products_v.id],
+      name: "_products_v_version_page_typefaces_parent_id_fk"
+    }).onDelete("cascade")
+  ]
+);
+
+export const _products_v_version_page_materials = pgTable(
+  "_products_v_version_page_materials",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: uuid("_parent_id").notNull(),
+    id: uuid("id").defaultRandom().primaryKey(),
+    item: varchar("item"),
+    _uuid: varchar("_uuid")
+  },
+  (columns) => [
+    index("_products_v_version_page_materials_order_idx").on(columns._order),
+    index("_products_v_version_page_materials_parent_id_idx").on(
+      columns._parentID
+    ),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [_products_v.id],
+      name: "_products_v_version_page_materials_parent_id_fk"
+    }).onDelete("cascade")
+  ]
+);
+
+export const _products_v_version_page_techniques = pgTable(
+  "_products_v_version_page_techniques",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: uuid("_parent_id").notNull(),
+    id: uuid("id").defaultRandom().primaryKey(),
+    item: varchar("item"),
+    _uuid: varchar("_uuid")
+  },
+  (columns) => [
+    index("_products_v_version_page_techniques_order_idx").on(columns._order),
+    index("_products_v_version_page_techniques_parent_id_idx").on(
+      columns._parentID
+    ),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [_products_v.id],
+      name: "_products_v_version_page_techniques_parent_id_fk"
+    }).onDelete("cascade")
+  ]
+);
+
+export const _products_v_version_page_gallery = pgTable(
+  "_products_v_version_page_gallery",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: uuid("_parent_id").notNull(),
+    id: uuid("id").defaultRandom().primaryKey(),
+    image: uuid("image_id").references(() => media.id, {
+      onDelete: "set null"
+    }),
+    caption: varchar("caption"),
+    _uuid: varchar("_uuid")
+  },
+  (columns) => [
+    index("_products_v_version_page_gallery_order_idx").on(columns._order),
+    index("_products_v_version_page_gallery_parent_id_idx").on(
+      columns._parentID
+    ),
+    index("_products_v_version_page_gallery_image_idx").on(columns.image),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [_products_v.id],
+      name: "_products_v_version_page_gallery_parent_id_fk"
+    }).onDelete("cascade")
+  ]
+);
+
+export const _products_v_version_page_book_pages = pgTable(
+  "_products_v_version_page_book_pages",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: uuid("_parent_id").notNull(),
+    id: uuid("id").defaultRandom().primaryKey(),
+    front: uuid("front_id").references(() => media.id, {
+      onDelete: "set null"
+    }),
+    back: uuid("back_id").references(() => media.id, {
+      onDelete: "set null"
+    }),
+    _uuid: varchar("_uuid")
+  },
+  (columns) => [
+    index("_products_v_version_page_book_pages_order_idx").on(columns._order),
+    index("_products_v_version_page_book_pages_parent_id_idx").on(
+      columns._parentID
+    ),
+    index("_products_v_version_page_book_pages_front_idx").on(columns.front),
+    index("_products_v_version_page_book_pages_back_idx").on(columns.back),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [_products_v.id],
+      name: "_products_v_version_page_book_pages_parent_id_fk"
+    }).onDelete("cascade")
+  ]
+);
+
 export const _products_v = pgTable(
   "_products_v",
   {
@@ -2375,6 +2825,71 @@ export const _products_v = pgTable(
     version_reservedQuantity: numeric("version_reserved_quantity", {
       mode: "number"
     }).default(0),
+    version_page_shelfTitle: varchar("version_page_shelf_title"),
+    version_page_shelfOrder: numeric("version_page_shelf_order", {
+      mode: "number"
+    }),
+    version_page_kicker: varchar("version_page_kicker"),
+    version_page_byline: varchar("version_page_byline"),
+    version_page_stageArt: uuid("version_page_stage_art_id").references(
+      () => media.id,
+      {
+        onDelete: "set null"
+      }
+    ),
+    version_page_longDescription: jsonb("version_page_long_description"),
+    version_page_about_heading: varchar("version_page_about_heading"),
+    version_page_about_body: jsonb("version_page_about_body"),
+    version_page_details_trimWidthMM: numeric(
+      "version_page_details_trim_width_m_m",
+      { mode: "number" }
+    ),
+    version_page_details_trimHeightMM: numeric(
+      "version_page_details_trim_height_m_m",
+      { mode: "number" }
+    ),
+    version_page_details_spineMM: numeric("version_page_details_spine_m_m", {
+      mode: "number"
+    }),
+    version_page_details_weightG: numeric("version_page_details_weight_g", {
+      mode: "number"
+    }),
+    version_page_details_pages: numeric("version_page_details_pages", {
+      mode: "number"
+    }),
+    version_page_details_words: numeric("version_page_details_words", {
+      mode: "number"
+    }),
+    version_page_book_coverDiffuse: uuid(
+      "version_page_book_cover_diffuse_id"
+    ).references(() => media.id, {
+      onDelete: "set null"
+    }),
+    version_page_book_coverBumpBase: uuid(
+      "version_page_book_cover_bump_base_id"
+    ).references(() => media.id, {
+      onDelete: "set null"
+    }),
+    version_page_book_coverBumpCustom: uuid(
+      "version_page_book_cover_bump_custom_id"
+    ).references(() => media.id, {
+      onDelete: "set null"
+    }),
+    version_page_book_coverFoil: uuid(
+      "version_page_book_cover_foil_id"
+    ).references(() => media.id, {
+      onDelete: "set null"
+    }),
+    version_page_book_coverGloss: uuid(
+      "version_page_book_cover_gloss_id"
+    ).references(() => media.id, {
+      onDelete: "set null"
+    }),
+    version_page_book_coverGlitter: uuid(
+      "version_page_book_cover_glitter_id"
+    ).references(() => media.id, {
+      onDelete: "set null"
+    }),
     version_updatedAt: timestamp("version_updated_at", {
       mode: "string",
       withTimezone: true,
@@ -2414,6 +2929,27 @@ export const _products_v = pgTable(
   (columns) => [
     index("_products_v_parent_idx").on(columns.parent),
     index("_products_v_version_version_event_idx").on(columns.version_event),
+    index("_products_v_version_page_version_page_stage_art_idx").on(
+      columns.version_page_stageArt
+    ),
+    index("_products_v_version_page_book_version_page_book_cover_di_idx").on(
+      columns.version_page_book_coverDiffuse
+    ),
+    index("_products_v_version_page_book_version_page_book_cover_bu_idx").on(
+      columns.version_page_book_coverBumpBase
+    ),
+    index("_products_v_version_page_book_version_page_book_cover__1_idx").on(
+      columns.version_page_book_coverBumpCustom
+    ),
+    index("_products_v_version_page_book_version_page_book_cover_fo_idx").on(
+      columns.version_page_book_coverFoil
+    ),
+    index("_products_v_version_page_book_version_page_book_cover_gl_idx").on(
+      columns.version_page_book_coverGloss
+    ),
+    index("_products_v_version_page_book_version_page_book_cover__2_idx").on(
+      columns.version_page_book_coverGlitter
+    ),
     index("_products_v_version_version_updated_at_idx").on(
       columns.version_updatedAt
     ),
@@ -4355,6 +4891,45 @@ export const site_editorial_locales = pgTable(
   ]
 );
 
+export const nfc_tap_handoffs = pgTable(
+  "nfc_tap_handoffs",
+  {
+    id: text("id").primaryKey(),
+    memberId: uuid("member_id").notNull(),
+    cardId: uuid("card_id").notNull(),
+    cardRef: text("card_ref").notNull(),
+    epochId: uuid("epoch_id").notNull(),
+    counter: integer("counter").notNull(),
+    browserHash: text("browser_hash").notNull(),
+    expiresAt: timestamp("expires_at", {
+      mode: "date",
+      withTimezone: true,
+      precision: 6
+    }).notNull()
+  },
+  (columns) => [
+    uniqueIndex("nfc_tap_handoffs_member_id_key").on(columns.memberId),
+    index("nfc_tap_handoffs_card_idx").on(columns.cardId),
+    index("nfc_tap_handoffs_expiry_idx").on(columns.expiresAt, columns.id),
+    index("nfc_tap_handoffs_epoch_idx").on(columns.epochId),
+    foreignKey({
+      columns: [columns["memberId"]],
+      foreignColumns: [users.id],
+      name: "nfc_tap_handoffs_member_id_fkey"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["cardId"]],
+      foreignColumns: [nfc_cards.id],
+      name: "nfc_tap_handoffs_card_id_fkey"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["epochId"]],
+      foreignColumns: [nfc_card_epochs.id],
+      name: "nfc_tap_handoffs_epoch_id_fkey"
+    }).onDelete("cascade")
+  ]
+);
+
 export const relations_admins = relations(admins, () => ({}));
 export const relations_users_role = relations(users_role, ({ one }) => ({
   parent: one(users, {
@@ -4891,6 +5466,101 @@ export const relations_products_images = relations(
     })
   })
 );
+export const relations_products_page_about_links = relations(
+  products_page_about_links,
+  ({ one }) => ({
+    _parentID: one(products, {
+      fields: [products_page_about_links._parentID],
+      references: [products.id],
+      relationName: "page_about_links"
+    })
+  })
+);
+export const relations_products_page_formats = relations(
+  products_page_formats,
+  ({ one }) => ({
+    _parentID: one(products, {
+      fields: [products_page_formats._parentID],
+      references: [products.id],
+      relationName: "page_formats"
+    })
+  })
+);
+export const relations_products_page_praise = relations(
+  products_page_praise,
+  ({ one }) => ({
+    _parentID: one(products, {
+      fields: [products_page_praise._parentID],
+      references: [products.id],
+      relationName: "page_praise"
+    })
+  })
+);
+export const relations_products_page_typefaces = relations(
+  products_page_typefaces,
+  ({ one }) => ({
+    _parentID: one(products, {
+      fields: [products_page_typefaces._parentID],
+      references: [products.id],
+      relationName: "page_typefaces"
+    })
+  })
+);
+export const relations_products_page_materials = relations(
+  products_page_materials,
+  ({ one }) => ({
+    _parentID: one(products, {
+      fields: [products_page_materials._parentID],
+      references: [products.id],
+      relationName: "page_materials"
+    })
+  })
+);
+export const relations_products_page_techniques = relations(
+  products_page_techniques,
+  ({ one }) => ({
+    _parentID: one(products, {
+      fields: [products_page_techniques._parentID],
+      references: [products.id],
+      relationName: "page_techniques"
+    })
+  })
+);
+export const relations_products_page_gallery = relations(
+  products_page_gallery,
+  ({ one }) => ({
+    _parentID: one(products, {
+      fields: [products_page_gallery._parentID],
+      references: [products.id],
+      relationName: "page_gallery"
+    }),
+    image: one(media, {
+      fields: [products_page_gallery.image],
+      references: [media.id],
+      relationName: "image"
+    })
+  })
+);
+export const relations_products_page_book_pages = relations(
+  products_page_book_pages,
+  ({ one }) => ({
+    _parentID: one(products, {
+      fields: [products_page_book_pages._parentID],
+      references: [products.id],
+      relationName: "page_book_pages"
+    }),
+    front: one(media, {
+      fields: [products_page_book_pages.front],
+      references: [media.id],
+      relationName: "front"
+    }),
+    back: one(media, {
+      fields: [products_page_book_pages.back],
+      references: [media.id],
+      relationName: "back"
+    })
+  })
+);
 export const relations_products_rels = relations(products_rels, ({ one }) => ({
   parent: one(products, {
     fields: [products_rels.parent],
@@ -4912,6 +5582,65 @@ export const relations_products = relations(products, ({ one, many }) => ({
     references: [commerce_events.id],
     relationName: "event"
   }),
+  page_stageArt: one(media, {
+    fields: [products.page_stageArt],
+    references: [media.id],
+    relationName: "page_stageArt"
+  }),
+  page_about_links: many(products_page_about_links, {
+    relationName: "page_about_links"
+  }),
+  page_formats: many(products_page_formats, {
+    relationName: "page_formats"
+  }),
+  page_praise: many(products_page_praise, {
+    relationName: "page_praise"
+  }),
+  page_typefaces: many(products_page_typefaces, {
+    relationName: "page_typefaces"
+  }),
+  page_materials: many(products_page_materials, {
+    relationName: "page_materials"
+  }),
+  page_techniques: many(products_page_techniques, {
+    relationName: "page_techniques"
+  }),
+  page_gallery: many(products_page_gallery, {
+    relationName: "page_gallery"
+  }),
+  page_book_coverDiffuse: one(media, {
+    fields: [products.page_book_coverDiffuse],
+    references: [media.id],
+    relationName: "page_book_coverDiffuse"
+  }),
+  page_book_coverBumpBase: one(media, {
+    fields: [products.page_book_coverBumpBase],
+    references: [media.id],
+    relationName: "page_book_coverBumpBase"
+  }),
+  page_book_coverBumpCustom: one(media, {
+    fields: [products.page_book_coverBumpCustom],
+    references: [media.id],
+    relationName: "page_book_coverBumpCustom"
+  }),
+  page_book_coverFoil: one(media, {
+    fields: [products.page_book_coverFoil],
+    references: [media.id],
+    relationName: "page_book_coverFoil"
+  }),
+  page_book_coverGloss: one(media, {
+    fields: [products.page_book_coverGloss],
+    references: [media.id],
+    relationName: "page_book_coverGloss"
+  }),
+  page_book_coverGlitter: one(media, {
+    fields: [products.page_book_coverGlitter],
+    references: [media.id],
+    relationName: "page_book_coverGlitter"
+  }),
+  page_book_pages: many(products_page_book_pages, {
+    relationName: "page_book_pages"
+  }),
   _rels: many(products_rels, {
     relationName: "_rels"
   })
@@ -4928,6 +5657,101 @@ export const relations__products_v_version_images = relations(
       fields: [_products_v_version_images.image],
       references: [media.id],
       relationName: "image"
+    })
+  })
+);
+export const relations__products_v_version_page_about_links = relations(
+  _products_v_version_page_about_links,
+  ({ one }) => ({
+    _parentID: one(_products_v, {
+      fields: [_products_v_version_page_about_links._parentID],
+      references: [_products_v.id],
+      relationName: "version_page_about_links"
+    })
+  })
+);
+export const relations__products_v_version_page_formats = relations(
+  _products_v_version_page_formats,
+  ({ one }) => ({
+    _parentID: one(_products_v, {
+      fields: [_products_v_version_page_formats._parentID],
+      references: [_products_v.id],
+      relationName: "version_page_formats"
+    })
+  })
+);
+export const relations__products_v_version_page_praise = relations(
+  _products_v_version_page_praise,
+  ({ one }) => ({
+    _parentID: one(_products_v, {
+      fields: [_products_v_version_page_praise._parentID],
+      references: [_products_v.id],
+      relationName: "version_page_praise"
+    })
+  })
+);
+export const relations__products_v_version_page_typefaces = relations(
+  _products_v_version_page_typefaces,
+  ({ one }) => ({
+    _parentID: one(_products_v, {
+      fields: [_products_v_version_page_typefaces._parentID],
+      references: [_products_v.id],
+      relationName: "version_page_typefaces"
+    })
+  })
+);
+export const relations__products_v_version_page_materials = relations(
+  _products_v_version_page_materials,
+  ({ one }) => ({
+    _parentID: one(_products_v, {
+      fields: [_products_v_version_page_materials._parentID],
+      references: [_products_v.id],
+      relationName: "version_page_materials"
+    })
+  })
+);
+export const relations__products_v_version_page_techniques = relations(
+  _products_v_version_page_techniques,
+  ({ one }) => ({
+    _parentID: one(_products_v, {
+      fields: [_products_v_version_page_techniques._parentID],
+      references: [_products_v.id],
+      relationName: "version_page_techniques"
+    })
+  })
+);
+export const relations__products_v_version_page_gallery = relations(
+  _products_v_version_page_gallery,
+  ({ one }) => ({
+    _parentID: one(_products_v, {
+      fields: [_products_v_version_page_gallery._parentID],
+      references: [_products_v.id],
+      relationName: "version_page_gallery"
+    }),
+    image: one(media, {
+      fields: [_products_v_version_page_gallery.image],
+      references: [media.id],
+      relationName: "image"
+    })
+  })
+);
+export const relations__products_v_version_page_book_pages = relations(
+  _products_v_version_page_book_pages,
+  ({ one }) => ({
+    _parentID: one(_products_v, {
+      fields: [_products_v_version_page_book_pages._parentID],
+      references: [_products_v.id],
+      relationName: "version_page_book_pages"
+    }),
+    front: one(media, {
+      fields: [_products_v_version_page_book_pages.front],
+      references: [media.id],
+      relationName: "front"
+    }),
+    back: one(media, {
+      fields: [_products_v_version_page_book_pages.back],
+      references: [media.id],
+      relationName: "back"
     })
   })
 );
@@ -4961,6 +5785,65 @@ export const relations__products_v = relations(
       fields: [_products_v.version_event],
       references: [commerce_events.id],
       relationName: "version_event"
+    }),
+    version_page_stageArt: one(media, {
+      fields: [_products_v.version_page_stageArt],
+      references: [media.id],
+      relationName: "version_page_stageArt"
+    }),
+    version_page_about_links: many(_products_v_version_page_about_links, {
+      relationName: "version_page_about_links"
+    }),
+    version_page_formats: many(_products_v_version_page_formats, {
+      relationName: "version_page_formats"
+    }),
+    version_page_praise: many(_products_v_version_page_praise, {
+      relationName: "version_page_praise"
+    }),
+    version_page_typefaces: many(_products_v_version_page_typefaces, {
+      relationName: "version_page_typefaces"
+    }),
+    version_page_materials: many(_products_v_version_page_materials, {
+      relationName: "version_page_materials"
+    }),
+    version_page_techniques: many(_products_v_version_page_techniques, {
+      relationName: "version_page_techniques"
+    }),
+    version_page_gallery: many(_products_v_version_page_gallery, {
+      relationName: "version_page_gallery"
+    }),
+    version_page_book_coverDiffuse: one(media, {
+      fields: [_products_v.version_page_book_coverDiffuse],
+      references: [media.id],
+      relationName: "version_page_book_coverDiffuse"
+    }),
+    version_page_book_coverBumpBase: one(media, {
+      fields: [_products_v.version_page_book_coverBumpBase],
+      references: [media.id],
+      relationName: "version_page_book_coverBumpBase"
+    }),
+    version_page_book_coverBumpCustom: one(media, {
+      fields: [_products_v.version_page_book_coverBumpCustom],
+      references: [media.id],
+      relationName: "version_page_book_coverBumpCustom"
+    }),
+    version_page_book_coverFoil: one(media, {
+      fields: [_products_v.version_page_book_coverFoil],
+      references: [media.id],
+      relationName: "version_page_book_coverFoil"
+    }),
+    version_page_book_coverGloss: one(media, {
+      fields: [_products_v.version_page_book_coverGloss],
+      references: [media.id],
+      relationName: "version_page_book_coverGloss"
+    }),
+    version_page_book_coverGlitter: one(media, {
+      fields: [_products_v.version_page_book_coverGlitter],
+      references: [media.id],
+      relationName: "version_page_book_coverGlitter"
+    }),
+    version_page_book_pages: many(_products_v_version_page_book_pages, {
+      relationName: "version_page_book_pages"
     }),
     _rels: many(_products_v_rels, {
       relationName: "_rels"
@@ -5652,8 +6535,10 @@ type DatabaseSchema = {
   enum_nfc_card_events_action: typeof enum_nfc_card_events_action;
   enum_nfc_card_events_reason: typeof enum_nfc_card_events_reason;
   enum_addresses_country: typeof enum_addresses_country;
+  enum_products_page_formats_effect: typeof enum_products_page_formats_effect;
   enum_products_commerce_model: typeof enum_products_commerce_model;
   enum_products_status: typeof enum_products_status;
+  enum__products_v_version_page_formats_effect: typeof enum__products_v_version_page_formats_effect;
   enum__products_v_version_commerce_model: typeof enum__products_v_version_commerce_model;
   enum__products_v_version_status: typeof enum__products_v_version_status;
   enum__products_v_published_locale: typeof enum__products_v_published_locale;
@@ -5740,9 +6625,25 @@ type DatabaseSchema = {
   nfc_card_events: typeof nfc_card_events;
   addresses: typeof addresses;
   products_images: typeof products_images;
+  products_page_about_links: typeof products_page_about_links;
+  products_page_formats: typeof products_page_formats;
+  products_page_praise: typeof products_page_praise;
+  products_page_typefaces: typeof products_page_typefaces;
+  products_page_materials: typeof products_page_materials;
+  products_page_techniques: typeof products_page_techniques;
+  products_page_gallery: typeof products_page_gallery;
+  products_page_book_pages: typeof products_page_book_pages;
   products: typeof products;
   products_rels: typeof products_rels;
   _products_v_version_images: typeof _products_v_version_images;
+  _products_v_version_page_about_links: typeof _products_v_version_page_about_links;
+  _products_v_version_page_formats: typeof _products_v_version_page_formats;
+  _products_v_version_page_praise: typeof _products_v_version_page_praise;
+  _products_v_version_page_typefaces: typeof _products_v_version_page_typefaces;
+  _products_v_version_page_materials: typeof _products_v_version_page_materials;
+  _products_v_version_page_techniques: typeof _products_v_version_page_techniques;
+  _products_v_version_page_gallery: typeof _products_v_version_page_gallery;
+  _products_v_version_page_book_pages: typeof _products_v_version_page_book_pages;
   _products_v: typeof _products_v;
   _products_v_rels: typeof _products_v_rels;
   carts_items: typeof carts_items;
@@ -5784,6 +6685,7 @@ type DatabaseSchema = {
   help_content_locales: typeof help_content_locales;
   site_editorial: typeof site_editorial;
   site_editorial_locales: typeof site_editorial_locales;
+  nfc_tap_handoffs: typeof nfc_tap_handoffs;
   relations_admins: typeof relations_admins;
   relations_users_role: typeof relations_users_role;
   relations_users: typeof relations_users;
@@ -5839,9 +6741,25 @@ type DatabaseSchema = {
   relations_nfc_card_events: typeof relations_nfc_card_events;
   relations_addresses: typeof relations_addresses;
   relations_products_images: typeof relations_products_images;
+  relations_products_page_about_links: typeof relations_products_page_about_links;
+  relations_products_page_formats: typeof relations_products_page_formats;
+  relations_products_page_praise: typeof relations_products_page_praise;
+  relations_products_page_typefaces: typeof relations_products_page_typefaces;
+  relations_products_page_materials: typeof relations_products_page_materials;
+  relations_products_page_techniques: typeof relations_products_page_techniques;
+  relations_products_page_gallery: typeof relations_products_page_gallery;
+  relations_products_page_book_pages: typeof relations_products_page_book_pages;
   relations_products_rels: typeof relations_products_rels;
   relations_products: typeof relations_products;
   relations__products_v_version_images: typeof relations__products_v_version_images;
+  relations__products_v_version_page_about_links: typeof relations__products_v_version_page_about_links;
+  relations__products_v_version_page_formats: typeof relations__products_v_version_page_formats;
+  relations__products_v_version_page_praise: typeof relations__products_v_version_page_praise;
+  relations__products_v_version_page_typefaces: typeof relations__products_v_version_page_typefaces;
+  relations__products_v_version_page_materials: typeof relations__products_v_version_page_materials;
+  relations__products_v_version_page_techniques: typeof relations__products_v_version_page_techniques;
+  relations__products_v_version_page_gallery: typeof relations__products_v_version_page_gallery;
+  relations__products_v_version_page_book_pages: typeof relations__products_v_version_page_book_pages;
   relations__products_v_rels: typeof relations__products_v_rels;
   relations__products_v: typeof relations__products_v;
   relations_carts_items: typeof relations_carts_items;

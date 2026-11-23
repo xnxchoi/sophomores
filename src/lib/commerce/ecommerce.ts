@@ -6,6 +6,7 @@ import { APIError, type CollectionBeforeChangeHook, type CollectionBeforeOperati
 import { z } from "zod";
 import { isCmsSuperAdmin } from "../auth/access";
 import { CommerceEditionCollections, CommerceEditionProductFields } from "../../payload/collections/commerce-editions";
+import { ProductPageFields } from "../../payload/collections/product-page-fields";
 import { commerceEditionProductSchema } from "./editions";
 import { Orders } from "../../payload/collections/orders";
 import { assertCommerceBrowserMutation, commerceAdmin, commerceAdminField, commerceAttemptCreate, commerceOwnerRead, commerceServerField, commerceServerWrite } from "./access";
@@ -206,6 +207,8 @@ function productsOverride(defaultCollection: CollectionConfig): CollectionConfig
       { name: "shippingFeeKRW", type: "number", min: 0, validate: (value: unknown) => value == null || Number.isSafeInteger(value) || "Shipping must be an approved integer KRW amount" },
       { name: "publicationApproved", type: "checkbox", defaultValue: false },
       { name: "reservedQuantity", type: "number", defaultValue: 0, min: 0, access: { create: commerceServerField, update: commerceServerField }, admin: { readOnly: true } },
+      // Product page content only; nothing in it takes part in commerce.
+      ...ProductPageFields,
     ], hooks: { ...defaultCollection.hooks,
       beforeOperation: [captureProductSubmission, ...(defaultCollection.hooks?.beforeOperation ?? [])],
       beforeChange: [...(defaultCollection.hooks?.beforeChange ?? []), async ({ req, data, originalDoc, operation }) => {

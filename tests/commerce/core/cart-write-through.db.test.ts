@@ -124,7 +124,7 @@ test("member cart write-through and saved-cart reload on real PostgreSQL", {
     const reserved = await initiateAttempt(payload);
     const error = await patch(reserved.user, reserved.cartID, []).then(() => undefined, (caught: unknown) => caught);
     // This is what the REST route sends (routeError -> formatErrors; a 409 is public).
-    const sent = formatErrors(error as Error) as { errors: { message?: unknown; data?: unknown }[] };
+    const sent = formatErrors(error as Parameters<typeof formatErrors>[0]) as { errors: { message?: unknown; data?: unknown }[] };
     t.diagnostic(`REST body keeps error data: ${sent.errors[0]?.data !== undefined}`);
     assert.equal(cartRefusalOf(sent.errors[0]), "payment-in-progress", "the browser keeps the line on a payment in progress");
   });

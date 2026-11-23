@@ -65,7 +65,8 @@ export function parseToken(token: string): { variants: string[]; utility: string
       current = "";
     } else current += char;
   }
-  return { variants: parts, utility: current.replace(/^!|!$/g, "") };
+  // `staff:` is the prefix of the Payload staff pages' own Tailwind build, not a state.
+  return { variants: parts.filter((part, index) => !(index === 0 && part === "staff")), utility: current.replace(/^!|!$/g, "") };
 }
 
 /** A variant's state, with any named-group suffix (`group-focus-visible/focus`) removed first. */
@@ -263,6 +264,7 @@ test("the classifier tells keyboard rings from pointer rings and hit slop from d
   assert.deepEqual(elementProblems(["min-h-12", "hover:bg-muted", "focus-visible:outline-2"]).length, 1);
   assert.deepEqual(elementProblems(["group/focus", "min-h-12"]), []);
   assert.deepEqual(elementProblems(["rounded-sm", "group-focus-visible/focus:outline-2", "group-focus-visible/focus:outline-current"]), []);
+  assert.deepEqual(elementProblems(["staff:min-h-[44px]", "staff:bg-transparent", "staff:focus-visible:outline-2"]).length, 1);
 });
 
 test("rings never reveal a hit area and never show on pointer focus", () => {

@@ -40,7 +40,7 @@ export function InlineRetry({ message, onRetry, pending = false, label, pendingL
         }}
         className="group/focus -ml-3"
       >
-        <FocusShape className="inline-flex items-center gap-2">{pending ? busy : <><RotateCw aria-hidden className="size-4" />{idle}</>}</FocusShape>
+        <FocusShape className="inline-flex items-center gap-[inherit]">{pending ? busy : <><RotateCw aria-hidden className="size-4" />{idle}</>}</FocusShape>
       </Button>
       <span role="status" aria-live="polite" className="sr-only">{pending ? busy : null}</span>
     </div>

@@ -130,12 +130,12 @@ export function ChapterNav({
           {chapters.map((chapter) => (
             <Link
               key={chapter.id}
-              className="p-2 font-sans text-teaser-nav uppercase transition-colors duration-200 ease-[ease] hover:bg-white hover:text-black aria-[current]:bg-white aria-[current]:text-black pointer-coarse:inline-flex pointer-coarse:min-h-12 pointer-coarse:items-center"
+              className="group/focus p-2 font-sans text-teaser-nav uppercase transition-colors duration-200 ease-[ease] hover:bg-white hover:text-black focus-visible:outline-none aria-[current]:bg-white aria-[current]:text-black pointer-coarse:inline-flex pointer-coarse:min-h-12 pointer-coarse:items-center"
               href={`#${chapter.id}`}
               aria-current={current === chapter.id ? "location" : undefined}
               onClick={chapter.id === "hero" ? onHome : undefined}
             >
-              {chapter.label}
+              <FocusShape className="outline-offset-[5px] group-focus-visible/focus:outline-teaser-focus">{chapter.label}</FocusShape>
             </Link>
           ))}
         </div>

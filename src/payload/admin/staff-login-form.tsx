@@ -212,17 +212,18 @@ export function StaffLoginForm({ nextPath, available }: {
           disabled={!available || busy}
           aria-busy={pending === (codeSent ? "send-code" : "magic-link")}
           onClick={() => { if (codeSent) void sendCode(); else void sendMagicLink(); }}
-          className="staff:relative staff:flex staff:min-h-[44px] staff:w-full staff:cursor-pointer staff:items-center staff:justify-center staff:rounded-[12px] staff:border-0 staff:bg-transparent staff:px-[20px] staff:py-[8px] staff:text-[13px] staff:font-medium staff:text-(--theme-elevation-650) staff:transition-colors staff:duration-200 staff:hover:text-(--theme-text) staff:focus-visible:outline-2 staff:focus-visible:outline-offset-2 staff:focus-visible:outline-(--theme-elevation-600) staff:disabled:cursor-not-allowed staff:disabled:opacity-40 staff:disabled:aria-busy:opacity-100"
+          className="staff:group/focus staff:relative staff:flex staff:min-h-[44px] staff:w-full staff:cursor-pointer staff:items-center staff:justify-center staff:rounded-[12px] staff:border-0 staff:bg-transparent staff:px-[20px] staff:py-[8px] staff:text-[13px] staff:font-medium staff:text-(--theme-elevation-650) staff:transition-colors staff:duration-200 staff:hover:text-(--theme-text) staff:disabled:cursor-not-allowed staff:disabled:opacity-40 staff:disabled:aria-busy:opacity-100"
         >
-          {pending === (codeSent ? "send-code" : "magic-link") ? progressLabel : codeSent ? t("emailANewCode") : t("emailAMagicLink")}
+          {/* The ring hugs the label, never the 44px target (owner, 23 Nov). FocusShape's unprefixed utilities are not built for this staff-prefixed page. */}
+          <span className="staff:rounded-sm staff:outline-offset-2 staff:group-focus-visible/focus:outline-2 staff:group-focus-visible/focus:outline-(--theme-elevation-600)">{pending === (codeSent ? "send-code" : "magic-link") ? progressLabel : codeSent ? t("emailANewCode") : t("emailAMagicLink")}</span>
           {pending === (codeSent ? "send-code" : "magic-link") && <LoaderCircle aria-hidden="true" className="staff:absolute staff:right-[16px] staff:size-[16px] staff:animate-spin" />}
         </button>
         {codeSent && <button
           type="button"
           disabled={busy}
           onClick={() => { if (pendingRef.current) return; setCodeSent(false); setOtp(""); setFeedback(null); }}
-          className="staff:min-h-[44px] staff:cursor-pointer staff:rounded-[8px] staff:border-0 staff:bg-transparent staff:px-[12px] staff:py-[8px] staff:text-[13px] staff:text-(--theme-elevation-600) staff:transition-colors staff:duration-200 staff:hover:text-(--theme-text) staff:focus-visible:outline-2 staff:focus-visible:outline-offset-2 staff:focus-visible:outline-(--theme-elevation-600) staff:disabled:cursor-not-allowed staff:disabled:opacity-40 staff:disabled:aria-busy:opacity-100"
-        >{t("changeEmail")}</button>}
+          className="staff:group/focus staff:min-h-[44px] staff:cursor-pointer staff:rounded-[8px] staff:border-0 staff:bg-transparent staff:px-[12px] staff:py-[8px] staff:text-[13px] staff:text-(--theme-elevation-600) staff:transition-colors staff:duration-200 staff:hover:text-(--theme-text) staff:disabled:cursor-not-allowed staff:disabled:opacity-40 staff:disabled:aria-busy:opacity-100"
+        ><span className="staff:rounded-sm staff:outline-offset-2 staff:group-focus-visible/focus:outline-2 staff:group-focus-visible/focus:outline-(--theme-elevation-600)">{t("changeEmail")}</span></button>}
       </div>
     </form>
   );

@@ -3,6 +3,7 @@
 import { useTexture } from "@react-three/drei";
 import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, type RefObject } from "react";
+import type { BookSignals } from "./book";
 import { BoxGeometry, DoubleSide, MathUtils, Mesh, MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry, Vector2, type Group, type Texture } from "three";
 
 /** Shared between the book (open/close timeline, pose) and the pages (physics, gestures). */
@@ -82,8 +83,8 @@ type Gesture = {
  * at the fore edge, and trackpad swipe; pages in flight can be caught; they never pass each other; hovering lifts and
  * curls the page under the cursor and pushes the block near the screen's edge. Tapping past either end closes.
  */
-export function LookInside({ look, root, width, height, thickness, pageTextures, onClose, onSpread }: {
-  look: RefObject<LookState | null>; root: RefObject<Group | null>;
+export function LookInside({ look, root, signals, width, height, thickness, pageTextures, onClose, onSpread }: {
+  look: RefObject<LookState | null>; root: RefObject<Group | null>; signals: RefObject<BookSignals>;
   width: number; height: number; thickness: number;
   /** Page images in reading order: page 1 (leaf 1 front), page 2 (leaf 1 back), ... Missing pages show blank. */
   pageTextures: string[];
@@ -132,7 +133,7 @@ export function LookInside({ look, root, width, height, thickness, pageTextures,
 
   function onPointerDown(event: ThreeEvent<PointerEvent>) {
     const l = look.current;
-    if (!l?.active || (event.nativeEvent.target as Element | null)?.closest?.("[data-book-ui]")) return;
+    if (!l?.active || signals.current.view.panning || (event.nativeEvent.target as Element | null)?.closest?.("[data-book-ui]")) return;
     event.stopPropagation();
     const { side, u, v } = pageCoords(event), e = event.nativeEvent, now = performance.now();
     // Catch pages in flight (#22): pressing while leaves are airborne brakes them over 400 ms.
@@ -145,6 +146,11 @@ export function LookInside({ look, root, width, height, thickness, pageTextures,
     const pageWidthPx = Math.max(160, (source?.clientWidth ?? 800) / 2);
     const move = (m: PointerEvent) => {
       const g = gesture.current; if (!g) return;
+      // A pinch or a held pan took over: the page goes back to where it was.
+      if (signals.current.view.panning) {
+        if (g.leaf >= 0) l.target[g.leaf] = g.startAngle > PI / 2 ? PI : 0;
+        gesture.current = null; return;
+      }
       const t = performance.now(), d = (g.downX - m.clientX) * g.dir; // distance dragged in the turn direction
       g.speed = Math.abs(m.clientX - g.lastX) / Math.max(t - g.lastAt, 1); g.lastX = m.clientX; g.lastAt = t;
       g.moved = Math.max(g.moved, Math.hypot(m.clientX - g.downX, m.clientY - g.downY));
@@ -199,6 +205,9 @@ export function LookInside({ look, root, width, height, thickness, pageTextures,
     const l = look.current, h = hover.current, dt = Math.min(delta, 0.05), f = dt * 60;
     h.clock += dt;
     if (!l) return;
+    // Control bar turns (#29's bar: back, forward).
+    while (l.active && signals.current.commands.length) turn(signals.current.commands.shift() === "back" ? -1 : 1);
+    if (!l.active) signals.current.commands.length = 0;
     const shown = l.t > 0;
     if (group.current) group.current.visible = shown;
     if (!shown) return;

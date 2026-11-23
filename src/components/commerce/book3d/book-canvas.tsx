@@ -1,9 +1,9 @@
 "use client";
 
-import { Environment, Lightformer } from "@react-three/drei";
-import { Canvas, useFrame } from "@react-three/fiber";
-import { Suspense, useRef, type ReactNode, type RefObject } from "react";
-import { MathUtils, type Group, type SpotLight } from "three";
+import { Environment, Lightformer, useFBO } from "@react-three/drei";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Suspense, useEffect, useMemo, useRef, type ReactNode, type RefObject } from "react";
+import { MathUtils, Mesh, OrthographicCamera, PlaneGeometry, Scene, ShaderMaterial, Vector2, type Group, type SpotLight } from "three";
 import { Book, type BookSignals, type BookTextures } from "./book";
 
 const easeInOutQuad = (x: number) => x < 0.5 ? 2 * x * x : 1 - (-2 * x + 2) ** 2 / 2;
@@ -34,8 +34,59 @@ function PointerSpot({ dark }: { dark: boolean }) {
     castShadow={dark} shadow-mapSize={[2048, 2048]} shadow-radius={3.2} shadow-bias={-0.0004} />;
 }
 
+/**
+ * Magnifier (#29): a lens over the scene. Magnification 0.308, radius 0.31 of the height, barrel −0.57, a ring at the
+ * edge. It follows the pointer at 22/s; on touch it stays where it was put and moves only while a finger drags.
+ * Mounted only while it's on: it renders the scene itself (into a target for the lens, then to the screen).
+ */
+function Magnifier({ touch }: { touch: boolean }) {
+  const target = useFBO();
+  const source = useThree((state) => state.events.connected) as HTMLElement | undefined;
+  const lens = useMemo(() => {
+    const material = new ShaderMaterial({
+      transparent: true, depthTest: false, depthWrite: false,
+      uniforms: { uMap: { value: null }, uCenter: { value: new Vector2(0.5, 0.5) }, uAspect: { value: 1 }, uRadius: { value: 0.31 }, uMag: { value: 0.308 }, uBarrel: { value: -0.57 } },
+      vertexShader: "varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }",
+      fragmentShader: `
+        uniform sampler2D uMap; uniform vec2 uCenter; uniform float uAspect, uRadius, uMag, uBarrel; varying vec2 vUv;
+        void main() {
+          vec2 d = (vUv - uCenter) * vec2(uAspect, 1.0); float n = length(d) / uRadius;
+          if (n > 1.0) discard;
+          vec2 sampleUv = uCenter + (vUv - uCenter) * (1.0 - uMag) * (1.0 + uBarrel * (1.0 - n * n) * 0.5);
+          vec4 color = texture2D(uMap, sampleUv);
+          float ring = smoothstep(0.955, 0.985, n);
+          gl_FragColor = vec4(mix(color.rgb, vec3(0.0), ring * 0.45), max(color.a, ring * 0.45 + 0.9 * (1.0 - ring)));
+        }`
+    });
+    const scene = new Scene(); scene.add(new Mesh(new PlaneGeometry(2, 2), material));
+    return { material, scene, camera: new OrthographicCamera(-1, 1, 1, -1, 0, 1) };
+  }, []);
+  useEffect(() => () => { lens.material.dispose(); lens.scene.traverse((o) => { if (o instanceof Mesh) o.geometry.dispose(); }); }, [lens]);
+  const pressed = useRef(false);
+  useEffect(() => {
+    // The stage (the canvas's event source) takes the pointer, not the canvas.
+    const element = source ?? window;
+    const down = () => { pressed.current = true; }, up = () => { pressed.current = false; };
+    element.addEventListener("pointerdown", down); window.addEventListener("pointerup", up);
+    return () => { element.removeEventListener("pointerdown", down); window.removeEventListener("pointerup", up); };
+  }, [source]);
+  useFrame((state, delta) => {
+    const u = lens.material.uniforms, center = u.uCenter.value as Vector2;
+    if (!touch || pressed.current) {
+      const k = 1 - Math.exp(-22 * Math.min(delta, 0.05));
+      center.x += ((state.pointer.x + 1) / 2 - center.x) * k; center.y += ((state.pointer.y + 1) / 2 - center.y) * k;
+    }
+    u.uAspect.value = state.size.width / Math.max(state.size.height, 1);
+    u.uMap.value = target.texture;
+    state.gl.setRenderTarget(target); state.gl.render(state.scene, state.camera); state.gl.setRenderTarget(null);
+    state.gl.render(state.scene, state.camera);
+    state.gl.autoClear = false; state.gl.render(lens.scene, lens.camera); state.gl.autoClear = true;
+  }, 1);
+  return null;
+}
+
 /** The book's canvas, loaded lazily by BookStage (three, R3F and drei stay out of the page's first load). */
-export default function BookCanvas({ eventSource, signals, textures, frameloop, dark, onOpen, onClose, storageKey, pageTextures }: {
+export default function BookCanvas({ eventSource, signals, textures, frameloop, dark, onOpen, onClose, storageKey, pageTextures, magnifier = false }: {
   eventSource: RefObject<HTMLElement | null>;
   signals: RefObject<BookSignals>;
   textures: BookTextures;
@@ -45,6 +96,7 @@ export default function BookCanvas({ eventSource, signals, textures, frameloop, 
   onClose?: () => void;
   storageKey?: string;
   pageTextures?: string[];
+  magnifier?: boolean;
 }) {
   const small = typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
   return <Canvas frameloop={frameloop} dpr={[1, small ? 1.5 : 2]} shadows={dark} eventSource={eventSource as RefObject<HTMLElement>} eventPrefix="client"
@@ -62,6 +114,7 @@ export default function BookCanvas({ eventSource, signals, textures, frameloop, 
     <Suspense fallback={null}>
       <Intro><Book textures={textures} signals={signals} onOpen={onOpen} onClose={onClose} small={small} storageKey={storageKey} pageTextures={pageTextures} /></Intro>
     </Suspense>
+    {magnifier && <Magnifier touch={small} />}
     {dark && <mesh position={[0, 0, -4]} receiveShadow>
       <planeGeometry args={[120, 120]} />
       <shadowMaterial opacity={0.855 * 0.4} />

@@ -814,7 +814,10 @@
       "description": "Description",
       "otherEditions": "Other editions",
       "lookInside": "Look inside",
-      "closeBook": "Close"
+      "closeBook": "Close",
+      "previousPage": "Previous page",
+      "nextPage": "Next page",
+      "magnifier": "Magnifier"
     },
     "components_commerce_checkout": {
       "customerSignInIsOffInThisReviewCopy": "Customer sign-in is off in this review copy.",

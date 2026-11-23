@@ -64,3 +64,6 @@ stripe.press's numbers (map §C1) are the tuning reference. The code is ours.
 - **Closing.** Close (left), Esc, ← and h close the book. So does a click on empty canvas or a tap past either end.
 - **Saved page.** The page you leave is kept for the visit (sessionStorage `book3d:<product id>`).
 - **Phone.** The stage covers the screen while the book is open.
+- **Control bar.** Close (left), previous page, next page, and the magnifier. The magnifier is a lens that follows the pointer; on touch it stays put until a finger drags it.
+- **Touch zoom and pan.** Pinch zooms 1–2× with rubber beyond. Two fingers, or one after a 300 ms hold, pan. On release it springs back into range.
+- **Highlighter.** Not built yet. It waits until a build confirms page picking.

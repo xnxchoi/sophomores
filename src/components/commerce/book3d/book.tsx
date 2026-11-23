@@ -10,6 +10,7 @@ import {
   MathUtils,
   Mesh,
   MeshPhysicalMaterial,
+  PerspectiveCamera,
   RepeatWrapping,
   SRGBColorSpace,
   Vector2,
@@ -31,7 +32,13 @@ export type BookTextures = {
 };
 
 /** What the page tells the book, read every frame (no re-render): scroll progress, hover effects, add-to-cart spins. */
-export type BookSignals = { scroll: number; hologram: boolean; radio: boolean; spins: number[]; look: boolean; peek: boolean };
+export type BookSignals = {
+  scroll: number; hologram: boolean; radio: boolean; spins: number[]; look: boolean; peek: boolean;
+  /** Look inside control bar: page turns waiting to run. */
+  commands: ("back" | "forward")[];
+  /** Touch zoom and pan of the open book (#27); unitsPerPx is written by the book for the gesture's maths. */
+  view: { zoom: number; x: number; y: number; panning: boolean; unitsPerPx: number };
+};
 
 // Proportions from the atlas: each cover 826×1264 px, the spine 224 px. World units; the camera sees 17.1 units tall.
 const H = 11, W = H * (826 / 1264), BOARD = 0.08, T = W * (224 / 826) - 2 * BOARD, SEGMENTS = 5, SEG = W / SEGMENTS;
@@ -158,7 +165,7 @@ function Board({ geometries, segments, material, k = 0 }: { geometries: BoxGeome
   return <group ref={(group) => { segments.current[k] = group; }} position={[k === 0 ? 0 : SEG, 0, 0]}>
     <mesh geometry={geometries[k]} material={material} castShadow />
     <Board geometries={geometries} segments={segments} material={material} k={k + 1} />
-    <LookInside look={look} root={root} width={W - 0.15} height={H - 0.3} thickness={T} pageTextures={pageTextures}
+    <LookInside look={look} root={root} signals={signals} width={W - 0.15} height={H - 0.3} thickness={T} pageTextures={pageTextures}
       onClose={() => onClose?.()}
       onSpread={(spread) => { if (storageKey) try { window.sessionStorage.setItem(storageKey, String(spread)); } catch { /* storage unavailable */ } }} />
   </group>;
@@ -322,6 +329,12 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
       const aspect = state.size.width / Math.max(state.size.height, 1), fit = Math.max(54, (W * 1.1) / (Math.tan(MathUtils.degToRad(9)) * aspect) + 4);
       state.camera.position.z = MathUtils.lerp(54, fit, b);
     }
+    // Touch zoom and pan apply only while the book is open.
+    const view = sig.view, camera = state.camera as PerspectiveCamera;
+    camera.position.x = view.x * b; camera.position.y = view.y * b;
+    const zoom = MathUtils.lerp(1, view.zoom, b);
+    if (camera.zoom !== zoom) { camera.zoom = zoom; camera.updateProjectionMatrix(); }
+    view.unitsPerPx = (2 * (camera.position.z - 4) * Math.tan(MathUtils.degToRad(9))) / Math.max(state.size.height, 1) / zoom;
   });
 
   return <group ref={root}

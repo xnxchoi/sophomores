@@ -814,7 +814,10 @@
       "description": "",
       "otherEditions": "",
       "lookInside": "",
-      "closeBook": ""
+      "closeBook": "",
+      "previousPage": "",
+      "nextPage": "",
+      "magnifier": ""
     },
     "components_commerce_checkout": {
       "customerSignInIsOffInThisReviewCopy": "",

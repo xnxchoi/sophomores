@@ -67,3 +67,11 @@ stripe.press's numbers (map §C1) are the tuning reference. The code is ours.
 - **Control bar.** Close (left), previous page, next page, and the magnifier. The magnifier is a lens that follows the pointer; on touch it stays put until a finger drags it.
 - **Touch zoom and pan.** Pinch zooms 1–2× with rubber beyond. Two fingers, or one after a 300 ms hold, pan. On release it springs back into range.
 - **Highlighter.** Not built yet. It waits until a build confirms page picking.
+
+## Sounds
+- **Synthesised (no files):**
+  - the pointer across the closed book rubs the cover (band-passed noise, 55–295 Hz, with volume following speed);
+  - dragging a page rubs paper (110–560 Hz);
+  - a cover shutting fast slaps.
+- **Sample slots** (`Book`'s `samples` prop): `pageTurn[]`, `grab`, `flop` and `crackle`. They are empty, because there are no files. When filled, they play through Howler, and the page turn plays faster for faster turns.
+- **First sound.** Audio starts on the first press, as browsers require.

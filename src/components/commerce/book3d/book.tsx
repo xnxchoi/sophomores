@@ -16,6 +16,7 @@ import {
   Vector2,
   type Texture
 } from "three";
+import { useBookSound, type BookSamples } from "./book-sound";
 import { createLookState, LEAVES, LookInside, OPEN_SECONDS, openCurves, type LookState } from "./look-inside";
 
 /**
@@ -165,7 +166,7 @@ function Board({ geometries, segments, material, k = 0 }: { geometries: BoxGeome
   return <group ref={(group) => { segments.current[k] = group; }} position={[k === 0 ? 0 : SEG, 0, 0]}>
     <mesh geometry={geometries[k]} material={material} castShadow />
     <Board geometries={geometries} segments={segments} material={material} k={k + 1} />
-    <LookInside look={look} root={root} signals={signals} width={W - 0.15} height={H - 0.3} thickness={T} pageTextures={pageTextures}
+    <LookInside look={look} root={root} signals={signals} sound={sound} width={W - 0.15} height={H - 0.3} thickness={T} pageTextures={pageTextures}
       onClose={() => onClose?.()}
       onSpread={(spread) => { if (storageKey) try { window.sessionStorage.setItem(storageKey, String(spread)); } catch { /* storage unavailable */ } }} />
   </group>;
@@ -181,12 +182,14 @@ const easeInOutQuint = (x: number) => x < 0.5 ? 16 * x ** 5 : 1 - (-2 * x + 2) *
  * coupling, and the hologram and radio effects. `onOpen` gets a click (a press under 5 px and 500 ms).
  * Look inside (signals.look) opens the book in place; the pages are LookInside's. The spread you leave is saved.
  */
-export function Book({ textures, signals, onOpen, onClose, small, storageKey, pageTextures = [] }: {
+export function Book({ textures, signals, onOpen, onClose, small, storageKey, pageTextures = [], samples }: {
   textures: BookTextures; signals: RefObject<BookSignals>; onOpen?: () => void; onClose?: () => void; small: boolean;
   /** sessionStorage key for the saved spread (#26). */
   storageKey?: string;
   pageTextures?: string[];
+  samples?: BookSamples;
 }) {
+  const sound = useBookSound(samples);
   const slots = useMemo(() => Object.fromEntries(Object.entries(textures).filter(([, url]) => url)) as Record<string, string>, [textures]);
   const maps = useTexture(slots) as unknown as Record<string, Texture>;
   const uniforms = useMemo(createUniforms, []);
@@ -210,8 +213,15 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
     yaw: 0, pitch: 0, velYaw: 0, velPitch: 0, lastYaw: 0, spinSpeed: 0, dragging: false, hovered: false,
     released: -Infinity, pitchFrom: 0, returning: false, touch: false, armed: false, totalX: 0, lastX: 0, lastY: 0,
     downX: 0, downY: 0, downAt: 0, frontA: 0, frontV: 0, backA: 0, backV: 0, peek: 0, lift: 0, liftT: 0,
-    spin: null as null | { dir: number; t: number }, scroll: 0, holo: 0, holoSince: -1, radio: 0, clock: 0, openTilt: 0
+    spin: null as null | { dir: number; t: number }, scroll: 0, holo: 0, holoSince: -1, radio: 0, clock: 0, openTilt: 0,
+    lastPointer: new Vector2()
   });
+  // Audio starts on the first press anywhere on the stage.
+  useEffect(() => {
+    if (!source) return;
+    source.addEventListener("pointerdown", sound.unlock);
+    return () => source.removeEventListener("pointerdown", sound.unlock);
+  }, [source, sound]);
 
   const setCursor = (value: "" | "hover" | "drag") => { if (source) source.dataset.book = value; };
 
@@ -252,6 +262,7 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
     if (want !== l.dir) {
       l.dir = want; l.active = false;
       if (want > 0) {
+        sound.play("crackle");
         // Turn the shortest way to the reading pose, and stop any fling.
         const yaw = REST_YAW + s.yaw; s.yaw = Math.atan2(Math.sin(yaw), Math.cos(yaw)) - REST_YAW; s.velYaw = 0; s.velPitch = 0; s.lastYaw = s.yaw;
       }
@@ -279,7 +290,14 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
     s.spinSpeed += (speed - s.spinSpeed) * (1 - Math.exp(-11 * dt));
     s.peek += (((s.hovered || sig.peek) && l.t === 0 ? PEEK : 0) - s.peek) * (1 - (1 - PEEK_EASE) ** f);
     const flap = Math.min(s.spinSpeed * FLAP_GAIN, FLAP_MAX), damping = 2 * Math.sqrt(FLAP_K);
+    const frontBefore = s.frontA;
     s.frontV += (FLAP_K * (flap + s.peek - s.frontA) - damping * s.frontV) * dt; s.frontA += s.frontV * dt;
+    // A cover shutting fast slaps, louder the faster it closes.
+    if (frontBefore > 0.03 && s.frontA <= 0.03 && s.frontV < -0.8) sound.slap(-s.frontV / 6);
+    // The pointer moving across the closed book rubs its cover.
+    const moved = s.lastPointer.distanceTo(state.pointer) * Math.max(state.size.width, state.size.height) / 2;
+    s.lastPointer.copy(state.pointer);
+    if (s.hovered && l.t === 0 && !s.dragging && moved > 0) sound.rub("cover", moved / (dt * 1000));
     s.backV += (FLAP_K * (flap * 1.5 - s.backA) - damping * s.backV) * dt; s.backA += s.backV * dt;
     // Opening swings the front cover flat to the left and drops its hinge to the back cover's level.
     front.current.forEach((g, k) => { if (g) g.rotation.y = -Math.max(s.frontA, 0) * SHARE[k] - (k === 0 ? open.cover * Math.PI : 0); });

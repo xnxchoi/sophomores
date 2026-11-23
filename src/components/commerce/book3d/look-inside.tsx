@@ -4,6 +4,7 @@ import { useTexture } from "@react-three/drei";
 import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, type RefObject } from "react";
 import type { BookSignals } from "./book";
+import type { BookSound } from "./book-sound";
 import { BoxGeometry, DoubleSide, MathUtils, Mesh, MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry, Vector2, type Group, type Texture } from "three";
 
 /** Shared between the book (open/close timeline, pose) and the pages (physics, gestures). */
@@ -83,8 +84,8 @@ type Gesture = {
  * at the fore edge, and trackpad swipe; pages in flight can be caught; they never pass each other; hovering lifts and
  * curls the page under the cursor and pushes the block near the screen's edge. Tapping past either end closes.
  */
-export function LookInside({ look, root, signals, width, height, thickness, pageTextures, onClose, onSpread }: {
-  look: RefObject<LookState | null>; root: RefObject<Group | null>; signals: RefObject<BookSignals>;
+export function LookInside({ look, root, signals, sound, width, height, thickness, pageTextures, onClose, onSpread }: {
+  look: RefObject<LookState | null>; root: RefObject<Group | null>; signals: RefObject<BookSignals>; sound: BookSound;
   width: number; height: number; thickness: number;
   /** Page images in reading order: page 1 (leaf 1 front), page 2 (leaf 1 back), ... Missing pages show blank. */
   pageTextures: string[];
@@ -118,6 +119,7 @@ export function LookInside({ look, root, signals, width, height, thickness, page
     const i = dir > 0 ? firstForward() : lastBack();
     if (i < 0) { onClose(); return; }
     if (look.current) look.current.target[i] = dir > 0 ? PI : 0;
+    sound.play("pageTurn", 0.5, dir > 0);
   };
   /** Several leaves at once (riffle): they travel together as one block (#23). */
   const turnMany = (dir: 1 | -1, count: number) => {
@@ -143,6 +145,7 @@ export function LookInside({ look, root, signals, width, height, thickness, page
     gesture.current = { leaf, dir, startAngle: leaf >= 0 ? l.angle[leaf] : 0, downX: e.clientX, downY: e.clientY, downAt: now, lastX: e.clientX, lastAt: now,
       speed: 0, v, edge: u > 0.9, moved: 0, braked: flying };
     if (source) source.dataset.book = "drag";
+    sound.play("grab");
     const pageWidthPx = Math.max(160, (source?.clientWidth ?? 800) / 2);
     const move = (m: PointerEvent) => {
       const g = gesture.current; if (!g) return;
@@ -154,6 +157,7 @@ export function LookInside({ look, root, signals, width, height, thickness, page
       const t = performance.now(), d = (g.downX - m.clientX) * g.dir; // distance dragged in the turn direction
       g.speed = Math.abs(m.clientX - g.lastX) / Math.max(t - g.lastAt, 1); g.lastX = m.clientX; g.lastAt = t;
       g.moved = Math.max(g.moved, Math.hypot(m.clientX - g.downX, m.clientY - g.downY));
+      sound.rub("paper", g.speed);
       if (g.edge || g.leaf < 0) return; // riffle: the flick decides on release
       // Drag curve (#20): a quick start, then linear with distance across the page.
       const travel = PI * (0.08 * (1 - Math.exp(-Math.max(d, 0) / 12)) + 0.92 * d / pageWidthPx);
@@ -174,6 +178,7 @@ export function LookInside({ look, root, signals, width, height, thickness, page
       // Release (#20): dragged in the turn direction commits, otherwise the page returns.
       const d = (g.downX - u.clientX) * g.dir;
       l.target[g.leaf] = d > 24 ? (g.dir > 0 ? PI : 0) : (g.dir > 0 ? 0 : PI);
+      sound.play(d > 24 ? "pageTurn" : "flop", Math.min(g.speed, 1), g.dir > 0);
     };
     window.addEventListener("pointermove", move); window.addEventListener("pointerup", up); window.addEventListener("pointercancel", up);
   }

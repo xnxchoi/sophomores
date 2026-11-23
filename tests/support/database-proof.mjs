@@ -48,6 +48,13 @@ const proofs = [
     ...proofTargets.cartWriteThrough,
   },
   {
+    // Product page content: an anonymous reader gets every page field of a published, approved
+    // product and nothing of a draft or unapproved one; the field checks refuse bad values.
+    file: "tests/commerce/core/product-page-fields.db.test.ts",
+    flag: "PRODUCT_PAGE_DATABASE_TESTS",
+    container: "sphmrs-product-page-20261123", port: 55515, database: "product_page_proof",
+  },
+  {
     file: "tests/commerce/editions/native-settlement.db.test.ts",
     flag: "NATIVE_EDITION_DATABASE_TESTS", explicit: true,
     ...proofTargets.nativeEdition, container: `${proofTargets.nativeEdition.container}${randomUUID()}`,

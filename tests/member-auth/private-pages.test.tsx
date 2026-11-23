@@ -357,3 +357,11 @@ test("the member-auth session clears the copies only after the server confirms t
   dom.window.sessionStorage.clear();
   dom.window.localStorage.clear();
 });
+
+test("one private-view mechanism: the receipt's delivery address uses the shared watcher, with no listeners of its own", () => {
+  const receipt = read("src/components/commerce/receipt-delivery.tsx");
+  assert.match(receipt, /watchPrivateView\(\{ conceal, reveal: \(\) => \{ void load\(\); \}, concealOnBlur: true \}\)/);
+  assert.doesNotMatch(receipt, /addEventListener\(|subscribeVisibility/);
+  // Its page, /me/orders/[id], is a private page.
+  assert.equal(isPrivatePagePath("/me/orders/2f7c"), true);
+});

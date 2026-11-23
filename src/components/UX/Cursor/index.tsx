@@ -325,11 +325,10 @@ export default function RP_Cursor() {
       aria-hidden={!0}
     >
       <AnimatePresence mode="sync" propagate={true} initial={true}>
-        {!isEnabled ? (
-          <></>
-        ) : (
-          <>
-            {(isTextCursor && (
+        {/* The text pill and the ring are AnimatePresence's direct keyed children ("wrap", "not_text"); inside a fragment
+            neither ever exited, so the pill vanished at once instead of playing its exit. */}
+        {isEnabled &&
+          ((isTextCursor && (
               <m.span
                 key={"wrap"}
                 className={cn(
@@ -440,9 +439,7 @@ export default function RP_Cursor() {
                   style={{ fill: strokeColor }}
                 />
               </m.svg>
-            )}
-          </>
-        )}
+            ))}
       </AnimatePresence>
     </m.span>
   );

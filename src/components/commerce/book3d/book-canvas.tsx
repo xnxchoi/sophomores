@@ -66,17 +66,29 @@ function Magnifier({ touch }: { touch: boolean }) {
   }, []);
   useEffect(() => () => { lens.material.dispose(); lens.scene.traverse((o) => { if (o instanceof Mesh) o.geometry.dispose(); }); }, [lens]);
   // The touch that holds the lens, by pointer ID: another finger's release doesn't drop it (Review-B r3).
-  const pressed = useRef<number | null>(null);
+  const pressed = useRef<number | null>(null), held = useRef(new Vector2(0.5, 0.5));
   useEffect(() => {
     // The stage (the canvas's event source) takes the pointer, not the canvas. Releases arrive there too: a press on
     // the book captures the pointer to the stage, so no window listener is needed.
     if (!source) return;
-    const down = (event: PointerEvent) => { if (pressed.current === null && !(event.target as Element | null)?.closest?.("[data-book-ui]")) pressed.current = event.pointerId; };
+    // On touch the lens sits under its own finger: that pointer's position, not R3F's shared pointer (another finger's).
+    const place = (event: PointerEvent) => {
+      const rect = source.getBoundingClientRect();
+      held.current.set((event.clientX - rect.left) / Math.max(rect.width, 1), 1 - (event.clientY - rect.top) / Math.max(rect.height, 1));
+    };
+    const down = (event: PointerEvent) => {
+      if (pressed.current !== null || (event.target as Element | null)?.closest?.("[data-book-ui]")) return;
+      pressed.current = event.pointerId; place(event);
+    };
+    const move = (event: PointerEvent) => { if (event.pointerId === pressed.current) place(event); };
     const up = (event: PointerEvent) => { if (event.pointerId === pressed.current) pressed.current = null; };
-    source.addEventListener("pointerdown", down);
+    source.addEventListener("pointerdown", down); source.addEventListener("pointermove", move);
     const ends = ["pointerup", "pointercancel", "lostpointercapture"] as const;
     for (const type of ends) source.addEventListener(type, up);
-    return () => { source.removeEventListener("pointerdown", down); for (const type of ends) source.removeEventListener(type, up); };
+    return () => {
+      source.removeEventListener("pointerdown", down); source.removeEventListener("pointermove", move);
+      for (const type of ends) source.removeEventListener(type, up);
+    };
   }, [source]);
   // The lens uniforms are live GPU state, not React state.
   /* eslint-disable react-hooks/immutability */
@@ -84,7 +96,8 @@ function Magnifier({ touch }: { touch: boolean }) {
     const u = lens.material.uniforms, center = u.uCenter.value as Vector2;
     if (!touch || pressed.current !== null) {
       const k = 1 - Math.exp(-22 * Math.min(delta, 0.05));
-      center.x += ((state.pointer.x + 1) / 2 - center.x) * k; center.y += ((state.pointer.y + 1) / 2 - center.y) * k;
+      const tx = touch ? held.current.x : (state.pointer.x + 1) / 2, ty = touch ? held.current.y : (state.pointer.y + 1) / 2;
+      center.x += (tx - center.x) * k; center.y += (ty - center.y) * k;
     }
     u.uAspect.value = state.size.width / Math.max(state.size.height, 1);
     u.uMap.value = target.texture;

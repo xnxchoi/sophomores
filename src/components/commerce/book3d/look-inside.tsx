@@ -215,7 +215,7 @@ export function LookInside({ look, root, signals, sound, width, height, thicknes
     if (!l?.active || signals.current.view.panning || (event.nativeEvent.target as Element | null)?.closest?.("[data-book-ui]")) return;
     event.stopPropagation();
     // A second finger is a pinch: the page in hand goes back, and the stage's pinch takes over (Review-B r2).
-    if (gesture.current || painting.current) { cancelGesture(); if (painting.current) { painting.current = null; saveMarks(); } return; }
+    if (gesture.current || painting.current) { cancelGesture(); if (painting.current) undoStroke(painting.current.stroke); return; }
     const { side, u, v } = pageCoords(event), e = event.nativeEvent, now = performance.now();
     // Highlighter on: a press paints on the top page of that side instead of turning it.
     const ink = signals.current.marker;
@@ -230,6 +230,8 @@ export function LookInside({ look, root, signals, sound, width, height, thicknes
         if (ev.pointerId !== e.pointerId) return;
         target.removeEventListener("pointerup", end); target.removeEventListener("pointercancel", end); target.removeEventListener("lostpointercapture", end);
         if (painting.current?.id !== e.pointerId) return; // a newer stroke from another pointer is not this one's to end
+        // A held pan took this finger over, even without a move over the pages: the stroke is undone, not kept.
+        if (signals.current.view.panning) { undoStroke(painting.current.stroke); return; }
         painting.current = null; saveMarks();
       };
       try { (e.target as Element).setPointerCapture(e.pointerId); } catch { /* the pointer is already gone */ }

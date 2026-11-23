@@ -173,6 +173,13 @@ test("settings sign-out clears and leaves only when Better Auth confirms it", as
   assert.equal(await signOutAndLeave(async () => ({ data: null, error: { status: 500, message: "Failed" } }), (url) => visited.push(url), refused), false);
   assert.equal(refused.session.data.size + refused.local.data.size, 2, "nothing cleared while the session lives");
   assert.deepEqual(visited, ["/"], "and no navigation");
+  // A missing or malformed acknowledgement is not a sign-out.
+  for (const answer of [undefined, null, {}, { data: null, error: null }, { data: { success: false }, error: null }, { data: { success: "yes" }, error: null }]) {
+    const unclear = stores();
+    assert.equal(await signOutAndLeave(async () => answer, (url) => visited.push(url), unclear), false, JSON.stringify(answer));
+    assert.equal(unclear.session.data.size + unclear.local.data.size, 2, JSON.stringify(answer));
+  }
+  assert.deepEqual(visited, ["/"]);
   const thrown = stores();
   await assert.rejects(signOutAndLeave(async () => { throw new Error("offline"); }, (url) => visited.push(url), thrown));
   assert.equal(thrown.session.data.size + thrown.local.data.size, 2);
@@ -228,7 +235,8 @@ const fire = (name: string) => dom.window.dispatchEvent(new dom.window.Event(nam
 const settle = () => new Promise((done) => setTimeout(done, 0));
 
 /** A guard whose server answers are scripted: each check takes the next answer. */
-function guard(principal: string | null, answers: Array<string | null | undefined>) {
+type Answer = string | null | undefined;
+function guard(principal: string | null, answers: Array<Answer | Promise<Answer>>) {
   const state = { reloads: 0, checks: 0 };
   const readPrincipal = async () => { state.checks += 1; return answers.shift(); };
   ui.render(<PrivatePageGuard principal={principal} reload={() => { state.reloads += 1; }} readPrincipal={readPrincipal} />);
@@ -288,15 +296,57 @@ test("an answer that arrives after the page was hidden again does not show it", 
   assert.equal(state.reloads, 0);
 });
 
-test("a page rendered signed out takes the member who signs in on it, then guards that member", async () => {
-  const state = guard(null, ["member-a", "member-b"]);
+/** An answer the test releases by hand: a request that has not come back. */
+function pending() {
+  let release!: (value: Answer) => void;
+  const answer = new Promise<Answer>((done) => { release = done; });
+  return { answer, release };
+}
+
+test("a focus check hides the page at once and keeps it hidden while the answer is pending", async () => {
+  for (const [late, reloads, hidden] of [[null, 1, true], ["member-b", 1, true], ["member-a", 0, false]] as const) {
+    const request = pending();
+    const state = guard("member-a", [request.answer]);
+    fire("focus");
+    assert.equal(dom.window.document.body.hidden, true, "hidden before any answer");
+    await settle();
+    assert.equal(dom.window.document.body.hidden, true, "still hidden while the request stalls");
+    assert.equal(state.reloads, 0);
+    request.release(late);
+    await settle();
+    assert.equal(dom.window.document.body.hidden, hidden, `answer ${late}`);
+    assert.equal(state.reloads, reloads, `answer ${late}`);
+    ui.cleanup();
+    dom.window.document.body.hidden = false;
+  }
+});
+
+test("a page rendered signed out shows again only while still signed out; any sign-in since reloads it", async () => {
+  const still = guard(null, [null]);
   fire("focus");
   await settle();
-  assert.equal(dom.window.document.body.hidden, false, "signed in on this page");
+  assert.equal(dom.window.document.body.hidden, false);
+  assert.equal(still.reloads, 0);
+  ui.cleanup();
+  // A signs in on this page, B replaces the session elsewhere before the first check: the page cannot tell A from
+  // B, so it never reveals the inline content; it reloads for whoever is signed in now.
+  const signedIn = guard(null, ["member-b"]);
   fire("focus");
   await settle();
-  assert.equal(dom.window.document.body.hidden, true, "then switched elsewhere");
-  assert.equal(state.reloads, 1);
+  assert.equal(dom.window.document.body.hidden, true);
+  assert.equal(signedIn.reloads, 1);
+});
+
+test("an unmounted guard drops its check in flight: no reload, no reveal on another route", async () => {
+  const request = pending();
+  const state = guard("member-a", [request.answer]);
+  fire("focus");
+  ui.cleanup();
+  dom.window.document.body.hidden = true;
+  request.release("member-b");
+  await settle();
+  assert.equal(state.reloads, 0);
+  assert.equal(dom.window.document.body.hidden, true, "nothing revealed by the old guard");
 });
 
 test("a restored page stays hidden and reloads; a normal show and an unmounted guard do nothing", async () => {

@@ -14,42 +14,49 @@ type Props = {
 
 /**
  * Mounted by every private page's layout through PrivateRoute (src/lib/member-auth/private-pages.ts). The page is
- * hidden when it is left and while its tab is hidden. On every return (the tab shown again, the window refocused)
- * the server is asked who is signed in now: the page shows again only for the same member; otherwise, or when the
- * server cannot say, it stays hidden and reloads, so the server renders it for whoever is signed in or sends a
- * signed-out visitor to sign in. A page restored from the back-forward cache always reloads. It renders nothing.
- *
- * A page rendered signed out (the sign-in steps) takes the first member it then sees as its own: that member
- * signed in on this page.
+ * hidden when it is left and while its tab is hidden. On every return (the tab shown again, the window refocused) it
+ * is hidden at once and the server is asked who is signed in now: the page shows again only for the member it was
+ * rendered for (or, rendered signed out, only while still signed out). A different member, a sign-in since, a
+ * sign-out, or no answer keeps it hidden and reloads it, so the server renders it for whoever is signed in now. A page
+ * restored from the back-forward cache always reloads. Unmounted, it drops any check still in flight. It renders
+ * nothing.
  */
 export function PrivatePageGuard({ principal, reload = reloadPage, readPrincipal = readSignedInMemberID }: Props) {
   useEffect(() => {
-    let expected = principal;
     let leaving = false;
+    let disposed = false;
     let check = 0;
     const setHidden = (hidden: boolean) => { document.body.hidden = hidden; };
     const leave = () => {
+      if (disposed) return;
       leaving = true;
       setHidden(true);
       reload();
     };
     const recheck = async () => {
-      if (leaving) return;
+      if (leaving || disposed) return;
       const mine = ++check;
+      // Hidden before asking: nothing shows while the answer is pending, or if it never comes.
+      setHidden(true);
       const current = await readPrincipal();
-      // A newer check, a hide since, or a reload already under way decides instead.
-      if (leaving || mine !== check) return;
-      if (current === undefined) return leave();
-      if (expected === null) expected = current;
-      if (current !== expected) return leave();
+      // Unmounted, a newer check, a hide since, or a reload under way decides instead.
+      if (disposed || leaving || mine !== check) return;
+      // Only the exact member the page was rendered for (null: still signed out) may see it again. A sign-in since
+      // a signed-out render reloads too: nothing proves the member now signed in owns what this page holds.
+      if (current === undefined || current !== principal) return leave();
       if (document.visibilityState === "visible") setHidden(false);
     };
-    return watchPrivateView({
+    const stop = watchPrivateView({
       conceal: () => { check += 1; setHidden(true); },
       reveal: () => { void recheck(); },
       restore: leave,
       recheckOnFocus: true
     });
+    return () => {
+      disposed = true;
+      check += 1;
+      stop();
+    };
   }, [principal, reload, readPrincipal]);
   return null;
 }

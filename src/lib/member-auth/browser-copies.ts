@@ -44,13 +44,14 @@ export function leaveAfterSignOut(navigate: (url: string) => void = (url) => win
 }
 
 /**
- * Settings sign-out. Better Auth's client resolves with { error } when the server refused, so only a sign-out without
- * an error clears the copies and leaves; a refused one keeps them, since the session (and its pending payment) lives
- * on. Returns whether it signed out; a thrown request is left to the caller.
+ * Settings sign-out. Better Auth's client resolves (it does not throw) with { data, error }; only an explicit
+ * acknowledgement, data.success === true and no error, counts as signed out. Anything else (an error, a missing or
+ * malformed answer) keeps the copies, since the session and its pending payment may live on. Returns whether it
+ * signed out; a thrown request is left to the caller.
  */
 export async function signOutAndLeave(signOut: () => Promise<unknown>, navigate?: (url: string) => void, stores?: Stores): Promise<boolean> {
-  const result = await signOut();
-  if (result && typeof result === "object" && "error" in result && (result as { error: unknown }).error) return false;
+  const result = (await signOut()) as { data?: { success?: unknown } | null; error?: unknown } | null | undefined;
+  if (!result || result.error || result.data?.success !== true) return false;
   leaveAfterSignOut(navigate, stores);
   return true;
 }

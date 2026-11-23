@@ -224,12 +224,9 @@ describe("the import walker", () => {
 });
 
 // Whole-catalogue imports inside a client bundle ship every namespace as JavaScript, whatever the providers hand
-// over. These three remain and are filed with their owners; the list may only shrink: when one is fixed, drop it.
-const knownClientCatalogueImports = [
-  "src/components/Authentication/phone-verification/verification-tray.tsx", // Auth: en.json for Common.cancel
-  "src/i18n/messages.ts", // via Auth's phone-verification.tsx (messagesByLocale, both locales)
-  "src/lib/phone-verification/i18n.ts" // Auth: phone verification copy
-];
+// over. With the Warp (UI-Shell r3) and phone verification (Auth) fixed, none remain: the joint inventory is empty
+// and must stay so.
+const knownClientCatalogueImports: string[] = [];
 
 test("no other client bundle under the site imports a whole catalogue", () => {
   const entries = [

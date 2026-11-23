@@ -1,14 +1,14 @@
 import { JSDOM } from "jsdom";
-import { messagesByLocale } from "@/lib/phone-verification/i18n";
+import { messagesByLocale } from "@/i18n/messages";
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { renderToStaticMarkup } from "react-dom/server";
+import { renderVerificationMarkup } from "../fixtures/verification-messages";
 import { VerificationProvider } from "@/components/Authentication/phone-verification/phone-verification";
 import { VerificationStatus } from "@/components/Authentication/phone-verification/verification-status";
 
 test("receiver outages are distinguished from waiting and verification failure in both languages", () => {
   for (const locale of ["en", "ko"] as const) {
-    const html = renderToStaticMarkup(
+    const html = renderVerificationMarkup(
       <VerificationProvider initialLocale={locale}>
         <VerificationStatus state="pending" busy={false} error="receiver" checked
           expiresAt={Date.now() + 300000} onExpire={() => {}} />

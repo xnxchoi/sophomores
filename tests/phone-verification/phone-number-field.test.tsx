@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import { NextIntlClientProvider } from "next-intl";
 import { PhoneNumberField } from "@/components/Authentication/phone-verification/phone-number-field";
-import { messagesByLocale } from "@/lib/phone-verification/i18n";
+import { messagesByLocale } from "@/i18n/messages";
 
 const renderField = (value = "", error = "") =>
   renderToStaticMarkup(

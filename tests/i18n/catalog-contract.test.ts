@@ -319,7 +319,8 @@ test("auth, Payload and phone surfaces retain canonical provider coverage", () =
     assert.match(source, /NextIntlClientProvider/);
     assert.match(source, /getMessages/);
   }
-  const source = readFileSync("src/lib/phone-verification/i18n.ts", "utf8");
+  // Phone verification picks its namespaces on the server from the canonical catalogue (no local copy).
+  const source = readFileSync("src/lib/phone-verification/messages.server.ts", "utf8");
   assert.match(source, /@\/i18n\/messages/);
   assert.doesNotMatch(source, /\.\/messages\//);
 });

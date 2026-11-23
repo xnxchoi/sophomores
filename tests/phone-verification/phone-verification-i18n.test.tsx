@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { renderToStaticMarkup } from "react-dom/server";
+import { renderVerificationMarkup } from "../fixtures/verification-messages";
 import { createTranslator, NextIntlClientProvider } from "next-intl";
 import { PhoneVerification } from "@/components/Authentication/phone-verification/phone-verification";
 import { PhoneNumberField } from "@/components/Authentication/phone-verification/phone-number-field";
+import { messagesByLocale } from "@/i18n/messages";
 import {
-  messagesByLocale,
   verificationLocales,
   type VerificationLocale
 } from "@/lib/phone-verification/i18n";
@@ -49,7 +49,7 @@ test("verification catalogs cover both locales with identical nonempty keys and 
 });
 
 test("English verification renders a translated screen, dialing prefix, and language controls", () => {
-  const html = renderToStaticMarkup(<PhoneVerification initialLocale="en" />);
+  const html = renderVerificationMarkup(<PhoneVerification initialLocale="en" />);
   assert.match(html, /lang="en"/);
   assert.match(html, /Verify your phone/);
   assert.match(html, /Phone number/);
@@ -62,7 +62,7 @@ test("English verification renders a translated screen, dialing prefix, and lang
 });
 
 test("Korean remains the default locale with an accessible language selection", () => {
-  const html = renderToStaticMarkup(<PhoneVerification />);
+  const html = renderVerificationMarkup(<PhoneVerification />);
   assert.match(html, /lang="ko"/);
   assert.match(html, /휴대폰 인증/);
   assert.match(html, /휴대폰 번호/);
@@ -75,7 +75,7 @@ for (const locale of ["en", "ko"] satisfies VerificationLocale[]) {
   test(`${locale} phone validation is translated and remains associated with its input`, () => {
     const t = createTranslator({locale, messages: messagesByLocale[locale], namespace: "Verification"});
     const message = t("invalidPhone");
-    const html = renderToStaticMarkup(
+    const html = renderVerificationMarkup(
       <NextIntlClientProvider locale={locale} messages={messagesByLocale[locale]} timeZone="Asia/Seoul">
         <PhoneNumberField value="123" onChange={() => {}} error={message} />
       </NextIntlClientProvider>

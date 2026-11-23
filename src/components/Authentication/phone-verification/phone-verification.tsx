@@ -15,10 +15,8 @@ import {
   useState
 } from "react";
 import { NextIntlClientProvider, useLocale, useTranslations } from "next-intl";
-import {
-  messagesByLocale,
-  type VerificationLocale
-} from "../../../lib/phone-verification/i18n";
+import type { VerificationLocale } from "../../../lib/phone-verification/i18n";
+import { VerificationCataloguesContext } from "./verification-messages";
 import { VerificationCountdown } from "./verification-countdown";
 import Link from "next/link";
 import { PhoneNumberField } from "./phone-number-field";
@@ -79,6 +77,8 @@ export function VerificationProvider({
 }: VerificationProviderProps) {
   const [localLocale, setLocalLocale] = useState(initialLocale);
   const currentLocale = locale ?? localLocale;
+  // Both locales, handed over by the segment layout (SegmentMessages); no client bundle imports a catalogue.
+  const catalogues = useContext(VerificationCataloguesContext);
   const changeLocale = useCallback(
     (next: VerificationLocale) => {
       if (locale === undefined) setLocalLocale(next);
@@ -89,13 +89,18 @@ export function VerificationProvider({
 
   return (
     <LocaleControl.Provider value={changeLocale}>
-      <NextIntlClientProvider
-        locale={currentLocale}
-        messages={messagesByLocale[currentLocale]}
-        timeZone="Asia/Seoul"
-      >
-        {children}
-      </NextIntlClientProvider>
+      {catalogues ? (
+        <NextIntlClientProvider
+          locale={currentLocale}
+          messages={catalogues[currentLocale]}
+          timeZone="Asia/Seoul"
+        >
+          {children}
+        </NextIntlClientProvider>
+      ) : (
+        // Not delivered (a page outside the purchase segments): the page's own copy and locale.
+        children
+      )}
     </LocaleControl.Provider>
   );
 }

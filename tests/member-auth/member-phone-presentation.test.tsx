@@ -2,7 +2,7 @@ import messages from "../../messages/en.json";
 import { EnglishMessages } from "../fixtures/english-messages";
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { renderToStaticMarkup } from "react-dom/server";
+import { renderVerificationMarkup } from "../fixtures/verification-messages";
 import { JSDOM } from "jsdom";
 import { VerificationProvider } from "@/components/Authentication/phone-verification/phone-verification";
 import { TrialVerificationView } from "@/components/Authentication/phone-verification/phone-verification-trial";
@@ -42,7 +42,7 @@ function render(
     busy,
     error
   };
-  const html = renderToStaticMarkup(
+  const html = renderVerificationMarkup(
     <EnglishMessages><VerificationProvider initialLocale={locale}>
       <TrialVerificationView
         presentation="registration"
@@ -205,7 +205,7 @@ test("completed manual checks distinguish pending, review and verified outcomes 
     ["review", "Needs review"],
     ["verified", "Message verified"]
   ] as const) {
-    const html = renderToStaticMarkup(
+    const html = renderVerificationMarkup(
       <EnglishMessages><VerificationProvider initialLocale="en">
         <VerificationStatus
           state={state}
@@ -233,7 +233,7 @@ test("completed manual checks distinguish pending, review and verified outcomes 
 });
 
 test("member phone integration opts into the uncluttered registration presentation", () => {
-  const html = renderToStaticMarkup(
+  const html = renderVerificationMarkup(
     <EnglishMessages><MemberPhoneStep busy={false} onPrepare={async () => true} onBind={() => {}} /></EnglishMessages>
   );
   const document = new JSDOM(html).window.document;
@@ -300,7 +300,7 @@ test("registration phone entry and Korean pending remain free of trial and langu
 });
 
 test("member phone wrapper does not prepend duplicate email-confirmed instructions", () => {
-  const html = renderToStaticMarkup(
+  const html = renderVerificationMarkup(
     <EnglishMessages><MemberAccountView
       snapshot={{
         ...emptyMemberSnapshot,

@@ -18,7 +18,7 @@ import { Drawer } from "vaul";
 import { authenticationViewportGeometry } from "@/lib/authentication-entry";
 import { Bar, Close, Modal } from "./verification-ui";
 import { cn } from "@/lib/utils";
-import messages from "../../../../messages/en.json";
+import { useTranslations } from "next-intl";
 
 type VerificationTrayProps = {
   open: boolean;
@@ -90,8 +90,10 @@ export function VerificationTray({
   chrome = "standard",
   mode = "focused",
   onCancel,
-  cancelLabel = messages.Common.cancel
+  cancelLabel: givenCancelLabel
 }: VerificationTrayProps) {
+  const common = useTranslations("Common");
+  const cancelLabel = givenCancelLabel ?? common("cancel");
   const viewport = useTrayViewport();
   const locked = mode === "focused";
   const compact = chrome === "compact";

@@ -810,7 +810,8 @@
       "allProducts": "",
       "includesBundle": "",
       "includesBookOnly": "",
-      "onePerAccount": ""
+      "onePerAccount": "",
+      "description": ""
     },
     "components_commerce_checkout": {
       "customerSignInIsOffInThisReviewCopy": "",

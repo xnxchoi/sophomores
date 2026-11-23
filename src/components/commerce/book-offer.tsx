@@ -28,24 +28,36 @@ export function CommerceShopView({ shop }: { shop: CommerceEditionShop | null })
   </PageInset>;
 }
 
-/** One product's page: the existing book layout for a single product, with its own name, price and what it includes. */
+/**
+ * One product's page, laid out like stripe.press's (map 23 Nov, owner: "a full-enough port of the Product page layout"):
+ * the stage (art, later the 3D book) holds the left 60% and stays pinned under the header while the purchase column on
+ * the right 40% scrolls; it lets go where the page ends. On a phone the stage sits at the top and stays pinned while the
+ * column scrolls up over it, as stripe.press's art does.
+ */
 export function CommerceProductView({ product, offer }: { product: EditionProduct | null; offer: CommerceEditionOffer | null }) {
   const t = useTranslations("Customer.components_commerce_book_offer");
   if (!product || !offer) return <BookUnavailable />;
-  return <PageInset as="main" className="pt-28 pb-24 text-foreground sm:pt-36 lg:pt-[clamp(7rem,18svh,9rem)]">
-    <div className="grid items-start gap-8 border-b border-border pb-10 lg:min-h-[calc(100svh-9rem)] lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:items-center lg:gap-14 lg:pb-16">
-      <header className="min-w-0">
-        <Link href="/shop" className="inline-flex min-h-12 items-center text-sm text-muted-foreground underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t("allProducts")}</Link>
-        <h1 className="mt-5 font-display text-[clamp(2.5rem,4vw,3.5rem)] font-normal leading-[1.08] tracking-[-0.02em] text-balance [overflow-wrap:anywhere]">{product.title}</h1>
-        <ProductFacts offer={offer} className="mt-6" />
-      </header>
-      <div className="min-w-0 lg:w-full lg:max-w-[max(14rem,calc(100svh-21rem))] lg:justify-self-end lg:[&_[role=tablist]]:flex-nowrap lg:[&_[role=tablist]]:overflow-x-auto lg:[&_[role=tablist]]:p-1.5">
-        <CommerceProductGallery key={product.productID} images={product.images} title={product.title} />
-      </div>
+  return <PageInset as="main" className="pt-[4.5rem] pb-24 text-foreground lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start lg:gap-x-6 lg:pt-[5.5rem]">
+    <div className="sticky top-[4.5rem] min-w-0 lg:top-[5.5rem] lg:h-[calc(100svh-7rem)]">
+      <CommerceProductGallery key={product.productID} images={product.images} title={product.title} fill />
     </div>
-    <div className="mt-10 grid items-start gap-x-16 gap-y-10 sm:mt-16 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
-      <p className="max-w-prose whitespace-pre-line text-base leading-6 text-muted-foreground [overflow-wrap:anywhere]">{product.description}</p>
-      <PurchaseNotOpen priceKRW={offer.priceKRW} />
+    <div className="relative z-1 min-w-0 bg-background pt-8 lg:bg-transparent lg:pt-0">
+      <Link href="/shop" className="inline-flex min-h-12 items-center text-sm text-muted-foreground underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2 lg:-mt-3">{t("allProducts")}</Link>
+      <header className="mt-6">
+        <p className="text-xs uppercase tracking-[0.04em] text-muted-foreground">{t("book")}</p>
+        <h1 className="mt-3 font-display text-[2.5rem] font-normal leading-[1.08] tracking-[-0.02em] text-balance [overflow-wrap:anywhere]">{product.title}</h1>
+      </header>
+      <section aria-labelledby="product-description-heading" className="mt-10">
+        <h2 id="product-description-heading" className="text-xs uppercase tracking-[0.04em] text-muted-foreground">{t("description")}</h2>
+        <p className="mt-3 max-w-prose whitespace-pre-line indent-[2em] text-base leading-6 [overflow-wrap:anywhere]">{product.description}</p>
+      </section>
+      <div className="mt-10">
+        <PurchaseNotOpen priceKRW={offer.priceKRW} />
+        <p className="mt-3 max-w-prose text-xs leading-5 text-muted-foreground">
+          {offer.editionEntitlements.membershipSignet ? t("includesBundle") : t("includesBookOnly")}
+          {offer.maximumQuantity === 1 && <> {t("onePerAccount")}.</>}
+        </p>
+      </div>
     </div>
   </PageInset>;
 }

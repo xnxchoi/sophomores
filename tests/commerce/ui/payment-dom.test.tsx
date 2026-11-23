@@ -154,7 +154,8 @@ test('the checkout route keeps published details visible while identity is check
     assert.ok(details.getByText('Dispatches after the launch'))
     assert.ok(details.getByText('₩3,000'))
     // Policy links moved from the summary to the page footer (checkout redesign, 21 Nov); still on the page.
-    assert.equal(ui.screen.getByRole('link', { name: 'Purchase terms' }).getAttribute('href'), '/terms')
+    // The quiet foot row (spec §7); terms, privacy and refunds live in the business footer.
+    assert.equal(ui.screen.getByRole('link', { name: 'Check payment status' }).getAttribute('href'), '/shop/payment')
   }
   const assertPrivateCheckoutBlocked = () => {
     assert.equal(ui.screen.queryByRole('textbox', { name: 'Recipient name' }) === null, true)

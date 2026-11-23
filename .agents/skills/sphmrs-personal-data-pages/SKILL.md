@@ -1,6 +1,6 @@
 ---
 name: sphmrs-personal-data-pages
-description: Use when building, changing or reviewing any Sophomores page or route handler that shows personal data (receipts, orders, account, tickets, invitations, wallet, member status). Baseline web-security checklist the owner treats as standard, not research. Reviewers fail a packet missing any item.
+description: Use when building, changing or reviewing any Sophomores page or route handler that shows personal data (receipts, orders, account, tickets, invitations, wallet, member status). Baseline web-security checklist the owner treats as standard, not research. Reviewers fail a change that exposes personal data or alters its lifecycle without these safeguards.
 ---
 
 # Personal-data pages: the baseline
@@ -20,8 +20,10 @@ Context: the receipt page shipped with `no-store` but no persisted-`pageshow` ch
 
 ## Where it applies
 
-Mechanism-owned paths (see AGENTS.md "Auth, payment and token mechanisms"): `src/lib/{member-auth,phone-verification,auth,commerce,tickets,invitation}`, `src/app/api/**`, `src/app/(auth)`, `src/app/(site)/{tickets/payment,shop/payment,shop/orders,shop/invitations,account/**}`. Pages outside these paths that read member or order state through the server helpers apply items 1–4 too.
+The trigger is what the change does, not where the file lives. It applies when a change **exposes personal data** (a page, route handler, server action, email or export that returns or renders it) or **alters its lifecycle** (how it is collected, stored, cached, shared, retained or deleted). Personal data here means anything that identifies a member or reveals their orders, tickets, invitations, wallet, contact details or membership status.
+
+Most such changes sit in the mechanism-owned paths (AGENTS.md, "Auth, payment and token mechanisms"), but a change there that touches no personal data (a rate limit, a copy tweak, a refactor with the same output) does not trigger the checklist. A page elsewhere that reads member or order state through the server helpers does.
 
 ## Review
 
-Codex Review-A/B: FAIL a packet that touches these paths and lacks any item, or whose `Skills used:` line omits this skill and `ecc:security-review`.
+Codex Review-A/B: FAIL a change that exposes personal data or alters its lifecycle when it lacks a checklist item that applies to it (for example, a new private page without `Cache-Control: private, no-store`). Judge the safeguards in the code, not the paperwork: a missing or incomplete `Skills used:` line is a note, never a FAIL on its own.

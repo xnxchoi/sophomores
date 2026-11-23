@@ -264,7 +264,7 @@ Group, position, and nest code by scope and use. Do not create single-depth catc
 
 ## Skills: load before you start (owner-approved routing, 2026-11-23)
 
-Load the listed skills before the first edit or draft in that area. Where a skill disagrees with an owner rule in this file, the owner rule wins. Claude loads them with the `Skill` tool; Codex reads project skills from `.agents/skills/<name>/SKILL.md` and checks plugin skills through the packet line below. Project hooks in `.claude/settings.json` remind Claude once per session per area and log each reminder (`reminded:<area>`) and each loaded skill to `.tmp/skills-used/<session-id>.log`, so a reminder with no matching skill shows as ignored.
+Load the listed skills before the first edit or draft in that area. Where a skill disagrees with an owner rule in this file, the owner rule wins. Claude loads them with the `Skill` tool; Codex reads project skills from `.agents/skills/<name>/SKILL.md` and checks plugin skills through the packet line below. For Claude only, project hooks in `.claude/settings.json` remind once per session per area and log each reminder (`reminded:<area>`) and each loaded skill to `.tmp/skills-used/<session-id>.log`, so a reminder with no matching skill shows as ignored. Codex has no such hook; its packet line is its attestation.
 
 | When the task is… | Load first | Then, as needed |
 |---|---|---|
@@ -286,7 +286,7 @@ Load the listed skills before the first edit or draft in that area. Where a skil
 | Self-review before a packet | built-in `code-review` | `simplify`; `ecc:santa-method`; `ecc:astra-review` |
 | Harness, settings or hooks | `update-config`, `ecc:hookify-rules` | `ecc:security-scan` |
 
-**Packet line.** Every worker packet and `worker_done` ends with `Skills used: <comma list> (log: .tmp/skills-used/<session-id>.log)`. Reviewers compare it with the area rows above and with the log. A missing required skill on an auth, commerce or personal-data row is a FAIL; elsewhere it is a note.
+**Packet line.** Every worker packet and `worker_done` ends with `Skills used: <comma list>`, attested per host: a Claude session adds `(log: .tmp/skills-used/<session-id>.log)` from its hooks; a Codex session gives the line alone. Reviewers compare it with the area rows above, and with the log where there is one. A missing skill or a missing log is a note, not a FAIL. What fails a packet is substance: a change that exposes personal data or alters its lifecycle without a safeguard from `sphmrs-personal-data-pages` that applies to it.
 
 <!-- BEGIN:nextjs-agent-upgrade -->
 

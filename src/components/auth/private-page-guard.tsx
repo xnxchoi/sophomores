@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
+import { type ReactNode, useEffect, useRef } from "react";
 import { readSignedInMemberID, watchPrivateView } from "@/lib/member-auth/private-view";
 
 const reloadPage = () => window.location.reload();
 
 type Props = {
+  children: ReactNode;
   /** The member the server rendered this page for (null: rendered signed out). */
   principal: string | null;
   reload?: () => void;
@@ -18,15 +19,16 @@ type Props = {
  * is hidden at once and the server is asked who is signed in now: the page shows again only for the member it was
  * rendered for (or, rendered signed out, only while still signed out). A different member, a sign-in since, a
  * sign-out, or no answer keeps it hidden and reloads it, so the server renders it for whoever is signed in now. A page
- * restored from the back-forward cache always reloads. Unmounted, it drops any check still in flight. It renders
- * nothing.
+ * restored from the back-forward cache always reloads. It hides only its own wrapper (layout-neutral), so leaving the
+ * route mid-check can never hide the page navigated to; unmounted, it drops any check still in flight.
  */
-export function PrivatePageGuard({ principal, reload = reloadPage, readPrincipal = readSignedInMemberID }: Props) {
+export function PrivatePageGuard({ children, principal, reload = reloadPage, readPrincipal = readSignedInMemberID }: Props) {
+  const content = useRef<HTMLDivElement>(null);
   useEffect(() => {
     let leaving = false;
     let disposed = false;
     let check = 0;
-    const setHidden = (hidden: boolean) => { document.body.hidden = hidden; };
+    const setHidden = (hidden: boolean) => { if (content.current) content.current.hidden = hidden; };
     const leave = () => {
       if (disposed) return;
       leaving = true;
@@ -58,5 +60,5 @@ export function PrivatePageGuard({ principal, reload = reloadPage, readPrincipal
       stop();
     };
   }, [principal, reload, readPrincipal]);
-  return null;
+  return <div ref={content} data-private-page="" className="contents [&[hidden]]:hidden">{children}</div>;
 }

@@ -78,7 +78,7 @@ test("every private page renders per request with the guard, and every page that
   // PrivateRoute is the one mount: connection() (per request, so Next also sends no-store) plus PrivatePageGuard,
   // told which member the page was rendered for.
   const route = read("src/components/auth/private-route.tsx");
-  assert.match(route, /await connection\(\);[\s\S]*<PrivatePageGuard principal=\{user \? String\(user\.id\) : null\} \/>/);
+  assert.match(route, /await connection\(\);[\s\S]*<PrivatePageGuard principal=\{user \? String\(user\.id\) : null\}>\{children\}<\/PrivatePageGuard>/);
   // /welcome shows verification, restriction and wallet state through a delegated loader (Review-A r2).
   assert.equal(isPrivatePagePath("/welcome"), true);
   assert.equal(readsTheMember(`${site}/welcome/page.tsx`), true, "the import walk sees the delegated loader");
@@ -86,7 +86,7 @@ test("every private page renders per request with the guard, and every page that
     assert.ok(fs.existsSync(routeDir(prefix)), `${prefix} is a route`);
     for (const page of pages(routeDir(prefix))) {
       const chain = [...layoutsAbove(page), page].map(read);
-      assert.equal(chain.some((source) => /<PrivateRoute \/>/.test(source)), true, `${routeOf(page)} mounts PrivateRoute`);
+      assert.equal(chain.some((source) => /<PrivateRoute>/.test(source)), true, `${routeOf(page)} mounts PrivateRoute`);
     }
   }
   // A page that reads the signed-in member shows that member's data, so it has to be on the list.
@@ -220,7 +220,7 @@ before(async () => {
   ({ PrivatePageGuard } = await import("@/components/auth/private-page-guard"));
   ({ watchPrivateView } = await import("@/lib/member-auth/private-view"));
 });
-afterEach(() => { ui.cleanup(); dom.window.document.body.hidden = false; visibility = "visible"; });
+afterEach(() => { ui.cleanup(); visibility = "visible"; });
 after(() => {
   for (const [key, descriptor] of saved) {
     if (descriptor) Object.defineProperty(globalThis, key, descriptor);
@@ -236,16 +236,18 @@ const settle = () => new Promise((done) => setTimeout(done, 0));
 
 /** A guard whose server answers are scripted: each check takes the next answer. */
 type Answer = string | null | undefined;
+/** The guard's own wrapper: the only element it ever hides. */
+const page = () => dom.window.document.querySelector<HTMLElement>("[data-private-page]")!;
 function guard(principal: string | null, answers: Array<Answer | Promise<Answer>>) {
   const state = { reloads: 0, checks: 0 };
   const readPrincipal = async () => { state.checks += 1; return answers.shift(); };
-  ui.render(<PrivatePageGuard principal={principal} reload={() => { state.reloads += 1; }} readPrincipal={readPrincipal} />);
+  ui.render(<PrivatePageGuard principal={principal} reload={() => { state.reloads += 1; }} readPrincipal={readPrincipal}><p>private content</p></PrivatePageGuard>);
   return state;
 }
 
 test("the page shows again only after the server confirms the same member", async () => {
   const state = guard("member-a", ["member-a", "member-a"]);
-  const body = dom.window.document.body;
+  const body = page();
   setVisibility("hidden");
   assert.equal(body.hidden, true, "hidden while the tab is hidden");
   setVisibility("visible");
@@ -263,17 +265,17 @@ test("a sign-out elsewhere keeps the page hidden and reloads it (visibility retu
   setVisibility("hidden");
   setVisibility("visible");
   await settle();
-  assert.equal(dom.window.document.body.hidden, true);
+  assert.equal(page().hidden, true);
   assert.equal(state.reloads, 1);
 });
 
 test("a switch to another account hides and reloads the page (focus return, no visibility change)", async () => {
   const state = guard("member-a", ["member-b"]);
   fire("blur");
-  assert.equal(dom.window.document.body.hidden, false, "a whole page is not hidden on blur");
+  assert.equal(page().hidden, false, "a whole page is not hidden on blur");
   fire("focus");
   await settle();
-  assert.equal(dom.window.document.body.hidden, true);
+  assert.equal(page().hidden, true);
   assert.equal(state.reloads, 1);
 });
 
@@ -282,7 +284,7 @@ test("when the server cannot say, the page stays hidden and reloads", async () =
   setVisibility("hidden");
   setVisibility("visible");
   await settle();
-  assert.equal(dom.window.document.body.hidden, true);
+  assert.equal(page().hidden, true);
   assert.equal(state.reloads, 1);
 });
 
@@ -292,7 +294,7 @@ test("an answer that arrives after the page was hidden again does not show it", 
   setVisibility("visible");
   setVisibility("hidden");
   await settle();
-  assert.equal(dom.window.document.body.hidden, true);
+  assert.equal(page().hidden, true);
   assert.equal(state.reloads, 0);
 });
 
@@ -308,16 +310,15 @@ test("a focus check hides the page at once and keeps it hidden while the answer 
     const request = pending();
     const state = guard("member-a", [request.answer]);
     fire("focus");
-    assert.equal(dom.window.document.body.hidden, true, "hidden before any answer");
+    assert.equal(page().hidden, true, "hidden before any answer");
     await settle();
-    assert.equal(dom.window.document.body.hidden, true, "still hidden while the request stalls");
+    assert.equal(page().hidden, true, "still hidden while the request stalls");
     assert.equal(state.reloads, 0);
     request.release(late);
     await settle();
-    assert.equal(dom.window.document.body.hidden, hidden, `answer ${late}`);
+    assert.equal(page().hidden, hidden, `answer ${late}`);
     assert.equal(state.reloads, reloads, `answer ${late}`);
     ui.cleanup();
-    dom.window.document.body.hidden = false;
   }
 });
 
@@ -325,7 +326,7 @@ test("a page rendered signed out shows again only while still signed out; any si
   const still = guard(null, [null]);
   fire("focus");
   await settle();
-  assert.equal(dom.window.document.body.hidden, false);
+  assert.equal(page().hidden, false);
   assert.equal(still.reloads, 0);
   ui.cleanup();
   // A signs in on this page, B replaces the session elsewhere before the first check: the page cannot tell A from
@@ -333,30 +334,36 @@ test("a page rendered signed out shows again only while still signed out; any si
   const signedIn = guard(null, ["member-b"]);
   fire("focus");
   await settle();
-  assert.equal(dom.window.document.body.hidden, true);
+  assert.equal(page().hidden, true);
   assert.equal(signedIn.reloads, 1);
 });
 
-test("an unmounted guard drops its check in flight: no reload, no reveal on another route", async () => {
+test("leaving the route mid-check leaves the destination visible; a late reply neither reveals nor reloads", async () => {
   const request = pending();
   const state = guard("member-a", [request.answer]);
   fire("focus");
+  assert.equal(page().hidden, true, "the private content is hidden while asked");
+  // A same-document Back to a public route: the guard and its wrapper go; the destination renders.
   ui.cleanup();
-  dom.window.document.body.hidden = true;
+  const destination = ui.render(<main data-public="">public page</main>);
+  const document = dom.window.document;
+  assert.equal(document.body.hidden, false, "the shared body was never hidden");
+  assert.equal(document.querySelector("[data-private-page]"), null);
   request.release("member-b");
   await settle();
-  assert.equal(state.reloads, 0);
-  assert.equal(dom.window.document.body.hidden, true, "nothing revealed by the old guard");
+  assert.equal(state.reloads, 0, "no reload from the old guard");
+  assert.equal((destination.container.querySelector("[data-public]") as HTMLElement).closest("[hidden]"), null, "the destination stays visible");
+  assert.equal(document.body.textContent?.includes("private content"), false, "the old content is gone, not revealed");
 });
 
 test("a restored page stays hidden and reloads; a normal show and an unmounted guard do nothing", async () => {
   const state = guard("member-a", []);
   fire("pagehide");
-  assert.equal(dom.window.document.body.hidden, true, "hidden before the back-forward cache keeps a frame");
+  assert.equal(page().hidden, true, "hidden before the back-forward cache keeps a frame");
   dom.window.dispatchEvent(pageShow(false));
   assert.equal(state.reloads, 0, "a normal load is not a restore");
   dom.window.dispatchEvent(pageShow(true));
-  assert.equal(dom.window.document.body.hidden, true);
+  assert.equal(page().hidden, true);
   assert.equal(state.reloads, 1, "restored: reload, so the server re-checks the session");
   ui.cleanup();
   dom.window.dispatchEvent(pageShow(true));

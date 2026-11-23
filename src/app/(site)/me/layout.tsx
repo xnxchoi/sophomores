@@ -6,5 +6,5 @@ import { SegmentMessages } from "../_intl/segment-messages";
 // The me pages' client components receive their own namespaces only (src/i18n/client-namespaces.ts).
 // A member's own pages (src/lib/member-auth/private-pages.ts): rendered per request, guarded in the browser.
 export default function MeLayout({ children }: { children: ReactNode }) {
-  return <><PrivateRoute /><SegmentMessages namespaces={segmentNamespaces.me}>{children}</SegmentMessages></>;
+  return <PrivateRoute><SegmentMessages namespaces={segmentNamespaces.me}>{children}</SegmentMessages></PrivateRoute>;
 }

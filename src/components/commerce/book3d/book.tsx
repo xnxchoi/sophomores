@@ -166,9 +166,6 @@ function Board({ geometries, segments, material, k = 0 }: { geometries: BoxGeome
   return <group ref={(group) => { segments.current[k] = group; }} position={[k === 0 ? 0 : SEG, 0, 0]}>
     <mesh geometry={geometries[k]} material={material} castShadow />
     <Board geometries={geometries} segments={segments} material={material} k={k + 1} />
-    <LookInside look={look} root={root} signals={signals} sound={sound} width={W - 0.15} height={H - 0.3} thickness={T} pageTextures={pageTextures}
-      onClose={() => onClose?.()}
-      onSpread={(spread) => { if (storageKey) try { window.sessionStorage.setItem(storageKey, String(spread)); } catch { /* storage unavailable */ } }} />
   </group>;
 }
 
@@ -363,5 +360,8 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
     <mesh ref={closedPages} geometry={geometry.pages} material={material} position={[-0.075, 0, 0]} castShadow />
     <group ref={frontHinge} position={[-W / 2, 0, T / 2]}><Board geometries={geometry.front} segments={front} material={material} /></group>
     <group position={[-W / 2, 0, -T / 2]}><Board geometries={geometry.back} segments={back} material={material} /></group>
+    <LookInside look={look} root={root} signals={signals} sound={sound} width={W - 0.15} height={H - 0.3} thickness={T} pageTextures={pageTextures}
+      onClose={() => onClose?.()}
+      onSpread={(spread) => { if (storageKey) try { window.sessionStorage.setItem(storageKey, String(spread)); } catch { /* storage unavailable */ } }} />
   </group>;
 }

@@ -14,7 +14,7 @@ before(async () => {
       if (context.parentURL && new URL(context.parentURL).pathname.endsWith("/src/app/(site)/shop/page.tsx")
         && ["next/server", "payload", "@payload-config", "@/lib/commerce/catalogue", "@/lib/commerce/editions",
           "@/lib/member-auth/public-capabilities.server", "@/components/commerce/checkout",
-          "@/components/commerce/offer", "@/components/commerce/book-offer"].includes(specifier)) {
+          "@/components/commerce/offer", "@/components/commerce/book-offer", "@/components/commerce/load-retry"].includes(specifier)) {
         return { url: new URL("../../fixtures/commerce/book-shop-route.tsx", import.meta.url).href, shortCircuit: true };
       }
       return nextResolve(specifier, context);
@@ -57,8 +57,17 @@ test("actual ShopPage routes native absence independently but never purchases an
     setBookShopScenario({ editions: new Error("Synthetic edition read failure"), legacyOffer: true });
     const html = renderToStaticMarkup(await ShopPage());
     assert.match(html, /data-book-state="read-failed"/);
+    assert.match(html, /data-retry/, "a failed read retries in place");
     assert.doesNotMatch(html, /data-legacy-offer|data-legacy-checkout|data-account-gate/);
     assert.equal(legacyOfferReads(), 0);
+  });
+  await t.test("a legacy offer read that throws is a failed read with a retry, not the closed shop", async () => {
+    setBookShopScenario({ editions: { status: "unavailable", reason: "product-unpublished", purchaseReady: false }, legacyOffer: new Error("Synthetic legacy read failure") });
+    const html = renderToStaticMarkup(await ShopPage());
+    assert.match(html, /data-book-state="read-failed"/);
+    assert.match(html, /data-retry/);
+    assert.doesNotMatch(html, /data-legacy-offer|data-legacy-checkout|data-account-gate/);
+    assert.equal(legacyOfferReads(), 1);
   });
   await t.test("no native or legacy publication never fabricates a checkout", async () => {
     setBookShopScenario({ editions: { status: "unavailable", reason: "product-unpublished", purchaseReady: false }, legacyOffer: false });

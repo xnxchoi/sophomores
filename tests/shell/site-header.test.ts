@@ -6,6 +6,7 @@ import { resolve } from "node:path";
 import { test } from "node:test";
 import {
   capHeaderScroll,
+  createLerpGuard,
   getHeaderScrollProgress,
   getNextHeaderScrubPosition,
   headerDoneAction,
@@ -13,6 +14,7 @@ import {
   headerInnerTranslate,
   headerInternalOpacity,
   headerLogoY,
+  headerRowY,
   headerSectionTranslate
 } from "@/components/shell/site-header";
 import { siteLayer } from "@/constants/site-layers";
@@ -110,4 +112,43 @@ test("the menu-time offsets and the mark's vertical position follow The Hideaway
       });
     }
   }
+});
+
+test("keyboard focus and the open menu (#24) win over a slide or fade", () => {
+  // revealed = keyboard focus or the open menu; visible is then true too.
+  for (const variant of ["slide", "fade"] as const) {
+    assert.equal(headerInternalOpacity(variant, true, true), 1, `${variant} + reveal: opaque`);
+    assert.equal(headerSectionTranslate(variant, true, true), 0, `${variant} + reveal: not slid`);
+    assert.equal(headerRowY(-100, true), 0, `${variant} + reveal: row in place`);
+  }
+  // Neither trigger: The Hideaway's values.
+  assert.equal(headerInternalOpacity("slide", false, false), 0);
+  assert.equal(headerSectionTranslate("slide", false, false), 100);
+  assert.equal(headerInternalOpacity("slide", true, false), 0);
+  assert.equal(headerRowY(-100, false), -100);
+  assert.match(header, /const revealed = focused \|\| open;/);
+  assert.match(header, /const internalOpacity = useTransform\(\(\) => \(revealState\.get\(\) \? 1 : springOpacity\.get\(\)\)\);/);
+  assert.match(header, /const sectionTranslate = useTransform\(\(\) => \(revealState\.get\(\) \? 0 : springTranslate\.get\(\)\)\);/);
+});
+
+test("starting a tween stops the lerp's scheduled writer", () => {
+  const guard = createLerpGuard();
+  let writes = 0;
+  const lerp = guard.writer(() => writes++);
+  lerp();
+  assert.equal(writes, 1);
+  guard.cancel(); // what stopLerp does before a tween
+  lerp();
+  lerp();
+  assert.equal(writes, 1);
+  // A newer lerp also retires the older writer.
+  const older = guard.writer(() => writes++);
+  const newer = guard.writer(() => writes++);
+  older();
+  newer();
+  assert.equal(writes, 2);
+  // Every tween start calls stopLerp first: the menu/typed-leave tween, the leave tween and the mount/resize tween.
+  assert.match(header, /running\.current = null;\n {4}stopLerp\(\);\n {4}if \(transitionType === "transition-wipe"\) return;/);
+  assert.match(header, /running\.current\?\.stop\(\);\n {4}stopLerp\(\);\n {4}running\.current = animate\(scrubPosition, 0,/);
+  assert.match(header, /stopLerp\(\);\n {4}animate\(scrubPosition, \[0, target\]/);
 });

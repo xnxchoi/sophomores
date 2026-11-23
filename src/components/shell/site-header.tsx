@@ -68,14 +68,43 @@ export function headerDoneAction({ wipe, navOpen, outType }: { wipe: boolean; na
   return "animate-to-previous" as const;
 }
 
-/** The sides' slide-out distance in % (HeaderClient.tsx:195-199). */
-export function headerSectionTranslate(variant: HeaderVariant, visible: boolean): number {
+/**
+ * The sides' slide-out distance in % (HeaderClient.tsx:195-199). `revealed` is keyboard focus or the open menu, our
+ * kept reveal (#24): it wins over a slide or fade, so the controls are never invisible while reachable.
+ */
+export function headerSectionTranslate(variant: HeaderVariant, visible: boolean, revealed = false): number {
+  if (revealed) return 0;
   return variant !== "slide" || visible ? 0 : 100;
 }
 
-/** The sides' opacity target (HeaderClient.tsx:207-211). */
-export function headerInternalOpacity(variant: HeaderVariant, visible: boolean): number {
+/** The sides' opacity target (HeaderClient.tsx:207-211); the reveal (#24) wins, as above. */
+export function headerInternalOpacity(variant: HeaderVariant, visible: boolean, revealed = false): number {
+  if (revealed) return 1;
   return variant !== "fade" && variant !== "slide" && visible ? 1 : 0;
+}
+
+/** The row's slide in % (HeaderClient.tsx:244); the reveal (#24) holds it in place. */
+export function headerRowY(innerTranslate: number, revealed: boolean) {
+  return revealed ? 0 : innerTranslate;
+}
+
+/**
+ * Guards the lerp's frame writer: a writer writes only while it is the latest one, so starting a tween (or another
+ * lerp) stops a writer already scheduled, which otherwise kept pulling the scrub for up to a second.
+ */
+export function createLerpGuard() {
+  let generation = 0;
+  return {
+    writer(write: () => void) {
+      const own = ++generation;
+      return () => {
+        if (own === generation) write();
+      };
+    },
+    cancel() {
+      generation += 1;
+    }
+  };
 }
 
 /** The inner row's slide on a header-transition change (HeaderClient.tsx:221-232). */
@@ -162,6 +191,7 @@ export function SiteHeader({ member: memberProp }: { member?: Promise<HeaderMemb
   // The Hideaway also hides the header while the FX frame is off (HeaderClient.tsx:253); not here, because the
   // footer turns that frame off (footer-visibility.tsx), which would hide the header whenever the footer shows.
   const visible = showHeader || hovered || focused || open;
+  const revealed = focused || open;
   const closeMenu = useCloseMenuOnNavigate();
 
   const { isMobile } = useIsMobile();
@@ -243,14 +273,21 @@ export function SiteHeader({ member: memberProp }: { member?: Promise<HeaderMemb
   useEffect(() => {
     visibleness.set(visible);
   }, [visible, visibleness]);
-  const sectionTranslate = useSpring(
-    useTransform(() => headerSectionTranslate(transitionVariant.get(), visibleness.get())),
+  const revealState = useMotionValue(revealed);
+  useEffect(() => {
+    revealState.set(revealed);
+  }, [revealed, revealState]);
+  const springTranslate = useSpring(
+    useTransform(() => headerSectionTranslate(transitionVariant.get(), visibleness.get(), revealState.get())),
     { visualDuration: 0.4, ...SPRING_EASE.power4.inOut }
   );
-  const internalOpacity = useSpring(
-    useTransform(() => headerInternalOpacity(transitionVariant.get(), visibleness.get())),
+  const springOpacity = useSpring(
+    useTransform(() => headerInternalOpacity(transitionVariant.get(), visibleness.get(), revealState.get())),
     { ...SPRING_EASE.power2.inOut, visualDuration: 0.3 }
   );
+  // While revealed the sides are at rest at once, not after the springs settle.
+  const sectionTranslate = useTransform(() => (revealState.get() ? 0 : springTranslate.get()));
+  const internalOpacity = useTransform(() => (revealState.get() ? 1 : springOpacity.get()));
   const innerTranslate = useMotionValue(0);
   useMotionValueEvent(transitionVariant, "change", (latestValue) => {
     const { y, delay, duration } = headerInnerTranslate(latestValue, visibleness.get());
@@ -259,7 +296,8 @@ export function SiteHeader({ member: memberProp }: { member?: Promise<HeaderMemb
   const sectionY = useMotionTemplate`-${sectionTranslate}%`;
   const sectionLX = useMotionTemplate`-${sectionTranslate}%`;
   const sectionRX = useMotionTemplate`${sectionTranslate}%`;
-  const innerY = useMotionTemplate`${innerTranslate}%`;
+  const rowY = useTransform(() => headerRowY(innerTranslate.get(), revealState.get()));
+  const innerY = useMotionTemplate`${rowY}%`;
   const scy = useTransform(() => headerLogoY(sectionTranslate.get(), mobileState.get(), scrubPosition.get()));
   const sectionCY = useMotionTemplate`translate(-50%,${scy}%)`;
   const innerLeft = useTransform(
@@ -277,6 +315,17 @@ export function SiteHeader({ member: memberProp }: { member?: Promise<HeaderMemb
   const tweenNumber = useRef(0);
   const halted = useRef(false);
   const running = useRef<AnimationPlaybackControls | null>(null);
+  const [lerpGuard] = useState(createLerpGuard);
+  const lerpStep = useRef<(() => void) | null>(null);
+  const lerpTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Stops a scheduled lerp writer: its frame, its 1 s cancel timer, and (through the guard) any call already queued.
+  const stopLerp = () => {
+    lerpGuard.cancel();
+    if (lerpStep.current) cancelFrame(lerpStep.current);
+    lerpStep.current = null;
+    if (lerpTimer.current) clearTimeout(lerpTimer.current);
+    lerpTimer.current = null;
+  };
 
   const track = (scrolled: number) => {
     const c = capHeaderScroll(scrolled, {
@@ -317,6 +366,7 @@ export function SiteHeader({ member: memberProp }: { member?: Promise<HeaderMemb
     windowWidth.set(window.innerWidth);
     if (!halted.current) track(lenis?.animatedScroll ?? window.scrollY);
     const target = getHeaderScrollProgress(tweenNumber.current);
+    stopLerp();
     animate(scrubPosition, [0, target], { duration: 0.6, type: "tween", ease: TWEEN_EASE.power1.out });
   });
   useLayoutEffect(() => {
@@ -330,6 +380,7 @@ export function SiteHeader({ member: memberProp }: { member?: Promise<HeaderMemb
   const setHeaderState = useEffectEvent((transitionType: "transition-wipe" | "animate-to-full" | "animate-to-previous", callback?: () => void) => {
     running.current?.stop();
     running.current = null;
+    stopLerp();
     if (transitionType === "transition-wipe") return;
     if (transitionType === "animate-to-full") {
       running.current = animate(scrubPosition, 0, {
@@ -344,11 +395,12 @@ export function SiteHeader({ member: memberProp }: { member?: Promise<HeaderMemb
       return;
     }
     callback?.();
-    const stepScrubPosition = () => {
+    const stepScrubPosition = lerpGuard.writer(() => {
       scrubPosition.set(getNextHeaderScrubPosition({ currentScrub: scrubPosition.get(), latestScroll: tweenNumber.current }));
-    };
+    });
     frame.update(stepScrubPosition, true);
-    setTimeout(() => cancelFrame(stepScrubPosition), 1000);
+    lerpStep.current = stepScrubPosition;
+    lerpTimer.current = setTimeout(() => cancelFrame(stepScrubPosition), 1000);
   });
 
   // HeaderClient.tsx:452-491: 20 ms after the menu or a page transition changes. A wipe holds the scroll (and, as in
@@ -396,6 +448,7 @@ export function SiteHeader({ member: memberProp }: { member?: Promise<HeaderMemb
     setHeaderVisibility(true);
     halted.current = true;
     running.current?.stop();
+    stopLerp();
     running.current = animate(scrubPosition, 0, {
       duration: 0.96,
       type: "tween",

@@ -56,11 +56,36 @@ export const useFooterReveal = create<{
  * a flag: PageCover still writes the band's own on/off for the footer (below), and this sits on top of it, so neither
  * overwrites the other, and an arriving page and a leaving one can both hold it during the curtain.
  */
-export const useFXFrameOff = create<{ held: number; hold: () => void; release: () => void }>((set) => ({
+export const useFXFrameOff = create<{
+  held: number;
+  hold: () => void;
+  release: () => void;
+  kept: number;
+  keep: () => void;
+  letGo: () => void;
+}>((set) => ({
   held: 0,
   hold: () => set((state) => ({ held: state.held + 1 })),
-  release: () => set((state) => ({ held: Math.max(0, state.held - 1) }))
+  release: () => set((state) => ({ held: Math.max(0, state.held - 1) })),
+  kept: 0,
+  keep: () => set((state) => ({ kept: state.kept + 1 })),
+  letGo: () => set((state) => ({ kept: Math.max(0, state.kept - 1) }))
 }));
+
+/**
+ * The route's loading screen keeps the band as it is while the next page loads: the leaving page has let go by then
+ * and the short loading screen reads as "footer revealed", so without this the band flashed on between two opted-out
+ * pages and dipped on the way back to a default one. The arriving page decides, in one fade.
+ */
+export function FXFrameKeep() {
+  const keep = useFXFrameOff((state) => state.keep);
+  const letGo = useFXFrameOff((state) => state.letGo);
+  useLayoutEffect(() => {
+    keep();
+    return letGo;
+  }, [keep, letGo]);
+  return null;
+}
 
 /**
  * Drop `<FXFrameOff />` anywhere in a page to keep the band off while the page is mounted. It holds in a layout

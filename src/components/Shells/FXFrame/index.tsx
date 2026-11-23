@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { useFrameState, useRPStore } from "@/providers/RP_Pro";
 import { AnimatePresence, useMotionValue, useSpring } from "motion/react";
 import * as m from "motion/react-m";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useShallow } from "zustand/shallow";
 import { useFXFrameOff } from "@/components/shell/footer-visibility";
 
@@ -21,6 +21,11 @@ export const FXFrame = () => {
   const showHeader = useRPStore(useShallow((r) => r.showHeader));
   // A page that holds the band off (FXFrameOff, shell/footer-visibility) wins over the footer's on/off.
   const heldOff = useFXFrameOff((state) => state.held > 0);
+  // While a route loads (FXFrameKeep), the band stays as it is; the arriving page then switches it once.
+  const kept = useFXFrameOff((state) => state.kept > 0);
+  const wanted = showFXFrame && showHeader && !heldOff;
+  const [shown, setShown] = useState(wanted);
+  if (!kept && shown !== wanted) setShown(wanted);
 
   const l = useSpring(left, {
     ...SPRING_EASE.power3.inOut,
@@ -39,7 +44,7 @@ export const FXFrame = () => {
   // you added transitions for switching.."; a brief filtered moment while it fades is fine).
   return (
     <AnimatePresence>
-      {showFXFrame && showHeader && !heldOff && (
+      {shown && (
         <m.div
           ref={fxWrapperRef}
           initial={{ visibility: "hidden", opacity: 0 }}

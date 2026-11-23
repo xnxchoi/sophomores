@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { after, afterEach, before, test } from "node:test";
 import { JSDOM } from "jsdom";
-import { FXFrameOff, useFXFrameOff } from "@/components/shell/footer-visibility";
+import { FXFrameKeep, FXFrameOff, useFXFrameOff } from "@/components/shell/footer-visibility";
 
 // A page that drops in <FXFrameOff /> holds the FXFrame band off while it is mounted, and gives it back on leaving.
 let dom: JSDOM;
@@ -49,4 +49,11 @@ test("two holders (an arriving and a leaving page) keep it off until both have l
   assert.equal(held(), 1);
   arriving.unmount();
   assert.equal(held(), 0);
+});
+
+test("the loading screen keeps the band as it is until it goes", () => {
+  const loading = ui.render(<FXFrameKeep />);
+  assert.equal(useFXFrameOff.getState().kept, 1);
+  loading.unmount();
+  assert.equal(useFXFrameOff.getState().kept, 0);
 });

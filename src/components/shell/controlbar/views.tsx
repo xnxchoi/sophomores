@@ -12,6 +12,7 @@ import { menuLinks } from "@/lib/content/menu";
 import type { Notification } from "@/lib/content/slots";
 import { cn } from "@/lib/utils";
 import { useRPStore } from "@/providers/RP_Pro";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 
 // The Hideaway's per-view stagger (Controlbar/views.tsx, SideDrawer/index.tsx). Low and quick: the drawer
 // itself carries the larger opening motion.
@@ -59,8 +60,8 @@ export function DefaultLinks() {
     >
       {menuLinks.map((link) => (
         <m.div key={link.href} variants={defaultLinksItem}>
-          <Link href={link.href} onClick={close} className="flex min-h-12 items-center">
-            {t(link.label)}
+          <Link href={link.href} onClick={close} className="group/focus flex min-h-12 items-center">
+            <FocusShape className="group-focus-visible/focus:outline-current">{t(link.label)}</FocusShape>
           </Link>
         </m.div>
       ))}
@@ -107,7 +108,7 @@ export function NotificationsView({ notifications }: { notifications: Notificati
               <Link
                 href={item.href || "/essays"}
                 onClick={close}
-                className="flex min-w-0 flex-1 items-start gap-3 rounded-xl px-3 py-3 touch-manipulation transition-colors active:bg-foreground/[0.05]"
+                className="flex min-w-0 flex-1 items-start gap-3 rounded-xl px-3 py-3 touch-manipulation transition-colors focus-visible:bg-foreground/[0.05] active:bg-foreground/[0.05]"
               >
                 <span
                   aria-hidden="true"
@@ -127,9 +128,9 @@ export function NotificationsView({ notifications }: { notifications: Notificati
                   type="button"
                   aria-label={list("markRead")}
                   onClick={() => inbox.markRead(item.id)}
-                  className="inline-flex size-12 flex-none items-center justify-center rounded-full text-foreground/70 touch-manipulation transition-colors active:bg-foreground/[0.06]"
+                  className="group/focus inline-flex size-12 flex-none items-center justify-center rounded-full text-foreground/70 touch-manipulation transition-colors active:bg-foreground/[0.06]"
                 >
-                  <Check aria-hidden="true" className="size-4" strokeWidth={1.5} />
+                  <FocusShape className="flex group-focus-visible/focus:outline-current"><Check aria-hidden="true" className="size-4" strokeWidth={1.5} /></FocusShape>
                 </button>
               )}
             </m.li>
@@ -195,7 +196,7 @@ function AccountRow({ href, icon, label, onSelect }: { href: string; icon: React
     <Link
       href={href}
       onClick={onSelect}
-      className="flex items-center gap-3 rounded-xl px-4 py-3.5 text-sm font-normal text-foreground/85 touch-manipulation transition-colors active:bg-foreground/[0.05]"
+      className="flex items-center gap-3 rounded-xl px-4 py-3.5 text-sm font-normal text-foreground/85 touch-manipulation transition-colors focus-visible:bg-foreground/[0.05] active:bg-foreground/[0.05]"
     >
       <span aria-hidden="true" className="text-foreground/65">
         {icon}
@@ -210,7 +211,7 @@ function MoreLink({ href, label, onSelect }: { href: string; label: string; onSe
     <Link
       href={href}
       onClick={onSelect}
-      className="flex items-center justify-between rounded-xl border border-border/30 px-4 py-3 font-sans text-[11px] tracking-widest text-foreground/75 uppercase touch-manipulation transition-colors active:bg-foreground/[0.05]"
+      className="flex items-center justify-between rounded-xl border border-border/30 px-4 py-3 font-sans text-[11px] tracking-widest text-foreground/75 uppercase touch-manipulation transition-colors active:bg-foreground/[0.05] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
     >
       {label}
       <ArrowRight aria-hidden="true" className="size-4" strokeWidth={1.5} />

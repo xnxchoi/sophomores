@@ -9,6 +9,7 @@ import { Link } from "@/components/core/Link/Link";
 import { siteLayer } from "@/constants/site-layers";
 import { useRPStore } from "@/providers/RP_Pro";
 import { DISCOVER, START } from "../header-panels";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 
 type SearchPost = { slug: string; title: string; dek: string };
 
@@ -92,9 +93,9 @@ function SheetBody({ posts, onClose }: { posts: SearchPost[]; onClose: () => voi
           type="button"
           onClick={onClose}
           aria-label={t("closeSearch")}
-          className="inline-flex size-12 flex-none items-center justify-center rounded-full text-foreground/70 touch-manipulation transition-colors active:bg-foreground/[0.06]"
+          className="group/focus inline-flex size-12 flex-none items-center justify-center rounded-full text-foreground/70 touch-manipulation transition-colors active:bg-foreground/[0.06]"
         >
-          <X aria-hidden="true" className="size-5" strokeWidth={1.5} />
+          <FocusShape className="flex group-focus-visible/focus:outline-current"><X aria-hidden="true" className="size-5" strokeWidth={1.5} /></FocusShape>
         </button>
         <SearchIcon aria-hidden="true" className="size-[18px] flex-none text-foreground/55" strokeWidth={1.5} />
         <input
@@ -175,7 +176,7 @@ function Row({
       <Link
         href={href}
         onClick={onSelect}
-        className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left touch-manipulation transition-colors active:bg-foreground/[0.05]"
+        className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left touch-manipulation transition-colors focus-visible:bg-foreground/[0.05] active:bg-foreground/[0.05]"
       >
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span className="truncate text-sm font-medium tracking-tight text-foreground">{title}</span>

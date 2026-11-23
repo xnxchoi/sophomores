@@ -4,6 +4,7 @@ import { DateTime } from "luxon";
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/components/core/Link/Link";
 import type { PostCard } from "@/lib/content/slots";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 
 /**
  * The essay listing as The Hideaway lays it out (components/layouts/Tagged/Item.tsx: CatTitle and
@@ -22,7 +23,7 @@ export function ArchiveRow({ post }: { post: PostCard }) {
   const locale = useLocale();
   return (
     <div className="relative mb-[40px] grid grid-cols-[1fr_1fr] grid-rows-4 gap-x-[20px] border-b border-[oklch(from_var(--port-shade)_l_c_h_/_0.16)] pb-[40px] after:absolute after:bottom-0 after:col-[6/-1] after:h-px after:w-full after:bg-[oklch(from_var(--port-shade)_l_c_h_/_0.4)] after:content-[''] lg:mb-25 lg:grid-cols-[repeat(12,1fr)] lg:grid-rows-[repeat(4,auto)_1fr_auto] lg:items-start lg:border-b-0 lg:pb-0">
-      <Link className="absolute inset-0 z-3 h-full w-full" href={post.href} aria-label={post.title} />
+      <Link className="absolute inset-0 z-3 h-full w-full focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-current" href={post.href} aria-label={post.title} />
       <div className="relative col-[1] row-[1/6] aspect-[3/2] min-h-px min-w-px overflow-hidden rounded-[10px] bg-[var(--faded-bg)] lg:col-[3/6] lg:row-[1/7]">
         {post.heroUrl ? <Image src={post.heroUrl} alt="" fill sizes="(min-width: 1024px) 25vw, 50vw" className="object-cover" /> : null}
       </div>
@@ -67,11 +68,11 @@ export function PageRange({
   return (
     <div className="mx-auto mb-8 flex w-[calc(100%-80px)]">
       <span className="flex w-1/3 shrink grow justify-start">
-        {page > 1 ? <Link className="-m-6 inline-flex p-6" href={`/essays/in/${page - 1}`}>{t("previous")}</Link> : null}
+        {page > 1 ? <Link className="group/focus -m-6 inline-flex p-6" href={`/essays/in/${page - 1}`}><FocusShape className="group-focus-visible/focus:outline-current">{t("previous")}</FocusShape></Link> : null}
       </span>
       <span className="flex w-1/3 shrink grow justify-center">{t("range", { start, end, total: totalDocs })}</span>
       <span className="flex w-1/3 shrink grow justify-end">
-        {page < totalPages ? <Link className="-m-6 inline-flex p-6" href={`/essays/in/${page + 1}`}>{t("next")}</Link> : null}
+        {page < totalPages ? <Link className="group/focus -m-6 inline-flex p-6" href={`/essays/in/${page + 1}`}><FocusShape className="group-focus-visible/focus:outline-current">{t("next")}</FocusShape></Link> : null}
       </span>
     </div>
   );

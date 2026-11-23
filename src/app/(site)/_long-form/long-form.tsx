@@ -18,7 +18,7 @@ export function LongFormProse({ children, className }: { children: ReactNode; cl
       "[&_h2]:scroll-mt-header [&_h2]:pt-10 [&_h2]:font-heading [&_h2]:text-2xl [&_h2]:leading-snug [&_h2]:tracking-tight [&_h2]:text-balance sm:[&_h2]:text-3xl",
       "[&_h3]:scroll-mt-header [&_h3]:pt-6 [&_h3]:text-xl [&_h3]:leading-snug [&_h3]:font-heading",
       "[&_h4]:scroll-mt-header [&_h4]:pt-4 [&_h4]:font-heading [&_h5]:scroll-mt-header [&_h6]:scroll-mt-header",
-      "[&_a]:underline [&_a]:decoration-current/40 [&_a]:underline-offset-4 hover:[&_a]:decoration-current",
+      "[&_a]:rounded-xs [&_a]:underline [&_a]:decoration-current/40 [&_a]:underline-offset-4 hover:[&_a]:decoration-current [&_a:focus-visible]:outline-2 [&_a:focus-visible]:outline-offset-2 [&_a:focus-visible]:outline-current",
       "[&_strong]:font-semibold",
       "[&_ul]:list-disc [&_ol]:list-decimal [&_ol]:pl-6 [&_ul]:pl-6 [&_li]:pl-1 [&_li+li]:mt-3 [&_li]:marker:text-muted-foreground [&_li_ol]:mt-3 [&_li_ul]:mt-3",
       "[&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-6 [&_blockquote]:text-muted-foreground",

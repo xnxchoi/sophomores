@@ -10,10 +10,11 @@ import * as m from "motion/react-m";
 import { Link } from "@/components/core/Link/Link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FloatingFocusManager, useFloating } from "@floating-ui/react";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 
 function PanelRow({ href, title, hint, onClose }: { href: string; title: string; hint?: string; onClose: () => void }) {
   return (
-    <Link href={href} className="flex min-h-11 w-full items-center py-2 pr-8 pl-4 text-sm leading-4 text-faded-fg/90 outline-none transition-colors duration-200 hover:text-faded-bg" onClick={onClose}>
+    <Link href={href} className="flex min-h-11 w-full items-center py-2 pr-8 pl-4 text-sm leading-4 text-faded-fg/90 outline-none transition-colors duration-200 hover:text-faded-bg focus-visible:underline focus-visible:underline-offset-4" onClick={onClose}>
       <span className="flex-1 truncate">{title}</span>
       {hint ? <span className="ml-3 text-xs opacity-60">{hint}</span> : null}
     </Link>
@@ -94,13 +95,13 @@ export function NotificationPanel({
                 }}
                 exit={{ translateX: "-100%" }}
               >
-                <Link href={item.href ?? "/essays"} onClick={onClose} className="block pr-8">
+                <Link href={item.href ?? "/essays"} onClick={onClose} className="block pr-8 focus-visible:underline focus-visible:underline-offset-4">
                   <p className="text-base">{item.title}</p>
                   <p className="port-copy text-[oklch(from_var(--port-shade)_l_c_h_/_0.72)] mt-1 text-sm">{item.body}</p>
                 </Link>
                 <button
                   type="button"
-                  className="absolute top-0 right-0 flex size-11 items-center justify-center text-xs"
+                  className="group/focus absolute top-0 right-0 flex size-11 items-center justify-center text-xs"
                   aria-label={t('closeNotification')}
                   onClick={() => {
                     if (inbox.connected) inbox.markRead(item.id);
@@ -109,7 +110,7 @@ export function NotificationPanel({
                     root.current?.focus({ preventScroll: true });
                   }}
                 >
-                  ×
+                  <FocusShape className="group-focus-visible/focus:outline-current">×</FocusShape>
                 </button>
               </m.article>
             ))
@@ -118,8 +119,8 @@ export function NotificationPanel({
       </div>
       {visible.length > 0 ? (
         <m.div initial={{ opacity: 0, translateY: "50%" }} animate={{ opacity: 1, translateY: "0%" }} transition={{ duration: 0.15, ease: "easeOut" }}>
-          <Link href="/essays" className="mt-3 flex min-h-11 w-full items-center justify-center py-1 text-sm" onClick={onClose}>
-            {t('seeAll')}</Link>
+          <Link href="/essays" className="group/focus mt-3 flex min-h-11 w-full items-center justify-center py-1 text-sm" onClick={onClose}>
+            <FocusShape className="group-focus-visible/focus:outline-current">{t('seeAll')}</FocusShape></Link>
         </m.div>
       ) : null}
     </m.div>
@@ -152,7 +153,7 @@ export function AccountPanel({ onClose }: { onClose: () => void }) {
         <PanelRow key={link.title} href={link.href} title={rowT(link.title)} onClose={onClose} />
       ))}
       <div className="menu-separator h-px my-1.5 mx-4 bg-gradient-to-r from-[oklch(from_var(--faded-fg)_l_c_h_/_0.1)] via-[oklch(from_var(--faded-fg)_l_c_h_/_0.25)] to-[oklch(from_var(--faded-fg)_l_c_h_/_0.1)]" />
-      <button type="button" className="flex w-full py-2 pr-8 pl-4 text-sm leading-4 text-faded-fg/90 outline-none" role="menuitem" onClick={onClose}>
+      <button type="button" className="flex w-full py-2 pr-8 pl-4 text-sm leading-4 text-faded-fg/90 outline-none focus-visible:underline focus-visible:underline-offset-4" role="menuitem" onClick={onClose}>
         {t('signOut')}</button>
     </m.div>
   );
@@ -213,7 +214,7 @@ export function SearchPanel({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
-      <button type="button" className="search-dialog-scrim absolute inset-0 bg-[oklch(from_var(--off-bg)_l_c_h_/_0.4)]" aria-label={t('closeSearch')} onClick={onClose} />
+      <button type="button" className="search-dialog-scrim absolute inset-0 bg-[oklch(from_var(--off-bg)_l_c_h_/_0.4)] focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-current" aria-label={t('closeSearch')} onClick={onClose} />
       <m.div className="search-dialog-panel relative z-1 w-[min(640px,calc(100%-32px))] mx-auto mt-[12vh] p-2 rounded-xl bg-[var(--faded-bg)]" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ duration: 0.2, ease: "easeOut" }}>
         <input ref={field} className="w-full h-11 border-0 bg-transparent text-inherit text-base tracking-normal outline-none" value={query} placeholder={t('searchForAnything')} autoComplete="off" autoCorrect="off" spellCheck={false} onChange={(event) => setQuery(event.target.value)} />
         <div className="mt-2 max-h-[50vh] overflow-auto">
@@ -225,7 +226,7 @@ export function SearchPanel({
                 <p className="px-3 py-1 text-xs tracking-[0.08em] uppercase opacity-60">{t('quickActions')}</p>
                 <button
                   type="button"
-                  className="flex min-h-11 w-full items-center py-2 pr-8 pl-4 text-sm leading-4 text-faded-fg/90 outline-none"
+                  className="flex min-h-11 w-full items-center py-2 pr-8 pl-4 text-sm leading-4 text-faded-fg/90 outline-none focus-visible:underline focus-visible:underline-offset-4"
                   onClick={() => {
                     toggleTheme();
                     onClose();

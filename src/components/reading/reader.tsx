@@ -1,10 +1,10 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Button } from "@/components/arc/button/button";
 import { useEffect, useRef, useState } from "react";
 import { sliceBody } from "@/lib/content/highlight";
 import type { HighlightRange } from "@/lib/content/slots";
+import { Button } from "@/components/core/ArcFocus/ArcFocus";
 
 export function Reader({
   body,

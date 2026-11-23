@@ -5,10 +5,10 @@ import { useTranslations } from "next-intl";
 import { ArrowRightIcon } from "@phosphor-icons/react";
 import { AnimatePresence, useIsPresent } from "motion/react";
 import * as m from "motion/react-m";
-import { Button } from "@/components/arc/button/button";
 import { Link } from "@/components/core/Link/Link";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useTourStore } from "./TourProvider";
+import { Button } from "@/components/core/ArcFocus/ArcFocus";
 
 // The opener the guide was last opened from. Set on click, so it is known before the guide or the menu moves focus.
 let lastOpener: HTMLElement | null = null;

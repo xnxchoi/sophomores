@@ -62,7 +62,7 @@ export function SlotManager({
 
           <Link
             href="/account"
-            className="inline-flex h-11 shrink-0 items-center justify-center rounded-xl bg-white px-5 text-xs font-medium text-black transition-colors hover:bg-neutral-200 focus-visible:outline-none"
+            className="inline-flex h-11 shrink-0 items-center justify-center rounded-xl bg-white px-5 text-xs font-medium text-black transition-colors hover:bg-neutral-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
           >
             Sign in to nominate
           </Link>
@@ -98,7 +98,7 @@ export function SlotManager({
 
           <Link
             href={isUnactivated ? "/account" : "/tickets"}
-            className="inline-flex h-11 shrink-0 items-center justify-center rounded-xl border border-white/15 bg-white/[0.06] px-5 text-xs font-medium text-white transition-colors hover:bg-white/[0.12]"
+            className="inline-flex h-11 shrink-0 items-center justify-center rounded-xl border border-white/15 bg-white/[0.06] px-5 text-xs font-medium text-white transition-colors hover:bg-white/[0.12] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
           >
             {isUnactivated ? "Activate account" : "Get ticket"}
           </Link>
@@ -202,7 +202,7 @@ export function SlotManager({
                     <button
                       type="button"
                       onClick={() => onOpenSearch(slot.position)}
-                      className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white px-5 text-xs font-medium text-black transition-colors hover:bg-neutral-200 focus-visible:outline-none"
+                      className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white px-5 text-xs font-medium text-black transition-colors hover:bg-neutral-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                     >
                       <PlusIcon className="size-4" />
                       <span>Search catalog</span>
@@ -250,7 +250,7 @@ export function SlotManager({
                               slot.track?.previewUrl
                             )
                           }
-                          className="absolute inset-0 flex items-center justify-center bg-black/40 text-white transition-opacity hover:bg-black/60"
+                          className="absolute inset-0 flex items-center justify-center bg-black/40 text-white transition-opacity hover:bg-black/60 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-white"
                           aria-busy={previewLoading || undefined}
                           aria-label={t(previewLoading ? "cancelPreview" : isPlayingThis ? "pausePreview" : previewFailed ? "retryPreview" : "playPreview", { track: slot.track.title })}
                         >
@@ -292,7 +292,7 @@ export function SlotManager({
                         type="button"
                         onClick={() => onOpenSearch(slot.position)}
                         title="Replace track"
-                        className="flex size-9 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-neutral-400 transition-colors hover:bg-white/[0.08] hover:text-white"
+                        className="flex size-9 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-neutral-400 transition-colors hover:bg-white/[0.08] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                       >
                         <ArrowsClockwiseIcon className="size-4" />
                         <span className="sr-only">Replace</span>
@@ -302,7 +302,7 @@ export function SlotManager({
                         disabled={isRemoving}
                         onClick={() => handleRemove(slot.position)}
                         title="Remove track"
-                        className="flex size-9 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-neutral-400 transition-colors hover:bg-neutral-800 hover:text-white"
+                        className="flex size-9 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-neutral-400 transition-colors hover:bg-neutral-800 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                       >
                         <TrashIcon className="size-4" />
                         <span className="sr-only">Remove</span>
@@ -328,7 +328,7 @@ export function SlotManager({
                         <button
                           type="button"
                           onClick={() => setEditingNoteSlot(null)}
-                          className="h-7 rounded px-2.5 text-xs text-neutral-400 hover:text-white"
+                          className="h-7 rounded px-2.5 text-xs text-neutral-400 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                         >
                           Cancel
                         </button>
@@ -336,7 +336,7 @@ export function SlotManager({
                           type="button"
                           disabled={isSavingNote}
                           onClick={() => handleSaveNote(slot.position)}
-                          className="inline-flex h-7 items-center justify-center rounded bg-white px-3 text-xs font-medium text-black hover:bg-neutral-200"
+                          className="inline-flex h-7 items-center justify-center rounded bg-white px-3 text-xs font-medium text-black hover:bg-neutral-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                         >
                           {isSavingNote ? "Saving..." : "Save note"}
                         </button>
@@ -351,7 +351,7 @@ export function SlotManager({
                         <button
                           type="button"
                           onClick={() => handleStartEditNote(slot)}
-                          className="text-neutral-400 hover:text-white underline underline-offset-2 shrink-0 ml-2"
+                          className="text-neutral-400 hover:text-white underline underline-offset-2 shrink-0 ml-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                         >
                           {slot.note ? "Edit note" : "Add note"}
                         </button>

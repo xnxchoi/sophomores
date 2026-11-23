@@ -76,7 +76,7 @@ export default function GeneralSectionClient({ user }: GeneralSectionClientProps
                 value="en"
                 checked={locale === "en"}
                 onChange={() => void handleSelectLocale("en")}
-                className="size-5 shrink-0 accent-foreground"
+                className="size-5 shrink-0 accent-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
               />
               <span className="text-sm font-medium">{t("english")}</span>
             </label>
@@ -93,7 +93,7 @@ export default function GeneralSectionClient({ user }: GeneralSectionClientProps
                 value="ko"
                 checked={locale === "ko"}
                 onChange={() => void handleSelectLocale("ko")}
-                className="size-5 shrink-0 accent-foreground"
+                className="size-5 shrink-0 accent-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
               />
               <span lang="ko" className="text-sm font-medium">{t("korean")}</span>
             </label>

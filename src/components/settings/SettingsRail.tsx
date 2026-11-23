@@ -81,7 +81,7 @@ export function SettingsRail() {
                 setPendingHref(href);
               }}
               className={cn(
-                "group relative flex items-center gap-3.5 rounded-xl px-3.5 py-3 transition-colors duration-150",
+                "group group/focus relative flex items-center rounded-xl px-3.5 py-3 transition-colors duration-150",
                 !active && "hover:bg-white/[0.04]"
               )}
             >
@@ -92,6 +92,7 @@ export function SettingsRail() {
                   transition={{ type: "spring", bounce: 0.15, duration: 0.35 }}
                 />
               ) : null}
+              <FocusShape className="relative z-10 flex min-w-0 items-center gap-3.5 rounded-lg group-focus-visible/focus:outline-current">
               <span
                 aria-hidden="true"
                 className={cn(
@@ -115,6 +116,7 @@ export function SettingsRail() {
                   {sectionT(meta.label)}
                 </span>
               </div>
+            </FocusShape>
             </Link>
           );
         })}

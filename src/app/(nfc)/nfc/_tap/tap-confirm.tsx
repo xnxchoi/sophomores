@@ -10,8 +10,9 @@ import {
 import { domAnimation, LazyMotion, stagger } from "motion/react";
 import * as m from "motion/react-m";
 import { useTranslations } from "next-intl";
-import { Button } from "@/components/arc/button/button";
 import { PageInset } from "@/components/core/PageInset/PageInset";
+import { Button } from "@/components/core/ArcFocus/ArcFocus";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 
 /**
  * The page a member sees after tapping their card (owner, 22 Nov: "we should probably confirm ... just one step ...
@@ -162,8 +163,8 @@ export function TapConfirm({ view }: { view: NfcTapView }) {
 function QuietLink({ href, children }: { href: string; children: ReactNode }) {
   return (
     <a href={href}
-      className="inline-flex min-h-12 items-center text-[13px] text-foreground/55 underline underline-offset-4 transition-colors hover:text-foreground">
-      {children}
+      className="group/focus inline-flex min-h-12 items-center text-[13px] text-foreground/55 underline underline-offset-4 transition-colors hover:text-foreground">
+      <FocusShape className="group-focus-visible/focus:outline-current">{children}</FocusShape>
     </a>
   );
 }

@@ -2,7 +2,8 @@
 
 import { useTranslations } from "next-intl";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type ComponentProps } from "react";
+import { cn } from "@/lib/utils";
 import {
   DEFAULT_WARP_TUNING,
   WARP_TUNING_CONTROLS,
@@ -109,7 +110,7 @@ export default function WarpControls({
               <label className="flex min-w-0 flex-col gap-1">
                 <span className="flex justify-between gap-3">{t("progress")}{" "}<output>{Math.round(progress)}%</output>
                 </span>
-                <input
+                <ThumbRange
                   aria-label={t("sequenceProgress")}
                   type="range"
                   min={0}
@@ -120,7 +121,6 @@ export default function WarpControls({
                     const value = event.currentTarget.valueAsNumber;
                     if (Number.isFinite(value)) onSeek(value / 100);
                   }}
-                  className="h-11 w-full accent-white"
                 />
               </label>
               <div className="flex gap-2">
@@ -202,7 +202,7 @@ export default function WarpControls({
                       {tuningText(control.labelKey)}
                       <output>{Number(tuning[control.key].toFixed(2))}</output>
                     </span>
-                    <input
+                    <ThumbRange
                       aria-label={tuningText(control.labelKey)}
                       type="range"
                       min={control.min}
@@ -214,7 +214,6 @@ export default function WarpControls({
                         if (Number.isFinite(value))
                           onChange({ ...tuning, [control.key]: value });
                       }}
-                      className="h-11 w-full accent-white"
                     />
                   </label>
                 ))}
@@ -250,4 +249,10 @@ export default function WarpControls({
       )}
     </div>
   );
+}
+
+/** A range whose keyboard focus rings the thumb, never the 44 px box around the track (owner, 23 Nov). A native
+ * thumb takes no ring, so the track and thumb are drawn here: a 4 px track and a 16 px thumb in the panel's white. */
+function ThumbRange({ className, ...props }: ComponentProps<"input">) {
+  return <input {...props} type="range" className={cn("h-11 w-full cursor-pointer appearance-none bg-transparent [&::-webkit-slider-runnable-track]:h-1 [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-white/35 [&::-webkit-slider-thumb]:-mt-1.5 [&::-webkit-slider-thumb]:size-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-moz-range-track]:h-1 [&::-moz-range-track]:rounded-full [&::-moz-range-track]:bg-white/35 [&::-moz-range-thumb]:size-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-white focus-visible:[&::-webkit-slider-thumb]:shadow-[0_0_0_2px_black,0_0_0_4px_white] focus-visible:[&::-moz-range-thumb]:shadow-[0_0_0_2px_black,0_0_0_4px_white]", className)} />;
 }

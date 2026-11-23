@@ -83,7 +83,7 @@ export function SetlistTracklist({
               <button
                 type="button"
                 onClick={() => setFilterQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
               >
                 <XIcon className="size-3.5" />
                 <span className="sr-only">Clear filter</span>
@@ -161,7 +161,7 @@ export function SetlistTracklist({
                                   setActiveNoteTrackId(isNoteOpen ? null : track.id)
                                 }
                                 title="View note"
-                                className="text-neutral-400 hover:text-white ml-0.5"
+                                className="text-neutral-400 hover:text-white ml-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                               >
                                 <ChatCircleTextIcon className="size-3" />
                               </button>
@@ -197,7 +197,7 @@ export function SetlistTracklist({
                           audioPreview.toggle(track.id, track.previewUrl)
                         }
                         className={cn(
-                          "flex size-11 items-center justify-center rounded-lg border text-xs transition-colors",
+                          "flex size-11 items-center justify-center rounded-lg border text-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white",
                           isPlayingThis
                             ? "border-white bg-white text-black"
                             : "border-white/10 bg-white/[0.02] text-neutral-400 hover:bg-white/[0.08] hover:text-white"
@@ -222,7 +222,7 @@ export function SetlistTracklist({
                         href={track.externalUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex size-8 items-center justify-center rounded-lg border border-white/10 bg-white/[0.02] text-neutral-400 transition-colors hover:bg-white/[0.08] hover:text-white"
+                        className="flex size-8 items-center justify-center rounded-lg border border-white/10 bg-white/[0.02] text-neutral-400 transition-colors hover:bg-white/[0.08] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                         title="Open track on Apple Music"
                       >
                         <ArrowSquareOutIcon className="size-3.5" />

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/components/core/Link/Link";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { ArticleHero } from "@/components/reading/article-hero";
 import { PostArchive } from "@/components/reading/post-archive";
 import { ReadingStage } from "@/components/reading/reading-stage";
@@ -22,8 +23,8 @@ export default async function ReadingPage() {
           <ArticleHero posts={posts} />
           <PostArchive posts={posts} />
           <div className="mx-auto flex max-w-3xl px-6">
-            <Link href="/essays/in" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">
-              {t("allEssays")}
+            <Link href="/essays/in" className="group/focus inline-flex min-h-11 items-center text-sm underline underline-offset-4">
+              <FocusShape className="group-focus-visible/focus:outline-current">{t("allEssays")}</FocusShape>
             </Link>
           </div>
         </>

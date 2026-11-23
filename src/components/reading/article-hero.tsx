@@ -44,7 +44,7 @@ function Lead({ post, span }: { post: PostCard; span: "with-rail" | "solo" }) {
     >
       <Link
         href={post.href}
-        className="absolute inset-0 z-10"
+        className="absolute inset-0 z-10 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-current"
         aria-label={post.title}
       />
       <MediaWell ratio="video" src={post.heroUrl} />
@@ -82,7 +82,7 @@ function Secondary({
     >
       <Link
         href={post.href}
-        className="absolute inset-0 z-10"
+        className="absolute inset-0 z-10 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-current"
         aria-label={post.title}
       />
       <MediaWell ratio="square" src={post.heroUrl} />
@@ -121,7 +121,7 @@ function Headliners({ posts }: { posts: PostCard[] }) {
           >
             <Link
               href={post.href}
-              className="absolute inset-0 z-10"
+              className="absolute inset-0 z-10 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-current"
               aria-label={post.title}
             />
             <div className="flex items-baseline gap-x-2.5">

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSettingsNav } from "./SettingsNav";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 
 interface SubRouteHeaderProps {
   title: string;
@@ -33,10 +34,11 @@ const t = useTranslations("Customer.settingsControls");
           setPendingHref(backHref);
         }}
         className={cn(
-          "group inline-flex w-fit items-center gap-1.5 text-xs text-neutral-400 transition-colors hover:text-white",
+          "group group/focus inline-flex w-fit items-center text-xs text-neutral-400 transition-colors hover:text-white",
           "rounded-sm xl:hidden"
         )}
       >
+        <FocusShape className="inline-flex items-center gap-1.5 group-focus-visible/focus:outline-current">
         <ChevronLeft
           size={14}
           strokeWidth={1.4}
@@ -44,6 +46,7 @@ const t = useTranslations("Customer.settingsControls");
           aria-hidden="true"
         />
         {backLabel ?? t("backToSettings")}
+      </FocusShape>
       </Link>
       <div className="flex flex-col gap-1.5">
         <h1 className="text-3xl font-light tracking-tight text-white xl:text-4xl">

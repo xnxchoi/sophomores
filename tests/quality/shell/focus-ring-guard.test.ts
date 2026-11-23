@@ -253,6 +253,58 @@ function hasBaseRule(): boolean {
     && /(^|;)\s*outline(-style)?\s*:\s*none\s*(;|$)/.test(rule.declarations));
 }
 
+// --- Controls with no keyboard cue -----------------------------------------------------------------------
+
+// The base layer removes the browser's ring, so a control that brings no cue of its own shows nothing on keyboard
+// focus. Arc internals are Arc's (their roots take the ring through ArcFocus); these files' controls render inside
+// `.teaser`, whose stylesheet rings every button and link on keyboard focus.
+// core/Button's MotionPillButton renders only inside the header's ring wrappers (legacy .rp_btn sets outline: none).
+const cueExempt = [/^src\/components\/arc\//, /^src\/components\/teaser\/(chapter-nav|story|narrative)\.tsx$/, /^src\/components\/Warp\/index\.tsx$/, /^src\/components\/core\/Button\/index\.tsx$/];
+const controlTags = new Set(["a", "button", "summary", "Link", "NextLink", "m.a", "m.button", "motion.a", "motion.button"]);
+
+export function controlsWithoutCue(file: string): string[] {
+  const rel = path.relative(root, file);
+  if (!/\.[jt]sx$/.test(file) || cueExempt.some((pattern) => pattern.test(rel))) return [];
+  const source = ts.createSourceFile(file, fs.readFileSync(file, "utf8"), ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const out: string[] = [];
+  const visit = (node: ts.Node, covered: boolean) => {
+    if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) {
+      const tag = node.tagName.getText(source);
+      const attributes = node.attributes.properties;
+      const attribute = (name: string) => attributes.find((item): item is ts.JsxAttribute => ts.isJsxAttribute(item) && item.name.getText(source) === name);
+      const literal = (name: string) => { const value = attribute(name)?.initializer; return value && ts.isStringLiteral(value) ? value.text : null; };
+      const className = attribute("className");
+      const tokens = className?.initializer ? split(literalTexts(className.initializer, new Set())) : [];
+      const cue = tokens.some((token) => {
+        const { variants, utility } = parseToken(token);
+        return token === "group/focus" || /has-\[:focus-visible\]/.test(token)
+          || (variants.some((variant) => focusKind(variant) === "visible") && !drawsNothing.has(utility));
+      });
+      const element = ts.isJsxOpeningElement(node) ? node.parent : node;
+      const childCue = /group-focus-visible|<FocusShape\b/.test(element.getText(source).slice(node.getText(source).length));
+      const control = controlTags.has(tag) || ["button", "link"].includes(literal("role") ?? "")
+        || (tag === "input" && ["range", "checkbox", "radio"].includes(literal("type") ?? ""));
+      // A component that forwards its caller's className is judged at its call sites.
+      const forwards = attributes.some(ts.isJsxSpreadAttribute) && tokens.length === 0;
+      const unreachable = /tabIndex=\{-1\}/.test(node.getText(source));
+      if (control && !cue && !childCue && !covered && !forwards && !unreachable) {
+        out.push(`${rel}:${source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1} <${tag}> ${tokens.join(" ").slice(0, 80)}`);
+      }
+    }
+    if (ts.isJsxElement(node)) {
+      visit(node.openingElement, covered);
+      const opening = node.openingElement;
+      const tag = opening.tagName.getText(source);
+      const rings = tag === "HitArea" || /has-\[:focus-visible\]/.test(opening.attributes.getText(source));
+      node.children.forEach((child) => visit(child, covered || rings));
+      return;
+    }
+    ts.forEachChild(node, (child) => visit(child, covered));
+  };
+  visit(source, false);
+  return out;
+}
+
 // --- Tests -----------------------------------------------------------------------------------------------
 
 test("the classifier tells keyboard rings from pointer rings and hit slop from drawn surfaces", () => {
@@ -276,4 +328,9 @@ test("rings never reveal a hit area and never show on pointer focus", () => {
 
 test("the base layer removes the browser's focus outline", () => {
   assert.ok(hasBaseRule(), "src/styles/globals.css @layer base needs `:focus, :focus-visible { outline-style: none; }`");
+});
+
+test("every control shows some keyboard focus cue", () => {
+  const { sources } = reachable();
+  assert.deepEqual(sources.flatMap(controlsWithoutCue), []);
 });

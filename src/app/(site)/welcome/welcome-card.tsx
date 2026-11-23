@@ -8,6 +8,7 @@ import { Link } from "@/components/core/Link/Link";
 import { PageInset } from "@/components/core/PageInset/PageInset";
 import { Button } from "@/components/ui/button";
 import type { MemberWelcomeView } from "@/lib/member-auth/welcome/read";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 
 const arrival: Variants = {
   initial: {},
@@ -66,20 +67,20 @@ export function WelcomeCard({ view }: { view: MemberWelcomeView }) {
             startTransition(() => router.refresh());
           }}>{pending ? t("checking") : t("tryAgain")}</Button>}
         {view.state === "signed-out" && <Link href="/account" prefetch={false}
-          className="inline-flex min-h-12 items-center justify-center rounded-full bg-foreground px-5 py-2 text-sm font-medium text-background hover:opacity-80">
+          className="inline-flex min-h-12 items-center justify-center rounded-full bg-foreground px-5 py-2 text-sm font-medium text-background hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground">
           {t("signIn")}
         </Link>}
         {view.state === "restricted" && <Link href="/help#help-contact"
-          className="inline-flex min-h-12 items-center text-sm underline underline-offset-4">{t("help")}</Link>}
+          className="group/focus inline-flex min-h-12 items-center text-sm underline underline-offset-4"><FocusShape className="group-focus-visible/focus:outline-current">{t("help")}</FocusShape></Link>}
         {view.state === "unverified" && <Link href="/me/settings/account" prefetch={false}
-          className="inline-flex min-h-12 items-center text-sm underline underline-offset-4">{t("account")}</Link>}
+          className="group/focus inline-flex min-h-12 items-center text-sm underline underline-offset-4"><FocusShape className="group-focus-visible/focus:outline-current">{t("account")}</FocusShape></Link>}
         {view.state === "verified" && <>
           {view.passkeyAvailable && <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-3">
             <p className="max-w-xs text-sm leading-6 text-muted-foreground">{t("passkeyOptional")}</p>
             <Link href="/me/settings/security" prefetch={false}
-              className="inline-flex min-h-12 items-center justify-center rounded-full bg-foreground px-5 py-2 text-sm font-medium text-background hover:opacity-80">{t("passkeySettings")}</Link>
+              className="inline-flex min-h-12 items-center justify-center rounded-full bg-foreground px-5 py-2 text-sm font-medium text-background hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground">{t("passkeySettings")}</Link>
           </div>}
-          <Link href="/me" prefetch={false} className="inline-flex min-h-12 items-center text-sm underline underline-offset-4">{t("account")}</Link>
+          <Link href="/me" prefetch={false} className="group/focus inline-flex min-h-12 items-center text-sm underline underline-offset-4"><FocusShape className="group-focus-visible/focus:outline-current">{t("account")}</FocusShape></Link>
         </>}
       </motion.div>
     </motion.section>

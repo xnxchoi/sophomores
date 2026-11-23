@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { Button } from "@/components/arc/button/button";
 import { useAudioPreview } from "./use-audio-preview";
 import {
   Dialog,
@@ -23,6 +22,7 @@ import {
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import type { MusicTrackView } from "@/lib/music/types";
+import { Button } from "@/components/core/ArcFocus/ArcFocus";
 
 interface TrackSearchDrawerProps {
   isOpen: boolean;
@@ -119,7 +119,7 @@ export function TrackSearchDrawer({
             <button
               type="button"
               onClick={handleClose}
-              className="flex size-9 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-neutral-400 transition-colors hover:bg-white/[0.08] hover:text-white"
+              className="flex size-9 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-neutral-400 transition-colors hover:bg-white/[0.08] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
             >
               <XIcon className="size-4" />
               <span className="sr-only">Close</span>
@@ -147,7 +147,7 @@ export function TrackSearchDrawer({
                   setQuery("");
                   setResults([]);
                 }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
               >
                 <XIcon className="size-4" />
                 <span className="sr-only">Clear search</span>
@@ -245,7 +245,7 @@ export function TrackSearchDrawer({
                         disabled={isSubmitting || isSelected}
                         onClick={() => handleSelect(track)}
                         className={cn(
-                          "inline-flex h-9 items-center justify-center rounded-lg px-3 text-xs font-medium transition-colors",
+                          "inline-flex h-9 items-center justify-center rounded-lg px-3 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white",
                           isSelected
                             ? "bg-neutral-800 text-neutral-300 cursor-default"
                             : "bg-white text-black hover:bg-neutral-200"

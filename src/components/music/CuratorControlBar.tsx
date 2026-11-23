@@ -83,7 +83,7 @@ export function CuratorControlBar({
                   type="button"
                   disabled={isSyncing}
                   onClick={() => syncNow()}
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-white px-4 text-xs font-medium text-black transition-colors hover:bg-neutral-200 focus-visible:outline-none disabled:opacity-50"
+                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-white px-4 text-xs font-medium text-black transition-colors hover:bg-neutral-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:opacity-50"
                 >
                   {isSyncing ? (
                     <CircleNotchIcon className="size-4 animate-spin" />
@@ -102,7 +102,7 @@ export function CuratorControlBar({
                   type="button"
                   disabled={isLoading}
                   onClick={() => authorizeCurator()}
-                  className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-3.5 text-xs text-neutral-300 transition-colors hover:bg-white/[0.08] hover:text-white"
+                  className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-3.5 text-xs text-neutral-300 transition-colors hover:bg-white/[0.08] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                   title="Reconnect your Apple ID"
                 >
                   <LinkIcon className="size-3.5" />
@@ -114,7 +114,7 @@ export function CuratorControlBar({
                 type="button"
                 disabled={isLoading}
                 onClick={() => authorizeCurator()}
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-white px-5 text-xs font-medium text-black transition-colors hover:bg-neutral-200 focus-visible:outline-none disabled:opacity-50"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-white px-5 text-xs font-medium text-black transition-colors hover:bg-neutral-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:opacity-50"
               >
                 {isLoading ? (
                   <CircleNotchIcon className="size-4 animate-spin" />

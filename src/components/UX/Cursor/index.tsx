@@ -53,6 +53,7 @@ export default function RP_Cursor() {
   const isTouchDevice = useDeviceInfo(useShallow((r) => r.isTouchDevice));
   const [isTextCursor, setIsTextCursor] = useState(!1);
   const marquee = useCursor(useShallow((l) => l.marquee));
+  const textExit = useCursor(useShallow((l) => l.textExit));
   const [direction, setDirection] = useState<"ltr" | "rtl">("ltr");
   const cursorState = useCursor(useShallow((l) => l.cursorState));
   const oCircle = useRef(null);
@@ -188,6 +189,8 @@ export default function RP_Cursor() {
   const textCursorVariants = useMemo(
     () => ({
       hidden: { opacity: 0, visibility: "hidden", scale: 0 },
+      // Opt-in (textExit "fade"): stripe.press's follower pill leaves by fading out while growing to 1.1× (0.3 s ease-out).
+      fade: { opacity: 0, scale: 1.1, transitionEnd: { visibility: "hidden" }, transition: { duration: 0.3, ease: "easeOut" } },
       animate: {
         opacity: 1,
         visibility: "visible",
@@ -338,7 +341,7 @@ export default function RP_Cursor() {
                 data-themed="color, border-color, background-color, outline-color,box-shadow"
                 initial="hidden"
                 animate={"animate"}
-                exit="hidden"
+                exit={textExit === "fade" ? "fade" : "hidden"}
               >
                 <m.span
                   data-themed="color, background-color"

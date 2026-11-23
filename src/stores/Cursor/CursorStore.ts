@@ -9,6 +9,8 @@ export type HA_CURSOR = {
     y: number;
   };
   marquee: boolean;
+  /** How a text cursor leaves: "shrink" (default) or "fade", stripe.press's follower pill (fades out while growing to 1.1×). */
+  textExit: "shrink" | "fade";
   cursorTheme: "light" | "dark";
   baseCursorTheme: "light" | "dark";
 };
@@ -20,6 +22,7 @@ export type HA_CURSOR_ACT = {
   setBaseCursorTheme: (theme: "light" | "dark") => void;
   resetCursorTheme: () => void;
   setMarquee: (marquee: boolean) => void;
+  setTextExit: (textExit: HA_CURSOR["textExit"]) => void;
 };
 
 const curInit: HA_CURSOR = {
@@ -30,7 +33,8 @@ const curInit: HA_CURSOR = {
   },
   baseCursorTheme: "light",
   cursorTheme: "light",
-  marquee: false
+  marquee: false,
+  textExit: "shrink"
 };
 
 export type HA_CURS = HA_CURSOR & HA_CURSOR_ACT;
@@ -53,7 +57,8 @@ export const createCursorStore = (initState: HA_CURSOR = curInit) => {
           cursorTheme: state.baseCursorTheme,
           marquee: false
         })),
-      setMarquee: (marquee) => set({ marquee })
+      setMarquee: (marquee) => set({ marquee }),
+      setTextExit: (textExit) => set({ textExit })
     }))
   );
 };

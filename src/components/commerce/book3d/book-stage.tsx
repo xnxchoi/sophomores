@@ -82,6 +82,7 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
       const state = node.dataset.book === "drag" ? "DRAG" : node.dataset.book === "hover" && !open ? lookLabel : null;
       if (state === null && !owned) return;
       owned = state !== null;
+      if (owned) cursor.getState().setTextExit("fade");
       cursor.getState().setCursorState(state);
     };
     const observer = new MutationObserver(sync);
@@ -89,6 +90,8 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
     sync();
     return () => { observer.disconnect(); if (owned) cursor.getState().setCursorState(null); };
   }, [cursor, open, lookLabel]);
+  // The fade exit is the book's; the site's other text cursors keep their own once the book is gone.
+  useEffect(() => () => { cursor?.getState().setTextExit("shrink"); }, [cursor]);
   // The theme's change re-lights the book.
   useEffect(() => { signals.current.invalidate?.(); }, [dark]);
 

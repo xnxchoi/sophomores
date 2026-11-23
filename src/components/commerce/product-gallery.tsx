@@ -28,7 +28,7 @@ export function CommerceProductGallery({ images, title }: {
   );
 
   if (media.length === 0 || (media.length === 1 && failed.has(media[0].src))) return (
-    <p className="flex aspect-square items-center justify-center rounded-xl border border-border bg-muted px-8 text-center text-sm leading-relaxed text-muted-foreground">
+    <p className="flex aspect-square items-center justify-center bg-muted px-8 text-center text-sm leading-relaxed text-muted-foreground">
       {t("imagesUnavailable")}
     </p>
   );
@@ -38,7 +38,7 @@ export function CommerceProductGallery({ images, title }: {
     // eslint-disable-next-line @next/next/no-img-element
     <img src={media[0].src} alt={media[0].alt} loading="eager"
       ref={(element) => checkImage(element, media[0].src)} onError={() => markUnavailable(media[0].src)}
-      className="aspect-square w-full rounded-xl border border-border bg-muted object-contain" />
+      className="aspect-square w-full bg-[url(/textures/travertine.webp)] bg-cover bg-center dark:bg-muted dark:bg-blend-multiply object-contain" />
   );
 
   return (
@@ -48,7 +48,7 @@ export function CommerceProductGallery({ images, title }: {
         {media.map((image, index) => (
           <Tabs.Tab key={`${image.id}:${image.sourceIndex}`} value={index}
             aria-label={t("gallerySelectImage", { number: index + 1, count: media.length })}
-            className="relative flex size-18 min-h-12 min-w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border-2 border-transparent bg-muted p-1 text-foreground transition-colors outline-offset-4 hover:border-border focus-visible:outline-2 data-active:border-foreground">
+            className="relative flex size-18 min-h-12 min-w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border-2 border-transparent bg-transparent p-1 text-foreground transition-colors outline-offset-4 hover:border-border focus-visible:outline-2 data-active:border-foreground">
             {!failed.has(image.src) && (
               // The tab's accessible name replaces this duplicate thumbnail description.
               // eslint-disable-next-line @next/next/no-img-element
@@ -64,8 +64,9 @@ export function CommerceProductGallery({ images, title }: {
       <div className="order-1 grid min-w-0">
         {media.map((image, index) => (
           <Tabs.Panel key={`${image.id}:${image.sourceIndex}`} value={index} keepMounted
-            className="col-start-1 row-start-1 min-w-0 rounded-xl outline-offset-4 transition-opacity duration-250 ease-out focus-visible:outline-2 data-hidden:hidden data-starting-style:opacity-0 data-ending-style:opacity-0">
-            <div className="aspect-square overflow-hidden rounded-xl border border-border bg-muted">
+            className="col-start-1 row-start-1 min-w-0 outline-offset-4 transition-opacity duration-250 ease-out focus-visible:outline-2 data-hidden:hidden data-starting-style:opacity-0 data-ending-style:opacity-0">
+            {/* Mersi M1 (owner: "4. M1, M2."): the art sits on a material plate, flat, with no frame or card. */}
+            <div className="aspect-square overflow-hidden bg-[url(/textures/travertine.webp)] bg-cover bg-center dark:bg-muted dark:bg-blend-multiply">
               {failed.has(image.src) ? (
                 <p className="flex size-full items-center justify-center px-6 text-center text-sm leading-relaxed text-muted-foreground">
                   {t("imagesUnavailable")}
@@ -73,7 +74,7 @@ export function CommerceProductGallery({ images, title }: {
               ) : (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={image.src} alt={image.alt} loading={index === 0 ? "eager" : "lazy"}
-                  ref={(element) => checkImage(element, image.src)} onError={() => markUnavailable(image.src)} className="size-full object-contain" />
+                  ref={(element) => checkImage(element, image.src)} onError={() => markUnavailable(image.src)} className="size-full object-contain mix-blend-multiply dark:mix-blend-normal" />
               )}
             </div>
             <p className="mt-3 text-xs text-muted-foreground tabular-nums">

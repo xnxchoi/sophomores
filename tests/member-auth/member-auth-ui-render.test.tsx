@@ -250,7 +250,8 @@ test("OTP correction does not advertise status refresh; genuine outages remain r
 
 test("OTP recipient has its own line rather than sharing a wrapping lead-in", () => {
   const html = render(anonymous, { codeRequested: true });
-  assert.match(html, /<span class="block [^"]*break-all/);
+  // Class order is the formatter's (prettier-plugin-tailwindcss), so match the classes, not their order.
+  assert.match(html, /<span class="(?=[^"]*\bblock\b)[^"]*break-all/);
 });
 
 test("completed customer account uses one monochrome confirmation and the shared typeface", () => {

@@ -1,6 +1,7 @@
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/components/core/Link/Link";
 import { PageInset } from "@/components/core/PageInset/PageInset";
+import { FXFrameOff } from "@/components/shell/footer-visibility";
 import type { SerializedEditorState } from "@payloadcms/richtext-lexical/lexical";
 import {
   type ApprovedPolicy,
@@ -37,6 +38,8 @@ export function PolicyPage({
 
   return (
     <div lang={locale} className="min-h-dvh bg-background text-foreground">
+      {/* The policy pages keep the FXFrame band off (owner, 23 Nov: "oh the policy pages"). */}
+      <FXFrameOff />
       {/* The Hideaway's legal layout and type as hideawayseoul.com/terms renders today (DocsShell): the header and text
           in a wide left column, a sticky right column of contents and related policies level with the header. Sizes,
           line heights, spacing and tones are measured from the live page at 390 and 1440; its column gap steps at 1280

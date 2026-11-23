@@ -38,20 +38,24 @@ input.code-field:not([type="checkbox"]) {
   );
 }
 
-/* Arc controls (inside [data-arc-control]) keep their own field styles; :where() keeps this rule's specificity unchanged. */
-input:not([type="checkbox"]):where(:not([data-arc-control] input)) {
-  display: block;
-  width: 100%;
-  font: inherit;
-  background: transparent;
-  color: #94918bc2;
-  border: 0;
-  border-radius: 0;
-  padding: 12px;
-  margin-top: 6px;
-  border-bottom: 1px solid #413416f0;
-  letter-spacing: 0.25em;
-  font-weight: 200;
+/* Arc controls (inside [data-arc-control]) keep their own field styles; :where() keeps this rule's specificity unchanged.
+   In Tailwind's base layer (globals.css declares the layer order and loads first), so an input with no utilities keeps
+   this look and any utility on an input wins over it. Unlayered, it beat every utility. */
+@layer base {
+  input:not([type="checkbox"]):where(:not([data-arc-control] input)) {
+    display: block;
+    width: 100%;
+    font: inherit;
+    background: transparent;
+    color: #94918bc2;
+    border: 0;
+    border-radius: 0;
+    padding: 12px;
+    margin-top: 6px;
+    border-bottom: 1px solid #413416f0;
+    letter-spacing: 0.25em;
+    font-weight: 200;
+  }
 }
 
 /* ==========================================================================

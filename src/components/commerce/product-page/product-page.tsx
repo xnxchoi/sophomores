@@ -92,7 +92,7 @@ export function ProductPage({ product, offer, content, shelf }: { product: Editi
           {content.praise.map((entry) => <li key={entry.name + entry.quote.slice(0, 24)} className="border-b border-dotted border-foreground/40 py-5">
             <figure>
               <blockquote className="max-w-[38rem] text-[15px] leading-[1.5] text-pretty">
-                <span aria-hidden="true" className="mr-1 inline-block align-[-0.35em] font-display text-[2rem] leading-none text-muted-foreground">“</span>{entry.quote}
+                <span aria-hidden="true" className="mr-1 font-display text-[1.75em] leading-[0] text-muted-foreground">“</span>{entry.quote}
               </blockquote>
               <figcaption className="mt-2 flex flex-wrap gap-x-2 text-[11px] uppercase tracking-[0.06em]">
                 {entry.url ? <a href={entry.url} target="_blank" rel="noreferrer" className="underline decoration-current/40 underline-offset-4 hover:decoration-current">{entry.name}</a> : <span>{entry.name}</span>}
@@ -104,7 +104,7 @@ export function ProductPage({ product, offer, content, shelf }: { product: Editi
       </section>}
 
       {(hasTable || content.gallery.length > 0) && <section aria-label={t("details")}
-        className={cn("grid gap-x-10 gap-y-10 lg:grid-cols-[minmax(0,1.58fr)_minmax(0,1fr)]", content.praise.length > 0 && "mt-20")}>
+        className={cn("grid gap-x-10 gap-y-10 lg:grid-cols-[minmax(0,1.58fr)_minmax(0,1fr)]", content.praise.length > 0 && "mt-12 lg:mt-20")}>
         <dl className="min-w-0 border-t border-foreground">
           <DetailRow label={t("details")} items={details} />
           <DetailRow label={t("typefaces")} items={content.typefaces.map((face) => face.foundry ? face.name + ", " + face.foundry : face.name)} />

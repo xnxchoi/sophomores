@@ -5,6 +5,7 @@ import { getPayload } from "payload";
 import config from "@payload-config";
 import { listCommerceEditionProducts, loadCommerceEditionOffer, loadPublishedCommerceEditions, type CommerceEditionOffer, type CommerceEditionShop } from "@/lib/commerce/editions";
 import { CommerceProductView } from "@/components/commerce/book-offer";
+import { FXFrameOff } from "./fx-frame-off";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("PageMetadata");
@@ -31,5 +32,5 @@ export default async function ShopProductPage({ params }: { params: Promise<{ id
   } catch {
     console.error("Published product information is unavailable.");
   }
-  return <div className="min-h-dvh bg-background text-foreground"><CommerceProductView product={product} offer={offer} others={others} /></div>;
+  return <div className="min-h-dvh bg-background text-foreground"><FXFrameOff /><CommerceProductView product={product} offer={offer} others={others} /></div>;
 }

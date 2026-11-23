@@ -208,11 +208,16 @@ const saved = new Map<string, PropertyDescriptor | undefined>();
 let visibility: DocumentVisibilityState = "visible";
 before(async () => {
   dom = new JSDOM("<!doctype html><html><body><main>private</main></body></html>", { url: "https://sophomores.co/me", pretendToBeVisual: true });
-  for (const key of ["window", "self", "document", "navigator", "HTMLElement", "Element", "Node", "Event"]) {
+  for (const key of ["window", "self", "document", "navigator", "HTMLElement", "HTMLInputElement", "HTMLButtonElement", "Element", "Node", "NodeFilter", "NodeList", "CustomEvent", "Event", "KeyboardEvent", "MouseEvent", "PointerEvent", "FocusEvent", "MutationObserver", "getComputedStyle", "requestAnimationFrame", "cancelAnimationFrame"]) {
     saved.set(key, Object.getOwnPropertyDescriptor(globalThis, key));
-    const value = key === "window" || key === "self" ? dom.window : dom.window[key as keyof typeof dom.window];
+    const raw = key === "window" || key === "self" ? dom.window : dom.window[key as keyof typeof dom.window];
+    const value = typeof raw === "function" && ["getComputedStyle", "requestAnimationFrame", "cancelAnimationFrame"].includes(key) ? raw.bind(dom.window) : raw;
     Object.defineProperty(globalThis, key, { value, configurable: true, writable: true });
   }
+  dom.window.matchMedia = () => ({ matches: false, media: "", onchange: null, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {}, dispatchEvent() { return false; } }) as unknown as MediaQueryList;
+  dom.window.scrollTo = () => {};
+  saved.set("ResizeObserver", Object.getOwnPropertyDescriptor(globalThis, "ResizeObserver"));
+  Object.defineProperty(globalThis, "ResizeObserver", { value: class { observe() {} unobserve() {} disconnect() {} }, configurable: true, writable: true });
   Object.defineProperty(dom.window.document, "visibilityState", { configurable: true, get: () => visibility });
   saved.set("IS_REACT_ACT_ENVIRONMENT", Object.getOwnPropertyDescriptor(globalThis, "IS_REACT_ACT_ENVIRONMENT"));
   Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { value: true, configurable: true, writable: true });
@@ -421,4 +426,69 @@ test("one private-view mechanism: the receipt's delivery address uses the shared
   assert.doesNotMatch(receipt, /addEventListener\(|subscribeVisibility/);
   // Its page, /me/orders/[id], is a private page.
   assert.equal(isPrivatePagePath("/me/orders/2f7c"), true);
+});
+
+let VerificationTray: typeof import("@/components/Authentication/phone-verification/verification-tray").VerificationTray;
+/** A private page with the sign-in tray open over it, its form showing the visitor's email. */
+async function guardedTray(answers: Array<Answer | Promise<Answer>>) {
+  VerificationTray ??= (await import("@/components/Authentication/phone-verification/verification-tray")).VerificationTray;
+  const state = { reloads: 0 };
+  const readPrincipal = async () => answers.shift();
+  ui.render(<PrivatePageGuard principal="member-a" reload={() => { state.reloads += 1; }} readPrincipal={readPrincipal}>
+    <p>private content</p>
+    <VerificationTray open onOpenChange={() => {}} headingId="tray-h" descriptionId="tray-d" description="Sign in" closeLabel="Close"
+      locale="en" mode="focused" onCancel={() => {}} cancelLabel="Cancel">
+      <form data-tray-form=""><input aria-label="Email" defaultValue="member-a@example.invalid" /></form>
+    </VerificationTray>
+  </PrivatePageGuard>);
+  await ui.waitFor(() => assert.ok(dom.window.document.querySelector("[data-tray-form]")));
+  return state;
+}
+const trayForm = () => dom.window.document.querySelector("[data-tray-form]");
+/** Hidden when it, or any element above it, carries the hidden attribute. */
+const trayHidden = () => trayForm()?.closest("[hidden]") !== null;
+
+test("the sign-in tray portals inside the private page's guard, not loose under body", async () => {
+  await guardedTray([]);
+  assert.ok(trayForm()?.closest("[data-private-portal-host]"), "mounted in the guard's portal host");
+  assert.ok(trayForm()?.closest("[data-private-page]"), "and so inside the guarded wrapper");
+  assert.equal(trayHidden(), false, "shown while the page is shown");
+});
+
+test("the open tray hides with the page: during a pending recheck and on pagehide", async () => {
+  const request = pending();
+  await guardedTray([request.answer]);
+  fire("focus");
+  assert.equal(trayHidden(), true, "hidden while the identity check is pending");
+  request.release("member-b");
+  await settle();
+  assert.equal(trayHidden(), true, "and stays hidden for another member");
+  ui.cleanup();
+  await guardedTray([]);
+  fire("pagehide");
+  assert.equal(trayHidden(), true, "hidden on pagehide, before a back-forward cache keeps a frame");
+});
+
+test("leaving for a public route takes the tray with it", async () => {
+  const request = pending();
+  const state = await guardedTray([request.answer]);
+  fire("focus");
+  ui.cleanup();
+  ui.render(<main data-public="">public page</main>);
+  assert.equal(trayForm(), null, "no tray form left anywhere");
+  assert.equal(dom.window.document.body.textContent?.includes("member-a@example.invalid"), false);
+  request.release("member-a");
+  await settle();
+  assert.equal(state.reloads, 0);
+  assert.equal(trayForm(), null);
+});
+
+test("outside a private page, overlays keep their usual place", async () => {
+  VerificationTray ??= (await import("@/components/Authentication/phone-verification/verification-tray")).VerificationTray;
+  ui.render(<VerificationTray open onOpenChange={() => {}} headingId="tray-h" descriptionId="tray-d" description="Sign in" closeLabel="Close"
+    locale="en" mode="focused" onCancel={() => {}} cancelLabel="Cancel"><form data-tray-form="" /></VerificationTray>);
+  await ui.waitFor(() => assert.ok(trayForm()));
+  assert.equal(trayForm()?.closest("[data-private-portal-host]"), null);
+  // The shared sheet takes the same host on a private page.
+  assert.match(read("src/components/ui/sheet.tsx"), /container=\{container \?\? privatePortal \?\? undefined\}/);
 });

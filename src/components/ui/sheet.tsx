@@ -4,6 +4,7 @@ import * as React from "react"
 import { Dialog as SheetPrimitive } from "@base-ui/react/dialog"
 import { cn } from "cn"
 import { Button } from "@/components/ui/button"
+import { usePrivatePortalContainer } from "@/components/auth/private-page-guard"
 import { XIcon } from "@phosphor-icons/react"
 import * as HA_SheetPrimitive from "@radix-ui/react-dialog"
 import { XIcon as HA_XIcon } from "lucide-react"
@@ -21,8 +22,10 @@ function SheetClose({ ...props }: SheetPrimitive.Close.Props) {
   return <SheetPrimitive.Close data-slot="sheet-close" {...props} />
 }
 
-function SheetPortal({ ...props }: SheetPrimitive.Portal.Props) {
-  return <SheetPrimitive.Portal data-slot="sheet-portal" {...props} />
+function SheetPortal({ container, ...props }: SheetPrimitive.Portal.Props) {
+  // On a member's private page the sheet mounts inside the page's guard, so it hides with the page.
+  const privatePortal = usePrivatePortalContainer()
+  return <SheetPrimitive.Portal data-slot="sheet-portal" container={container ?? privatePortal ?? undefined} {...props} />
 }
 
 function SheetOverlay({ className, ...props }: SheetPrimitive.Backdrop.Props) {

@@ -1,9 +1,18 @@
 "use client";
 
-import { type ReactNode, useEffect, useRef } from "react";
+import { createContext, type ReactNode, useContext, useEffect, useRef, useState } from "react";
 import { readSignedInMemberID, watchPrivateView } from "@/lib/member-auth/private-view";
 
 const reloadPage = () => window.location.reload();
+
+// Where a private page's overlays (sheets, trays, dialogs) mount: a host inside the guard's own wrapper, so whatever
+// hides the page hides them too. Null outside a private page: portals keep their usual place under <body>.
+const PrivatePortalHost = createContext<HTMLElement | null>(null);
+
+/** The portal container for an overlay on a private page (null elsewhere). Pass it as the portal's `container`. */
+export function usePrivatePortalContainer(): HTMLElement | null {
+  return useContext(PrivatePortalHost);
+}
 
 type Props = {
   children: ReactNode;
@@ -20,10 +29,12 @@ type Props = {
  * rendered for (or, rendered signed out, only while still signed out). A different member, a sign-in since, a
  * sign-out, or no answer keeps it hidden and reloads it, so the server renders it for whoever is signed in now. A page
  * restored from the back-forward cache always reloads. It hides only its own wrapper (layout-neutral), so leaving the
- * route mid-check can never hide the page navigated to; unmounted, it drops any check still in flight.
+ * route mid-check can never hide the page navigated to; unmounted, it drops any check still in flight. The page's
+ * overlays portal into a host inside that wrapper (usePrivatePortalContainer), so they are hidden with it.
  */
 export function PrivatePageGuard({ children, principal, reload = reloadPage, readPrincipal = readSignedInMemberID }: Props) {
   const content = useRef<HTMLDivElement>(null);
+  const [portalHost, setPortalHost] = useState<HTMLElement | null>(null);
   useEffect(() => {
     let leaving = false;
     let disposed = false;
@@ -60,5 +71,8 @@ export function PrivatePageGuard({ children, principal, reload = reloadPage, rea
       stop();
     };
   }, [principal, reload, readPrincipal]);
-  return <div ref={content} data-private-page="" className="contents [&[hidden]]:hidden">{children}</div>;
+  return <div ref={content} data-private-page="" className="contents [&[hidden]]:hidden">
+    <PrivatePortalHost.Provider value={portalHost}>{children}</PrivatePortalHost.Provider>
+    <div ref={setPortalHost} data-private-portal-host="" className="contents" />
+  </div>;
 }

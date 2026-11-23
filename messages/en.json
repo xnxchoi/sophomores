@@ -1466,7 +1466,15 @@
       "continueToShop": "Review and purchase in the shop",
       "continueToCheckout": "Continue to checkout",
       "visitShop": "Visit the shop",
-      "shippingAndReturns": "Shipping and returns"
+      "shippingAndReturns": "Shipping and returns",
+      "writeOfferUnavailable": "That item isn't on sale now, so it wasn't added.",
+      "writeLimitReached": "It's one per account, and you already have one.",
+      "writePaymentInProgress": "A payment is still open. Finish it first.",
+      "writeCartLocked": "Your cart can't change right now, so it wasn't added.",
+      "writeRejected": "We couldn't add it to your cart.",
+      "writeRetry": "We couldn't save your cart.",
+      "tryAgain": "Try again",
+      "checkPayment": "Check payment status"
     },
     "app_site_me_page": {
       "title": "Your account",

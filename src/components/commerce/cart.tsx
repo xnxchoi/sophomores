@@ -1,11 +1,12 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useSyncExternalStore } from "react";
 import NumberFlow, { NumberFlowGroup } from "@number-flow/react";
 import { useCart, useEcommerce } from "@payloadcms/plugin-ecommerce/client/react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/components/core/Link/Link";
 import type { CommerceOffer } from "@/lib/commerce/catalogue";
+import { listGuestCart, removeGuestCartLine, subscribeGuestCart, type GuestCartLine } from "@/lib/commerce/browser-cart";
 import type { Cart } from "@/payload-types";
 import { cn } from "@/lib/utils";
 
@@ -14,9 +15,19 @@ type CartAction =
   | { kind: "refreshing" | "refreshed" | "refresh-error" }
   | null;
 
+// Auth's browser cart parses storage on every read, so keep one snapshot per content for useSyncExternalStore.
+let guestSnapshot: { key: string; lines: readonly GuestCartLine[] } = { key: "[]", lines: [] };
+const noGuestLines: readonly GuestCartLine[] = [];
+function readGuestLines() {
+  const lines = listGuestCart();
+  const key = JSON.stringify(lines);
+  if (key !== guestSnapshot.key) guestSnapshot = { key, lines };
+  return guestSnapshot.lines;
+}
+
 /**
- * The cart for everyone. Its provider (CommerceProvider) loads a signed-in member's cart itself, and a guest cart once Auth
- * enables one. This view never submits payment. With `onSignIn`, Checkout asks for sign-in first instead of linking on.
+ * The cart for everyone. Signed in, its provider (CommerceProvider) loads the member's cart; signed out, the lines are
+ * Auth's browser cart (src/lib/commerce/browser-cart.ts), written through to the member's cart after sign-in. This view never submits payment. With `onSignIn`, Checkout asks for sign-in first instead of linking on.
  */
 export function CommerceCart({ offer, wide = false, signedIn = true, onSignIn }: {
   offer: CommerceOffer | null; wide?: boolean; signedIn?: boolean; onSignIn?: () => void;
@@ -24,12 +35,16 @@ export function CommerceCart({ offer, wide = false, signedIn = true, onSignIn }:
   const t = useTranslations("Customer.components_commerce_cart");
   const { cart, isLoading, removeItem, refreshCart } = useCart();
   const { user } = useEcommerce();
+  const guestLines = useSyncExternalStore(subscribeGuestCart, readGuestLines, () => noGuestLines);
+  const guest = !signedIn;
   // A signed-in member's cart arrives after the provider reads the member; until then (or while the cart it named loads) it's loading, not empty.
   const savedCarts = (user as { cart?: { docs?: unknown[] } } | null | undefined)?.cart?.docs?.length ?? 0;
-  const waiting = !cart && (isLoading || (signedIn && (!user || savedCarts > 0)));
+  const waiting = !guest && !cart && (isLoading || !user || savedCarts > 0);
   const [action, setAction] = useState<CartAction>(null);
   const changing = useRef(false);
-  const items: NonNullable<Cart["items"]> = cart?.items ?? [];
+  const items: NonNullable<Cart["items"]> = guest
+    ? guestLines.map((line) => ({ id: line.productID, product: line.productID, quantity: line.quantity }))
+    : cart?.items ?? [];
   const pending = action?.kind === "removing" || action?.kind === "refreshing";
   const busy = pending || isLoading;
   const line = items.length === 1 ? items[0] : undefined;
@@ -56,6 +71,8 @@ export function CommerceCart({ offer, wide = false, signedIn = true, onSignIn }:
   else if (action?.kind === "refresh-error") feedback = t("refreshFailed");
 
   async function remove(itemID: string) {
+    // Signed out the line is the browser's (its ID is the product ID); removing it is immediate.
+    if (guest) { removeGuestCartLine(itemID); return; }
     if (changing.current || busy || !cart?.id) return;
     changing.current = true;
     const cartID = String(cart.id);
@@ -102,7 +119,7 @@ export function CommerceCart({ offer, wide = false, signedIn = true, onSignIn }:
                 <p className="mt-3 text-sm text-muted-foreground">{Number.isSafeInteger(item.quantity) && item.quantity > 0 ? t("quantity", { count: item.quantity }) : t("quantityUnavailable")}</p>
                 {matching ? <p className="mt-2 text-sm tabular-nums">{t("unitPrice", { amount: offer.priceKRW.toLocaleString("ko-KR") })}</p>
                   : <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{t("itemDetailsUnavailable")}</p>}
-                <button type="button" aria-label={t("removeNamed", { title })} disabled={busy || !item.id || !!cart.purchasedAt || cart.status === "purchased"}
+                <button type="button" aria-label={t("removeNamed", { title })} disabled={busy || !item.id || !!cart?.purchasedAt || cart?.status === "purchased"}
                   onClick={() => item.id && void remove(item.id)} className="mt-3 inline-flex min-h-12 items-center justify-center rounded-full border border-border px-5 text-sm outline-offset-4 transition-colors hover:bg-muted focus-visible:outline-2 disabled:opacity-40">{action?.kind === "removing" && action.itemID === item.id ? t("removing") : t("remove")}</button>
               </div>
             </li>;

@@ -1466,7 +1466,15 @@
       "continueToShop": "",
       "continueToCheckout": "",
       "visitShop": "",
-      "shippingAndReturns": ""
+      "shippingAndReturns": "",
+      "writeOfferUnavailable": "",
+      "writeLimitReached": "",
+      "writePaymentInProgress": "",
+      "writeCartLocked": "",
+      "writeRejected": "",
+      "writeRetry": "",
+      "tryAgain": "",
+      "checkPayment": ""
     },
     "app_site_me_page": {
       "title": "",

@@ -246,8 +246,9 @@ export function LookInside({ source, look, root, signals, sound, width, height, 
         if (ev.pointerId !== e.pointerId) return;
         target.removeEventListener("pointerup", end); target.removeEventListener("pointercancel", end); target.removeEventListener("lostpointercapture", end);
         if (painting.current?.id !== e.pointerId) return; // a newer stroke from another pointer is not this one's to end
-        // A held pan took this finger over, even without a move over the pages: the stroke is undone, not kept.
-        if (signals.current.view.panning) { undoStroke(); return; }
+        // Only a real release keeps the stroke. A cancel, a lost capture or the book hiding (which cancels the pointer)
+        // takes it back, as does a held pan that took this finger over; committed marks are never touched (Review-B r3).
+        if (ev.type !== "pointerup" || signals.current.view.panning) { undoStroke(); return; }
         marks.current?.commit(painting.current.stroke); painting.current = null;
       };
       try { (e.target as Element).setPointerCapture(e.pointerId); } catch { /* the pointer is already gone */ }

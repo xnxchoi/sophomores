@@ -51,7 +51,7 @@ export function Reader({
 
   return (
     <div className="relative">
-      <article ref={articleRef} tabIndex={0} className="font-serif text-xl leading-relaxed font-light">
+      <article ref={articleRef} tabIndex={0} className="font-serif text-xl leading-relaxed font-light whitespace-pre-line">
         {parts.map((part, index) =>
           part.id ? (
             <mark key={part.id} className="port-mark bg-[oklch(from_var(--port-shade)_l_c_h_/_0.15)] text-inherit">

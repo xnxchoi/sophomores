@@ -139,6 +139,8 @@ test("a rejected user lookup never fails the sign-in and logs no address", async
     }));
   } finally { console.error = original; }
   const text = JSON.stringify(errors);
-  assert.match(text, /AdapterError/);
+  // A fixed label and a correlation ID only: the thrown error's name and message are never logged.
+  assert.match(text, /"errorClass":"Error","correlationId":"[0-9a-f-]{36}"/);
+  assert.equal(text.includes("AdapterError") || text.includes("lookup failed"), false);
   assert.equal(text.toLowerCase().includes(owner), false);
 });

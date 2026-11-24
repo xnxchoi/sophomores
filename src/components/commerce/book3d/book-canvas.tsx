@@ -8,9 +8,11 @@ import { Book, easeInOutQuad, type BookSignals, type BookTextures } from "./book
 
 
 /** Intro dolly (map §C1 #10): the camera starts 120 units further back and eases in over 2 s; the book rises into place. */
-function Intro({ children }: { children: ReactNode }) {
-  const group = useRef<Group>(null), clock = useRef(0);
+function Intro({ children, skip = false }: { children: ReactNode; skip?: boolean }) {
+  // Skipped when the book arrives by the carry (it travels in from a shop card instead): it starts at rest.
+  const group = useRef<Group>(null), clock = useRef(skip ? 2 : 0), rest = useRef(skip);
   useFrame((state, delta) => {
+    if (rest.current) { rest.current = false; state.camera.position.z = 54; state.invalidate(); }
     if (clock.current >= 2) return;
     clock.current = Math.min(clock.current + Math.min(delta, 0.05), 2);
     state.invalidate(); // on demand, the intro still plays to its end
@@ -18,7 +20,7 @@ function Intro({ children }: { children: ReactNode }) {
     state.camera.position.z = 54 + 120 * (1 - e);
     if (group.current) group.current.position.y = -6 * (1 - e);
   });
-  return <group ref={group} position={[0, -6, 0]}>{children}</group>;
+  return <group ref={group} position={[0, skip ? 0 : -6, 0]}>{children}</group>;
 }
 
 /** Mouse spotlight (#12): follows the pointer at 0.06 per frame; it casts the book's shadow in the dark theme only. */
@@ -108,7 +110,7 @@ function Magnifier({ touch, source }: { touch: boolean; source?: HTMLElement }) 
  * BookStage. The View's own element is the book's hit area (see BookSignals.hitRect): drei raycasts only events that
  * target it, so it spans the stage and the book clips its hit-testing to its own bounds. Hidden while covered.
  */
-export default function BookView({ signals, textures, visible, dark, onOpen, onClose, storageKey, pageTextures, magnifier = false, onElement, ...hit }: {
+export default function BookView({ signals, textures, visible, dark, intro = true, onOpen, onClose, storageKey, pageTextures, magnifier = false, onElement, ...hit }: {
   signals: RefObject<BookSignals>;
   textures: BookTextures;
   visible: boolean;
@@ -118,6 +120,8 @@ export default function BookView({ signals, textures, visible, dark, onOpen, onC
   storageKey?: string;
   pageTextures?: string[];
   magnifier?: boolean;
+  /** The intro dolly; off when the book arrives by the carry. */
+  intro?: boolean;
   onElement?: (element: HTMLElement | null) => void;
 } & Pick<ComponentProps<"div">, "className" | "inert" | "onPointerEnter" | "onPointerDown" | "onPointerMove" | "onPointerLeave">) {
   const small = typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
@@ -138,7 +142,7 @@ export default function BookView({ signals, textures, visible, dark, onOpen, onC
         clicks elsewhere (the controls, the page) don't count. Only the book is in this group, so the shadow catcher or
         the lens never counts as a hit. */}
     <Suspense fallback={null}>
-      <group onPointerMissed={(event) => { if (signals.current.look && source && event.target === source) onClose?.(); }}><Intro><Book source={source} textures={textures} signals={signals} onOpen={onOpen} onClose={onClose} small={small} storageKey={storageKey} pageTextures={pageTextures} /></Intro></group>
+      <group onPointerMissed={(event) => { if (signals.current.look && source && event.target === source) onClose?.(); }}><Intro skip={!intro}><Book source={source} textures={textures} signals={signals} onOpen={onOpen} onClose={onClose} small={small} storageKey={storageKey} pageTextures={pageTextures} /></Intro></group>
     </Suspense>
     {magnifier && <Magnifier touch={small} source={source} />}
     {/* The dark theme's shadow catcher; the shared canvas renders shadow maps (shadows="percentage", UI-Shell dd1b91ac). */}

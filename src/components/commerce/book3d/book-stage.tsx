@@ -13,9 +13,14 @@ import { useTheme } from "@/providers/Theme";
 import { useRPStore } from "@/providers/RP_Pro";
 import { useCanvasClaim } from "@/components/gl/canvas-frameloop";
 import type { BookSignals, BookTextures } from "./book";
+import { endCarry, peekCarry } from "./book-carry";
 
 // Not three's MathUtils: the stage loads with the page, and three must stay in the lazy canvas chunk.
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+// Also not book.tsx's easeInOutQuad, for the same reason (three stays in the lazy chunk).
+const easeInOutQuad = (x: number) => x < 0.5 ? 2 * x * x : 1 - (-2 * x + 2) ** 2 / 2;
+// The carry (TEARDOWN §5): the active book travels for 600 ms (its 200 → 800 ms window), eased in and out.
+const CARRY_MS = 600;
 const BookCanvas = dynamic(() => import("./book-canvas"), { ssr: false });
 
 /**
@@ -79,6 +84,10 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
   // Otherwise it renders on demand: a scroll, a row's effect or the theme asks for a frame, and the book keeps asking only
   // while something it shows still moves (book.tsx), so an idle page draws nothing (Review-B r2: demand on release).
   const [hovering, setHovering] = useState(false);
+  // Arriving from a shop card: the book starts at that card's cover and travels into the stage (book-carry.tsx).
+  const [carried] = useState(() => peekCarry(id));
+  const [carrying, setCarrying] = useState(false);
+  const carry = useRef<{ from: NonNullable<typeof carried>; start: number } | null>(null);
   // The shared canvas runs 'always' while any View holds a claim (gl/canvas-frameloop.tsx), otherwise on demand.
   const shown = inView && !menuOpen;
   // The book's own presence: once the scroll exit has carried it out of view, its label and hit area go too, though the
@@ -86,7 +95,18 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
   const [gone, setGone] = useState(false);
   useEffect(() => { const sig = signals.current; sig.onGone = setGone; return () => { sig.onGone = null; }; }, []);
   const usable = shown && !gone;
-  useCanvasClaim(shown && (hovering || open));
+  useCanvasClaim(shown && (hovering || open || carrying));
+  useEffect(() => {
+    if (!carried) return;
+    carry.current = { from: carried, start: performance.now() };
+    let frame = requestAnimationFrame(function step() {
+      setCarrying(true);
+      sync.current?.();
+      if (carry.current && performance.now() - carry.current.start < CARRY_MS) { frame = requestAnimationFrame(step); return; }
+      carry.current = null; endCarry(id); setCarrying(false); sync.current?.();
+    });
+    return () => { cancelAnimationFrame(frame); carry.current = null; };
+  }, [carried, id]);
   const engage = () => setHovering(true), release = () => setHovering(false);
   const poke = () => signals.current.invalidate?.();
   // Pointers pressed on the book; when it hides or leaves mid-gesture each is cancelled, so a held drag, page turn, stroke, pinch or
@@ -135,7 +155,13 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
       if (exit !== signals.current.exit) { signals.current.exit = exit; poke(); }
       // The control layer mirrors the stage's rect.
       const layer = overlay.current;
-      if (layer && rect) { layer.style.left = rect.left + "px"; layer.style.top = rect.top + "px"; layer.style.width = rect.width + "px"; layer.style.height = rect.height + "px"; }
+      // During the carry it travels from the clicked card's cover to the stage.
+      const from = carry.current, e = from ? easeInOutQuad(clamp((performance.now() - from.start) / CARRY_MS, 0, 1)) : 1;
+      const lerp = (a: number, b: number) => a + (b - a) * e;
+      if (layer && rect) {
+        layer.style.left = lerp(from?.from.left ?? rect.left, rect.left) + "px"; layer.style.top = lerp(from?.from.top ?? rect.top, rect.top) + "px";
+        layer.style.width = lerp(from?.from.width ?? rect.width, rect.width) + "px"; layer.style.height = lerp(from?.from.height ?? rect.height, rect.height) + "px";
+      }
     };
     // The closed book's tilt follows the pointer over the whole viewport (mouse and pen; touch has no hover).
     let lastPoke = 0;
@@ -256,7 +282,7 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
           stripe.press hit-rect) and lives in this layer, so its rect follows the stage's, and can travel (the carry, step
           3). It spans the layer; the book clips its hit-testing to its own bounds each frame (none while Look inside is
           open). It starts clipped to nothing. Pointer engagement holds a frameloop claim. */}
-      <BookCanvas signals={signals} textures={textures} visible={shown} dark={dark}
+      <BookCanvas signals={signals} textures={textures} visible={shown} dark={dark} intro={!carried}
         onOpen={() => setOpen(true)} onClose={close} storageKey={"book3d:" + id} pageTextures={pageTextures} magnifier={magnifier}
         onElement={(element) => { signals.current.hitRect = element; }}
         onPointerEnter={engage} onPointerDown={engage} onPointerMove={hovering ? undefined : engage} onPointerLeave={release}

@@ -6,6 +6,7 @@ import { PageInset } from "@/components/core/PageInset/PageInset";
 import { Badge } from "@/components/arc/badge/badge";
 import { ArcRoles } from "./arc-roles";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
+import { CarryLink } from "./book3d/book-carry";
 
 type EditionProduct = Extract<CommerceEditionCatalogue, { status: "displayable" }>["product"];
 
@@ -28,11 +29,12 @@ type ShopEntry = Extract<CommerceEditionShop, { status: "displayable" }>["produc
 /** One product in the shop list: cover, title and facts, linking to its page. */
 function ProductCard({ product, offer }: ShopEntry) {
   return <li className="min-w-0">
-    <Link href={"/shop/products/" + encodeURIComponent(product.productID)} className="group block min-w-0 outline-offset-4 focus-visible:outline-2">
+    {/* The click records the cover's rect: the product page's book starts there (the carry, book3d/book-carry.tsx). */}
+    <CarryLink productId={product.productID} href={"/shop/products/" + encodeURIComponent(product.productID)} className="group block min-w-0 outline-offset-4 focus-visible:outline-2">
       <ProductCover product={product} />
       <h2 className="mt-5 text-2xl leading-snug tracking-tight underline-offset-4 [overflow-wrap:anywhere] group-hover:underline">{product.title}</h2>
       <ProductFacts offer={offer} className="mt-3" />
-    </Link>
+    </CarryLink>
   </li>;
 }
 
@@ -77,8 +79,8 @@ function ProductCover({ product }: { product: EditionProduct }) {
   const cover = product.images.flatMap(({ image }) => typeof image === "object" && image.url ? [{ src: image.url, alt: image.alt || product.title }] : [])[0];
   return cover
     // eslint-disable-next-line @next/next/no-img-element
-    ? <img src={cover.src} alt={cover.alt} className="aspect-square w-full rounded-xl border border-border bg-muted object-contain" />
-    : <div aria-hidden="true" className="aspect-square w-full rounded-xl border border-border bg-muted" />;
+    ? <img data-carry-cover src={cover.src} alt={cover.alt} className="aspect-square w-full rounded-xl border border-border bg-muted object-contain" />
+    : <div data-carry-cover aria-hidden="true" className="aspect-square w-full rounded-xl border border-border bg-muted" />;
 }
 
 /** No published product to show (also the product page's fail-closed state). */

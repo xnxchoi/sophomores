@@ -66,7 +66,7 @@ export default function DraftTransfer({
         >{t("exportJSON")}</EditorButton>
       </footer>
       <details className="mt-3 text-xs" open={json ? true : undefined}>
-        <summary className="cursor-pointer py-2 focus-visible:outline-2">{t("importExportedJSON")}</summary>
+        <summary className="py-2 focus-visible:outline-2">{t("importExportedJSON")}</summary>
         <textarea
           aria-label={t("sequenceJSON")}
           value={json}

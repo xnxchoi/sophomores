@@ -38,7 +38,7 @@ export function StudyPrimaryAction({
     <button
       type="button"
       className={cn(
-        "flex h-12 min-w-0 items-center justify-center rounded-xl bg-foreground px-5 text-[15px] font-medium text-background transition-[background-color,color,opacity,transform] duration-200 ease-out hover:bg-foreground/90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-foreground active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-40 aria-busy:cursor-wait aria-busy:opacity-80",
+        "flex h-12 min-w-0 items-center justify-center rounded-xl bg-foreground px-5 text-[15px] font-medium text-background transition-[background-color,color,opacity,transform] duration-200 ease-out hover:bg-foreground/90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-foreground active:scale-[0.985] disabled:opacity-40 aria-busy:opacity-80",
         className
       )}
       {...props}

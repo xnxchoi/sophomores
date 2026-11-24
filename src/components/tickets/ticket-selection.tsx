@@ -719,11 +719,11 @@ export function TicketSelection({
                     <label
                       key={option.id}
                       className={cn(
-                        "flex min-h-[76px] cursor-pointer items-center gap-4 rounded-2xl border border-neutral-700 px-4 py-4 transition-colors has-focus-visible:outline-2 has-focus-visible:outline-offset-4 has-focus-visible:outline-neutral-100",
+                        "flex min-h-[76px] items-center gap-4 rounded-2xl border border-neutral-700 px-4 py-4 transition-colors has-focus-visible:outline-2 has-focus-visible:outline-offset-4 has-focus-visible:outline-neutral-100",
                         option.id === selection.ticketTypeId &&
                           "border-neutral-300 bg-white/4",
                         option.available === false &&
-                          "cursor-not-allowed opacity-50"
+                          "opacity-50"
                       )}
                     >
                       <input
@@ -1009,7 +1009,7 @@ function TicketAction({
       {...props}
       type="button"
       aria-busy={busy}
-      className="relative flex min-h-[48px] w-full items-center justify-center rounded-xl border-0 bg-neutral-100 px-8 py-3 text-[14px] font-medium text-neutral-950 transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-200 disabled:cursor-not-allowed disabled:opacity-40 disabled:aria-busy:opacity-100"
+      className="relative flex min-h-[48px] w-full items-center justify-center rounded-xl border-0 bg-neutral-100 px-8 py-3 text-[14px] font-medium text-neutral-950 transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-200 disabled:opacity-40 disabled:aria-busy:opacity-100"
     >
       {children}
       {busy && (

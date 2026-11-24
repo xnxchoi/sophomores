@@ -611,7 +611,7 @@ export default function SequenceEditor({
               />
             </div>
             <details className="mt-1 text-[11px]">
-              <summary className="cursor-pointer py-1 text-white/65 focus-visible:outline-2">{t("sessionOnlyDraftResetJSONHelp")}</summary>
+              <summary className="py-1 text-white/65 focus-visible:outline-2">{t("sessionOnlyDraftResetJSONHelp")}</summary>
               <p className="text-white/65">{t("livePreviewOnlyNotSavedInProductionRevealSeconds")}{" "}
                 {!ready && t("waitingForRendererTransportDisabled")}
               </p>

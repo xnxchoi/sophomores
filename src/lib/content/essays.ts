@@ -6,9 +6,13 @@
  */
 export const essaysEnabled: boolean = false;
 
-/** True when a site path leads into the essays section. */
+/**
+ * True when a site path leads into the essays section: exactly what next.config.ts sends there, so the link gate and the
+ * route gate agree. Next matches custom routes case-insensitively, and the legacy /read and /reading URLs redirect to
+ * /essays, so both count.
+ */
 export function isEssaysPath(href: string): boolean {
-  return /^\/essays(?:[/?#]|$)/.test(href);
+  return /^\/(?:essays|read|reading)(?:[/?#]|$)/i.test(href);
 }
 
 /** The href if it can be followed now; undefined for a link into /essays while essays are off. */

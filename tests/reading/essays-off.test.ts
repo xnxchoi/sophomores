@@ -43,7 +43,21 @@ test("nothing links into /essays: menu, tour, search and notification fallbacks"
   const panels = readFileSync(new URL("../../src/components/shell/header-panels.tsx", import.meta.url), "utf8");
   assert.match(panels, /export const DISCOVER = \[[^\]]*\]\.filter\(\(row\) => reachableHref\(row\.href\) !== undefined\)/);
   // Notification rows, See All and search results ask this before they render a link.
-  for (const href of ["/essays", "/essays/in", "/essays/lights-low", "/essays?x=1"]) assert.equal(reachableHref(href), undefined, href);
-  for (const href of ["/", "/music", "/essaysx", "https://example.com/essays"]) assert.equal(reachableHref(href), href, href);
+  for (const href of ["/essays", "/essays/in", "/essays/lights-low", "/essays?x=1", "/essays#top"]) assert.equal(reachableHref(href), undefined, href);
+  // Review-B r2: the gate matches what the config catches: any case, and the legacy aliases that redirect to /essays.
+  for (const href of ["/ESSAYS/x", "/Essays", "/read/lights-low", "/READ", "/reading/x", "/Reading?x=1"]) assert.equal(reachableHref(href), undefined, href);
+  for (const href of ["/", "/music", "/essaysx", "/readings", "/reader", "https://example.com/essays", "https://example.com/read/x"]) assert.equal(reachableHref(href), href, href);
   assert.equal(reachableHref(undefined), undefined);
+});
+
+test("the link gate hides exactly what the config sends to the 404, directly or through a redirect", async () => {
+  const config = (await import("../../next.config")).default;
+  const rules = await beforeFiles();
+  const redirects = ((await config.redirects?.()) ?? []) as Rewrite[];
+  const leadsTo404 = (pathname: string) =>
+    rules.some((rule) => !rule.has && rule.destination === "/not-found" && matches(rule, pathname)) ||
+    redirects.some((rule) => !rule.has && rule.destination.startsWith("/essays") && matches(rule, pathname));
+  const paths = ["/essays", "/essays/x", "/ESSAYS/x", "/Essays/in/2", "/read", "/read/x", "/READ/x", "/reading", "/reading/x", "/Reading/x",
+    "/", "/essaysx", "/readings", "/reader", "/music", "/shop/cart", "/setlists/a"];
+  for (const pathname of paths) assert.equal(reachableHref(pathname) === undefined, leadsTo404(pathname), pathname);
 });

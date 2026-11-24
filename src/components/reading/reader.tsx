@@ -108,12 +108,11 @@ function hideOuterBlankLines(parts: TextPart[], body: string): (TextPart & { hid
   return parts.flatMap((part) => {
     const start = offset;
     offset += part.text.length;
-    if (part.id) return [part];
     const from = Math.min(Math.max(visibleStart - start, 0), part.text.length);
     const to = Math.max(Math.min(visibleEnd - start, part.text.length), from);
     return [
       { text: part.text.slice(0, from), hidden: true },
-      { text: part.text.slice(from, to) },
+      { text: part.text.slice(from, to), id: part.id },
       { text: part.text.slice(to), hidden: true }
     ].filter((piece) => piece.text.length > 0);
   });

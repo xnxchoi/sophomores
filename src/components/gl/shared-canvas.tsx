@@ -31,7 +31,9 @@ export function SharedCanvas({ eventSource, children, style, ...props }: SharedC
       frameloop={frameloop}
       eventSource={eventSource}
       data-frameloop={frameloop}
-      dpr={[1, 1.5]}
+      // Capped at 2: retina stays sharp, a 3× phone draws 2× (stripe.press: [1, 2]). R3F owns the ratio; nothing in a
+      // View may call gl.setPixelRatio or gl.setSize, which would override this on the next resize.
+      dpr={[1, 2]}
       performance={{ min: 0.2 }}
       gl={{ alpha: true, premultipliedAlpha: false, powerPreference: "high-performance" }}
       {...props}

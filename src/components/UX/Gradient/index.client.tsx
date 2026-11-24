@@ -7,7 +7,7 @@ import {
   useTexture,
   View
 } from "@react-three/drei";
-import { extend, useFrame, useThree } from "@react-three/fiber";
+import { extend, useFrame } from "@react-three/fiber";
 import { animate, useMotionValueEvent } from "motion/react";
 import { useCallback, useEffect, useEffectEvent, useMemo, useRef } from "react";
 import {
@@ -62,7 +62,6 @@ function GradientInner() {
   const noiseTexture = useTexture("/assets/seamless.png", (texture) => {
     texture.wrapS = texture.wrapT = RepeatWrapping;
   });
-  const { gl, set, scene, camera } = useThree();
   // The Hideaway's 15 two-stop schemes, one per menu link in order, now drawn from our CSS colour tokens
   // (owner, 21 Nov: "bring in the colors from our CSS"). Each stop is the nearest existing token to The
   // Hideaway's hex by OKLab distance, or the named brand colour where the nearest was a grey or a rouge tint
@@ -163,20 +162,11 @@ function GradientInner() {
       });
     }
   }, [menuMediaPreviewKeyValue]);
-  const initializeRenderer = useEffectEvent(() => {
-    const devicePixelRatio = window.devicePixelRatio || 2;
-    const pe = gl.domElement.parentElement;
-    if (pe) {
-      gl.domElement.width = pe.offsetWidth;
-      gl.domElement.height = pe.offsetHeight;
-    }
-    gl.setPixelRatio(devicePixelRatio);
-  });
+  // The renderer's size and pixel ratio belong to the shared canvas (R3F, gl/shared-canvas.tsx, capped at 2). The
+  // Hideaway's gradient set them itself (Gradient_M.tsx:204), which overrode that cap on every resize; here it only
+  // feeds its own uniforms, which still read the device's ratio, so the gradient looks the same.
   const onResize = useEffectEvent(() => {
-    gl.setSize(gl.domElement.offsetWidth, gl.domElement.offsetHeight);
     const devicePixelRatio = window.devicePixelRatio || 2;
-
-    gl.setPixelRatio(devicePixelRatio);
     gradientt.current &&
       ((gradientt.current.uniforms.u_resolution.value = new Vector2(
         window.innerWidth,
@@ -190,7 +180,6 @@ function GradientInner() {
   const lastResize = useWindowResize({ debounce: 100 });
 
   useEffect(() => {
-    initializeRenderer();
     onResize();
   }, []);
   useEffect(() => {

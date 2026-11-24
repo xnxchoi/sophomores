@@ -26,7 +26,7 @@ import { failureClass } from "@/lib/auth/failure-log";
  */
 export type SuperAdminBootstrapResult = "unconfigured" | "present" | "promoted" | "missing-staff" | "review-copy" | "read-only" | "failed";
 
-/** A fixed label and correlation ID only: the thrown value is never read, since database errors can quote query parameters, the configured address included. */
+/** A fixed label and correlation ID only: no property value of the thrown error is logged, since database errors can quote query parameters, the configured address included. */
 function errorSummary(error: unknown): Record<string, string> {
   return { errorClass: failureClass(error), correlationId: crypto.randomUUID() };
 }

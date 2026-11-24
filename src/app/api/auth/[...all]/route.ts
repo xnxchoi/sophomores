@@ -20,7 +20,7 @@ async function handle(request: Request): Promise<Response> {
       return new Response(response.body, { status: response.status, headers });
     }
   } catch (error) {
-    // A fixed label and a correlation ID only: the thrown value is never read (src/lib/auth/failure-log.ts).
+    // A fixed label and a correlation ID only: no property value of the thrown error is logged (src/lib/auth/failure-log.ts).
     return authHandlerFailed(discovery, error);
   }
   return authUnavailable(discovery);

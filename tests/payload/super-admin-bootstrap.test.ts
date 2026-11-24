@@ -172,7 +172,7 @@ test("failure diagnostics never carry the configured address", async () => {
   assert.equal(await ensureFirstSuperAdmin(f.payload, env), "failed");
   const text = JSON.stringify(f.logged);
   assert.equal(text.toLowerCase().includes("owner@example.com"), false);
-  // A fixed label and correlation ID only: the thrown value's name, code and cause are never read.
+  // A fixed label and correlation ID only: no property value of the thrown error is logged.
   assert.doesNotMatch(text, /DrizzleQueryError|23505|Failed query/);
   assert.match(text, /"errorClass":"Error","correlationId":"[0-9a-f-]{36}"/);
 });

@@ -24,7 +24,7 @@ export function memberUnavailable(): Response {
 }
 /**
  * The auth route's answer when its handler throws: the failure is logged by a fixed label and a correlation ID
- * (never the thrown value), and the 503 carries that ID so a report can be matched to its log line.
+ * (no property value of the thrown error), and the 503 carries that ID so a report can be matched to its log line.
  */
 export function authHandlerFailed(discovery: boolean, error: unknown, log?: (...values: unknown[]) => void): Response {
   return authUnavailable(discovery, logAuthFailure("Auth handler error.", error, log));

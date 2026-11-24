@@ -6,8 +6,8 @@ import { failureClass, logAuthFailure } from "@/lib/auth/failure-log";
 import { authHandlerFailed } from "@/lib/member-auth/http";
 import { MemberError } from "@/lib/member-auth/contracts";
 
-// Standard-security baseline: an auth failure is logged by a fixed label and a correlation ID only. The thrown value
-// is never read: its name, message, stack and cause can carry user or database data, and a getter can throw.
+// Standard-security baseline: an auth failure is logged by a fixed label and a correlation ID only. No property value
+// of the thrown error is logged (its name, message, stack and cause can carry user or database data); a throwing trap is contained.
 const personal = "member@example.invalid";
 const identifierShaped = "member_example_invalid"; // passes any identifier-syntax check, yet is personal
 const dsn = "postgres://db.internal:5432/members";

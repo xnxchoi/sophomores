@@ -5,7 +5,7 @@ import { test } from "node:test";
 import { assertMemberAuthRequest } from "@/lib/member-auth/server";
 import type { MemberAuthConfig } from "@/lib/member-auth/config";
 import { assertPayloadAuthRequest, createPayloadAuthBefore } from "@/lib/member-auth/payload-policy";
-import { MEMBER_PROVIDER_ERROR_CODES, MEMBER_SIGN_IN_RETURNS, memberSignInHref, memberSignInNext, memberSignInReturn, memberSocialReturn } from "@/lib/member-auth/paths";
+import { MEMBER_PROVIDER_ERROR_CODES, MEMBER_SIGN_IN_RETURNS, memberCleanCallbackQuery, memberSignInHref, memberSignInNext, memberSignInReturn, memberSocialReturn } from "@/lib/member-auth/paths";
 import { isNoStorePagePath, isPrivatePagePath } from "@/lib/member-auth/private-pages";
 
 // Owner, 24 Nov: a signed-out /account redirects to /sign-in (no modal), and sign-in returns to where they were.
@@ -128,5 +128,51 @@ test("/sign-in is a private page; /account and every /me page send a signed-out 
     assert.doesNotMatch(source, /\/account\?next=/, file);
     // The order page never puts its ID in the sign-in link.
     if (/redirect\(/.test(source) && /currentUser/.test(source)) assert.match(source, /redirect\(memberSignInHref\("\/me[a-z/-]*"\)\)/, file);
+  }
+});
+
+// Review-A, 24 Nov: Better Auth appends the upstream error and error_description verbatim to the pinned error URL.
+const queryOf = (url: string) => Object.fromEntries(new URL(url, origin).searchParams);
+
+test("a callback page keeps only a listed next and a recognised error code; the description never stays", () => {
+  assert.equal(memberCleanCallbackQuery("/sign-in", { next: "/me", error: "access_denied" }, true), null, "already clean");
+  assert.equal(memberCleanCallbackQuery("/sign-in", {}, true), null);
+  assert.equal(memberCleanCallbackQuery("/sign-in", { next: "/me", error: "access_denied", error_description: "User member@example.invalid denied" }, true), "/sign-in?next=/me&error=access_denied");
+  assert.equal(memberCleanCallbackQuery("/sign-in", { next: "/me", error: "upstream failure for member@example.invalid" }, true), "/sign-in?next=/me&error=unknown");
+  assert.equal(memberCleanCallbackQuery("/sign-in", { next: "/me/orders/1234" }, true), "/sign-in?next=/me/orders");
+  assert.equal(memberCleanCallbackQuery("/sign-in", { next: "/me", state: "abc", code: "xyz" }, true), "/sign-in?next=/me");
+  assert.equal(memberCleanCallbackQuery("/sign-in", { error: ["access_denied", "x"] }, true), "/sign-in?error=unknown");
+  assert.equal(memberCleanCallbackQuery("/account/continue", { next: "/me" }, false), "/account/continue", "a page without next drops it");
+  assert.equal(memberCleanCallbackQuery("/account", { error_description: "provider text" }, true), "/account");
+});
+
+test("both policies' pinned error return, as Better Auth's failure redirect builds it, is cleaned before render", async () => {
+  const { appendQueryParams } = await import("@better-auth/core/utils/url");
+  // Payload's before-hook pins errorCallbackURL; the local server.ts pins the same memberSocialReturn value.
+  const before = createPayloadAuthBefore(origin);
+  const pinned = await before({ path: "/sign-in/social", body: { provider: "google", callbackURL: "/sign-in?next=/me/orders" }, headers: new Headers(), context: {} } as never) as { context: { body: { errorCallbackURL: string } } };
+  const local = memberSocialReturn(origin, "/sign-in?next=/me/orders");
+  assert.equal(local, pinned.context.body.errorCallbackURL);
+  for (const errorURL of [pinned.context.body.errorCallbackURL, local!]) {
+    for (const [error, expected] of [["access_denied", "access_denied"], ["provider exploded for member@example.invalid", "unknown"]] as const) {
+      const redirected = appendQueryParams(errorURL, new URLSearchParams({ error, error_description: "Diagnostic for member@example.invalid at db.internal" }));
+      const cleaned = memberCleanCallbackQuery("/sign-in", queryOf(redirected), true);
+      assert.equal(cleaned, `/sign-in?next=/me/orders&error=${expected}`, redirected);
+      assert.equal(/member@example|db\.internal|error_description/.test(cleaned ?? ""), false);
+    }
+  }
+  // The default error return (/account) for other flows is cleaned the same way.
+  const fallback = appendQueryParams("/account", new URLSearchParams({ error: "unable_to_link_account", error_description: "member@example.invalid" }));
+  assert.equal(memberCleanCallbackQuery("/account", queryOf(fallback), true), "/account?error=unable_to_link_account");
+});
+
+test("each callback page cleans its query before it renders or reads the session", () => {
+  for (const [file, before] of [["src/app/(site)/sign-in/page.tsx", "isReviewCopyRequest()"], ["src/app/(site)/account/page.tsx", "currentUser()"],
+    ["src/app/(site)/account/continue/page.tsx", "isReviewCopyRequest()"]] as const) {
+    const source = readFileSync(file, "utf8");
+    const clean = source.indexOf("memberCleanCallbackQuery(");
+    assert.ok(clean > 0, file);
+    assert.match(source.slice(clean), /^memberCleanCallbackQuery\([^)]*\);\s*if \(cleaned\) redirect\(cleaned\);/, file);
+    assert.ok(clean < source.indexOf(before), `${file} cleans before ${before}`);
   }
 });

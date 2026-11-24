@@ -48,11 +48,37 @@ export const MEMBER_PROVIDER_ERROR_CODES = [
   "unable_to_get_user_info", "no_callback_url", "email_does_not_match", "account_already_linked_to_different_user",
   "state_mismatch", "internal_server_error"
 ] as const;
+/** A provider error as a recognised code, else "unknown" (undefined stays undefined). */
+export function memberProviderErrorCode(error: unknown): string | undefined {
+  if (error === undefined) return undefined;
+  return typeof error === "string" && (MEMBER_PROVIDER_ERROR_CODES as readonly string[]).includes(error) ? error : "unknown";
+}
 /** The sign-in page for a return path; a provider error is carried only as a recognised code, else "unknown". */
 export function memberSignInHref(next: unknown, error?: unknown): string {
-  const code = error === undefined ? undefined
-    : typeof error === "string" && (MEMBER_PROVIDER_ERROR_CODES as readonly string[]).includes(error) ? error : "unknown";
+  const code = memberProviderErrorCode(error);
   return `${MEMBER_SIGN_IN_PATH}?next=${memberSignInNext(next)}${code ? `&error=${code}` : ""}`;
+}
+/**
+ * A provider callback page's query, cleaned before anything renders (Review-A, 24 Nov): Better Auth appends the
+ * upstream `error` and `error_description` verbatim to the pinned callback URL, so a provider diagnostic could sit
+ * in the browser URL. Only a listed `next` (where the page takes one) and a recognised error code survive; any other
+ * key, a description, or an array value is dropped. Returns the clean URL to redirect to, or null when the query is
+ * already clean.
+ */
+export function memberCleanCallbackQuery(path: string, query: Record<string, string | string[] | undefined> | undefined, takesNext: boolean): string | null {
+  const keys = Object.keys(query ?? {}).filter((key) => query?.[key] !== undefined);
+  const error = query?.error;
+  const code = memberProviderErrorCode(error);
+  const next = query?.next;
+  const clean = keys.every((key) => key === "error" || (takesNext && key === "next"))
+    && (error === undefined || error === code)
+    && (!takesNext || next === undefined || next === memberSignInNext(next));
+  if (clean) return null;
+  const params = [
+    ...(takesNext && next !== undefined ? [`next=${memberSignInNext(next)}`] : []),
+    ...(code ? [`error=${code}`] : [])
+  ];
+  return params.length ? `${path}?${params.join("&")}` : path;
 }
 /**
  * A social sign-in started on the sign-in page returns to it: `/sign-in` with at most one `next` (path or same-origin

@@ -6,7 +6,7 @@ import { MemberAccountPage } from "@/components/Authentication/member-auth/accou
 import { ReviewCustomerNoticePage } from "@/components/commerce/review-customer-notice";
 import { isReviewCopyRequest } from "@/lib/auth/review-editor-policy";
 import { readHeaderMemberState } from "@/lib/member-auth/header-state.server";
-import { memberSignInNext } from "@/lib/member-auth/paths";
+import { MEMBER_SIGN_IN_PATH, memberCleanCallbackQuery, memberSignInNext } from "@/lib/member-auth/paths";
 import { loadPublicMemberCapabilities } from "@/lib/member-auth/public-capabilities.server";
 
 export const metadata = {
@@ -21,8 +21,12 @@ export const metadata = {
  */
 export default async function SignInPage({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
   await connection();
+  const query = await searchParams;
+  // A provider's raw error and error_description never stay in the URL: redirect to the clean query first.
+  const cleaned = memberCleanCallbackQuery(MEMBER_SIGN_IN_PATH, query, true);
+  if (cleaned) redirect(cleaned);
   if (isReviewCopyRequest()) return <ReviewCustomerNoticePage kind="account" />;
-  const next = memberSignInNext((await searchParams)?.next);
+  const next = memberSignInNext(query?.next);
   const state = await readHeaderMemberState(await headers());
   if (state.state === "signed-in" && state.member) redirect(next);
   // Signed in but still in setup (a new social member back from the provider): the setup step, not the chooser.

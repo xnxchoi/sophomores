@@ -53,7 +53,7 @@ before(async () => {
         if (specifier === "next/server") return { url: moduleUrl(`export async function connection(){${state}.events.push("connection"); await ${state}.connect();}`), shortCircuit: true };
         // A signed-out /account redirects to /sign-in (owner, 24 Nov); these tests render the signed-in account.
         if (parent.endsWith("/account/page.tsx") && specifier === "@/lib/auth/server") return { url: moduleUrl("export async function currentUser(){return {id:\"member\"};}"), shortCircuit: true };
-        if (parent.endsWith("/account/page.tsx") && specifier === "next/navigation") return { url: moduleUrl("export function redirect(){throw new Error(\"Unexpected redirect\");}"), shortCircuit: true };
+        if (/\/account(?:\/continue)?\/page\.tsx$/.test(parent) && specifier === "next/navigation") return { url: moduleUrl("export function redirect(){throw new Error(\"Unexpected redirect\");}"), shortCircuit: true };
         // Importing the request API is safe; disabled checkout must not call it.
         if (parent.endsWith("/tickets/page.tsx") && specifier === "next/headers") return { url: moduleUrl(`export async function headers(){${state}.events.push("headers"); return new Headers();}`), shortCircuit: true };
         if (specifier.endsWith("public-capabilities.server")) return { url: moduleUrl(`export const loadPublicMemberCapabilities=()=>${state}.loadFlags();`), shortCircuit: true };
@@ -89,7 +89,7 @@ before(async () => {
       render: () => renderAccount({ searchParams: Promise.resolve({}) }),
       component: "TicketAccountEntry"
     },
-    { name: "continuation", render: (await import("@/app/(site)/account/continue/page")).default, component: "TicketAccountEntry", flow: "login" }
+    { name: "continuation", render: ((page) => () => page({ searchParams: Promise.resolve({}) }))((await import("@/app/(site)/account/continue/page")).default), component: "TicketAccountEntry", flow: "login" }
   );
   renderTickets = (await import("@/app/(site)/tickets/page")).default;
   renderLegacyPayment = (await import("@/app/(site)/tickets/payment/page")).default;

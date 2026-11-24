@@ -31,6 +31,7 @@ import * as migration_20261123_045913_product_page_fields from './20261123_04591
 import * as migration_20261124_120000_shared_event_ticket_binding from './20261124_120000_shared_event_ticket_binding';
 import * as migration_20261124_121000_shared_guest_cart_kind from './20261124_121000_shared_guest_cart_kind';
 import * as migration_20261124_130000_home_entry from './20261124_130000_home_entry';
+import * as migration_20261124_140000_order_refund from './20261124_140000_order_refund';
 
 export const migrations = [
   {
@@ -187,5 +188,10 @@ export const migrations = [
     up: migration_20261124_130000_home_entry.up,
     down: migration_20261124_130000_home_entry.down,
     name: '20261124_130000_home_entry',
+  },
+  {
+    up: migration_20261124_140000_order_refund.up,
+    down: migration_20261124_140000_order_refund.down,
+    name: '20261124_140000_order_refund',
   },
 ];

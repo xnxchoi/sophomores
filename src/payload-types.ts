@@ -1473,6 +1473,15 @@ export interface Order {
     deliveredAt?: string | null;
     returnDisposition?: ('pending-inspection' | 'restock' | 'do-not-restock') | null;
   };
+  /**
+   * Set once, when PortOne confirms a full cancellation.
+   */
+  commerceRefund?: {
+    refundedAt?: string | null;
+    source?: ('provider' | 'admin') | null;
+    providerEventID?: string | null;
+    transactionID?: string | null;
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -2810,6 +2819,14 @@ export interface OrdersSelect<T extends boolean = true> {
         shippedAt?: T;
         deliveredAt?: T;
         returnDisposition?: T;
+      };
+  commerceRefund?:
+    | T
+    | {
+        refundedAt?: T;
+        source?: T;
+        providerEventID?: T;
+        transactionID?: T;
       };
   updatedAt?: T;
   createdAt?: T;

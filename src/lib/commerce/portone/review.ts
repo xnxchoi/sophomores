@@ -5,6 +5,7 @@ import { withCommerceWrite } from '../access'
 import { purchaseAllowance, type PurchaseSnapshot } from '../purchase-snapshot'
 import { lockReservationContext, releaseReservation } from '../reservations'
 import { holdOrderBenefits, revokeOrderBenefits } from '../benefit-review'
+import { recordOrderRefund } from '../order-refund'
 import { assertPaymentRollback, inPaymentTransaction, lockCommerce, paymentTransactionToken, relationshipID } from '../_shared/transaction'
 import { adapterConfig, parsePortOneTransaction, providerPayment, readPortOneTransaction, type AdapterDependencies } from './adapter'
 import { channelType, classifyPaymentRisk, minimalPaymentRiskProof, validatePaidPayment } from './proof'
@@ -242,8 +243,13 @@ async function reviewPaymentEvidence(req: PayloadRequest, input: ReviewInput, ev
         // This releases account/event reservations or commitments; the domain
         // deliberately does NOT restock physical products automatically.
         await releaseReservation({ req, attemptID: row.id, verifiedReason: 'confirmed-cancel', providerEventID: evidenceID })
-        if (current.order != null) await revokeOrderBenefits({ req, orderID: relationshipID(current.order),
-          providerEventID: evidenceID, reason: 'verified-full-cancellation' })
+        if (current.order != null) {
+          await revokeOrderBenefits({ req, orderID: relationshipID(current.order),
+            providerEventID: evidenceID, reason: 'verified-full-cancellation' })
+          // The order itself: refunded once, with its record. Membership granted by the payment is not reversed.
+          await recordOrderRefund({ req, orderID: relationshipID(current.order), transactionID: row.id,
+            providerEventID: evidenceID, source: 'provider' })
+        }
       } else if (!holdOnly && current.order != null) {
         await holdOrderBenefits({ req, orderID: relationshipID(current.order), providerEventID: evidenceID,
           reason: 'verified-provider-payment-risk' })

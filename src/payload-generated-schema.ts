@@ -223,6 +223,10 @@ export const enum_orders_fulfillment_return_disposition = pgEnum(
   "enum_orders_fulfillment_return_disposition",
   ["pending-inspection", "restock", "do-not-restock"]
 );
+export const enum_orders_commerce_refund_source = pgEnum(
+  "enum_orders_commerce_refund_source",
+  ["provider", "admin"]
+);
 export const enum_transactions_payment_method = pgEnum(
   "enum_transactions_payment_method",
   ["portone"]
@@ -3156,6 +3160,18 @@ export const orders = pgTable(
     fulfillment_returnDisposition: enum_orders_fulfillment_return_disposition(
       "fulfillment_return_disposition"
     ),
+    commerceRefund_refundedAt: timestamp("commerce_refund_refunded_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }),
+    commerceRefund_source: enum_orders_commerce_refund_source(
+      "commerce_refund_source"
+    ),
+    commerceRefund_providerEventID: varchar(
+      "commerce_refund_provider_event_i_d"
+    ),
+    commerceRefund_transactionID: varchar("commerce_refund_transaction_i_d"),
     updatedAt: timestamp("updated_at", {
       mode: "string",
       withTimezone: true,
@@ -6627,6 +6643,7 @@ type DatabaseSchema = {
   enum_orders_commerce_version: typeof enum_orders_commerce_version;
   enum_orders_fulfillment_status: typeof enum_orders_fulfillment_status;
   enum_orders_fulfillment_return_disposition: typeof enum_orders_fulfillment_return_disposition;
+  enum_orders_commerce_refund_source: typeof enum_orders_commerce_refund_source;
   enum_transactions_payment_method: typeof enum_transactions_payment_method;
   enum_transactions_status: typeof enum_transactions_status;
   enum_transactions_currency: typeof enum_transactions_currency;

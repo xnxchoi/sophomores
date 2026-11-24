@@ -26,6 +26,7 @@ import { recordSettlementWalletGrants } from "./keys/wallet-attachment";
 import { assertPrincipalUnchanged, attemptReadStop, portonePaymentAdapter } from "./portone/adapter";
 import { isVerifiedCommerceWebhook } from "./portone/endpoints";
 import { isVerifiedPaymentCancellation } from "./portone/review";
+import { isVerifiedOrderRefund, refundableOrderStatuses } from "./order-refund";
 import { runReconciliation, settleIfProviderPaid } from "./portone/admission";
 
 const deny = () => false;
@@ -124,6 +125,13 @@ const commerceOrderFields: Field[] = [
     { name: "shippedAt", type: "date" }, { name: "deliveredAt", type: "date" },
     { name: "returnDisposition", type: "select", options: [{ label: english.Staff.schema.pendingInspection, value: "pending-inspection" }, { label: english.Staff.schema.restock, value: "restock" }, { label: english.Staff.schema.doNotRestock, value: "do-not-restock" }] },
   ] },
+  // Written once, only by recordOrderRefund (order-refund.ts) when PortOne confirms a full cancellation.
+  { name: "commerceRefund", type: "group", admin: { description: english.Staff.schema.orderRefundRecord }, fields: [
+    { name: "refundedAt", type: "date", admin: { date: { pickerAppearance: "dayAndTime" } } },
+    { name: "source", type: "select", options: [{ label: english.Staff.schema.refundSourceProvider, value: "provider" }, { label: english.Staff.schema.refundSourceAdmin, value: "admin" }] },
+    { name: "providerEventID", type: "text" },
+    { name: "transactionID", type: "text" },
+  ] },
 ];
 
 function ordersOverride(defaultCollection: CollectionConfig): CollectionConfig {
@@ -157,8 +165,11 @@ function ordersOverride(defaultCollection: CollectionConfig): CollectionConfig {
         if (data.amount !== snapshot.totalAmount || data.currency !== snapshot.currency || relationshipID(data.customer) !== snapshot.customerID || data.status !== "processing") throw new APIError("Order snapshot mismatch", 409);
         return { ...data, id: randomUUID(), commerceSnapshot: snapshot };
       }
-      // Financial snapshots and identity never change during fulfillment workflows.
-      if (Object.keys(data).some((key) => !["fulfillment", "updatedAt"].includes(key) && JSON.stringify(data[key]) !== JSON.stringify(originalDoc[key]))) throw new APIError("Financial order fields are immutable", 403);
+      // Financial snapshots and identity never change during fulfillment workflows. The one exception is a verified
+      // full cancellation on this request (order-refund.ts): it may move a paid order to refunded and record how, once.
+      const refund = isVerifiedOrderRefund(req, String(originalDoc.id)) && refundableOrderStatuses.includes(originalDoc.status) && data.status === "refunded";
+      const changeable = refund ? ["status", "commerceRefund", "updatedAt"] : ["fulfillment", "updatedAt"];
+      if (Object.keys(data).some((key) => !changeable.includes(key) && JSON.stringify(data[key]) !== JSON.stringify(originalDoc[key]))) throw new APIError("Financial order fields are immutable", 403);
       return data;
     }] },
   };

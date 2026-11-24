@@ -362,6 +362,15 @@ test('I2 disposable PostgreSQL admission, accounting, native fencing and restart
       "SELECT paid_quantity::int, reserved_quantity::int FROM commerce_allowances WHERE customer_id=$1 AND release_i_d='membership'", [f.customerID])).rows
     const released = await reservationState(settled)
     assert.deepEqual(released.map(row => [row.state, row.release_reason]), [['released', 'confirmed-cancel']])
+    // The order moves to refunded once, with its record; the financial snapshot is untouched.
+    const orderRecord = async (f: Attempt) => (await control.query(`SELECT status, amount::int, commerce_snapshot,
+      commerce_refund_source, commerce_refund_provider_event_i_d, commerce_refund_transaction_i_d, commerce_refund_refunded_at
+      FROM orders WHERE id = (SELECT order_id FROM transactions WHERE id = $1)`, [f.transactionID])).rows
+    const refunded = await orderRecord(settled)
+    assert.equal(refunded.length, 1)
+    assert.deepEqual([refunded[0].status, refunded[0].amount, refunded[0].commerce_refund_source, refunded[0].commerce_refund_provider_event_i_d,
+      refunded[0].commerce_refund_transaction_i_d, refunded[0].commerce_refund_refunded_at instanceof Date],
+    ['refunded', settled.snapshot.totalAmount, 'provider', 'cancelled-after-settlement', settled.transactionID, true])
     const closed = await evidence(settled.transactionID)
     // Case 11: the Paid case is unchanged; the disposition is a separate immutable record.
     assert.deepEqual(closed[paidReviewScope(settled.transactionID)], opened[paidReviewScope(settled.transactionID)])
@@ -377,6 +386,7 @@ test('I2 disposable PostgreSQL admission, accounting, native fencing and restart
     assert.deepEqual(await evidence(settled.transactionID), closed)
     assert.deepEqual(await reservationState(settled), released)
     assert.deepEqual(await allowance(settled), freed)
+    assert.deepEqual(await orderRecord(settled), refunded)
     assert.deepEqual(await discover(settled), [])
     // Case 13: the original Paid redelivered after the cancellation is stale and cannot reopen it.
     const stale = await signedWebhook(settled, 'paid-before-settlement', 'Transaction.Paid', provider(settled, 'PAID', settled.snapshot.totalAmount, 0))

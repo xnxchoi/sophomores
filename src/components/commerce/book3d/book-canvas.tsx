@@ -120,7 +120,7 @@ export default function BookView({ signals, textures, visible, dark, onOpen, onC
   pageTextures?: string[];
   magnifier?: boolean;
   onElement?: (element: HTMLElement | null) => void;
-} & Pick<ComponentProps<"div">, "className" | "onPointerEnter" | "onPointerDown" | "onPointerMove" | "onPointerLeave">) {
+} & Pick<ComponentProps<"div">, "className" | "inert" | "onPointerEnter" | "onPointerDown" | "onPointerMove" | "onPointerLeave">) {
   const small = typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
   const [source, setSource] = useState<HTMLElement>();
   return <View visible={visible} aria-hidden="true" {...hit} style={{ clipPath: "inset(50%)" }}

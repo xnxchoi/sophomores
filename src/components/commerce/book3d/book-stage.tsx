@@ -83,6 +83,30 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
   useCanvasClaim(shown && (hovering || open));
   const engage = () => setHovering(true), release = () => setHovering(false);
   const poke = () => signals.current.invalidate?.();
+  // Pointers pressed on the book; when it hides mid-gesture each is cancelled, so a held drag, page turn, stroke, pinch or
+  // pan ends the way a cancelled touch does (Review-B r2).
+  const pressed = useRef(new Set<number>());
+  useEffect(() => {
+    const down = (event: PointerEvent) => { if (signals.current.hitRect?.contains(event.target as Node)) pressed.current.add(event.pointerId); };
+    const up = (event: PointerEvent) => { pressed.current.delete(event.pointerId); };
+    document.addEventListener("pointerdown", down, true);
+    for (const type of ["pointerup", "pointercancel"] as const) document.addEventListener(type, up, true);
+    return () => {
+      document.removeEventListener("pointerdown", down, true);
+      for (const type of ["pointerup", "pointercancel"] as const) document.removeEventListener(type, up, true);
+    };
+  }, []);
+  useEffect(() => {
+    const hit = signals.current.hitRect;
+    if (shown || !hit) return;
+    for (const pointerId of pressed.current) {
+      try { hit.releasePointerCapture(pointerId); } catch { /* not captured */ }
+      hit.dispatchEvent(new PointerEvent("pointercancel", { pointerId, bubbles: true }));
+    }
+    pressed.current.clear();
+    const id = requestAnimationFrame(() => setHovering(false));
+    return () => cancelAnimationFrame(id);
+  }, [shown]);
   // The theme's change re-lights the book.
   useEffect(() => { signals.current.invalidate?.(); }, [dark]);
 
@@ -152,7 +176,7 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
   // hold pan (rubber 0.28 past the edge, a quarter of the spread stays on screen), and on release it springs back in.
   useEffect(() => {
     const element = stage.current, view = signals.current.view;
-    if (!element || !open) return;
+    if (!element || !open || !shown) return;
     const points = new Map<number, { x: number; y: number }>();
     let start: null | { dist: number; x: number; y: number; zoom: number; viewX: number; viewY: number } = null;
     let hold = 0, settle = 0, downAt = { x: 0, y: 0 };
@@ -201,12 +225,12 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
     element.addEventListener("lostpointercapture", up);
     element.addEventListener("gesturestart", block); element.addEventListener("gesturechange", block);
     return () => {
-      window.clearTimeout(hold); cancelAnimationFrame(settle);
+      window.clearTimeout(hold); cancelAnimationFrame(settle); view.panning = false;
       element.removeEventListener("pointerdown", down); element.removeEventListener("pointermove", move); element.removeEventListener("pointerup", up); element.removeEventListener("pointercancel", up);
       element.removeEventListener("lostpointercapture", up);
       element.removeEventListener("gesturestart", block); element.removeEventListener("gesturechange", block);
     };
-  }, [open]);
+  }, [open, shown]);
 
   return <div data-open={open} ref={(element) => { stage.current = element; inViewRef(element); }}
     onDragStart={(event) => event.preventDefault()}
@@ -219,7 +243,9 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
       onOpen={() => setOpen(true)} onClose={close} storageKey={"book3d:" + id} pageTextures={pageTextures} magnifier={magnifier}
       onElement={(element) => { signals.current.hitRect = element; }}
       onPointerEnter={engage} onPointerDown={engage} onPointerMove={hovering ? undefined : engage} onPointerLeave={release}
-      className="pointer-events-auto absolute inset-0 touch-pan-y in-data-[open=true]:touch-none" />
+      // Hidden (menu, out of view) means no input target either: drei's View passes `visible` to the canvas, not to this
+      // DOM tracker (Review-B r2).
+      inert={!shown} className={cn("pointer-events-auto absolute inset-0 touch-pan-y in-data-[open=true]:touch-none", !shown && "pointer-events-none")} />
     {/* Controls above the shared canvas: a fixed layer in a body portal, after the canvas in paint order, mirroring the
         stage's rect (scroll, resize, the phone's full-screen open state). */}
     {mounted && createPortal(<div ref={(element) => { overlay.current = element; signals.current.overlay = element; }}

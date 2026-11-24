@@ -18,9 +18,6 @@ export function NotFoundPage() {
           <LinkUnderlined className="inline-flex min-h-12 items-center bg-transparent hover:text-red-500" href="/">
             {t("returnHome")}
           </LinkUnderlined>
-          <LinkUnderlined className="inline-flex min-h-12 items-center bg-transparent hover:text-red-500" href="/shop">
-            {t("notFoundShop")}
-          </LinkUnderlined>
         </nav>
       </div>
     </>

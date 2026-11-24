@@ -260,7 +260,7 @@ export const easeInOutQuad = (x: number) => x < 0.5 ? 2 * x * x : 1 - (-2 * x + 
  * coupling, and the hologram and radio effects. `onOpen` gets a click (a press under 5 px and 500 ms).
  * Look inside (signals.look) opens the book in place; the pages are LookInside's. The spread you leave is saved.
  */
-export function Book({ textures, signals, onOpen, onClose, small, storageKey, pageTextures = [], samples, source }: {
+export function Book({ textures, signals, onOpen, small, storageKey, pageTextures = [], samples, source }: {
   /** The book's DOM hit area (the View's element): its pointer listeners and cursor state live there. */
   source?: HTMLElement;
   textures: BookTextures; signals: RefObject<BookSignals>; onOpen?: () => void; onClose?: () => void; small: boolean;
@@ -429,6 +429,17 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
     if (backHinge.current) backHinge.current.position.z = (-T / 2) * (1 - onSegments);
     frontMeshes.current.forEach((m) => { if (m) m.position.z = (T / 2) * onSegments; });
     backMeshes.current.forEach((m) => { if (m) m.position.z = (-T / 2) * onSegments; });
+    // Mitred joints: where a bent board's segments meet, each offset segment is trimmed or stretched along its length to
+    // the bisector (d·tan(δ/2) for a joint bending by δ), so no corner pokes out under the stacks (the sliver by the
+    // spine) and the joints don't step. The hinge end stays on the spine.
+    const mitre = (groups: (Group | null)[], meshes: (Mesh | null)[], d: number) => meshes.forEach((m, k) => {
+      if (!m) return;
+      const half = (g: Group | null | undefined) => g ? d * Math.tan(MathUtils.clamp(g.rotation.y, -1.2, 1.2) / 2) : 0;
+      const start = k === 0 ? 0 : -half(groups[k]), end = half(groups[k + 1]);
+      m.position.x = start; m.scale.x = Math.max(0.05, (SEG + end - start) / SEG);
+    });
+    mitre(front.current, frontMeshes.current, (T / 2) * onSegments + BOARD / 2);
+    mitre(back.current, backMeshes.current, -((T / 2) * onSegments + BOARD / 2));
     // The body turns π·n about the spine (stripe.press's facing counter-yaw): the gutter rises toward you mid-book while
     // the covers and pages, bent back by the same amount, stay flat.
     if (body.current) {

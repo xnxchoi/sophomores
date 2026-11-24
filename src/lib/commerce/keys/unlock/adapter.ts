@@ -1,10 +1,11 @@
 import PublicLockV14 from "@unlock-protocol/contracts/dist/abis/PublicLock/PublicLockV14.json";
 import {
-  BaseError, ContractFunctionRevertedError, encodeFunctionData, getAddress, isAddressEqual, maxUint256, parseEventLogs, zeroAddress,
+  BaseError, ContractFunctionRevertedError, decodeFunctionData, encodeFunctionData, getAddress, isAddressEqual, maxUint256, parseEventLogs, zeroAddress,
   type Abi, type Address, type Hex, type LocalAccount, type Transport,
 } from "viem";
 import { isTxHash, parseKeyGrantTarget, type KeyGrantAdapter, type KeyGrantTarget, type PrepareOutcome, type ReconcileOutcome, type ReplaceOutcome } from "../contracts";
 import { POLYGON_CHAIN_ID, polygonPins, type PolygonPins } from "./polygon";
+import type { KeyStateReader } from "../worker";
 import { createSignerTransactions, replacementFee, type Inspection } from "./transactions";
 
 /*
@@ -30,7 +31,7 @@ import { createSignerTransactions, replacementFee, type Inspection } from "./tra
 
 const lockAbi = PublicLockV14.abi as Abi;
 
-export type UnlockKeyGrantAdapter = KeyGrantAdapter & { inspect(txHash: Hex): Promise<Inspection> };
+export type UnlockKeyGrantAdapter = KeyGrantAdapter & KeyStateReader & { inspect(txHash: Hex): Promise<Inspection> };
 
 export type UnlockKeyGrantAdapterOptions = {
   chainID: number;
@@ -51,12 +52,12 @@ const unknown: ReconcileOutcome = { kind: "unknown" };
 export const reverted = (error: unknown): boolean => error instanceof BaseError && error.walk((cause) => cause instanceof ContractFunctionRevertedError) instanceof ContractFunctionRevertedError;
 
 export function createUnlockKeyGrantAdapter({ chainID, account, transport, now = () => new Date(), holdMs = 60_000, env, polygon = polygonPins }: UnlockKeyGrantAdapterOptions): UnlockKeyGrantAdapter {
-  const chain = createSignerTransactions({ chainID, account, transport, holdMs, env });
-  const { client } = chain;
-  // Polygon grants come only from the pinned grant signer: any other account is refused before anything is read.
+  // Polygon grants come only from the pinned grant signer: any other account is refused before a transport is built.
   if (chainID === POLYGON_CHAIN_ID && !isAddressEqual(account.address, polygon.granter)) {
     throw new Error("Unlock grants on Polygon (137) are refused: the signer is not the pinned key granter");
   }
+  const chain = createSignerTransactions({ chainID, account, transport, holdMs, env });
+  const { client } = chain;
 
   /** The target, only if it is well formed, on this adapter's chain, and (on Polygon) on the pinned lock. */
   const targetHere = (value: KeyGrantTarget): { lock: Address; recipient: Address } | "invalid" | "elsewhere" | "unpinned" => {
@@ -125,7 +126,24 @@ export function createUnlockKeyGrantAdapter({ chainID, account, transport, now =
 
     broadcast: ({ txHash }) => chain.broadcast({ txHash }),
     release: ({ txHash }) => chain.release({ txHash }),
-    rebroadcast: ({ raw }) => chain.rebroadcast({ raw }),
+    // Only a grantKeys call is re-sent, and on Polygon only to the pinned lock.
+    rebroadcast: ({ raw }) => chain.rebroadcast({ raw }, ({ to, data }) => {
+      if (chainID === POLYGON_CHAIN_ID && !isAddressEqual(to, polygon.lock)) return false;
+      try { return decodeFunctionData({ abi: lockAbi, data }).functionName === "grantKeys"; } catch { return false; }
+    }),
+
+    /** Reads only: whether the key is no longer valid (cancelled or expired) at a canonical block at the chain's depth. */
+    async keyInvalidAtDepth({ target: value, tokenID }) {
+      const target = targetHere(value);
+      if (typeof target === "string" || !/^[1-9][0-9]{0,76}$/.test(tokenID)) return null;
+      try {
+        if (!(await chain.onChain())) return null;
+        const blockHash = await chain.buriedBlockHash();
+        if (!blockHash) return null;
+        const valid = await client.readContract({ address: target.lock, abi: lockAbi, functionName: "isValidKey", args: [BigInt(tokenID)], blockHash, requireCanonical: true });
+        return valid === false;
+      } catch { return null; }
+    },
 
     async reconcile({ txHash, target: value }) {
       const target = targetHere(value);

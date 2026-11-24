@@ -3,14 +3,14 @@ import { chmod, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
-import { decodeFunctionData, keccak256, numberToHex, parseTransaction, type Hex } from "viem";
+import { decodeFunctionData, encodeFunctionData, keccak256, numberToHex, parseTransaction, type Hex } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { createUnlockKeyGrantAdapter } from "@/lib/commerce/keys/unlock/adapter";
 import { createUnlockKeyCancelAdapter } from "@/lib/commerce/keys/unlock/cancel";
 import {
-  loadPolygonKeyGranterAccount, loadPolygonLockManagerAccount, POLYGON_KEY_GRANTER, POLYGON_SIGNET_LOCK, polygonKeyGrantsLive,
+  loadPolygonKeyGranterAccount, POLYGON_KEY_GRANTER, POLYGON_SIGNET_LOCK, polygonKeyGrantsLive,
 } from "@/lib/commerce/keys/unlock/polygon";
-import { chainEnabled, confirmationDepth, maxFeeCeiling } from "@/lib/commerce/keys/unlock/transactions";
+import { chainEnabled, confirmationDepth, maxCostWei, maxFeeCeiling } from "@/lib/commerce/keys/unlock/transactions";
 import { dispatchKeyGrants } from "@/lib/commerce/keys/worker";
 import { fakePayload } from "./support/fake-payload";
 import { healthyChain, lockAbi, lockAddress, mockChain, receipt, recipient, transferLog } from "./support/mock-chain";
@@ -18,7 +18,8 @@ import { healthyChain, lockAbi, lockAddress, mockChain, receipt, recipient, tran
 // Polygon (137) key grants for paid orders (owner, 24 Nov): the pinned Signet lock, the pinned grant signer, and a
 // go-live switch that stays off until the owner flips it. Everything here runs against the scripted mock chain:
 // no RPC, no signing with a real key, no broadcast.
-const live = { KEY_GRANT_POLYGON_LIVE: "1" } as const;
+// 1 POL: the approved budget a go-live would set from a quote (deployment/KEY-GRANTS.md).
+const live = { KEY_GRANT_POLYGON_LIVE: "1", KEY_GRANT_POLYGON_MAX_COST_WEI: "1000000000000000000" } as const;
 const off = {} as const;
 const now = () => new Date("2026-11-24T00:00:00Z");
 const polygonChain = (overrides: Parameters<typeof healthyChain>[0] = {}) => healthyChain({ eth_chainId: () => numberToHex(137), ...overrides });
@@ -141,19 +142,41 @@ test("the pinned signer file refuses a key that derives any other address, witho
   }
 });
 
-test("the Polygon lock-manager signer is optional: no file means no cancels, a valid file loads, a bad one is refused", async () => {
-  const directory = await mkdtemp(join(tmpdir(), "polygon-manager-"));
-  try {
-    const file = join(directory, "polygon-lock-manager.env");
-    assert.equal(await loadPolygonLockManagerAccount(file), null, "absent: cancel requests stay recorded");
-    const key = generatePrivateKey();
-    const address = privateKeyToAccount(key).address;
-    await writeFile(file, `UNLOCK_LIVE_LOCK_MANAGER_PRIVATE_KEY=${key}\nUNLOCK_LIVE_LOCK_MANAGER_ADDRESS=${address}\n`);
-    await chmod(file, 0o644);
-    await assert.rejects(loadPolygonLockManagerAccount(file), /mode 0600/);
-    await chmod(file, 0o600);
-    assert.equal((await loadPolygonLockManagerAccount(file))?.address, address);
-  } finally {
-    await rm(directory, { recursive: true, force: true });
+
+test("ADR-0026: the Polygon fee budget is required, bounded, and enforced on gas limit times max fee before signing", async () => {
+  const account = privateKeyToAccount(generatePrivateKey());
+  const build = (budget?: string) => createUnlockKeyGrantAdapter({ chainID: 137, account, transport: mockChain(polygonChain()).transport, now,
+    env: { KEY_GRANT_POLYGON_LIVE: "1", ...(budget === undefined ? {} : { KEY_GRANT_POLYGON_MAX_COST_WEI: budget }) }, polygon: { lock: lockAddress, granter: account.address } });
+  for (const budget of [undefined, "", "0", "-1", "1.5", "0x10", "5000000000000000001"]) {
+    assert.throws(() => build(budget), /approved fee budget/, String(budget));
   }
+  assert.equal(maxCostWei(137, { KEY_GRANT_POLYGON_MAX_COST_WEI: "5000000000000000000" }), 5n * 10n ** 18n, "5 POL is the most a go-live may approve");
+  // The mock prepares 200,000 gas: a budget one wei under its worst case refuses the grant unsent.
+  const raws: Hex[] = [];
+  const handlers = polygonChain({ eth_sendRawTransaction: (params) => { raws.push(params[0] as Hex); return keccak256(params[0] as Hex); } });
+  const pinned = pinnedAdapter(handlers, { KEY_GRANT_POLYGON_LIVE: "1", KEY_GRANT_POLYGON_MAX_COST_WEI: "1" });
+  assert.deepEqual(await pinned.adapter.prepare({ intentID: "i", attemptID: "a", target: polygonTarget, nonceFloor: 0 }), { kind: "definitelyNotSent", code: "fee_above_ceiling" });
+  assert.deepEqual(await pinned.adapter.prepareReplacement({ intentID: "i", target: polygonTarget, nonce: 0, previous: { maxFeePerGas: "1", maxPriorityFeePerGas: "1" } }),
+    { kind: "definitelyNotSent", code: "fee_ceiling_reached" }, "a replacement meets the same budget");
+  assert.equal(raws.length, 0);
+});
+
+test("recorded bytes are re-sent only for our signer, on 137, to the pinned lock, as grantKeys, within budget; anything else is refused before RPC", async () => {
+  const { adapter, account, requests } = pinnedAdapter(polygonChain({ eth_sendRawTransaction: (params) => keccak256(params[0] as Hex) }));
+  const grantData = encodeFunctionData({ abi: lockAbi, functionName: "grantKeys", args: [[recipient], [1n], ["0x0000000000000000000000000000000000000000"]] });
+  const sign = (signer: typeof account, overrides: Record<string, unknown> = {}) => signer.signTransaction({
+    type: "eip1559", chainId: 137, to: lockAddress, data: grantData, nonce: 0, gas: 200_000n, maxFeePerGas: 100_000_000_000n, maxPriorityFeePerGas: 30_000_000_000n, ...overrides,
+  } as never);
+  const cases: [string, Hex, string][] = [
+    ["another chain", await sign(account, { chainId: 84532 }), "rebroadcast_mismatch"],
+    ["another sender", await sign(privateKeyToAccount(generatePrivateKey())), "rebroadcast_mismatch"],
+    ["another lock", await sign(account, { to: `0x${"c".repeat(40)}` }), "rebroadcast_mismatch"],
+    ["another operation", await sign(account, { data: encodeFunctionData({ abi: lockAbi, functionName: "setOwner", args: [recipient] }) }), "rebroadcast_mismatch"],
+    ["a value transfer", await sign(account, { value: 1n }), "rebroadcast_mismatch"],
+    ["over budget", await sign(account, { gas: 2_000_000n, maxFeePerGas: 2_000_000_000_000n }), "fee_above_cap"],
+    ["unreadable", "0x02deadbeef" as Hex, "rebroadcast_unreadable"],
+  ];
+  for (const [label, raw, code] of cases) assert.deepEqual(await adapter.rebroadcast({ raw }), { kind: "refused", code }, label);
+  assert.equal(requests.length, 0, "nothing refused reached the chain");
+  assert.deepEqual(await adapter.rebroadcast({ raw: await sign(account) }), { kind: "accepted" }, "our own recorded grant is re-sent");
 });

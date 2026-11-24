@@ -1,5 +1,5 @@
 import PublicLockV14 from "@unlock-protocol/contracts/dist/abis/PublicLock/PublicLockV14.json";
-import { encodeFunctionData, getAddress, isAddressEqual, parseEventLogs, type Abi, type Address, type Hex, type LocalAccount, type Transport } from "viem";
+import { decodeFunctionData, encodeFunctionData, getAddress, isAddressEqual, parseEventLogs, type Abi, type Address, type Hex, type LocalAccount, type Transport } from "viem";
 import { isTxHash, parseKeyGrantTarget, type CancelPrepareOutcome, type CancelReconcileOutcome, type KeyCancelAdapter, type KeyGrantTarget, type ReplaceOutcome } from "../contracts";
 import { reverted } from "./adapter";
 import { POLYGON_CHAIN_ID, POLYGON_SIGNET_LOCK } from "./polygon";
@@ -127,7 +127,11 @@ export function createUnlockKeyCancelAdapter({ chainID, account, transport, hold
 
     broadcast: ({ txHash }) => chain.broadcast({ txHash }),
     release: ({ txHash }) => chain.release({ txHash }),
-    rebroadcast: ({ raw }) => chain.rebroadcast({ raw }),
+    // Only an expireAndRefundFor call is re-sent, and on Polygon only to the pinned lock.
+    rebroadcast: ({ raw }) => chain.rebroadcast({ raw }, ({ to, data }) => {
+      if (chainID === POLYGON_CHAIN_ID && !isAddressEqual(to, polygonLock)) return false;
+      try { return decodeFunctionData({ abi: lockAbi, data }).functionName === "expireAndRefundFor"; } catch { return false; }
+    }),
 
     /** `confirmed` only for exactly one `CancelKey` of this token, from this lock, with no refund, at the chain's depth. */
     async reconcileCancel({ txHash, target: value, tokenID }) {

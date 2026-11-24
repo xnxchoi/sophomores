@@ -1,5 +1,5 @@
 import {
-  BaseError, createPublicClient, createWalletClient, isAddressEqual, keccak256, parseTransaction, TransactionNotFoundError, TransactionReceiptNotFoundError, withTimeout,
+  BaseError, createPublicClient, createWalletClient, isAddressEqual, keccak256, parseTransaction, recoverTransactionAddress, TransactionNotFoundError, TransactionReceiptNotFoundError, withTimeout,
   type Address, type Hex, type LocalAccount, type TransactionReceipt, type Transport,
 } from "viem";
 import { baseSepolia, polygon } from "viem/chains";
@@ -60,6 +60,24 @@ const networks: Readonly<Record<number, { chain: typeof baseSepolia }>> = {
   [polygon.id]: { chain: polygon as unknown as typeof baseSepolia },
 };
 
+/**
+ * ADR-0026: the worst case of one transaction (its gas limit times its max fee per gas, in wei) may not pass the
+ * approved budget; a transaction over it is not signed (or not re-sent) and is parked for a person.
+ * - 84532 Base Sepolia: 0.00005 ETH, a million gas at its ceiling (test funds).
+ * - 137 Polygon: the owner's approved POL budget, KEY_GRANT_POLYGON_MAX_COST_WEI, converted from USD 0.10 at approval
+ *   time (deployment/KEY-GRANTS.md). Required while Polygon is on, a positive integer no larger than 5 POL; without
+ *   it no Polygon transaction is built.
+ */
+export const MAX_POLYGON_COST_WEI = 5n * 10n ** 18n;
+export function maxCostWei(chainID: number, env: Readonly<Record<string, string | undefined>> = process.env): bigint | null {
+  if (chainID === baseSepolia.id) return 50_000_000_000_000n;
+  if (chainID !== POLYGON_CHAIN_ID) return null;
+  const value = env.KEY_GRANT_POLYGON_MAX_COST_WEI;
+  if (!value || !/^[1-9][0-9]{0,30}$/.test(value)) return null;
+  const budget = BigInt(value);
+  return budget <= MAX_POLYGON_COST_WEI ? budget : null;
+}
+
 /** Whether this process may transact on `chainID` now: Base Sepolia always; Polygon only while the switch is on. */
 export function chainEnabled(chainID: number, env: Readonly<Record<string, string | undefined>> = process.env): boolean {
   if (chainID === POLYGON_CHAIN_ID) return polygonKeyGrantsLive(env);
@@ -104,6 +122,9 @@ export function replacementFee(previous: TransactionFee, estimate: Fees, ceiling
   return raised(maxFeePerGas, before.maxFeePerGas) && raised(maxPriorityFeePerGas, before.maxPriorityFeePerGas) ? { maxFeePerGas, maxPriorityFeePerGas } : null;
 }
 
+/** The adapter's check that recorded bytes are its own operation (target lock and function). */
+export type RecordedOperation = (transaction: { to: Address; data: Hex }) => boolean;
+
 export type SignerTransactionsOptions = {
   chainID: number; account: LocalAccount; transport?: Transport; holdMs?: number;
   /** Where the go-live switch is read (default: process.env). */
@@ -114,6 +135,10 @@ export type SignerTransactionsOptions = {
 export function createSignerTransactions({ chainID, account, transport, holdMs = 60_000, env = process.env }: SignerTransactionsOptions) {
   const network = Object.hasOwn(networks, chainID) && chainEnabled(chainID, env) ? networks[chainID] : undefined;
   if (!network) throw new Error(`Unlock transactions are refused on chain ${chainID}: Base Sepolia (84532) is enabled, and Polygon (137) only while KEY_GRANT_POLYGON_LIVE=1`);
+  const budget = maxCostWei(chainID, env);
+  if (budget === null) throw new Error(`Unlock transactions are refused on chain ${chainID}: no approved fee budget (KEY_GRANT_POLYGON_MAX_COST_WEI)`);
+  const overBudget = (gas: bigint | undefined, maxFeePerGas: bigint | undefined) =>
+    gas === undefined || maxFeePerGas === undefined || maxFeePerGas > ceiling || gas * maxFeePerGas > budget;
   const depth = BigInt(confirmationDepth[chainID]);
   const ceiling = maxFeeCeiling[chainID];
   if (!transport) throw new Error("Unlock requires an explicit transport");
@@ -174,7 +199,7 @@ export function createSignerTransactions({ chainID, account, transport, holdMs =
      */
     async sign(release: () => void, request: { to: Address; data: Hex; nonce: number; fees?: Fees }): Promise<{ txHash: Hex; raw: Hex; nonce: number; fee: TransactionFee } | "fee_above_ceiling"> {
       const prepared = await wallet.prepareTransactionRequest({ to: request.to, data: request.data, nonce: request.nonce, ...request.fees });
-      if ((prepared.maxFeePerGas ?? prepared.gasPrice ?? 0n) > ceiling) return "fee_above_ceiling";
+      if (overBudget(prepared.gas, prepared.maxFeePerGas ?? prepared.gasPrice)) return "fee_above_ceiling";
       const signed = await wallet.signTransaction(prepared);
       const sent = parseTransaction(signed);
       const txHash = keccak256(signed);
@@ -210,7 +235,18 @@ export function createSignerTransactions({ chainID, account, transport, holdMs =
      * so it can never become a second transaction. A node that already holds it
      * answers "already known"; one that has mined the nonce answers "nonce too low".
      */
-    async rebroadcast({ raw }: { raw: string }): Promise<RebroadcastOutcome> {
+    async rebroadcast({ raw }: { raw: string }, recorded: RecordedOperation): Promise<RebroadcastOutcome> {
+      // Fail closed before any RPC (Review-A, 24 Nov): only our own signer's transaction, on this chain, of the
+      // adapter's own operation, within the fee budget, is ever re-sent.
+      let sent: ReturnType<typeof parseTransaction>;
+      let from: Address;
+      try {
+        sent = parseTransaction(raw as Hex);
+        from = await recoverTransactionAddress({ serializedTransaction: raw as Parameters<typeof recoverTransactionAddress>[0]["serializedTransaction"] });
+      } catch { return { kind: "refused", code: "rebroadcast_unreadable" }; }
+      if (sent.type !== "eip1559" || sent.chainId !== chainID || !isAddressEqual(from, account.address) || !sent.to || (sent.value ?? 0n) !== 0n
+        || !recorded({ to: sent.to, data: sent.data ?? "0x" })) return { kind: "refused", code: "rebroadcast_mismatch" };
+      if (overBudget(sent.gas, sent.maxFeePerGas)) return { kind: "refused", code: "fee_above_cap" };
       const hash = keccak256(raw as Hex);
       try {
         const answered = await sendRaw(raw as Hex);

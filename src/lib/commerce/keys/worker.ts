@@ -9,6 +9,7 @@ import {
   type BroadcastOutcome, type CancelReconcileOutcome, type KeyCancelAdapter, type KeyGrantAdapter, type RebroadcastOutcome, type ReconcileOutcome, type RecordedSend,
   type ReplaceOutcome, type TransactionFee,
 } from "./contracts";
+import type { KeyGrantTarget } from "./contracts";
 
 /*
  * ADR-0004 worker. Explicitly invoked (no scheduler yet) with a chain adapter.
@@ -613,6 +614,8 @@ async function replaceStuck(payload: Payload, operation: Operation, chain: Repla
           await grantRecoveryAllowed(req, intent, held, row, sends.length, last.txHash) ? send() : null))
         : await send();
       if (!answer) continue;
+      // Recorded bytes that fail the adapter's checks are never sent: stopped for a person (Review-A, 24 Nov).
+      if (answer.kind === "refused") { await markAttempt(payload, operation, row, operation.stop(`${prefix}rebroadcast_refused`)); continue; }
       const sentAt = now().toISOString();
       if (answer.kind === "accepted") await markSend(payload, operation, row, sends.length - 1, { accepted: true }, { [fields.lastSentAt]: sentAt });
       else if (answer.kind === "unknown") await markSend(payload, operation, row, sends.length - 1, { rebroadcasts: tries + 1 }, { [fields.lastSentAt]: sentAt, lastErrorCode: `${prefix}rebroadcast_unknown` });
@@ -810,4 +813,30 @@ export async function cancelKeyGrants({ payload, adapter, limit = 10, now = () =
     await recordCancel(payload, row.id, claimed.cancelAttemptID, now(), outcome);
   }
   return dispatched;
+}
+
+/** What the owner-cancel reconcile reads: whether a key is no longer valid at the chain's depth (null: cannot tell yet). */
+export type KeyStateReader = { keyInvalidAtDepth(input: { target: KeyGrantTarget; tokenID: string }): Promise<boolean | null> };
+
+/**
+ * ADR-0008 and ADR-0011: refunded keys are cancelled by the owner's own wallet, the lock manager, never by a key on our
+ * host, so nothing here signs. Each granted intent with cancelRequested is marked cancelled once the chain shows its
+ * key no longer valid at confirmation depth (cancelled or expired), with the existing evidence code `key_not_valid`.
+ * Unknown answers leave the intent as it is, for the next pass.
+ */
+export async function reconcileOwnerCancels({ payload, reader, limit = 10, now = () => new Date() }: { payload: Payload; reader: KeyStateReader; limit?: number; now?: () => Date }): Promise<number> {
+  let settled = 0;
+  for await (const row of due(payload, { and: [{ state: { equals: "granted" } }, { cancelRequested: { equals: true } }, { tokenID: { exists: true } }] }, now)) {
+    if (settled >= limit) break;
+    let invalid: boolean | null;
+    try { invalid = await reader.keyInvalidAtDepth({ target: parseKeyGrantTarget(row.target), tokenID: String(row.tokenID) }); } catch { invalid = null; }
+    if (invalid !== true) continue;
+    const moved = await inIntent(payload, row.id, async (req, intent) => {
+      if (intent.state !== "granted" || intent.cancelRequested !== true || String(intent.tokenID) !== String(row.tokenID)) return false;
+      await updateCommerce(req, INTENTS, row.id, { state: "cancelled", cancelledAt: now().toISOString(), lastErrorCode: "key_not_valid", nextAttemptAt: null });
+      return true;
+    });
+    if (moved) settled++;
+  }
+  return settled;
 }

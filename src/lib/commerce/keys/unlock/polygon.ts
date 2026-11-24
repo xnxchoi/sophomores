@@ -1,4 +1,3 @@
-import { lstat } from "node:fs/promises";
 import { join } from "node:path";
 import { getAddress, isAddressEqual, type Address } from "viem";
 import type { PrivateKeyAccount } from "viem/accounts";
@@ -18,7 +17,6 @@ export const POLYGON_CHAIN_ID = 137 as const;
 export const POLYGON_SIGNET_LOCK: Address = getAddress("0xcc95180d590365d88f8aad870c264d127b221506");
 export const POLYGON_KEY_GRANTER: Address = getAddress("0x2cdb060e373f0efe93beffd1478cde739cbc5336");
 export const polygonKeyGranterFile = join(signerDirectory, "polygon-key-granter.env");
-export const polygonLockManagerFile = join(signerDirectory, "polygon-lock-manager.env");
 
 /** What a Polygon adapter is pinned to. Production uses the defaults; tests supply throwaway pins. */
 export type PolygonPins = Readonly<{ lock: Address; granter: Address }>;
@@ -36,18 +34,3 @@ export async function loadPolygonKeyGranterAccount(file = polygonKeyGranterFile)
   return account;
 }
 
-/**
- * The Signet lock's separate lock-manager authority (ADR-0008), used only to cancel refunded keys (ADR-0009), from
- * ~/.config/sphmrs/polygon-lock-manager.env (0600, UNLOCK_LIVE_LOCK_MANAGER_*). Null while no such file exists, so
- * cancel requests stay recorded and unexecuted; a file that exists but fails any check is refused. It may never be the
- * grant signer.
- */
-export async function loadPolygonLockManagerAccount(file = polygonLockManagerFile): Promise<PrivateKeyAccount | null> {
-  try { await lstat(file); } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
-    throw new SignerLoadError("Signer file is missing or unreadable");
-  }
-  const account = await loadSignerAccount(file, "UNLOCK_LIVE_LOCK_MANAGER");
-  if (isAddressEqual(account.address, POLYGON_KEY_GRANTER)) throw new SignerLoadError("The lock manager may not be the key granter");
-  return account;
-}

@@ -97,7 +97,8 @@ export type ReplaceOutcome =
  * Re-sending recorded bytes: `accepted` when the node answers with the hash or
  * already holds it; `nonceConsumed` when the node says the nonce is used.
  */
-export type RebroadcastOutcome = { kind: "accepted" } | { kind: "nonceConsumed" } | { kind: "unknown" };
+/** `refused`: the recorded bytes failed a check (chain, sender, lock, operation or fee budget) and were not sent. */
+export type RebroadcastOutcome = { kind: "accepted" } | { kind: "nonceConsumed" } | { kind: "unknown" } | { kind: "refused"; code: string };
 
 export type BroadcastOutcome =
   | { kind: "submitted" }
@@ -114,7 +115,7 @@ export type ReconcileOutcome =
  * a target corrected, an existing key resolved). The worker parks these in
  * `failed_retryable` with the code instead of retrying them.
  */
-export const parkedGrantCodes = ["chain_not_enabled", "invalid_target", "recipient_has_key"] as const;
+export const parkedGrantCodes = ["chain_not_enabled", "lock_not_enabled", "invalid_target", "recipient_has_key"] as const;
 
 /**
  * Codes that end automatic replacement of a stuck grant; it stays `ambiguous`
@@ -126,9 +127,9 @@ export const grantRecoveryHeld = "grant_recovery_held";
 export const grantBroadcastStops = [grantBroadcastPending, grantBroadcastSuppressed, grantRecoveryHeld] as const;
 
 export const ticketTokenConflict = "ticket_token_conflict";
-export const replacementStopCodes = [ticketTokenConflict, "replacement_exhausted", "replacement_fee_ceiling", "replacement_write_ahead_failed", "replacement_rebroadcast_failed", ...grantBroadcastStops] as const;
+export const replacementStopCodes = [ticketTokenConflict, "replacement_exhausted", "replacement_fee_ceiling", "replacement_write_ahead_failed", "replacement_rebroadcast_failed", "replacement_rebroadcast_refused", ...grantBroadcastStops] as const;
 /** The same stop codes for a cancel; its key stays granted (and reconciled), and the manager's new cancels are held. */
-export const cancelReplacementStopCodes = ["cancel_replacement_exhausted", "cancel_replacement_fee_ceiling", "cancel_replacement_write_ahead_failed", "cancel_replacement_rebroadcast_failed"] as const;
+export const cancelReplacementStopCodes = ["cancel_replacement_exhausted", "cancel_replacement_fee_ceiling", "cancel_replacement_write_ahead_failed", "cancel_replacement_rebroadcast_failed", "cancel_replacement_rebroadcast_refused"] as const;
 
 export interface KeyGrantAdapter {
   /** The grant signer's CAIP-10 account; the worker's signer lock and nonce floor are per account. */
@@ -165,7 +166,7 @@ export type CancelReconcileOutcome =
   | { kind: "unknown" };
 
 /** Cancel codes that wait for a person; the worker never retries them. */
-export const parkedCancelCodes = ["chain_not_enabled", "invalid_target", "invalid_token", "token_mismatch", "not_lock_manager", "cancel_signer_is_granter", "cancel_reverted"] as const;
+export const parkedCancelCodes = ["chain_not_enabled", "lock_not_enabled", "invalid_target", "invalid_token", "token_mismatch", "not_lock_manager", "cancel_signer_is_granter", "cancel_reverted"] as const;
 
 /**
  * The separate lock-manager authority (ADR-0008); never the grant signer. Same

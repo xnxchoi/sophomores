@@ -379,6 +379,12 @@ function TicketEmailEntry(props: MemberAccountViewProps & { locked: boolean; vis
   const greeting = found && typed ? ([...typed].reduce((sum, character) => (sum * 31 + character.charCodeAt(0)) % 997, seed) % GREETINGS) + 1 : 0;
   const heading = greeting ? t(`accountGreeting.${greeting}` as "accountGreeting.1") : t("signIn");
   const refocus = useRef(false);
+  const submitButton = useRef<HTMLButtonElement | null>(null);
+  // An account found swaps the field for the row, which removes the focused input. Focus moves to the primary button
+  // ("Send sign-in code"), so Enter keeps doing what that button does (owner, 24 Nov: Enter must submit).
+  useEffect(() => {
+    if (found && emailInput.current && document.activeElement === emailInput.current) submitButton.current?.focus({ preventScroll: true });
+  }, [found]);
   useEffect(() => {
     if (found || !refocus.current) return;
     refocus.current = false;
@@ -450,7 +456,7 @@ function TicketEmailEntry(props: MemberAccountViewProps & { locked: boolean; vis
           {action}
         </div>
         {/* An email with no account cannot receive a sign-in code. */}
-        {!noAccount && <Button type="submit" variant="primary" size="lg" className="w-full" loading={pending || (snapshot.busy && snapshot.pendingAction === "send-code")} disabled={locked || !capabilities?.emailOtp || lookupFailed || (classified && (props.resendRemaining ?? 0) > 0)}>
+        {!noAccount && <Button ref={submitButton} type="submit" variant="primary" size="lg" className="w-full" loading={pending || (snapshot.busy && snapshot.pendingAction === "send-code")} disabled={locked || !capabilities?.emailOtp || lookupFailed || (classified && (props.resendRemaining ?? 0) > 0)}>
           {props.emailEntry?.state === "existing" ? t("sendSignInCode") : t("continue")}
         </Button>}
       </form>

@@ -259,6 +259,34 @@ test("lookup branches existing and new email without delivery until a separate e
   assert.deepEqual(calls.filter((call) => call.startsWith("send:")), ["send:returning@example.com"]);
 });
 
+test("Enter in the email field does what the visible primary button does, once; typing fires nothing", async () => {
+  // Owner, 24 Nov: Enter must submit the email field. jsdom has no keyboard implicit submission, so Enter is modelled by
+  // its native effect, requestSubmit() on the field's own form; the test also pins that the field and the visible
+  // primary button share that form, the button is a submit button, and focus stays where Enter reaches the form.
+  const calls: string[] = [];
+  const client: MemberClient = { ...memberActions, status: async () => anonymous,
+    lookupEmail: async (email) => { calls.push("lookup:" + email); return { account: "existing" }; },
+    sendEmailCode: async (email) => { calls.push("send:" + email); } };
+  ui.render(<EnglishMessages><Tickets memberClient={client} /></EnglishMessages>);
+  const email = await ui.screen.findByRole("textbox", { name: "Email address" }) as HTMLInputElement;
+  await ui.waitFor(() => assert.equal(email.disabled, false));
+  email.focus();
+  ui.fireEvent.change(email, { target: { value: "enter@example.com" } });
+  assert.deepEqual(calls, [], "typing looks nothing up and sends nothing");
+  const continueButton = ui.screen.getByRole("button", { name: "Continue" }) as HTMLButtonElement;
+  assert.equal(continueButton.type, "submit");
+  assert.equal(continueButton.form === email.form, true);
+  ui.act(() => email.form!.requestSubmit());
+  const send = await ui.screen.findByRole("button", { name: "Send sign-in code" }) as HTMLButtonElement;
+  assert.deepEqual(calls, ["lookup:enter@example.com"], "the first Enter looks the email up once");
+  // The row replaced the field: focus is on the primary button, so the next Enter reaches the same form.
+  await ui.waitFor(() => assert.equal(document.activeElement === send, true));
+  assert.equal(send.type, "submit");
+  ui.act(() => send.form!.requestSubmit());
+  await ui.screen.findByLabelText(messages.AuthPhase.code);
+  assert.deepEqual(calls, ["lookup:enter@example.com", "send:enter@example.com"], "the second Enter sends the code once");
+});
+
 test("lookup failures and missing lookup capability never assume a new account", async () => {
   const { lookupEmail: _lookup, ...withoutLookup } = memberActions;
   ui.render(<EnglishMessages><Tickets memberClient={{ ...withoutLookup, status: async () => anonymous }} /></EnglishMessages>);

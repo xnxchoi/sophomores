@@ -290,6 +290,30 @@ test("provider return defaults to an explicit setup gate, not automatic phone ve
   );
 });
 
+test("account sign-in: Enter in the email field does what the visible primary button does, once; typing fires nothing", async () => {
+  // Owner, 24 Nov: Enter must submit. jsdom has no keyboard implicit submission, so Enter is its native effect:
+  // requestSubmit() on the field's own form, whose submit button is the visible primary button.
+  const c = client();
+  const lookups: string[] = [];
+  c.value.lookupEmail = async (email) => { lookups.push(email); return { account: "existing" }; };
+  await choose("Sign in", c);
+  const email = ui.screen.getByLabelText("Email address") as HTMLInputElement;
+  email.focus();
+  ui.fireEvent.change(email, { target: { value: "enter@example.com" } });
+  assert.deepEqual(lookups, [], "typing looks nothing up");
+  const primary = document.querySelector<HTMLButtonElement>("[data-phase-action=submit]")!;
+  assert.equal(primary.type, "submit");
+  assert.equal(primary.form === email.form, true);
+  ui.act(() => email.form!.requestSubmit());
+  await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Send sign-in code" }));
+  assert.deepEqual(lookups, ["enter@example.com"], "the first Enter looks the email up once");
+  assert.deepEqual(c.calls.filter(([name]) => name === "code"), [], "no code before the second explicit submit");
+  assert.equal(document.activeElement === email, true, "focus stays in the field, so the next Enter reaches the form");
+  ui.act(() => email.form!.requestSubmit());
+  await untilAsserted(ui, () => assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code)));
+  assert.deepEqual(c.calls.filter(([name]) => name === "code"), [["code", "enter@example.com"]], "the second Enter sends the code once");
+});
+
 test("Switch account clears the confirmed sign-in identity and retains only the same-address resend cooldown", async () => {
   const c = client();
   await choose("Sign in", c);

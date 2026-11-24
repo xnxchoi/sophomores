@@ -123,7 +123,8 @@ for (const [width, pointer] of [[393, false], [393, true], [1024, true]] as cons
     assert.equal(panel.getAttribute("data-authentication-presentation"), modal ? "modal" : "tray");
     assert.ok(identity.classList.contains("data-[authentication-presentation=modal]:[@media(max-height:600px)]:[--account-action-gap:12px]"), "only short modals reduce account action spacing to exactly 12px");
     const alternatives = identity.querySelector("[data-account-entry-alternatives]");
-    assert.ok(alternatives?.classList.contains("pt-[var(--account-action-gap)]"), "provider gap belongs inside its collapsing height");
+    // The gap stays inside the collapsing height, plus the 4px focus-ring clearance the shell's -m-1 gives back.
+    assert.ok(alternatives?.classList.contains("pt-[calc(var(--account-action-gap)+0.25rem)]"), "provider gap belongs inside its collapsing height");
     assert.ok(ui.screen.getByRole("button", { name: "Can’t sign in?" }).classList.contains("mt-[var(--account-action-gap)]"), "recovery owns the same responsive action gap");
     assert.ok(panel.classList.contains("!px-6"), "short surfaces retain horizontal alignment and wrapping");
     assert.ok(panel.classList.contains("data-[authentication-presentation=modal]:[@media(max-height:600px)]:pt-4!"));
@@ -162,7 +163,7 @@ test("the actual stylesheet compiles short-modal spacing and overrides the globa
   }
   assert.ok(declarations.some((decl) => decl.prop === "--account-action-gap" && decl.value === "20px" && !/max-height:/.test(decl.context)), "actual stylesheet retains the default 20px action gap");
   assert.ok(declarations.some((decl) => decl.prop === "--account-action-gap" && decl.value === "12px" && decl.context.includes("authentication-presentation") && decl.context.includes("modal") && /max-height:\s*600px/.test(decl.context)), "actual stylesheet applies exactly 12px only inside the short-modal query");
-  assert.ok(declarations.some((decl) => decl.prop === "padding-top" && decl.value === "var(--account-action-gap)"), "provider row consumes the responsive variable inside its own height");
+  assert.ok(declarations.some((decl) => decl.prop === "padding-top" && /^calc\(var\(--account-action-gap\) \+ 0\.25rem\)$/.test(decl.value)), "provider row consumes the responsive variable inside its own height (plus the focus-ring clearance)");
   assert.ok(declarations.some((decl) => decl.prop === "margin-top" && decl.value === "var(--account-action-gap)"), "recovery and magic-link action spacing consume the same variable");
   assert.ok(declarations.some((decl) => decl.prop === "scrollbar-width" && decl.value === "thin" && decl.important && decl.context.includes("authentication-presentation")));
   assert.ok(declarations.some((decl) => decl.prop === "display" && decl.value === "block" && decl.important && decl.context.includes("webkit-scrollbar") && decl.context.includes("authentication-presentation")));

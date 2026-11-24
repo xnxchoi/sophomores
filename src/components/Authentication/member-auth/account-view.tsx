@@ -515,47 +515,79 @@ function AccountEntryAlternatives(props: Pick<MemberAccountViewProps, "snapshot"
   providers: MemberSocialProvider[];
   /** Sign-up's stack sits right under the heading, whose own margin spaces it. */
   underHeading: boolean;
+  /**
+   * Once an email is in the field, the other ways in step back into one row of icon-only buttons (owner, 24 Nov:
+   * "make the passkey and others compact-1 row of 3 smaller buttons, each with icons only ... animated"). Clearing the
+   * field brings the labelled stack back.
+   */
+  compact: boolean;
 }) {
   const t = useTranslations("MemberAuth");
   const expanded = props.providers.length + (props.passkeyAvailable ? 1 : 0) > 0;
+  // One coherent motion: the stack's buttons travel and resize into the row (Motion layout) while the block's real
+  // height eases to the row's on the same curve, so the space below closes with them and nothing is left empty.
+  const content = useRef<HTMLDivElement>(null);
+  const [height, setHeight] = useState<number | null>(null);
+  useLayoutEffect(() => {
+    const node = content.current;
+    if (!node || typeof ResizeObserver === "undefined") return;
+    const measure = () => setHeight(node.offsetHeight || null);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+  const morph = { duration: motionTokens.duration.normal, ease: motionTokens.easing.smooth };
   return (
     <motion.div
       data-account-alternatives-shell=""
       data-expanded={expanded}
       initial={false}
-      animate={{ height: expanded ? "auto" : 0, opacity: expanded ? 1 : 0 }}
-      transition={{ duration: motionTokens.duration.fast, ease: motionTokens.easing.smooth }}
-      className="overflow-hidden"
+      animate={{ height: expanded ? height ?? "auto" : 0, opacity: expanded ? 1 : 0 }}
+      transition={morph}
+      // The clip keeps the morph tidy; -m-1 with p-1 inside leaves 4px for the keyboard focus ring (2px outline and
+      // 2px offset) on every side without moving anything.
+      className="-m-1 overflow-hidden"
       inert={!expanded}
       aria-hidden={!expanded}
     >
       <div
+        ref={content}
         data-account-entry-alternatives=""
-        className={cn("grid items-stretch gap-2", props.underHeading ? "pt-0" : "pt-[var(--account-action-gap)]")}
+        data-compact={props.compact}
+        className={cn(
+          "p-1",
+          props.compact ? "flex flex-wrap items-center justify-center gap-3" : "grid items-stretch gap-2",
+          props.underHeading ? "pt-1" : "pt-[calc(var(--account-action-gap)+0.25rem)]"
+        )}
       >
         {props.passkeyAvailable && (
-          <Button
-            type="button"
-            variant="secondary"
-            size="lg"
-            className="w-full"
-            aria-label={t("signInWithAPasskey")}
-            disabled={props.locked}
-            loading={props.snapshot.pendingAction === "passkey" && props.snapshot.busy}
-            onClick={props.onPasskey}
-          >
-            <KeyRound aria-hidden="true" className="size-4" strokeWidth={1.5} />
-            {t("passkey")}
-          </Button>
+          <motion.div layout transition={morph} className={cn("rounded-[14px]", props.compact ? "size-12" : "w-full")}>
+            <Button
+              type="button"
+              variant="secondary"
+              size="lg"
+              className={cn(props.compact ? "size-full px-0!" : "w-full")}
+              aria-label={t("signInWithAPasskey")}
+              disabled={props.locked}
+              loading={props.snapshot.pendingAction === "passkey" && props.snapshot.busy}
+              onClick={props.onPasskey}
+            >
+              <motion.span layout transition={morph} className="inline-flex"><KeyRound aria-hidden="true" className="size-4" strokeWidth={1.5} /></motion.span>
+              {!props.compact && t("passkey")}
+            </Button>
+          </motion.div>
         )}
         {props.providers.map((provider) => (
-          <ProviderButton
-            key={provider}
-            provider={provider}
-            disabled={props.locked}
-            busy={props.snapshot.pendingAction === provider && props.snapshot.busy}
-            onClick={() => props.onSocial(provider)}
-          />
+          <motion.div key={provider} layout transition={morph} className={cn("rounded-[14px]", props.compact ? "size-12" : "w-full")}>
+            <ProviderButton
+              provider={provider}
+              compact={props.compact}
+              disabled={props.locked}
+              busy={props.snapshot.pendingAction === provider && props.snapshot.busy}
+              onClick={() => props.onSocial(provider)}
+            />
+          </motion.div>
         ))}
       </div>
     </motion.div>
@@ -578,8 +610,10 @@ function OrDivider() {
   );
 }
 
-function ProviderButton({ provider, disabled, busy, onClick }: {
+function ProviderButton({ provider, compact, disabled, busy, onClick }: {
   provider: MemberSocialProvider;
+  /** Icon only, in the compact row; the label stays as the accessible name. */
+  compact: boolean;
   disabled: boolean;
   busy: boolean;
   onClick: () => void;
@@ -595,11 +629,14 @@ function ProviderButton({ provider, disabled, busy, onClick }: {
         disabled={disabled}
         aria-busy={busy}
         onClick={onClick}
-        className="relative h-12 min-h-12 w-full min-w-0 gap-2 rounded-[12px] border-[#FEE500] bg-[#FEE500] px-4 py-0 text-[15px] leading-5 whitespace-nowrap text-black/85 hover:bg-[#FEE500] focus-visible:outline-offset-2 aria-busy:opacity-80"
+        className={cn(
+          "relative min-w-0 gap-2 rounded-[12px] border-[#FEE500] bg-[#FEE500] py-0 text-[15px] leading-5 whitespace-nowrap text-black/85 hover:bg-[#FEE500] focus-visible:outline-offset-2 aria-busy:opacity-80",
+          compact ? "size-full min-h-0 px-0!" : "h-12 min-h-12 w-full px-4"
+        )}
       >
         <Image src="/auth-providers/kakao-symbol.svg" alt="" aria-hidden="true" width={15} height={15} unoptimized className="size-[14.6px] shrink-0" />
-        <span>{label}</span>
-        {busy && <LoaderCircle aria-hidden="true" className="absolute right-4 size-4 animate-spin" strokeWidth={1.5} />}
+        {!compact && <span>{label}</span>}
+        {busy && !compact && <LoaderCircle aria-hidden="true" className="absolute right-4 size-4 animate-spin" strokeWidth={1.5} />}
       </AccountButton>
     );
   return (
@@ -610,13 +647,13 @@ function ProviderButton({ provider, disabled, busy, onClick }: {
         provider === "google" && "[--border:#747775] [--foreground:#1F1F1F] [--surface-muted:#FFFFFF] [--surface:#FFFFFF] dark:[--border:#8E918F] dark:[--foreground:#E3E3E3] dark:[--surface-muted:#131314] dark:[--surface:#131314]"
       )}
     >
-      <Button data-social-provider={provider} type="button" variant="secondary" size="lg" className="w-full" aria-label={label} disabled={disabled} loading={busy} onClick={onClick}>
-        {provider === "apple" && <Image src="/auth-providers/apple-logo.svg" alt="" aria-hidden="true" width={31} height={44} unoptimized className="-my-2 -mr-1 h-11 w-auto" />}
+      <Button data-social-provider={provider} type="button" variant="secondary" size="lg" className={cn(compact ? "size-full px-0!" : "w-full")} aria-label={label} disabled={disabled} loading={busy} onClick={onClick}>
+        {provider === "apple" && <Image src="/auth-providers/apple-logo.svg" alt="" aria-hidden="true" width={31} height={44} unoptimized className={cn("h-11 w-auto", !compact && "-my-2 -mr-1")} />}
         {provider === "google" && <>
           <Image src="/auth-providers/google-g-light.svg" alt="" aria-hidden="true" width={20} height={20} unoptimized className="size-5 dark:hidden" />
           <Image src="/auth-providers/google-g.svg" alt="" aria-hidden="true" width={20} height={20} unoptimized className="hidden size-5 dark:block" />
         </>}
-        {label}
+        {!compact && label}
       </Button>
     </div>
   );
@@ -744,6 +781,7 @@ function IdentityStep(props: MemberAccountViewProps & { locked: boolean; reserve
           passkeyAvailable={Boolean(props.flow !== "signup" && capabilities?.passkey)}
           providers={providers}
           underHeading={socialSignup || orDivider}
+          compact={!socialSignup && Boolean(props.email.trim())}
           onPasskey={props.onPasskey}
           onSocial={props.onSocial}
         />

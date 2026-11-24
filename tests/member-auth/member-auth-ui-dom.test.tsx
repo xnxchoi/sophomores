@@ -314,6 +314,41 @@ test("account sign-in: Enter in the email field does what the visible primary bu
   assert.deepEqual(c.calls.filter(([name]) => name === "code"), [["code", "enter@example.com"]], "the second Enter sends the code once");
 });
 
+test("once an email is in, the other ways in become one row of icon-only buttons; clearing brings the labels back", async () => {
+  // Owner, 24 Nov: "Once email is in, we make the passkey and others compact-1 row of 3 smaller buttons, each with
+  // icons only". The accessible names stay; the visible labels go; nothing is looked up or sent while typing.
+  const c = client();
+  const lookups: string[] = [];
+  c.value.lookupEmail = async (email) => { lookups.push(email); return { account: "existing" }; };
+  await choose("Sign in", c);
+  const row = () => document.querySelector<HTMLElement>("[data-account-entry-alternatives]")!;
+  const alternatives = () => [...row().querySelectorAll<HTMLButtonElement>("button")];
+  await untilAsserted(ui, () => assert.ok(alternatives().length >= 2));
+  assert.equal(row().dataset.compact, "false", "empty field: the labelled stack");
+  const labelled = alternatives().map((button) => [button.getAttribute("aria-label"), button.textContent?.trim()]);
+  for (const [name, text] of labelled) assert.ok(name && text && text.length > 0, `${name} shows its label`);
+  const email = ui.screen.getByLabelText("Email address") as HTMLInputElement;
+  ui.fireEvent.change(email, { target: { value: "member@example.com" } });
+  await untilAsserted(ui, () => assert.equal(row().dataset.compact, "true"));
+  // Arc's button crossfades its label out; wait for the exit to finish.
+  await untilAsserted(ui, () => {
+    for (const button of alternatives()) {
+      assert.ok(button.getAttribute("aria-label"), "each icon button keeps its accessible name");
+      assert.equal(button.textContent?.trim(), "", `${button.getAttribute("aria-label")} shows its icon only`);
+    }
+  });
+  assert.deepEqual(alternatives().map((button) => button.getAttribute("aria-label")), labelled.map(([name]) => name), "same buttons, same order");
+  assert.deepEqual(lookups, [], "typing looks nothing up");
+  // Review-B: the clip must not cut the 2px outline + 2px offset focus ring, and Arc's .lg padding must not squeeze
+  // the icons (its unlayered padding-inline needs the important utility).
+  const shell = row().closest<HTMLElement>("[data-account-alternatives-shell]")!;
+  assert.equal(shell.classList.contains("-m-1") && row().classList.contains("p-1"), true, "4px ring clearance inside the clip");
+  assert.equal(alternatives().every((button) => button.classList.contains("px-0!")), true, "icon buttons drop Arc's padding");
+  ui.fireEvent.change(email, { target: { value: "" } });
+  await untilAsserted(ui, () => assert.equal(row().dataset.compact, "false"));
+  await untilAsserted(ui, () => assert.deepEqual(alternatives().map((button) => [button.getAttribute("aria-label"), button.textContent?.trim()]), labelled, "the labels come back"));
+});
+
 test("Switch account clears the confirmed sign-in identity and retains only the same-address resend cooldown", async () => {
   const c = client();
   await choose("Sign in", c);

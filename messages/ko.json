@@ -794,7 +794,19 @@
       "productBookGlitterTile": "",
       "productBookPages": "",
       "productBookPageFront": "",
-      "productBookPageBack": ""
+      "productBookPageBack": "",
+      "homeEntry": "",
+      "homeEntryDescription": "",
+      "warpWindowStart": "",
+      "warpWindowEnd": "",
+      "warpWindowDescription": "",
+      "warpWindowOrder": "",
+      "entryLinks": "",
+      "entryLinksDescription": "",
+      "entryLinkCode": "",
+      "entryLinkCodeLength": "",
+      "entryLinkCodeDescription": "",
+      "entryLinkNote": ""
     }
   },
   "Customer": {

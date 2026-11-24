@@ -323,6 +323,13 @@ export const enum__commerce_publication_v_published_locale = pgEnum(
   "enum__commerce_publication_v_published_locale",
   ["en", "ko"]
 );
+export const enum_home_entry_warpstart_tz = pgEnum(
+  "enum_home_entry_warpstart_tz",
+  ["Asia/Seoul"]
+);
+export const enum_home_entry_warpend_tz = pgEnum("enum_home_entry_warpend_tz", [
+  "Asia/Seoul"
+]);
 
 export const admins = pgTable(
   "admins",
@@ -4899,6 +4906,53 @@ export const site_editorial_locales = pgTable(
   ]
 );
 
+export const home_entry_entry_links = pgTable(
+  "home_entry_entry_links",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: uuid("_parent_id").notNull(),
+    id: varchar("id").primaryKey(),
+    code: varchar("code").notNull(),
+    note: varchar("note")
+  },
+  (columns) => [
+    index("home_entry_entry_links_order_idx").on(columns._order),
+    index("home_entry_entry_links_parent_id_idx").on(columns._parentID),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [home_entry.id],
+      name: "home_entry_entry_links_parent_id_fk"
+    }).onDelete("cascade")
+  ]
+);
+
+export const home_entry = pgTable("home_entry", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  warpStart: timestamp("warp_start", {
+    mode: "string",
+    withTimezone: true,
+    precision: 3
+  }),
+  warpStart_tz:
+    enum_home_entry_warpstart_tz("warpstart_tz").default("Asia/Seoul"),
+  warpEnd: timestamp("warp_end", {
+    mode: "string",
+    withTimezone: true,
+    precision: 3
+  }),
+  warpEnd_tz: enum_home_entry_warpend_tz("warpend_tz").default("Asia/Seoul"),
+  updatedAt: timestamp("updated_at", {
+    mode: "string",
+    withTimezone: true,
+    precision: 3
+  }),
+  createdAt: timestamp("created_at", {
+    mode: "string",
+    withTimezone: true,
+    precision: 3
+  })
+});
+
 export const nfc_tap_handoffs = pgTable(
   "nfc_tap_handoffs",
   {
@@ -6517,6 +6571,21 @@ export const relations_site_editorial = relations(
     })
   })
 );
+export const relations_home_entry_entry_links = relations(
+  home_entry_entry_links,
+  ({ one }) => ({
+    _parentID: one(home_entry, {
+      fields: [home_entry_entry_links._parentID],
+      references: [home_entry.id],
+      relationName: "entryLinks"
+    })
+  })
+);
+export const relations_home_entry = relations(home_entry, ({ many }) => ({
+  entryLinks: many(home_entry_entry_links, {
+    relationName: "entryLinks"
+  })
+}));
 
 type DatabaseSchema = {
   enum__locales: typeof enum__locales;
@@ -6579,6 +6648,8 @@ type DatabaseSchema = {
   enum__commerce_publication_v_version_shipping_countries: typeof enum__commerce_publication_v_version_shipping_countries;
   enum__commerce_publication_v_version_status: typeof enum__commerce_publication_v_version_status;
   enum__commerce_publication_v_published_locale: typeof enum__commerce_publication_v_published_locale;
+  enum_home_entry_warpstart_tz: typeof enum_home_entry_warpstart_tz;
+  enum_home_entry_warpend_tz: typeof enum_home_entry_warpend_tz;
   admins: typeof admins;
   users_role: typeof users_role;
   users: typeof users;
@@ -6694,6 +6765,8 @@ type DatabaseSchema = {
   help_content_locales: typeof help_content_locales;
   site_editorial: typeof site_editorial;
   site_editorial_locales: typeof site_editorial_locales;
+  home_entry_entry_links: typeof home_entry_entry_links;
+  home_entry: typeof home_entry;
   nfc_tap_handoffs: typeof nfc_tap_handoffs;
   relations_admins: typeof relations_admins;
   relations_users_role: typeof relations_users_role;
@@ -6810,6 +6883,8 @@ type DatabaseSchema = {
   relations_help_content: typeof relations_help_content;
   relations_site_editorial_locales: typeof relations_site_editorial_locales;
   relations_site_editorial: typeof relations_site_editorial;
+  relations_home_entry_entry_links: typeof relations_home_entry_entry_links;
+  relations_home_entry: typeof relations_home_entry;
 };
 
 declare module "@payloadcms/db-postgres" {

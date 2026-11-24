@@ -794,7 +794,19 @@
       "productBookGlitterTile": "Glitter tile",
       "productBookPages": "Inside pages",
       "productBookPageFront": "Front",
-      "productBookPageBack": "Back"
+      "productBookPageBack": "Back",
+      "homeEntry": "Home entry",
+      "homeEntryDescription": "When the Warp home shows at /. Outside the window, and without an entry link, visitors go to the default home.",
+      "warpWindowStart": "Warp starts",
+      "warpWindowEnd": "Warp ends",
+      "warpWindowDescription": "Seoul time. The Warp shows to everyone while both are set and now is between them.",
+      "warpWindowOrder": "The end must come after the start.",
+      "entryLinks": "Entry links",
+      "entryLinksDescription": "A link to /w/ followed by a code opens the Warp for 6 hours from the first visit. Delete a row to stop its link.",
+      "entryLinkCode": "Code",
+      "entryLinkCodeLength": "This code was not made here. Remove the row and add a new one.",
+      "entryLinkCodeDescription": "Made by the server when you save. Copy it after saving.",
+      "entryLinkNote": "Note"
     }
   },
   "Customer": {

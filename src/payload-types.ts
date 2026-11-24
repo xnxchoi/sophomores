@@ -201,12 +201,14 @@ export interface Config {
     'business-info': BusinessInfo;
     'help-content': HelpContent;
     'site-editorial': SiteEditorial;
+    'home-entry': HomeEntry;
   };
   globalsSelect: {
     'commerce-publication': CommercePublicationSelect<false> | CommercePublicationSelect<true>;
     'business-info': BusinessInfoSelect<false> | BusinessInfoSelect<true>;
     'help-content': HelpContentSelect<false> | HelpContentSelect<true>;
     'site-editorial': SiteEditorialSelect<false> | SiteEditorialSelect<true>;
+    'home-entry': HomeEntrySelect<false> | HomeEntrySelect<true>;
   };
   locale: 'en' | 'ko';
   widgets: {
@@ -3265,6 +3267,37 @@ export interface SiteEditorial {
   createdAt?: string | null;
 }
 /**
+ * When the Warp home shows at /. Outside the window, and without an entry link, visitors go to the default home.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "home-entry".
+ */
+export interface HomeEntry {
+  id: string;
+  /**
+   * Seoul time. The Warp shows to everyone while both are set and now is between them.
+   */
+  warpStart?: string | null;
+  warpStart_tz?: 'Asia/Seoul' | null;
+  warpEnd?: string | null;
+  warpEnd_tz?: 'Asia/Seoul' | null;
+  /**
+   * A link to /w/ followed by a code opens the Warp for 6 hours from the first visit. Delete a row to stop its link.
+   */
+  entryLinks?:
+    | {
+        /**
+         * Made by the server when you save. Copy it after saving.
+         */
+        code: string;
+        note?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "commerce-publication_select".
  */
@@ -3329,6 +3362,26 @@ export interface SiteEditorialSelect<T extends boolean = true> {
   siteTitle?: T;
   siteDescription?: T;
   featuredSetlist?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "home-entry_select".
+ */
+export interface HomeEntrySelect<T extends boolean = true> {
+  warpStart?: T;
+  warpStart_tz?: T;
+  warpEnd?: T;
+  warpEnd_tz?: T;
+  entryLinks?:
+    | T
+    | {
+        code?: T;
+        note?: T;
+        id?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

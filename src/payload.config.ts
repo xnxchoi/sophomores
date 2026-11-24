@@ -25,6 +25,7 @@ import { commerceDomainPlugin } from "@/lib/commerce/domain";
 import { CommercePublication } from "@/lib/commerce/catalogue";
 import { BusinessInfo } from "@/payload/globals/business-info";
 import { HelpContent } from "@/payload/globals/help-content";
+import { HomeEntry } from "@/payload/globals/home-entry";
 import { SiteEditorial } from "@/payload/globals/site-editorial";
 import { editorialEnsurePlugin } from "@/payload/seed/editorial";
 import { superAdminEnsurePlugin } from "@/payload/seed/super-admin";
@@ -76,7 +77,7 @@ const buildSiteConfig = (mode: "site" | "nfc-read" | "nfc-write") => {
     },
     collections: tapOnly ? [Admins, Users, ...nfcCollections] :
       [Admins, Users, MemberWallets, MemberWalletCatchUp, HomePage, AccountRecoveryRequests, ...contentCollections, ...nfcCollections],
-    ...(tapOnly ? {} : { jobs: walletCatchUpJobs, globals: [CommercePublication, BusinessInfo, HelpContent, SiteEditorial] }),
+    ...(tapOnly ? {} : { jobs: walletCatchUpJobs, globals: [CommercePublication, BusinessInfo, HelpContent, SiteEditorial, HomeEntry] }),
     plugins: [
       betterAuthPlugin(betterAuthPluginOptions),
       ...(tapOnly ? [] : [staffCmsLoginPlugin, commercePlugin, commerceDomainPlugin, editorialEnsurePlugin, superAdminEnsurePlugin, homePageEnsurePlugin]),

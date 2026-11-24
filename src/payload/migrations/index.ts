@@ -29,6 +29,7 @@ import * as migration_20261123_040000_event_ticket_targets from './20261123_0400
 import * as migration_20261123_045913_product_page_fields from './20261123_045913_product_page_fields';
 
 import * as migration_20261124_120000_shared_event_ticket_binding from './20261124_120000_shared_event_ticket_binding';
+import * as migration_20261124_130000_home_entry from './20261124_130000_home_entry';
 
 export const migrations = [
   {
@@ -175,5 +176,10 @@ export const migrations = [
     up: migration_20261124_120000_shared_event_ticket_binding.up,
     down: migration_20261124_120000_shared_event_ticket_binding.down,
     name: '20261124_120000_shared_event_ticket_binding',
+  },
+  {
+    up: migration_20261124_130000_home_entry.up,
+    down: migration_20261124_130000_home_entry.down,
+    name: '20261124_130000_home_entry',
   },
 ];

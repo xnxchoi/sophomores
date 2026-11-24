@@ -83,8 +83,7 @@ export const CommerceKeyGrantIntents: CollectionConfig = {
       // Deny document-less field reads (e.g. distinct/group queries), which
       // otherwise bypass afterRead and can return the entire stored JSON.
       access: { read: ({ doc }) => doc != null },
-      indexes: [{ fields: ["entitlement", "purpose"], unique: true }],
-  hooks: { afterRead: [projectGrantSends] },
+      hooks: { afterRead: [projectGrantSends] },
     },
     { name: "lastSentAt", type: "date", index: true },
     { name: "settledTxHash", type: "text" },
@@ -98,6 +97,7 @@ export const CommerceKeyGrantIntents: CollectionConfig = {
     { name: "cancelSends", type: "json" },
     { name: "cancelLastSentAt", type: "date", index: true },
   ]),
+  indexes: [{ fields: ["entitlement", "purpose"], unique: true }],
   hooks: {
     beforeChange: [({ data, originalDoc, operation, req }) => {
       if (!commerceServerWrite(req)) throw new APIError("Key grants are server owned", 403);

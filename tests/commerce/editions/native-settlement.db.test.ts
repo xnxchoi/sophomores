@@ -60,6 +60,7 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
 
   await t.test("shared event: one Member and two Guest seats, two Guest slots per sponsor, and one final token mapping", async () => {
     const { randomUUID } = await import("node:crypto");
+    const { z } = await import("zod");
     const { seedCheckoutCart, initiateThroughEndpoint } = await import("../core/payment-postgres-fixture");
     const { up: upBinding, down: downBinding } = await import("../../../src/payload/migrations/20261124_120000_shared_event_ticket_binding");
     const { reservePurchase } = await import("../../../src/lib/commerce/reservations");
@@ -68,7 +69,7 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
     await migrate(downBinding);
     await migrate(upBinding);
     const member = await seedMember(payload);
-    const guest = await seedCheckoutCart(payload, { user: member, customerID: String(member.id) });
+    const guest = await seedCheckoutCart(payload, { user: member, customerID: z.uuid().parse(member.id) as ReturnType<typeof randomUUID> });
     const eventID = guest.eventID;
     const lock = "0x" + "b".repeat(40);
     const ticketTarget = { chainID: 137, lock, mode: "shared" as const };

@@ -6,7 +6,7 @@ import { ticketTokenIdentity } from "@/lib/commerce/keys/contracts";
 const lock = "0x" + "a".repeat(40);
 const config = { version: 1, mode: "shared", chainID: 137, eventLock: lock, guestProductID: "guest" };
 const event = { id: "e", checkInAuthority: "unlock-events", unlockTicketConfiguration: config };
-const target = { chainID: 137, lock, mode: "shared" };
+const target = { chainID: 137, lock, mode: "shared" } as const;
 
 test("explicit shared mode resolves both tiers without admitting an unrelated Guest offer", () => {
   assert.deepEqual(resolveEventTicketTarget(event, "member", "edition"), target);

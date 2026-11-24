@@ -15,7 +15,12 @@ export const dynamic = "force-dynamic";
  */
 export async function GET(request: Request, { params }: { params: Promise<{ code: string }> }) {
   const { code } = await params;
-  const entry = await readHomeEntry(() => getPayload({ config }));
-  // better-auth's getIP, as the music routes use it: the ingress overwrites X-Forwarded-For.
-  return entryLinkResponse({ entry, code, now: Date.now(), address: getIP(request, {}) ?? "unknown" });
+  // better-auth's getIP, as the music routes use it: the ingress overwrites X-Forwarded-For. The attempt is counted
+  // before Payload is read.
+  return entryLinkResponse({
+    loadEntry: () => readHomeEntry(() => getPayload({ config })),
+    code,
+    now: Date.now(),
+    address: getIP(request, {}) ?? "unknown"
+  });
 }

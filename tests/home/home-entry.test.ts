@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { registerHooks } from "node:module";
 import { after, before, test } from "node:test";
 import { getPathMatch } from "next/dist/shared/lib/router/utils/path-match";
+import { matchHas } from "next/dist/shared/lib/router/utils/prepare-destination";
 import { defaultHomeHref, homeEntryGatePath, homeEntryMarker, warpEntryCookie } from "@/lib/content/home";
 import { HomeEntry, entryCodePattern, newEntryCode } from "@/payload/globals/home-entry";
 
@@ -66,7 +67,7 @@ test("the window is open only while both ends are set and now is between them", 
   assert.equal(server.warpWindowOpen(server.parseHomeEntry(null), now), false);
 });
 
-test("the cookie-less '/' gate: the default home outside the window, a window pass inside it", () => {
+test("the cookie-less '/' gate: the default home outside the window, a window pass inside it", async () => {
   const closed = server.homeGateResponse({ entry: shut(), now });
   assert.equal(closed.status, 307);
   assert.equal(closed.headers.get("location"), defaultHomeHref);
@@ -77,7 +78,7 @@ test("the cookie-less '/' gate: the default home outside the window, a window pa
   assert.equal(inside.status, 303);
   // Review-B r1: one pass only. The way back carries the marker, which the gate's rewrite never catches, so a
   // browser that refuses the cookie lands on the Warp home instead of being sent round.
-  assert.equal(inside.headers.get("location"), `/?${homeEntryMarker}`);
+  assert.equal(inside.headers.get("location"), `/?${homeEntryMarker}=1`);
   assert.match(cookieOf(inside), /^sphmrs_warp=window\.\d+\.[A-Za-z0-9_-]{43}; Path=\/; Max-Age=3600; HttpOnly; SameSite=Lax/);
   // The pass ends with the window when that comes first.
   assert.equal(server.readWarpPass(passOf(inside), now)?.expires, now + hour);
@@ -87,13 +88,30 @@ test("the cookie-less '/' gate: the default home outside the window, a window pa
   const late = server.homeGateResponse({ entry: closing(1500), now });
   assert.equal(late.status, 303);
   assert.match(cookieOf(late), /; Max-Age=1; /);
+  // Review-A r2: through Next's own matcher (prepare-destination matchHas), with no cookie, the gate's way back is NOT
+  // caught again, while a bare "/" is. (A bare "?entry" parses as "" and would be caught: matchHas tests truthiness.)
+  const config = (await import("../../next.config")).default;
+  const rewrites = await config.rewrites?.();
+  assert.ok(rewrites && !Array.isArray(rewrites));
+  const gate = (rewrites.beforeFiles ?? []).find((rule) => rule.destination === homeEntryGatePath);
+  assert.ok(gate);
+  const caught = (location: string, cookie = "") => {
+    const url = new URL(location, "https://site.example");
+    const query = Object.fromEntries(url.searchParams);
+    return url.pathname === gate.source && matchHas({ headers: { cookie } } as never, query, gate.has, gate.missing) !== false;
+  };
+  assert.equal(caught(inside.headers.get("location")!), false, "the way back is served, not sent round");
+  assert.equal(caught("/"), true, "a cookie-less '/' goes to the gate");
+  assert.equal(caught("/?entry"), true, "a bare marker would still be caught");
+  assert.equal(caught("/", `${warpEntryCookie}=x`), false);
+  assert.equal(caught("/", "__prerender_bypass=x"), false);
   const last = server.homeGateResponse({ entry: closing(400), now });
-  assert.equal(last.headers.get("location"), `/?${homeEntryMarker}`);
+  assert.equal(last.headers.get("location"), `/?${homeEntryMarker}=1`);
   assert.equal(cookieOf(last), "", "under a second left: no pass, just the one way back");
 });
 
-test("an entry link: a valid code sets a 6-hour link pass; every answer leaves for '/' and keeps the code out of the page", () => {
-  const valid = server.entryLinkResponse({ entry: shut(), code, now, address: "198.51.100.1" });
+test("an entry link: a valid code sets a 6-hour link pass; every answer leaves for '/' and keeps the code out of the page", async () => {
+  const valid = await server.entryLinkResponse({ loadEntry: async () => shut(), code, now, address: "198.51.100.1" });
   assert.equal(valid.status, 303);
   assert.equal(valid.headers.get("location"), "/");
   assert.equal(valid.headers.get("referrer-policy"), "no-referrer");
@@ -103,7 +121,7 @@ test("an entry link: a valid code sets a 6-hour link pass; every answer leaves f
   assert.equal(server.readWarpPass(passOf(valid), now)?.kind, "link");
 
   for (const wrong of ["SpringWindow_0123456789b", "short", "", "../../etc", `${code}x`]) {
-    const response = server.entryLinkResponse({ entry: shut(), code: wrong, now, address: "198.51.100.2" });
+    const response = await server.entryLinkResponse({ loadEntry: async () => shut(), code: wrong, now, address: "198.51.100.2" });
     assert.equal(response.status, 303, wrong);
     assert.equal(response.headers.get("location"), "/");
     assert.equal(cookieOf(response), "", wrong);
@@ -145,19 +163,21 @@ test("the global is staff-only and accepts only codes made here", async () => {
   assert.equal(server.entryCodeMatches(server.parseHomeEntry({ entryLinks: [{ code: "short" }] }), "short"), false);
 });
 
-test("entry-link attempts are limited per address; other addresses are unaffected", () => {
+test("entry-link attempts are limited per address, before any read; other addresses are unaffected", async () => {
   const address = "203.0.113.9";
   for (let attempt = 0; attempt < server.entryLinkLimit.max; attempt++) {
-    assert.equal(server.entryLinkResponse({ entry: shut(), code: "wrong", now, address }).status, 303);
+    assert.equal((await server.entryLinkResponse({ loadEntry: async () => shut(), code: "wrong", now, address })).status, 303);
   }
-  const refused = server.entryLinkResponse({ entry: shut(), code, now, address });
+  let reads = 0;
+  const refused = await server.entryLinkResponse({ loadEntry: async () => (reads++, shut()), code, now, address });
+  assert.equal(reads, 0, "an address over the limit costs no read");
   assert.equal(refused.status, 429, "even a valid code waits once the address is over the limit");
   assert.equal(cookieOf(refused), "");
   assert.equal(refused.headers.get("cache-control"), "private, no-store");
   assert.ok(Number(refused.headers.get("retry-after")) >= 1);
-  assert.equal(server.entryLinkResponse({ entry: shut(), code, now, address: "203.0.113.10" }).status, 303);
+  assert.equal((await server.entryLinkResponse({ loadEntry: async () => shut(), code, now, address: "203.0.113.10" })).status, 303);
   // The window resets.
-  assert.equal(server.entryLinkResponse({ entry: shut(), code, now: now + server.entryLinkLimit.windowMs + 1, address }).status, 303);
+  assert.equal((await server.entryLinkResponse({ loadEntry: async () => shut(), code, now: now + server.entryLinkLimit.windowMs + 1, address })).status, 303);
 });
 
 test("codes are made by the server: a new row gets a fresh code, a saved row keeps its own", async () => {

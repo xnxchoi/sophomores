@@ -125,11 +125,18 @@ const entryLinkAttempts = windowTable("warp-entry|address");
 
 /**
  * GET /w/<code>: a valid code gets a link pass; either way the visitor lands on "/" and the code leaves the address
- * bar. An address that tries too often gets 429 without its code being checked.
+ * bar. The attempt is counted before the store is read, so an address over the limit gets 429 and costs no read.
+ * The address is the ingress's (X-Forwarded-For) and the counts live in this process, so this bounds abuse loosely.
  */
-export function entryLinkResponse({ entry, code, now, address }: { entry: HomeEntryState; code: string; now: number; address: string }) {
+export async function entryLinkResponse({ loadEntry, code, now, address }: {
+  loadEntry: () => Promise<HomeEntryState>;
+  code: string;
+  now: number;
+  address: string;
+}) {
   const wait = hitWindow(entryLinkAttempts, address, { ...entryLinkLimit, now });
   if (wait !== null) return new Response(null, { status: 429, headers: { ...noStore, "Retry-After": String(wait) } });
+  const entry = await loadEntry();
   const headers = new Headers({ ...noStore, Location: "/" });
   if (entryCodeMatches(entry, code)) {
     const cookie = warpCookie(issueWarpPass({ kind: "link", expires: now + warpVisitSeconds * 1000 }), warpVisitSeconds);
@@ -139,7 +146,7 @@ export function entryLinkResponse({ entry, code, now, address }: { entry: HomeEn
 }
 
 /**
- * The gate for a cookie-less "/": outside the window, the default home. Inside it, one pass back to "/?entry", which
+ * The gate for a cookie-less "/": outside the window, the default home. Inside it, one pass back to "/?entry=1", which
  * the gate never catches (next.config.ts), so a browser that refuses the cookie still lands on the Warp home, once,
  * instead of being sent round. The window pass rides along when at least a whole second of the window is left.
  */
@@ -148,7 +155,9 @@ export function homeGateResponse({ entry, now }: { entry: HomeEntryState; now: n
     return new Response(null, { status: 307, headers: { ...noStore, Location: defaultHomeHref } });
   }
   const expires = Math.min(entry.warpEnd ?? now, now + warpVisitSeconds * 1000);
-  const headers = new Headers({ ...noStore, Location: `/?${homeEntryMarker}` });
+  // A non-empty value: Next's `missing` check tests the query value's truthiness (prepare-destination matchHas), so a
+  // bare "?entry" ("") would still be caught and sent round.
+  const headers = new Headers({ ...noStore, Location: `/?${homeEntryMarker}=1` });
   const seconds = Math.floor((expires - now) / 1000);
   if (seconds >= 1) headers.append("Set-Cookie", serializeCookie(warpCookie(issueWarpPass({ kind: "window", expires }), seconds)));
   return new Response(null, { status: 303, headers });

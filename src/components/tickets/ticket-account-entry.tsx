@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import type { MemberClient } from "../../lib/member-auth/client";
 import type { MemberCapabilities } from "../../lib/member-auth/contracts";
-import { MemberAccountStudy } from "../Authentication/member-auth/account-study";
+import { MemberAccountPage } from "../Authentication/member-auth/account-study";
 import { subscribeVisibility } from "@/utils/browser/visibility";
 import {
   clearTicketReturnIntent,
@@ -84,9 +84,10 @@ export function TicketAccountEntry({
   }
 
   return (
-    <MemberAccountStudy
+    // The account is a normal page (owner, 24 Nov); a signed-out visitor never gets here (/account redirects to /sign-in).
+    <MemberAccountPage
       client={client}
-      initialFlow={initialFlow}
+      initialFlow={initialFlow ?? "login"}
       initialCapabilities={initialCapabilities}
       authenticatedAction={showAccountNavigation ? <AccountNavigation /> : undefined}
       completionAction={

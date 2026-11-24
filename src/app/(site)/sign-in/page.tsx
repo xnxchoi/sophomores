@@ -2,7 +2,7 @@ import messages from "../../../../messages/en.json";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
-import { MemberSignInPage } from "@/components/Authentication/member-auth/account-study";
+import { MemberAccountPage } from "@/components/Authentication/member-auth/account-study";
 import { ReviewCustomerNoticePage } from "@/components/commerce/review-customer-notice";
 import { isReviewCopyRequest } from "@/lib/auth/review-editor-policy";
 import { readHeaderMemberState } from "@/lib/member-auth/header-state.server";
@@ -26,5 +26,5 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
   const state = await readHeaderMemberState(await headers());
   if (state.state === "signed-in" && state.member) redirect(next);
   // Signed in but still in setup (a new social member back from the provider): the setup step, not the chooser.
-  return <MemberSignInPage next={next} initialFlow={state.state === "signed-in" ? "login" : undefined} initialCapabilities={await loadPublicMemberCapabilities()} />;
+  return <MemberAccountPage next={next} initialFlow={state.state === "signed-in" ? "login" : undefined} initialCapabilities={await loadPublicMemberCapabilities()} />;
 }

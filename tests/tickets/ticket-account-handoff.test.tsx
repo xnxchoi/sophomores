@@ -62,7 +62,7 @@ test("without a completion action the accepted member confirmation and primary p
 let dom: JSDOM;
 let ui: typeof import("@testing-library/react/pure");
 let Entry: typeof import("@/components/tickets/ticket-account-entry").TicketAccountEntry;
-let Study: typeof import("@/components/Authentication/member-auth/account-study").MemberAccountStudy;
+let Page: typeof import("@/components/Authentication/member-auth/account-study").MemberAccountPage;
 let draft: typeof import("@/lib/tickets/selection-draft");
 const previous = new Map<string, PropertyDescriptor | undefined>();
 function expose(key: string, value: unknown) {
@@ -84,7 +84,7 @@ before(async () => {
   Object.defineProperty(win.HTMLElement.prototype, "scrollIntoView", { value() {} });
   ui = await import("@testing-library/react/pure");
   MemberAccountView = (await import("@/components/Authentication/member-auth/account-view")).MemberAccountView;
-  Study = (await import("@/components/Authentication/member-auth/account-study")).MemberAccountStudy;
+  Page = (await import("@/components/Authentication/member-auth/account-study")).MemberAccountPage;
 });
 afterEach(() => { ui.cleanup(); dom.window.localStorage.clear(); });
 after(async () => {
@@ -115,9 +115,10 @@ function saveIntent(returnToTickets = true, now = Date.now()) {
   return result;
 }
 
-test("ticket-aware entry is SSR-identical to the existing account shell before browser intent is read", async () => {
+test("ticket-aware entry is SSR-identical to the account page before browser intent is read", async () => {
+  // The signed-in account is a normal page (owner, 24 Nov): the entry renders the page, opened on the member's flow.
   await loadEntry();
-  assert.equal(renderToStaticMarkup(<MemberAuthProviders><Entry /></MemberAuthProviders>), renderToStaticMarkup(<MemberAuthProviders><Study /></MemberAuthProviders>));
+  assert.equal(renderToStaticMarkup(<MemberAuthProviders><Entry /></MemberAuthProviders>), renderToStaticMarkup(<MemberAuthProviders><Page initialFlow="login" /></MemberAuthProviders>));
 });
 
 test("no intent, non-return drafts and malformed or expired storage do not add ticket actions", async () => {
@@ -140,31 +141,27 @@ test("no intent, non-return drafts and malformed or expired storage do not add t
   }
 });
 
-test("a standalone chooser has no ticket-return link and focused Cancel only restores its chooser", async () => {
+test("on the account page, sign-in has no ticket-return link and Cancel only restores the inline chooser", async () => {
+  // A session that lapsed while /account was open (the server redirects a signed-out load to /sign-in).
   await loadEntry(); saveIntent();
   ui.render(<Entry client={client()} />, { wrapper: MemberAuthProviders });
-  await ui.screen.findByRole("heading", { name: "Welcome" });
-  assert.equal(ui.screen.queryByRole("link", { name: "Return to shop" }) === null, true);
-  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign in" }));
   await ui.screen.findByRole("heading", { name: messages.AuthPhase.login });
+  assert.equal(document.querySelector("[data-vaul-drawer], [role=dialog]") === null, true, "a page, not a sheet");
   assert.equal(ui.screen.queryByRole("link", { name: "Return to shop" }) === null, true);
-  ui.fireEvent.keyDown(document, { key: "Escape" });
-  assert.ok(ui.screen.getByRole("heading", { name: messages.AuthPhase.login }));
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Cancel" }));
   await ui.screen.findByRole("heading", { name: "Welcome" });
-  const login = ui.screen.getByRole("button", { name: "Sign in" });
-  await ui.waitFor(() => assert.equal(document.activeElement === login, true));
   assert.equal(ui.screen.queryByRole("link", { name: "Return to shop" }) === null, true);
 });
 
-test("standalone chooser dismissal never navigates or mutates a retained ticket draft", async (t) => {
+test("returning to the inline chooser never navigates or mutates a retained ticket draft", async (t) => {
   await loadEntry();
   const saved = saveIntent();
   const push = t.mock.method(window.history, "pushState");
   const replace = t.mock.method(window.history, "replaceState");
   ui.render(<Entry client={client()} />, { wrapper: MemberAuthProviders });
+  await ui.screen.findByRole("heading", { name: messages.AuthPhase.login });
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Cancel" }));
   await ui.screen.findByRole("heading", { name: "Welcome" });
-  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Close account options" }));
   assert.equal(push.mock.calls.length + replace.mock.calls.length, 0);
   assert.equal(window.location.pathname, "/account");
   assert.deepEqual(draft.readTicketSelectionDraft(dom.window.localStorage), saved);

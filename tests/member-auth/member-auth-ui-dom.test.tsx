@@ -11,7 +11,7 @@ let MemberAuthProviders: typeof import("./fixtures/providers").MemberAuthProvide
 let dom: JSDOM;
 let ui: typeof import("@testing-library/react/pure");
 let Study: typeof import("@/components/Authentication/member-auth/account-study").MemberAccountStudy;
-let SignIn: typeof import("@/components/Authentication/member-auth/account-study").MemberSignInPage;
+let SignIn: typeof import("@/components/Authentication/member-auth/account-study").MemberAccountPage;
 let View: typeof import("@/components/Authentication/member-auth/account-view").MemberAccountView;
 let Phone: typeof import("@/components/Authentication/member-auth/phone-step").MemberPhoneStep;
 const previous = new Map<string, PropertyDescriptor | undefined>();
@@ -102,7 +102,7 @@ before(async () => {
   ui = await import("@testing-library/react/pure");
   Study = (await import("@/components/Authentication/member-auth/account-study"))
     .MemberAccountStudy;
-  SignIn = (await import("@/components/Authentication/member-auth/account-study")).MemberSignInPage;
+  SignIn = (await import("@/components/Authentication/member-auth/account-study")).MemberAccountPage;
   View = (await import("@/components/Authentication/member-auth/account-view")).MemberAccountView;
   Phone = (await import("@/components/Authentication/member-auth/phone-step"))
     .MemberPhoneStep;
@@ -375,6 +375,19 @@ test("the sign-in page renders the chooser and flow inline, never a sheet, and l
   await untilAsserted(ui, () => assert.deepEqual(visited, ["/me/orders"]));
   await new Promise((resolve) => setTimeout(resolve, 50));
   assert.deepEqual(visited, ["/me/orders"], "it leaves once");
+});
+
+test("a signed-in /account is a normal page: the member's account inline, no sheet, no navigation away", async () => {
+  // Owner, 24 Nov: "OBVIOUSLY it should be the normal page".
+  const c = client();
+  c.setStatus(active);
+  const visited: string[] = [];
+  ui.render(<SignIn initialFlow="login" client={c.value} navigate={(url) => visited.push(url)} authenticatedAction={<a href="/me">Account home</a>} />, { wrapper: MemberAuthProviders });
+  await untilAsserted(ui, () => ui.screen.getByRole("link", { name: "Account home" }));
+  assert.equal(document.querySelector("[data-vaul-drawer], [role=dialog]") === null, true);
+  assert.equal(document.querySelector("[data-member-account-page]") !== null, true);
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  assert.deepEqual(visited, [], "the account page has no next: it never navigates away");
 });
 
 test("the sign-in page keeps an account still in setup on its setup step, inline, without leaving", async () => {

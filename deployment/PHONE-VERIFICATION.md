@@ -322,12 +322,23 @@ physical wrong-SIM or multi-carrier evidence.
 Owner, 24 Nov 2026: "We have staff with uplus and kt, we'll test on preview" and
 "we'll test Uplus, SKT's budget carrier (I have one), and KT on top of SKT".
 
-Policy `preview-trial-zoho-arc-v1` loads only when **all** hold: `PREVIEW_RUNTIME=sandbox`,
-`PHONE_VERIFICATION_MODE=production` and origin exactly `https://preview.sophomores.co`.
-Anywhere else the receiver refuses to start. Production policy stays non-granting.
-Member bindings accept a trial proof only in the app's sandbox runtime
-(`isSandboxRuntime`: exact flag, no review owner, PortOne test channel;
-`src/lib/member-auth/phone-policies.ts`); otherwise a trial-verified challenge cannot bind.
+One authority governs the trial, for issuing and for binding: main's sandbox
+runtime (`isSandboxRuntime`: exactly `PREVIEW_RUNTIME=sandbox`, no
+`REVIEW_OWNER_EMAIL`, PortOne test mode on the pinned TEST store and channel),
+production phone mode, and origin exactly `https://preview.sophomores.co`.
+
+- **Issuing.** The receiver service checks that profile and hands its child only
+  `PHONE_VERIFICATION_PREVIEW_ATTESTATION`: an HMAC under the phone state secret over
+  the preview origin and mailbox. No PortOne or review setting reaches the child. The
+  child refuses the trial policy without a matching attestation. The service always
+  replaces any attestation it was given.
+- **Binding.** Member repositories consume a trial proof only under the same
+  authority (`src/lib/member-auth/phone-policies.ts`).
+- **The SKT pilot** (`local-skt-zoho-arc-v1`) issues only with
+  `PHONE_VERIFICATION_MODE=local`, and new bindings consume it only with local phone
+  and member modes. Existing pilot bindings stay recognised as a historical record,
+  including the owner's 9 Nov binding.
+- **Production** issues and consumes neither policy.
 
 The gate is the SKT pilot's gate (single-hop Zoho ARC `i=1`, SPF pass, exact
 envelope = From number, protected headers and body, strict MMS parser), widened
@@ -401,6 +412,9 @@ docker run -d --name sphmrs-preview-phone-receiver --restart on-failure:5 --init
 | Key | Receiver | App | Value |
 |---|---|---|---|
 | `PREVIEW_RUNTIME` | yes | yes | `sandbox` |
+| `REVIEW_OWNER_EMAIL` | must be unset | must be unset | — |
+| `PORTONE_PAYMENT_MODE`, `PORTONE_STORE_ID`, `PORTONE_CHANNEL_KEY`, `PORTONE_SANDBOX_TEST_STORE_ID`, `PORTONE_SANDBOX_TEST_CHANNEL_KEY` | service only (identifiers; never the API or webhook secret) | yes | the app's sandbox values |
+| `MEMBER_AUTH_ORIGIN` | no | yes | `https://preview.sophomores.co` |
 | `PHONE_VERIFICATION_MODE` | yes | yes | `production` |
 | `PHONE_VERIFICATION_TRANSPORT` | yes | yes | `zoho-poll` |
 | `PHONE_VERIFICATION_ORIGIN` | yes | yes | `https://preview.sophomores.co` |
@@ -411,6 +425,7 @@ docker run -d --name sphmrs-preview-phone-receiver --restart on-failure:5 --init
 | `PHONE_VERIFICATION_ALLOW_LEGACY_ZOHO_ARC` | yes | no | `1` |
 | `PHONE_VERIFICATION_RECEIVER_SECRETS_FILE` | yes | no | `/run/phone-receiver/zoho-receiver.env` |
 
+The service derives `PHONE_VERIFICATION_PREVIEW_ATTESTATION` itself; do not set it.
 None of these is set in production. `PHONE_VERIFICATION_RECEIVER_SECRETS_FILE` is
 refused unless `PREVIEW_RUNTIME=sandbox` and the path is absolute.
 

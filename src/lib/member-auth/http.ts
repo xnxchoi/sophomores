@@ -5,7 +5,7 @@ import type { MemberBindingService } from "./service";
 import { productionOrigin } from "../phone-verification/server/config";
 import { hasConfiguredRequestAuthority } from "../phone-verification/server/local-request";
 import { logAuthFailure } from "../auth/failure-log";
-import { MEMBER_ACCOUNT_CONTINUATION_PATH, MEMBER_ACCOUNT_PATH, MEMBER_PURCHASE_RETURN_PATHS, MEMBER_SIGN_IN_PATH, memberCleanCallbackQuery } from "./paths";
+import { MEMBER_ACCOUNT_CONTINUATION_PATH, MEMBER_ACCOUNT_PATH, MEMBER_PURCHASE_RETURN_PATHS, MEMBER_SIGN_IN_PATH, memberCleanCallbackQuery, memberProviderErrorCode } from "./paths";
 
 type Dependencies = {
   origin: string;
@@ -29,7 +29,9 @@ const callbackPages: Readonly<Record<string, boolean>> = {
  * appends the provider's `error` and `error_description` verbatim to the pinned callback URL, so the diagnostic would
  * sit in the first Location header and be requested by the browser. A same-origin redirect to a pinned callback page
  * gets the clean query instead (a listed next where the page takes one, a recognised error code, nothing else, no
- * fragment). The status and every other header, Set-Cookie included, are kept; any other redirect is untouched.
+ * fragment). A redirect to our own provider callback (Apple's form_post hop) keeps only the fields Better Auth reads,
+ * with the error as a recognised code. The status and every other header, Set-Cookie included, are kept; any other
+ * redirect is untouched.
  */
 export function memberSafeAuthRedirect(response: Response, origin: string): Response {
   const location = response.headers.get("location");
@@ -37,9 +39,12 @@ export function memberSafeAuthRedirect(response: Response, origin: string): Resp
   let url: URL;
   try { url = new URL(location, origin); } catch { return response; }
   if (url.origin !== new URL(origin).origin) return response;
+  // Apple's form_post: Better Auth turns the POST into a GET to our own callback, copying every field into the query.
+  if (/^\/api\/auth\/callback\/[a-z0-9-]+$/.test(url.pathname)) return safeProviderCallback(response, location, url);
   const takesNext = callbackPages[url.pathname];
   if (takesNext === undefined) return response;
-  const query: Record<string, string | string[]> = {};
+  // Null prototype: a "__proto__" or "constructor" key is an ordinary key here, so it cannot evade the cleanup.
+  const query: Record<string, string | string[]> = Object.create(null);
   for (const key of new Set(url.searchParams.keys())) {
     const values = url.searchParams.getAll(key);
     query[key] = values.length > 1 ? values : values[0];
@@ -47,6 +52,25 @@ export function memberSafeAuthRedirect(response: Response, origin: string): Resp
   const cleaned = memberCleanCallbackQuery(url.pathname, query, takesNext);
   if (cleaned === null && !url.hash) return response;
   const target = cleaned ?? `${url.pathname}${url.search}`;
+  const headers = new Headers(response.headers);
+  headers.set("location", /^[a-z][a-z0-9+.-]*:/i.test(location) ? `${url.origin}${target}` : target);
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+}
+/** What Better Auth's provider callback reads (callback.mjs schema); error is kept only as a recognised code. */
+const providerCallbackKeys = new Set(["code", "state", "user", "iss", "device_id"]);
+function safeProviderCallback(response: Response, location: string, url: URL): Response {
+  const params = new URLSearchParams();
+  let changed = url.hash !== "";
+  for (const [key, value] of url.searchParams) {
+    if (providerCallbackKeys.has(key)) params.append(key, value);
+    else if (key === "error") {
+      const code = memberProviderErrorCode(value) ?? "unknown";
+      params.append("error", code);
+      if (code !== value) changed = true;
+    } else changed = true;
+  }
+  if (!changed) return response;
+  const target = `${url.pathname}${params.size ? `?${params}` : ""}`;
   const headers = new Headers(response.headers);
   headers.set("location", /^[a-z][a-z0-9+.-]*:/i.test(location) ? `${url.origin}${target}` : target);
   return new Response(response.body, { status: response.status, statusText: response.statusText, headers });

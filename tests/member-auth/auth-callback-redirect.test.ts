@@ -57,13 +57,15 @@ for (const [name, handle] of Object.entries(paths)) {
       ["/sign-in?next=/me/orders", "provider exploded", "/sign-in?next=/me/orders&error=unknown"],
       [`${origin}/sign-in?next=/me`, "access_denied", `${origin}/sign-in?next=/me&error=access_denied`],
       ["/account", "unable_to_link_account", "/account?error=unable_to_link_account"],
-      ["/tickets", "access_denied", "/tickets?error=access_denied"]
+      ["/tickets", "access_denied", "/tickets?error=access_denied"],
+      // Null-prototype cleanup: these keys are ordinary keys and are dropped (Review-A LOW).
+      ["/sign-in?next=/me&__proto__=x&constructor=y", "access_denied", "/sign-in?next=/me&error=access_denied"]
     ] as const) {
       const response = await handle(providerFailure(failure(pinned, error)));
       assert.equal(response.status, 302, pinned);
       const location = response.headers.get("location") ?? "";
       assert.equal(location, expected, pinned);
-      assert.equal(/member@example|db\.internal|error_description|Upstream/.test(location), false, location);
+      assert.equal(/member@example|db\.internal|error_description|Upstream|__proto__|constructor/.test(location), false, location);
       assert.equal(response.headers.getSetCookie().length, 2, "every Set-Cookie survives");
     }
   });
@@ -77,3 +79,46 @@ for (const [name, handle] of Object.entries(paths)) {
     }
   });
 }
+
+// Review-A, 24 Nov: Apple's form_post. Better Auth first turns the POST into a same-origin GET to our own
+// /api/auth/callback/apple, copying every field (error_description included) into that Location.
+test("a redirect to our own provider callback keeps only what Better Auth reads, with the error as a recognised code", async () => {
+  const hop = `${origin}/api/auth/callback/apple?${new URLSearchParams({ code: "c", state: "s", user: '{"name":{"firstName":"A"}}', iss: "https://appleid.apple.com",
+    error: "user_cancelled_authorize", error_description: diagnostic })}&__proto__=x&constructor=y`;
+  for (const handle of Object.values(paths)) {
+    const response = await handle(providerFailure(hop));
+    const location = new URL(response.headers.get("location") ?? "", origin);
+    assert.equal(response.status, 302);
+    assert.equal(location.pathname, "/api/auth/callback/apple");
+    assert.deepEqual([...location.searchParams.keys()].sort(), ["code", "error", "iss", "state", "user"]);
+    assert.equal(location.searchParams.get("error"), "user_cancelled_authorize");
+    assert.equal(location.searchParams.get("state"), "s");
+    assert.equal(/member@example|db\.internal|error_description|__proto__|constructor/.test(location.href), false, location.href);
+    assert.equal(response.headers.getSetCookie().length, 2);
+  }
+  const clean = `${origin}/api/auth/callback/apple?code=c&state=s`;
+  assert.equal((await paths.local(providerFailure(clean))).headers.get("location"), clean, "a clean hop is untouched");
+});
+
+test("payload handler: Better Auth's real form_post conversion leaves without the provider's description", async () => {
+  const { betterAuth } = await import("better-auth");
+  const { memoryAdapter } = await import("better-auth/adapters/memory");
+  const auth = betterAuth({
+    baseURL: origin, secret: "s".repeat(64), database: memoryAdapter({ user: [], session: [], account: [], verification: [] }),
+    trustedOrigins: [origin, "https://appleid.apple.com"], socialProviders: { apple: { clientId: "fixture", clientSecret: "fixture" } }
+  });
+  state[key] = { handler: auth.handler };
+  for (const [error, expected] of [["user_cancelled_authorize", "user_cancelled_authorize"], ["invalid_request for member@example.invalid", "unknown"]] as const) {
+    const body = new URLSearchParams({ state: "opaque-state", error, error_description: diagnostic });
+    const response = await route.POST(new Request(`${origin}/api/auth/callback/apple`, {
+      method: "POST", headers: { "content-type": "application/x-www-form-urlencoded", origin: "https://appleid.apple.com" }, body
+    }));
+    assert.equal(response.status, 302, error);
+    const location = new URL(response.headers.get("location") ?? "", origin);
+    assert.equal(location.pathname, "/api/auth/callback/apple", "the POST became Better Auth's own GET hop");
+    assert.equal(location.searchParams.get("error"), expected);
+    assert.equal(location.searchParams.get("state"), "opaque-state");
+    assert.equal(location.searchParams.has("error_description"), false);
+    assert.equal(/member@example|db\.internal|Upstream/.test(location.href), false, location.href);
+  }
+});

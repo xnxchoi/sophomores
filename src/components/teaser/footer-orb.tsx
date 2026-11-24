@@ -1,5 +1,6 @@
 "use client";
 
+// Kept unused on purpose (owner, 24 Nov): not mounted anywhere.
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Component, type ErrorInfo, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type Group, MathUtils, type ShaderMaterial } from "three";

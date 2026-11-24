@@ -6,6 +6,9 @@ import "@/styles/sphmrs.scss";
 import { Suspense, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { ClientLayout } from "./client-layout";
+import { AccountSheetProvider } from "@/components/auth/account-sheet";
+import { VerificationMessages } from "@/components/Authentication/phone-verification/verification-messages";
+import { verificationCatalogues } from "@/lib/phone-verification/messages.server";
 import { BusinessFooter } from "./_commerce/business-footer";
 import { FooterGate, PageCover } from "@/components/shell/footer-visibility";
 import { loadBusinessInformation } from "@/payload/globals/business-info";
@@ -99,6 +102,9 @@ export default async function RootLayout({
           messages={pick(messages, shellDelivery)}
         >
           <Providers>
+            {/* One in-place sign-in sheet for the site's sign-in buttons, with the phone step's bilingual copy. */}
+            <VerificationMessages messages={verificationCatalogues()}>
+            <AccountSheetProvider>
             <ClientLayout
               headerMember={headerMember}
               contactEmail={contactEmail}
@@ -110,6 +116,8 @@ export default async function RootLayout({
                 </Suspense>
               </FooterGate>
             </ClientLayout>
+            </AccountSheetProvider>
+            </VerificationMessages>
           </Providers>
         </NextIntlClientProvider>
       </body>

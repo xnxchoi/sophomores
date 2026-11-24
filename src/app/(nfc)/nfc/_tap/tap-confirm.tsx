@@ -13,6 +13,7 @@ import { useTranslations } from "next-intl";
 import { PageInset } from "@/components/core/PageInset/PageInset";
 import { Button } from "@/components/core/ArcFocus/ArcFocus";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
+import { useAccountSheetSubmit } from "@/components/auth/account-sheet";
 
 /**
  * The page a member sees after tapping their card (owner, 22 Nov: "we should probably confirm ... just one step ...
@@ -44,6 +45,9 @@ const copyKey = {
 
 export function TapConfirm({ view }: { view: NfcTapView }) {
   const t = useTranslations("Customer.app_site_nfc_tap");
+  // Sign in opens the in-place sheet over the tap, which refreshes in place afterwards; without JavaScript the form
+  // goes to the sign-in page (no next: the tap is not on the closed return list, so sign-in ends at shop home).
+  const openSignIn = useAccountSheetSubmit();
   const [confirming, setConfirming] = useState(false);
   // Set in the same event as the submit, so a second press before React re-renders can't send twice.
   const sent = useRef(false);
@@ -133,7 +137,7 @@ export function TapConfirm({ view }: { view: NfcTapView }) {
                 </form>
               ) : state === "signed-out" ? (
                 // Sign-in starts fresh: the tap link is never carried through it (NFC lane contract); the member taps again.
-                <form method="get" action="/account">
+                <form method="get" action="/sign-in" onSubmit={openSignIn}>
                   <Button
                     type="submit"
                     variant="primary"

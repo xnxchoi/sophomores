@@ -7,6 +7,7 @@ import * as m from "motion/react-m";
 import { Bell, Moon, Search, Sun, UserRound } from "lucide-react";
 import { Suspense, use, useEffect, useRef, type ComponentProps, type MouseEvent, type ReactNode, type RefObject } from "react";
 import { Link } from "@/components/core/Link/Link";
+import { useAccountSheetTrigger } from "@/components/auth/account-sheet";
 import { useNotificationInbox } from "@/components/notifications/notification-inbox";
 import { siteLayer } from "@/constants/site-layers";
 import type { Notification } from "@/lib/content/slots";
@@ -248,12 +249,15 @@ export function RightZone({
   select: Select;
 }) {
   const t = useTranslations("Customer.components_shell_header_actions");
+  // Log in opens the in-place sign-in sheet; the href is the no-JS and modifier-click path (owner, 24 Nov).
+  const signIn = useAccountSheetTrigger();
   const account = <AccountTrigger active={view === "account"} onClick={(event) => select("account", event)} />;
   if (!reading) {
     if (state !== "signed-out") return account;
     return (
       <Link
-        href="/account"
+        href={signIn.href}
+        onClick={signIn.onClick}
         aria-label={t("logIn")}
         className="group/focus inline-flex size-(--bar-target) items-center justify-center relative rounded-full text-foreground/75 [&>*]:translate-y-[calc((var(--bar-target)_-_var(--frame-bottom))/2)] touch-manipulation transition-[color,opacity] active:opacity-60"
       >

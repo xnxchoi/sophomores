@@ -9,6 +9,8 @@
  * InlineRetry control (the setlist pages mount it; any page may).
  */
 export const shellNamespaces = [
+  // The in-place sign-in sheet (src/components/auth/account-sheet.tsx) opens over any page (owner, 24 Nov).
+  "AuthPhase",
   "Common",
   "InlineRetry",
   "Interface",
@@ -21,8 +23,13 @@ export const shellNamespaces = [
   "Customer.menuButton",
   "Customer.navigation",
   "Customer.panelRows",
-  "Customer.themeControl"
+  "Customer.themeControl",
+  "Verification",
+  "VerificationTrial"
 ] as const;
+
+/** The in-place sign-in sheet's own copy, for layouts outside the site shell (the NFC tap). */
+export const accountSheetNamespaces = ["AuthPhase", "Common", "Interface", "MemberAuth", "Verification", "VerificationTrial"] as const;
 
 /** The home page's Warp tuning and sequence panels, which only mount in development. */
 export const developmentNamespaces = ["Developer"] as const;

@@ -88,7 +88,7 @@ export function MemberAccountStudy({
 
 /** Caller-owned surface: closing disposes private flow, not the caller or Vaul root. */
 export function MemberAccountDialog({
-  open, onOpenChange, returnFocusRef, client, initialFlow, initialCapabilities, completionAction, authenticatedAction
+  open, onOpenChange, returnFocusRef, client, initialFlow, initialCapabilities, completionAction, authenticatedAction, onSnapshot
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -98,6 +98,8 @@ export function MemberAccountDialog({
   initialCapabilities?: Readonly<MemberCapabilities>;
   completionAction?: ReactNode;
   authenticatedAction?: ReactNode;
+  /** Every session snapshot of the open flow (an in-place sheet closes once the member is confirmed). */
+  onSnapshot?: (snapshot: MemberSnapshot) => void;
 }) {
   const t = useTranslations("MemberAuth");
   const [entry, setEntry] = useState<{ open: boolean; choice: "chooser" | "login" | "signup" | null }>({ open, choice: null });
@@ -191,6 +193,7 @@ export function MemberAccountDialog({
               flow={step}
               completionAction={completionAction}
               authenticatedAction={authenticatedAction}
+              onSnapshot={onSnapshot}
               onChooser={() => {
                 setEntry({ open, choice: "chooser" });
               }}

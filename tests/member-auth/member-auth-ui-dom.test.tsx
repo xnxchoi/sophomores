@@ -2,6 +2,7 @@ import messages from "../../messages/en.json";
 import { codeCell, codeCells, enteredCode, firstCodeCell, replaceCode } from "../fixtures/code-input";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { readFileSync } from "node:fs";
 import { after, afterEach, before, test } from "node:test";
 import { JSDOM } from "jsdom";
 import { untilAsserted } from "../support/dom-state";
@@ -12,6 +13,7 @@ let dom: JSDOM;
 let ui: typeof import("@testing-library/react/pure");
 let Study: typeof import("@/components/Authentication/member-auth/account-study").MemberAccountStudy;
 let SignIn: typeof import("@/components/Authentication/member-auth/account-study").MemberAccountPage;
+let Sheet: typeof import("@/components/auth/account-sheet");
 let View: typeof import("@/components/Authentication/member-auth/account-view").MemberAccountView;
 let Phone: typeof import("@/components/Authentication/member-auth/phone-step").MemberPhoneStep;
 const previous = new Map<string, PropertyDescriptor | undefined>();
@@ -103,6 +105,7 @@ before(async () => {
   Study = (await import("@/components/Authentication/member-auth/account-study"))
     .MemberAccountStudy;
   SignIn = (await import("@/components/Authentication/member-auth/account-study")).MemberAccountPage;
+  Sheet = await import("@/components/auth/account-sheet");
   View = (await import("@/components/Authentication/member-auth/account-view")).MemberAccountView;
   Phone = (await import("@/components/Authentication/member-auth/phone-step"))
     .MemberPhoneStep;
@@ -388,6 +391,58 @@ test("a signed-in /account is a normal page: the member's account inline, no she
   assert.equal(document.querySelector("[data-member-account-page]") !== null, true);
   await new Promise((resolve) => setTimeout(resolve, 50));
   assert.deepEqual(visited, [], "the account page has no next: it never navigates away");
+});
+
+test("a sign-in button opens the in-place sheet on a plain click and keeps its sign-in page href", async () => {
+  // Owner, 24 Nov: "Sign-in buttons should in general be modal-togglers"; only a typed or navigated URL gets the page.
+  const { AccountSheetProvider, useAccountSheetTrigger, useAccountSheetSubmit } = Sheet;
+  function Trigger() { const signIn = useAccountSheetTrigger("signup"); return <a href={signIn.href} onClick={signIn.onClick}>Log in</a>; }
+  function TapForm() { const open = useAccountSheetSubmit(); return <form method="get" action="/sign-in" onSubmit={open}><button type="submit">Sign in here</button></form>; }
+  ui.render(<AccountSheetProvider><Trigger /><TapForm /></AccountSheetProvider>, { wrapper: MemberAuthProviders });
+  const link = ui.screen.getByRole("link", { name: "Log in" });
+  assert.equal(link.getAttribute("href")?.startsWith("/sign-in?next="), true, "the no-JS and modifier-click path is the sign-in page");
+  assert.equal(document.querySelector("[data-vaul-drawer]") === null, true, "closed until asked");
+  const modified = new dom.window.MouseEvent("click", { bubbles: true, cancelable: true, metaKey: true });
+  link.dispatchEvent(modified);
+  assert.equal(modified.defaultPrevented, false, "a modifier-click follows the link");
+  const plain = new dom.window.MouseEvent("click", { bubbles: true, cancelable: true, button: 0 });
+  ui.act(() => { link.dispatchEvent(plain); });
+  assert.equal(plain.defaultPrevented, true, "a plain click stays on the page");
+  await untilAsserted(ui, () => assert.ok(document.querySelector("[data-vaul-drawer]")));
+  ui.fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });
+  await untilAsserted(ui, () => assert.equal(document.querySelector("[data-vaul-drawer][data-state=open]") === null, true));
+  const submitted = new dom.window.Event("submit", { bubbles: true, cancelable: true });
+  ui.act(() => { ui.screen.getByRole("button", { name: "Sign in here" }).closest("form")!.dispatchEvent(submitted); });
+  assert.equal(submitted.defaultPrevented, true, "the NFC form opens the sheet instead of leaving");
+  await untilAsserted(ui, () => assert.ok(document.querySelector("[data-vaul-drawer][data-state=open]")));
+});
+
+test("the in-place sheet closes and refreshes the page once the member is confirmed", async () => {
+  const { AccountSheetProvider, useAccountSheetTrigger } = Sheet;
+  const { AppRouterContext } = await import("next/dist/shared/lib/app-router-context.shared-runtime");
+  let refreshes = 0;
+  const router = { back() {}, forward() {}, refresh() { refreshes += 1; }, push() {}, replace() {}, prefetch() {}, bfcacheId: "sheet-test" };
+  const c = client();
+  c.value.verifyEmailCode = async (...args) => { c.calls.push(["verify", ...args]); c.setStatus(active); };
+  function Trigger() { const signIn = useAccountSheetTrigger(); return <a href={signIn.href} onClick={signIn.onClick}>Log in</a>; }
+  ui.render(<AppRouterContext.Provider value={router as never}><AccountSheetProvider client={c.value}><Trigger /></AccountSheetProvider></AppRouterContext.Provider>, { wrapper: MemberAuthProviders });
+  ui.fireEvent.click(ui.screen.getByRole("link", { name: "Log in" }));
+  ui.fireEvent.click(await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Sign in" })));
+  const email = await untilAsserted(ui, () => {
+    const field = ui.screen.getByLabelText("Email address") as HTMLInputElement;
+    assert.equal(field.disabled, false);
+    return field;
+  });
+  ui.fireEvent.change(email, { target: { value: "member@example.com" } });
+  ui.fireEvent.submit(email.closest("form")!);
+  ui.fireEvent.click(await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Send sign-in code" })));
+  await untilAsserted(ui, () => assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code)));
+  assert.equal(refreshes, 0, "nothing refreshes before the member is confirmed");
+  ui.fireEvent.change(firstCodeCell(ui.screen), { target: { value: "A1B2C3" } });
+  await untilAsserted(ui, () => assert.equal(refreshes, 1));
+  await untilAsserted(ui, () => assert.equal(document.querySelector("[data-vaul-drawer][data-state=open]") === null, true));
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  assert.equal(refreshes, 1, "once");
 });
 
 test("the sign-in page keeps an account still in setup on its setup step, inline, without leaving", async () => {

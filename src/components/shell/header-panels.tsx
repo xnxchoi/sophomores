@@ -8,14 +8,15 @@ import { useTheme, useThemeLocked } from "@/providers/Theme";
 import { AnimatePresence, useIsPresent } from "motion/react";
 import * as m from "motion/react-m";
 import { Link } from "@/components/core/Link/Link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useAccountSheetTrigger } from "@/components/auth/account-sheet";
+import { type MouseEvent, useEffect, useMemo, useRef, useState } from "react";
 import { FloatingFocusManager, useFloating } from "@floating-ui/react";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { reachableHref } from "@/lib/content/essays";
 
-function PanelRow({ href, title, hint, onClose }: { href: string; title: string; hint?: string; onClose: () => void }) {
+function PanelRow({ href, title, hint, onClose, onClick }: { href: string; title: string; hint?: string; onClose: () => void; onClick?: (event: MouseEvent<HTMLElement>) => void }) {
   return (
-    <Link href={href} className="flex min-h-11 w-full items-center py-2 pr-8 pl-4 text-sm leading-4 text-faded-fg/90 outline-none transition-colors duration-200 hover:text-faded-bg focus-visible:underline focus-visible:underline-offset-4" onClick={onClose}>
+    <Link href={href} className="flex min-h-11 w-full items-center py-2 pr-8 pl-4 text-sm leading-4 text-faded-fg/90 outline-none transition-colors duration-200 hover:text-faded-bg focus-visible:underline focus-visible:underline-offset-4" onClick={(event: MouseEvent<HTMLElement>) => { onClick?.(event); onClose(); }}>
       <span className="flex-1 truncate">{title}</span>
       {hint ? <span className="ml-3 text-xs opacity-60">{hint}</span> : null}
     </Link>
@@ -178,10 +179,17 @@ export const DISCOVER = [
   { href: "/essays", title: "reading", hint: "essays" },
   { href: "/", title: "reception", hint: "home" }
 ].filter((row) => reachableHref(row.href) !== undefined);
+/** Sign in and Create account open the in-place sign-in sheet on that flow (owner, 24 Nov: sign-in buttons toggle it). */
 export const START = [
-  { href: "/account", title: "signIn" },
-  { href: "/account", title: "createAccount", hint: "getStarted" }
-];
+  { flow: "login", title: "signIn" },
+  { flow: "signup", title: "createAccount", hint: "getStarted" }
+] as const;
+
+/** A START row: the sign-in page's href for no-JS and modifier-click, the sheet on a plain click. */
+function StartPanelRow({ flow, title, hint, onClose }: { flow: "login" | "signup"; title: string; hint?: string; onClose: () => void }) {
+  const signIn = useAccountSheetTrigger(flow);
+  return <PanelRow href={signIn.href} onClick={signIn.onClick} title={title} hint={hint} onClose={onClose} />;
+}
 
 export function SearchPanel({
   onClose,
@@ -239,7 +247,12 @@ export function SearchPanel({
           {query.trim() === "" ? (
             <>
               <SearchGroup heading={t('discover')} rows={DISCOVER.map((row) => ({ ...row, title: rowT(row.title), hint: rowT(row.hint) }))} onClose={onClose} />
-              <SearchGroup heading={t('getStarted')} rows={START.map((row) => ({ ...row, title: rowT(row.title), hint: row.hint ? rowT(row.hint) : undefined }))} onClose={onClose} />
+              <div className="mt-2">
+                <p className="px-3 py-1 text-xs tracking-[0.08em] uppercase opacity-60">{t('getStarted')}</p>
+                {START.map((row) => (
+                  <StartPanelRow key={row.title} flow={row.flow} title={rowT(row.title)} hint={"hint" in row ? rowT(row.hint) : undefined} onClose={onClose} />
+                ))}
+              </div>
               {!locked && <div className="mt-2">
                 <p className="px-3 py-1 text-xs tracking-[0.08em] uppercase opacity-60">{t('quickActions')}</p>
                 <button

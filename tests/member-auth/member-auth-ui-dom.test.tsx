@@ -480,25 +480,34 @@ test("pagehide disposes the open sheet, so nothing typed into it is kept for a b
   assert.equal(reopened.value, "", "reopening starts empty");
 });
 
-test("on a private page the sheet joins the page's concealment: hidden while a recheck is pending, kept hidden for a different member", async () => {
+test("on a private page the sheet joins the page's concealment: hidden while a recheck is pending, shown again for the same member, kept hidden for a different member", async () => {
   const { PrivatePageGuard } = await import("@/components/auth/private-page-guard");
   const c = client();
   let answer: (value: string | null) => void = () => {};
   let reloads = 0;
   const readPrincipal = () => new Promise<string | null | undefined>((resolve) => { answer = resolve; });
   ui.render(<Sheet.AccountSheetProvider client={c.value}>
-    <PrivatePageGuard principal={null} reload={() => { reloads += 1; }} readPrincipal={readPrincipal}><SheetTrigger /></PrivatePageGuard>
+    <PrivatePageGuard principal="member-a" reload={() => { reloads += 1; }} readPrincipal={readPrincipal}><SheetTrigger /></PrivatePageGuard>
   </Sheet.AccountSheetProvider>, { wrapper: MemberAuthProviders });
   const email = await openSheetEmail();
   ui.fireEvent.change(email, { target: { value: "member@example.com" } });
   const page = document.querySelector("[data-private-page]")!;
+  const concealed = () => page.hasAttribute("data-concealed") && page.hasAttribute("inert");
   assert.equal(document.querySelector("[data-private-portal-host]")!.contains(email), true, "the sheet portals into the page's host");
+  // The same member: hidden while the answer is pending, then shown again as it was.
   ui.act(() => { dom.window.dispatchEvent(new dom.window.Event("focus")); });
-  await untilAsserted(ui, () => assert.equal(page.hasAttribute("data-concealed") && page.hasAttribute("inert"), true));
+  await untilAsserted(ui, () => assert.equal(concealed(), true));
   assert.equal(page.contains(email), true, "hidden and blocked with the page while the answer is pending");
+  await ui.act(async () => { answer("member-a"); });
+  await untilAsserted(ui, () => assert.equal(concealed(), false));
+  assert.equal(email.isConnected && email.value === "member@example.com", true, "the same member gets the sheet back as it was");
+  assert.equal(reloads, 0);
+  // A different member: kept hidden and reloaded.
+  ui.act(() => { dom.window.dispatchEvent(new dom.window.Event("focus")); });
+  await untilAsserted(ui, () => assert.equal(concealed(), true));
   await ui.act(async () => { answer("member-b"); });
   await untilAsserted(ui, () => assert.equal(reloads, 1));
-  assert.equal(page.hasAttribute("data-concealed"), true, "a different member never sees it again");
+  assert.equal(concealed(), true, "a different member never sees it");
 });
 
 test("a navigation disposes the open sheet", async () => {

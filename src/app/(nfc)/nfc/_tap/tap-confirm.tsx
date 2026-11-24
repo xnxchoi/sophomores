@@ -21,7 +21,7 @@ import { useAccountSheetSubmit } from "@/components/auth/use-account-sheet";
  * very premium ... feels like an experience already"; concept C, "I like the light up part").
  *
  * The NFC lane owns the route and the private projection (GET and POST /nfc/[ref]); this view only renders its five
- * states. It shows no name, product or card reference. Unavailable also covers a card on another account, so the page
+ * states, plus one of its own: signed in through the sheet from the signed-out state, which asks for a new tap. It shows no name, product or card reference. Unavailable also covers a card on another account, so the page
  * never reveals an owner. Confirm is one POST to /nfc/[formRef] carrying the opaque `confirmation`; the route answers with a
  * 303 to /welcome or the account page, so the light holds its confirming state for as long as that takes.
  *

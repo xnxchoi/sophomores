@@ -15,6 +15,18 @@ type Dependencies = {
   bodyTimeoutMs?: number;
 };
 class HttpError extends Error { constructor(readonly status: number, readonly code: string) { super(code); } }
+/**
+ * Logs an unexpected failure by its error class and a fresh correlation ID only. The message and stack can carry
+ * user or database data (an address, a DSN fragment), so they never reach the log (standard-security baseline).
+ * Returns the correlation ID, for the response, so a report can be matched to its log line.
+ */
+export function logMemberFailure(context: string, error: unknown, log: (...values: unknown[]) => void = console.error): string {
+  const name = (error as { name?: unknown } | null)?.name;
+  const correlationId = crypto.randomUUID();
+  log(context, { errorClass: typeof name === "string" && /^[A-Za-z][A-Za-z0-9_]{0,79}$/.test(name) ? name : "Error", correlationId });
+  return correlationId;
+}
+
 export function memberJson(status: number, body: unknown): Response {
   return Response.json(body, { status, headers: { "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff", "X-Robots-Tag": "noindex, nofollow, noarchive", "Referrer-Policy": "no-referrer" } });
 }

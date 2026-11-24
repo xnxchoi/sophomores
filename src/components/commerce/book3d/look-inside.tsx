@@ -27,6 +27,9 @@ import { BoxGeometry, CanvasTexture, DoubleSide, MathUtils, MeshStandardMaterial
 export type LookState = {
   /** Cover progress (0 shut, 1 open) and page progress (the fan); dir +1 opening, −1 closing. */
   lu: number; ld: number; dir: 1 | -1;
+  /** The face turn before the cover moves (0 posed, 1 facing you): stripe.press's book turns to face the reader over the
+   *  first ~480 ms of opening, then the cover swings. Closing brings it back with the cover. */
+  face: number;
   /** Tween clocks (s) and start values of the current open or close. The pages wait for the cover to be half open. */
   luClock: number; ldClock: number; luFrom: number; ldFrom: number; ldRunning: boolean;
   /** The pages take input once the fan is under way (stripe.press: page progress past 0.3). */
@@ -58,19 +61,20 @@ const easeOutCubic = (t: number) => 1 - (1 - t) ** 3;
 const fanEase = (s: number) => s <= 0 ? 0 : s >= 1 ? 1 : s ** 2.4 / (s ** 2.4 + (1 - s) ** 1.1);
 
 export function createLookState(spread: number): LookState {
-  return { lu: 0, ld: 0, dir: -1, luClock: 0, ldClock: 0, luFrom: 0, ldFrom: 0, ldRunning: false, active: false,
+  return { lu: 0, ld: 0, face: 0, dir: -1, luClock: 0, ldClock: 0, luFrom: 0, ldFrom: 0, ldRunning: false, active: false,
     angle: Array(LEAVES).fill(PI / 2), vel: Array(LEAVES).fill(0), target: Array(LEAVES).fill(PI / 2), render: Array(LEAVES).fill(PI / 2),
     brake: Array(LEAVES).fill(null), tip: Array(LEAVES).fill(0), fan: Array(LEAVES).fill(0),
     spread: MathUtils.clamp(Math.round(spread), 0, LEAVES), tx: 0, push: 0, n: 0 };
 }
 
 /**
- * The open and close timeline (06w9:16057-16166). Opening: the cover over 980 ms (t²), then, once it is half open, the
+ * The open and close timeline (06w9:16057-16166). Opening: the book turns to face you (480 ms), the cover over 980 ms (t²), then, once it is half open, the
  * pages over 900 ms (fan ease). Closing: both from where they are, together, easeOutCubic (980 and 900 ms), each frame's
  * step capped at 34 ms so a dropped frame slows the close instead of skipping it.
  */
 export function stepLookTimeline(l: LookState, want: 1 | -1, dt: number) {
   if (want !== l.dir) { l.dir = want; l.luClock = 0; l.ldClock = 0; l.luFrom = l.lu; l.ldFrom = l.ld; l.ldRunning = want < 0; }
+  if (l.dir > 0 && l.face < 1) { l.face = Math.min(l.face + dt / 0.48, 1); l.luClock = 0; l.active = false; return; }
   if (l.dir > 0) {
     if (l.lu < 1) { l.luClock += dt; const t = clamp01(l.luClock * 1000 / COVER_MS); l.lu = l.luFrom + (1 - l.luFrom) * t * t; }
     if (!l.ldRunning && l.lu >= 0.5) { l.ldRunning = true; l.ldClock = 0; l.ldFrom = l.ld; }
@@ -80,6 +84,7 @@ export function stepLookTimeline(l: LookState, want: 1 | -1, dt: number) {
     l.luClock += step; l.ldClock += step;
     l.lu = l.luFrom * (1 - easeOutCubic(clamp01(l.luClock * 1000 / COVER_MS)));
     l.ld = l.ldFrom * (1 - easeOutCubic(clamp01(l.ldClock * 1000 / PAGE_MS)));
+    l.face = Math.min(l.face, l.lu);
   }
   l.active = l.dir > 0 && l.ld > 0.3;
 }

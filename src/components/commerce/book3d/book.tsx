@@ -4,7 +4,7 @@
 /* eslint-disable react-hooks/immutability */
 
 import { useTexture } from "@react-three/drei";
-import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, type RefObject } from "react";
 import {
   Box3,
@@ -308,13 +308,23 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
 
   const setCursor = (value: "" | "hover" | "drag") => { if (source) source.dataset.book = value; };
 
-  function onPointerDown(event: ThreeEvent<PointerEvent>) {
+  // The closed book's pointer input arrives on the View's own element, the hit area clipped to the book (the layer is a
+  // body portal, outside the canvas's event source, so R3F's mesh events never see it): a press anywhere on it drags
+  // the book, and a click opens it; entering and leaving it is the hover.
+  useEffect(() => {
+    if (!source) return;
+    const down = (event: PointerEvent) => { if (event.button === 0 || event.pointerType !== "mouse") onPointerDown(event); };
+    const enter = () => { physics.current.hovered = true; if (!physics.current.dragging && (look.current?.lu ?? 0) === 0) setCursor("hover"); };
+    const leave = () => { physics.current.hovered = false; if (!physics.current.dragging && (look.current?.lu ?? 0) === 0) setCursor(""); };
+    source.addEventListener("pointerdown", down); source.addEventListener("pointerenter", enter); source.addEventListener("pointerleave", leave);
+    return () => { source.removeEventListener("pointerdown", down); source.removeEventListener("pointerenter", enter); source.removeEventListener("pointerleave", leave); };
+  });
+
+  function onPointerDown(e: PointerEvent) {
     // The stage's own controls (Look inside, Close) sit over the canvas; presses on them aren't for the book.
-    if ((event.nativeEvent.target as Element | null)?.closest?.("[data-book-ui]")) return;
-    event.stopPropagation();
-    if ((look.current?.lu ?? 0) > 0) return; // open or opening: the pages take the pointer
+    if ((e.target as Element | null)?.closest?.("[data-book-ui]")) return;
+    if ((look.current?.lu ?? 0) > 0 || (look.current?.face ?? 0) > 0) return; // open or opening: the pages take the pointer
     const s = physics.current;
-    const e = event.nativeEvent;
     if (s.dragging) return; // one pointer owns the drag; a second finger is ignored
     Object.assign(s, { dragging: true, touch: e.pointerType !== "mouse", armed: false, totalX: 0, lastX: e.clientX, lastY: e.clientY,
       downX: e.clientX, downY: e.clientY, downAt: performance.now(), velYaw: 0, velPitch: 0, returning: false });
@@ -462,11 +472,13 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
     s.exitRot += (exitEase - s.exitRot) * (1 - 0.8 ** f);
     // The closed tilt and pose blend out with the cover (× 1 − lu): the open book faces you, pitched back.
     const b = lu, closedYaw = REST_YAW + s.yaw + s.tiltYaw + spinYaw + s.scroll * 0.9;
+    // Opening first turns the book to face you (easeInOutQuad over the face turn), then the cover swings.
+    const faced = easeInOutQuad(l.face);
     if (root.current) {
       root.current.rotation.set(
-        MathUtils.lerp(REST_PITCH + s.pitch + s.tiltPitch - 0.9 * s.exitRot, -(small ? OPEN_TILT_TOUCH : OPEN_TILT) + s.openTilt, b),
-        MathUtils.lerp(closedYaw + 0.3 * s.exitRot, 0, b),
-        MathUtils.lerp(REST_ROLL - 0.8 * s.exitRot, 0, b));
+        MathUtils.lerp(MathUtils.lerp(REST_PITCH + s.pitch + s.tiltPitch - 0.9 * s.exitRot, 0, faced), -(small ? OPEN_TILT_TOUCH : OPEN_TILT) + s.openTilt, b),
+        MathUtils.lerp(MathUtils.lerp(closedYaw + 0.3 * s.exitRot, 0, faced), 0, b),
+        MathUtils.lerp(MathUtils.lerp(REST_ROLL - 0.8 * s.exitRot, 0, faced), 0, b));
       // Open: the spine on the frame's centre and the spread about 60% of the window wide (stripe.press's ~870 px at
       // 1440), free to spill past the stage; on a phone one page fills the width.
       const fr = sig.frame ?? { left: 0, top: 0, width: sw, height: sh };
@@ -496,7 +508,7 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
     const s = physics.current, l = look.current, sig = signals.current, r = root.current;
     const pose = (r ? r.rotation.x + r.rotation.y * 3 + r.rotation.z * 5 + r.position.x * 7 + r.position.y * 11 + r.position.z * 13 : 0)
       + s.frontA * 17 + s.backA * 19 + s.peek * 23 + s.yaw * 29 + s.pitch * 31 + s.tiltYaw * 43 + s.tiltPitch * 47 + s.exit * 53 + s.holo * 37 + s.radio * 41
-      + (l ? l.lu * 43 + l.ld * 59 + l.n * 61 : 0) + state.camera.position.z * 53;
+      + (l ? l.lu * 43 + l.ld * 59 + l.n * 61 + l.face * 67 : 0) + state.camera.position.z * 53;
     const settling = s.dragging || (Number.isFinite(s.released) && s.clock - s.released < (s.touch ? 3.2 : 7.1))
       || sig.hologram || sig.radio || sig.spins.length > 0 || sig.commands.length > 0;
     if (settling || Math.abs(pose - lastPose.current) > 1e-5 || Number.isNaN(lastPose.current)) state.invalidate();
@@ -504,9 +516,7 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
   });
 
   return <group ref={root}
-    onPointerDown={onPointerDown}
-    onPointerOver={(e) => { e.stopPropagation(); physics.current.hovered = true; if (!physics.current.dragging) setCursor("hover"); }}
-    onPointerOut={() => { physics.current.hovered = false; if (!physics.current.dragging) setCursor(""); }}>
+>
     <group ref={body}>
       <mesh geometry={geometry.spine} material={material} position={[-W / 2 - BOARD / 2, 0, 0]} castShadow />
       <mesh ref={closedPages} geometry={geometry.pages} material={material} position={[-0.075, 0, 0]} castShadow />

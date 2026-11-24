@@ -5,6 +5,7 @@ import type { MemberBindingService } from "./service";
 import { productionOrigin } from "../phone-verification/server/config";
 import { hasConfiguredRequestAuthority } from "../phone-verification/server/local-request";
 import { logAuthFailure } from "../auth/failure-log";
+import { MEMBER_ACCOUNT_CONTINUATION_PATH, MEMBER_ACCOUNT_PATH, MEMBER_PURCHASE_RETURN_PATHS, MEMBER_SIGN_IN_PATH, memberCleanCallbackQuery } from "./paths";
 
 type Dependencies = {
   origin: string;
@@ -16,6 +17,40 @@ type Dependencies = {
   bodyTimeoutMs?: number;
 };
 class HttpError extends Error { constructor(readonly status: number, readonly code: string) { super(code); } }
+/** The pinned callback pages a sign-in returns to, and whether each one takes a next. */
+const callbackPages: Readonly<Record<string, boolean>> = {
+  [MEMBER_SIGN_IN_PATH]: true,
+  [MEMBER_ACCOUNT_PATH]: true,
+  [MEMBER_ACCOUNT_CONTINUATION_PATH]: false,
+  ...Object.fromEntries(MEMBER_PURCHASE_RETURN_PATHS.map((path) => [path, false]))
+};
+/**
+ * Better Auth's own redirect, made safe before it leaves the server (Review-A, 24 Nov). Its OAuth failure redirect
+ * appends the provider's `error` and `error_description` verbatim to the pinned callback URL, so the diagnostic would
+ * sit in the first Location header and be requested by the browser. A same-origin redirect to a pinned callback page
+ * gets the clean query instead (a listed next where the page takes one, a recognised error code, nothing else, no
+ * fragment). The status and every other header, Set-Cookie included, are kept; any other redirect is untouched.
+ */
+export function memberSafeAuthRedirect(response: Response, origin: string): Response {
+  const location = response.headers.get("location");
+  if (!location || response.status < 300 || response.status > 399) return response;
+  let url: URL;
+  try { url = new URL(location, origin); } catch { return response; }
+  if (url.origin !== new URL(origin).origin) return response;
+  const takesNext = callbackPages[url.pathname];
+  if (takesNext === undefined) return response;
+  const query: Record<string, string | string[]> = {};
+  for (const key of new Set(url.searchParams.keys())) {
+    const values = url.searchParams.getAll(key);
+    query[key] = values.length > 1 ? values : values[0];
+  }
+  const cleaned = memberCleanCallbackQuery(url.pathname, query, takesNext);
+  if (cleaned === null && !url.hash) return response;
+  const target = cleaned ?? `${url.pathname}${url.search}`;
+  const headers = new Headers(response.headers);
+  headers.set("location", /^[a-z][a-z0-9+.-]*:/i.test(location) ? `${url.origin}${target}` : target);
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+}
 export function memberJson(status: number, body: unknown): Response {
   return Response.json(body, { status, headers: { "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff", "X-Robots-Tag": "noindex, nofollow, noarchive", "Referrer-Policy": "no-referrer" } });
 }

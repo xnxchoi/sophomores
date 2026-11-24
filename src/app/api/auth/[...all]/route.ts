@@ -1,6 +1,6 @@
 import { betterAuthOptions } from "@/lib/auth/options";
 import { normalizeMemberEmailEntryRequest } from "@/lib/member-auth/email-entry";
-import { authHandlerFailed, authUnavailable, memberJson } from "@/lib/member-auth/http";
+import { authHandlerFailed, authUnavailable, memberJson, memberSafeAuthRedirect } from "@/lib/member-auth/http";
 import { getPayload } from "@/payload";
 
 export const runtime = "nodejs";
@@ -13,7 +13,8 @@ async function handle(request: Request): Promise<Response> {
   try {
     const payload = await getPayload();
     if (payload.betterAuth?.handler) {
-      const response = await payload.betterAuth.handler(normalized);
+      // A provider failure's redirect leaves without the provider's own error text (memberSafeAuthRedirect).
+      const response = memberSafeAuthRedirect(await payload.betterAuth.handler(normalized), betterAuthOptions.baseURL ?? new URL(request.url).origin);
       if (!discovery) return response;
       const headers = new Headers(response.headers);
       for (const [name, value] of memberJson(200, {}).headers) headers.set(name, value);

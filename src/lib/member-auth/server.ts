@@ -11,6 +11,7 @@ import type { MemberAuthConfig } from "./config";
 import type { MemberMailer } from "./mail";
 import { identifierCookieToken, IDENTIFIER_COOKIE } from "./identifier";
 import { MEMBER_ACCOUNT_PATH, MEMBER_ACCOUNT_CONTINUATION_PATH, memberSocialReturn } from "./paths";
+import { memberSafeAuthRedirect } from "./http";
 
 const paths = new Set([
   "/member-email-entry/check", "/get-session", "/sign-out", "/sign-in/social", "/callback/google", "/link-social", "/list-accounts",
@@ -257,7 +258,8 @@ export async function handleMemberAuthRequest(auth: Pick<MemberAuth, "handler">,
         body = Buffer.concat(chunks);
       } finally { clearTimeout(timer); await reader.cancel().catch(() => undefined); reader.releaseLock(); }
     }
-    const response = await auth.handler(new Request(request.url, { method: request.method, headers, body: body as BodyInit | undefined }));
+    // A provider failure's redirect leaves without the provider's own error text (memberSafeAuthRedirect).
+    const response = memberSafeAuthRedirect(await auth.handler(new Request(request.url, { method: request.method, headers, body: body as BodyInit | undefined })), config.origin);
     if (response.status >= 500) { await response.body?.cancel(); return privateJson(503); }
     const output = new Headers(response.headers);
     output.set("Cache-Control", "private, no-store"); output.set("X-Content-Type-Options", "nosniff");

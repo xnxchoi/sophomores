@@ -1,0 +1,79 @@
+import assert from "node:assert/strict";
+import { registerHooks } from "node:module";
+import { after, before, test } from "node:test";
+import type { MemberAuthConfig } from "@/lib/member-auth/config";
+
+// Review-A, 24 Nov: Better Auth's OAuth failure redirect appends the provider's error and error_description verbatim
+// to the pinned callback URL. The FIRST Location that leaves the server must already be clean, on both handler paths.
+const origin = "http://localhost:3240";
+const diagnostic = "Upstream said member@example.invalid at db.internal";
+const key = "__authCallbackRedirectTest";
+const state = globalThis as unknown as Record<string, { handler: (request: Request) => Promise<Response> } | undefined>;
+const moduleUrl = (source: string) => `data:text/javascript,${encodeURIComponent(source)}`;
+let hooks: { deregister(): void } | undefined;
+let route: typeof import("@/app/api/auth/[...all]/route");
+let local: typeof import("@/lib/member-auth/server");
+
+function providerFailure(location: string): Response {
+  const headers = new Headers({ location });
+  headers.append("set-cookie", "better-auth.state=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax");
+  headers.append("set-cookie", "better-auth.pkce=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax");
+  return new Response(null, { status: 302, headers });
+}
+const failure = (base: string, error: string) =>
+  `${base}${base.includes("?") ? "&" : "?"}${new URLSearchParams({ error, error_description: diagnostic })}`;
+const callback = () => new Request(`${origin}/api/auth/callback/google?code=provider-code&state=s`, { headers: { host: "localhost:3240" } });
+
+before(async () => {
+  hooks = registerHooks({
+    resolve(specifier, context, nextResolve) {
+      if ((context.parentURL ?? "").includes("/app/api/auth/")) {
+        if (specifier === "@/payload") return { url: moduleUrl(`export async function getPayload(){ return { betterAuth: globalThis.${key} }; }`), shortCircuit: true };
+        if (specifier === "@/lib/auth/options") return { url: moduleUrl(`export const betterAuthOptions = { baseURL: "${origin}" };`), shortCircuit: true };
+      }
+      return nextResolve(specifier, context);
+    },
+    load(url, context, nextLoad) {
+      if (url.startsWith("data:text/javascript,")) return { format: "module", source: decodeURIComponent(url.slice("data:text/javascript,".length)), shortCircuit: true };
+      return nextLoad(url, context);
+    }
+  });
+  route = await import("@/app/api/auth/[...all]/route");
+  local = await import("@/lib/member-auth/server");
+});
+after(() => { hooks?.deregister(); delete state[key]; });
+
+const config: MemberAuthConfig = { mode: "local", origin, databaseUrl: "postgres://localhost/sophomores_verification_test_auth",
+  secret: "b".repeat(64), verificationSecret: "a".repeat(64), rpId: "localhost", google: null, mail: null };
+const paths = {
+  payload: async (response: Response) => { state[key] = { handler: async () => response }; return route.GET(callback()); },
+  local: async (response: Response) => local.handleMemberAuthRequest({ handler: async () => response }, config, callback())
+};
+
+for (const [name, handle] of Object.entries(paths)) {
+  test(`${name} handler: the first Location keeps only a listed next and a recognised code, with status and cookies`, async () => {
+    for (const [pinned, error, expected] of [
+      ["/sign-in?next=/me/orders", "access_denied", "/sign-in?next=/me/orders&error=access_denied"],
+      ["/sign-in?next=/me/orders", "provider exploded", "/sign-in?next=/me/orders&error=unknown"],
+      [`${origin}/sign-in?next=/me`, "access_denied", `${origin}/sign-in?next=/me&error=access_denied`],
+      ["/account", "unable_to_link_account", "/account?error=unable_to_link_account"],
+      ["/tickets", "access_denied", "/tickets?error=access_denied"]
+    ] as const) {
+      const response = await handle(providerFailure(failure(pinned, error)));
+      assert.equal(response.status, 302, pinned);
+      const location = response.headers.get("location") ?? "";
+      assert.equal(location, expected, pinned);
+      assert.equal(/member@example|db\.internal|error_description|Upstream/.test(location), false, location);
+      assert.equal(response.headers.getSetCookie().length, 2, "every Set-Cookie survives");
+    }
+  });
+
+  test(`${name} handler: success, provider and already-clean redirects are left exactly as they are`, async () => {
+    for (const location of ["/sign-in?next=/me", "/account/continue", "/tickets", "https://accounts.google.com/o/oauth2/v2/auth?client_id=x&state=s",
+      "/api/auth/error?error=state_mismatch"]) {
+      const response = await handle(providerFailure(location));
+      assert.equal(response.headers.get("location"), location);
+      assert.equal(response.headers.getSetCookie().length, 2);
+    }
+  });
+}

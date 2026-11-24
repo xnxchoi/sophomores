@@ -9,7 +9,7 @@ export default async function LogoutPage() {
       <p className="my-4 text-preview-secondary">{t("thisWillEndThePreviewSessionInThisBrowser")}</p>
       <form method="post" action="/api/session/logout">
         <button
-          className="mt-7 w-full cursor-pointer rounded-md border-0 bg-preview-accent p-3.25 font-semibold text-preview-on-accent focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-preview-accent"
+          className="mt-7 w-full rounded-md border-0 bg-preview-accent p-3.25 font-semibold text-preview-on-accent focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-preview-accent"
           type="submit"
         >
           {t("signOutLabel")}

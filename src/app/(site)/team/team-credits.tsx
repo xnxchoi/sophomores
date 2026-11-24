@@ -243,7 +243,7 @@ function FocusCard({ person, onClose }: { person: TeamPerson; onClose: () => voi
           initial={{ opacity: 0 }}
           animate={{ opacity: 1, transition: { type: "tween", delay: 0.3, duration: 0.3, ease: "easeIn" } }}
           exit={{ opacity: 0, transition: { type: "tween", delay: 0, duration: 0.3, ease: "easeOut" } }}
-          className="fixed inset-0 z-[99] h-screen w-screen cursor-default bg-background/40 -outline-offset-8 backdrop-blur-sm focus-visible:outline-2"
+          className="fixed inset-0 z-[99] h-screen w-screen bg-background/40 -outline-offset-8 backdrop-blur-sm focus-visible:outline-2"
         />
         <m.div
           ref={card}
@@ -444,7 +444,7 @@ function CreditsRoll({ groups, still, held, hidden, onShow, onFocusName, onLeave
                     }}
                     onClick={(event) => onSelect(person, pass === 1 ? twin(person.id) ?? event.currentTarget : event.currentTarget)}
                     /* The names keep Hideaway's size; on touch an invisible inset grows each hit area to 44px+. */
-                    className="group/focus relative cursor-pointer text-left leading-none after:absolute after:inset-x-0 after:-inset-y-3 pointer-coarse:after:content-['']"
+                    className="group/focus relative text-left leading-none after:absolute after:inset-x-0 after:-inset-y-3 pointer-coarse:after:content-['']"
                   >
                     <FocusShape className="outline-offset-4">{person.name}{person.patronage && <span aria-hidden="true"> 🎂</span>}</FocusShape>
                   </button>

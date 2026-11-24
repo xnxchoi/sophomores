@@ -199,9 +199,17 @@ input.code-field:not([type="checkbox"]) {
   }
 }
 
-@media (pointer: fine) {
-  * {
-    cursor: none;
+/* No native cursor on the site, ever (owner, 24 Nov: "KILL THE FUCKING cursor:pointer; SHIT WITH *{cursor:none;}"):
+   the site's own cursor (UX/Cursor) is the only one. Important in the base layer, so it beats every utility, Arc
+   module and legacy rule, including inputs, links, buttons and disabled controls. This sheet loads only on the site
+   ((site)/layout.tsx and global-not-found.tsx), never in the Payload admin. */
+@layer base {
+  @media (pointer: fine) {
+    *,
+    *::before,
+    *::after {
+      cursor: none !important;
+    }
   }
 }
 

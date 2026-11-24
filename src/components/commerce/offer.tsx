@@ -51,7 +51,7 @@ export function CommerceOfferView({ offer, children }: { offer: CommerceOffer | 
     </div>
     <section aria-label={t('sellerAndPurchasePolicies')} className="mt-16 border-t border-border pt-10 text-sm leading-relaxed sm:mt-24">
       {Object.entries(disclosure.policies).map(([key, policy]) => <details key={key} className="mt-6 border-t border-border">
-        <summary className="group/focus min-h-12 cursor-pointer py-4 font-medium"><FocusShape className="outline-offset-4">{key === "terms" ? t('purchaseTerms') : key === "privacy" ? t('privacyAndDeliveryInformation') : t('cancellationsReturnsAndRefunds')}</FocusShape></summary>
+        <summary className="group/focus min-h-12 py-4 font-medium"><FocusShape className="outline-offset-4">{key === "terms" ? t('purchaseTerms') : key === "privacy" ? t('privacyAndDeliveryInformation') : t('cancellationsReturnsAndRefunds')}</FocusShape></summary>
         <div className="max-w-3xl space-y-6 pb-6 text-muted-foreground"><p>{t('policyEffectiveDate', { date: policy.effectiveDate })}</p>{policy.sections.map((section, index) => <section key={index}>
           <h3 className="text-foreground">{section.heading}</h3>{section.paragraphs.map((paragraph, paragraphIndex) => <p key={paragraphIndex} className="mt-3 whitespace-pre-line">{paragraph}</p>)}
         </section>)}</div>

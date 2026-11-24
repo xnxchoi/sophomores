@@ -139,7 +139,7 @@ export function PrimaryButton({
   return (
     <button
       className={cn(
-        "relative mt-5 flex min-h-13 w-full items-center justify-between gap-3 rounded-lg bg-foreground px-5 py-3.5 text-sm font-semibold text-background transition-[background-color,transform,box-shadow] duration-200 ease-out hover:bg-foreground/90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-foreground active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground",
+        "relative mt-5 flex min-h-13 w-full items-center justify-between gap-3 rounded-lg bg-foreground px-5 py-3.5 text-sm font-semibold text-background transition-[background-color,transform,box-shadow] duration-200 ease-out hover:bg-foreground/90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-foreground active:scale-[0.98] disabled:bg-muted disabled:text-muted-foreground",
         className
       )}
       {...props}
@@ -151,7 +151,7 @@ export function PrimaryLink({ className, ...props }: ComponentProps<"a">) {
   return (
     <a
       className={cn(
-        "relative mt-5 flex min-h-13 w-full items-center justify-between gap-3 rounded-lg bg-foreground px-5 py-3.5 text-sm font-semibold text-background transition-[background-color,transform,box-shadow] duration-200 ease-out hover:bg-foreground/90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-foreground active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground",
+        "relative mt-5 flex min-h-13 w-full items-center justify-between gap-3 rounded-lg bg-foreground px-5 py-3.5 text-sm font-semibold text-background transition-[background-color,transform,box-shadow] duration-200 ease-out hover:bg-foreground/90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-foreground active:scale-[0.98] disabled:bg-muted disabled:text-muted-foreground",
         className
       )}
       {...props}

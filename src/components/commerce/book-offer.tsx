@@ -67,7 +67,7 @@ export function PurchaseNotOpen({ priceKRW }: { priceKRW: number }) {
   const t = useTranslations("Customer.components_commerce_book_offer");
   const locale = useLocale();
   return <div role="group" aria-disabled="true" aria-labelledby="book-purchase-heading"
-    className="flex min-h-10 cursor-default items-center justify-between gap-4 self-start border-y border-dotted border-foreground/45 text-[15px] leading-[21px] opacity-60 pointer-coarse:min-h-11">
+    className="flex min-h-10 items-center justify-between gap-4 self-start border-y border-dotted border-foreground/45 text-[15px] leading-[21px] opacity-60 pointer-coarse:min-h-11">
     <p id="book-purchase-heading">{t("purchaseNotOpen")}</p>
     <p className="tabular-nums">{new Intl.NumberFormat(locale, { style: "currency", currency: "KRW", maximumFractionDigits: 0 }).format(priceKRW)}</p>
   </div>;

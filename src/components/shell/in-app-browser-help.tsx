@@ -15,7 +15,7 @@ type CopyStatus = "copying" | "copied" | "failed";
 function CopyPageLink({ status, onCopy }: { status: CopyStatus | null; onCopy: () => void }) {
   const t = useTranslations("Customer.inAppBrowserHelp");
   return <>
-    <Button type="button" variant="outline" aria-disabled={status === "copying"} onClick={onCopy} className="mt-5 min-h-12 w-full rounded-full px-4 text-sm aria-disabled:cursor-default aria-disabled:opacity-50">
+    <Button type="button" variant="outline" aria-disabled={status === "copying"} onClick={onCopy} className="mt-5 min-h-12 w-full rounded-full px-4 text-sm aria-disabled:opacity-50">
       {status === "copying" ? t("copying") : t("copy")}
     </Button>
     <p role="status" aria-live="polite" className="mt-3 min-h-5 text-xs leading-relaxed text-muted-foreground">

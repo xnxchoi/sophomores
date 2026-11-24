@@ -70,7 +70,7 @@ export function ActionButton({
           ? "bg-red-500/20 text-red-200 hover:bg-red-500/30 border border-red-500/30"
           : "bg-white/10 text-white hover:bg-white/20 border border-white/10",
         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white",
-        "disabled:cursor-not-allowed disabled:opacity-40",
+        "disabled:opacity-40",
         className
       )}
     >

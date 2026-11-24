@@ -327,7 +327,7 @@ function PaymentResult({
               setResult({ paymentId, status: "checking" });
               setAttempt((value) => value + 1);
             }}
-            className="min-h-12 w-full rounded-xl bg-neutral-100 px-5 py-3 text-sm font-medium text-neutral-950 transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-100 disabled:cursor-wait disabled:bg-neutral-800 disabled:text-neutral-400"
+            className="min-h-12 w-full rounded-xl bg-neutral-100 px-5 py-3 text-sm font-medium text-neutral-950 transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-100 disabled:bg-neutral-800 disabled:text-neutral-400"
           >
             {status === "checking" ? t('checking') : t('checkAgain')}
           </button>
@@ -340,7 +340,7 @@ function PaymentResult({
               disabled={resuming || status === "checking"}
               aria-busy={resuming}
               onClick={resume}
-              className="min-h-12 w-full rounded-xl border border-neutral-600 px-5 py-3 text-sm font-medium text-neutral-100 transition-colors hover:bg-neutral-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-100 disabled:cursor-wait disabled:text-neutral-400"
+              className="min-h-12 w-full rounded-xl border border-neutral-600 px-5 py-3 text-sm font-medium text-neutral-100 transition-colors hover:bg-neutral-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-100 disabled:text-neutral-400"
             >
               {resuming ? t('openingPayment') : t('resumePayment')}
             </button>

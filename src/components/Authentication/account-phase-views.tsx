@@ -649,7 +649,7 @@ function InlineEmailResend({ props }: { props: Props }) {
           coolingDown ? undefined : `${t("codeRecovery")} ${t("resend")}`
         }
         onClick={() => props.onAction("retry")}
-        className="min-h-11 w-44 gap-1 rounded-md px-3 text-[13px] font-normal text-muted-foreground underline decoration-current/30 underline-offset-4 hover:bg-transparent hover:text-foreground disabled:cursor-not-allowed disabled:text-muted-foreground disabled:no-underline"
+        className="min-h-11 w-44 gap-1 rounded-md px-3 text-[13px] font-normal text-muted-foreground underline decoration-current/30 underline-offset-4 hover:bg-transparent hover:text-foreground disabled:text-muted-foreground disabled:no-underline"
       >
         {coolingDown ? (
           <>

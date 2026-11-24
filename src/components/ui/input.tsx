@@ -11,8 +11,8 @@ export function Input({ className, type, ...props }: ComponentProps<"input">) {
       data-slot="input"
       suppressHydrationWarning
       className={cn(
-        "h-8 w-full min-w-0 rounded-none border border-input bg-transparent px-2.5 py-1 text-xs transition-colors outline-none file:inline-flex file:h-6 file:border-0 file:bg-transparent file:text-xs file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:border-ring disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-1 aria-invalid:ring-destructive/20 md:text-xs dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40",
-        "border-faded-background/60 flex h-8 w-full min-w-0 border-b border-solid bg-transparent px-2.5 py-3.5 text-base shadow-xs transition-[color,box-shadow] outline-none selection:bg-background selection:text-foreground file:inline-flex file:h-6 file:border-0 file:bg-transparent file:font-medium file:text-foreground placeholder:text-base placeholder:text-muted-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
+        "h-8 w-full min-w-0 rounded-none border border-input bg-transparent px-2.5 py-1 text-xs transition-colors outline-none file:inline-flex file:h-6 file:border-0 file:bg-transparent file:text-xs file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:border-ring disabled:pointer-events-none disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-1 aria-invalid:ring-destructive/20 md:text-xs dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40",
+        "border-faded-background/60 flex h-8 w-full min-w-0 border-b border-solid bg-transparent px-2.5 py-3.5 text-base shadow-xs transition-[color,box-shadow] outline-none selection:bg-background selection:text-foreground file:inline-flex file:h-6 file:border-0 file:bg-transparent file:font-medium file:text-foreground placeholder:text-base placeholder:text-muted-foreground disabled:pointer-events-none disabled:opacity-50",
         "focus-visible:border-faded-background/50 focus-visible:ring-ring/0 focus-visible:ring-offset-0",
         "aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40",
         className
@@ -45,7 +45,7 @@ function HA_Input({
       data-slot="input"
       suppressHydrationWarning
       className={cn(
-        "flex h-8 w-full min-w-0 border-b border-solid border-faded-bg/60 bg-transparent px-2.5 py-3 text-base shadow-xs transition-[color,box-shadow] outline-none selection:bg-background selection:text-foreground file:inline-flex file:h-7 file:border-0 file:bg-transparent file:font-medium file:text-foreground placeholder:text-base placeholder:text-muted-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
+        "flex h-8 w-full min-w-0 border-b border-solid border-faded-bg/60 bg-transparent px-2.5 py-3 text-base shadow-xs transition-[color,box-shadow] outline-none selection:bg-background selection:text-foreground file:inline-flex file:h-7 file:border-0 file:bg-transparent file:font-medium file:text-foreground placeholder:text-base placeholder:text-muted-foreground disabled:pointer-events-none disabled:opacity-50",
         "focus-visible:border-faded-background/50 focus-visible:ring-ring/0 focus-visible:ring-offset-0",
         "aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40",
         className
@@ -96,7 +96,7 @@ export function DrawnField({
         <div className="pointer-events-none absolute right-0 bottom-0 left-0 h-px origin-right scale-x-0 bg-foreground transition-[transform,height] duration-[800ms] ease-[cubic-bezier(0.16,1,0.32,1)] peer-focus:origin-left peer-focus:scale-x-100 peer-not-placeholder-shown:origin-left peer-not-placeholder-shown:scale-x-100 peer-aria-invalid:h-0.5 peer-aria-invalid:origin-left peer-aria-invalid:scale-x-100" />
         <label
           htmlFor={fieldId}
-          className="absolute top-0 left-0 m-0 cursor-text text-[length:var(--step-body,0.875rem)] leading-5 font-normal text-muted-foreground transition-colors duration-300 peer-focus:text-foreground peer-aria-invalid:text-foreground"
+          className="absolute top-0 left-0 m-0 text-[length:var(--step-body,0.875rem)] leading-5 font-normal text-muted-foreground transition-colors duration-300 peer-focus:text-foreground peer-aria-invalid:text-foreground"
         >
           {label}
         </label>

@@ -133,3 +133,16 @@ for (const paymentStatus of ["succeeded", "cancelled"]) {
     assert.equal(fake.rows["commerce-admissions"].every((row) => !!row.returnAcceptedAt), true);
   });
 }
+
+// Unlock events: attendance happens outside our records, so a cancellation normally keeps the seat. Before Part I
+// starts nobody can have attended, and a verified full cancellation releases it (owner, 24 Nov: "release seat").
+for (const [when, startsAt, committed, status] of [["before the event", "2999-01-01T00:00:00.000Z", 0, "revoked"], ["after the event started", "2000-01-01T00:00:00.000Z", 3, "available"]] as const) {
+  test(`verified full cancellation on an Unlock event ${when}`, async () => {
+    const fake = await paidFake();
+    fake.rows["commerce-events"][0] = { ...fake.rows["commerce-events"][0], checkInAuthority: "unlock-events", partIStartsAt: startsAt };
+    await fake.transaction(admin, (req) => releaseReservation({ req, attemptID: "attempt", verifiedReason: "confirmed-cancel", providerEventID: "verified-cancel" }));
+    assert.equal(fake.rows["commerce-events"][0].committedQuantity, committed);
+    assert.ok(fake.rows["commerce-admissions"].every((row: { status: string }) => row.status === status));
+    assert.equal(fake.rows["commerce-allowances"][0].paidQuantity, 0);
+  });
+}

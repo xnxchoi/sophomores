@@ -5,6 +5,8 @@ import { join } from "node:path";
 import { test } from "node:test";
 import { NextRequest } from "next/server";
 import { proxy } from "../../src/proxy";
+import type { PayloadRequest } from "payload";
+import { createAdapterEndpoints } from "@/lib/commerce/portone/endpoints";
 import { COOKIE_NAME, issueSession, validateConfig } from "@/lib/preview-auth/session";
 
 const config = validateConfig({ origin: "https://preview.sophomores.co", username: "team", passwordSalt: "ab".repeat(16), passwordHash: "cd".repeat(64), signingSecret: "ef".repeat(32) });
@@ -115,6 +117,37 @@ test("private proxy fails closed across documents, APIs, compiled assets and spo
       assert.equal(document.status, 303, path);
       assert.equal(document.headers.get("location"), `${config.origin}/login`);
     }
+  });
+  await t.test("PortOne's webhook POST passes the gate without a cookie; nothing else near it does", async () => {
+    // Launch blocker (coordinator, 24 Nov): PortOne's server-to-server webhook carries no preview cookie.
+    const webhook = "/api/payments/portone/webhooks";
+    const passed = call(webhook, { "content-type": "application/json" }, "POST");
+    assert.equal(passed.headers.get("x-middleware-next"), "1", "reaches the handler");
+    assert.match(passed.headers.get("cache-control") ?? "", /no-store/);
+    for (const method of ["GET", "HEAD", "PUT", "PATCH", "DELETE", "OPTIONS"]) {
+      assert.equal(call(webhook, {}, method).status, 401, `${method} ${webhook}`);
+    }
+    for (const path of [
+      "/api/payments/portone/webhooks/", "/api/payments/portone/webhooks/x", "/api/payments/portone/webhook",
+      "/api/payments/portone/webhooksx", "/api/payments/portone/WEBHOOKS", "/api/payments/portone/%77ebhooks",
+      "/api/payments/portone/webhooks?x=1", "/api/payments/portone/confirm-order", "/api/payments/portone/initiate",
+      "/api/payments/portone", "/payments/portone/webhooks", "/api/users"
+    ]) {
+      assert.equal(call(path, {}, "POST").status, 401, `POST ${path}`);
+    }
+    assert.equal(call(webhook, { rsc: "1" }, "POST").status, 401, "an RSC request is not a webhook");
+    // Past the gate, only a PortOne signature counts: an unsigned POST is refused by the handler itself.
+    const handler = createAdapterEndpoints({ config: { mode: "test", origin: "https://preview.sophomores.co", storeId: "store",
+      channelKey: "channel", apiSecret: "api", webhookSecret: "webhook", localKpnTestCheckout: true } })
+      .find((endpoint) => endpoint.path === "/webhooks" && endpoint.method === "post");
+    assert.ok(handler);
+    const unsigned = Object.assign(new Request(`https://preview.sophomores.co${webhook}`, { method: "POST",
+      headers: { "content-type": "application/json" }, body: "{}" }), { payload: {} }) as unknown as PayloadRequest;
+    assert.equal((await handler.handler(unsigned)).status, 409);
+    const forged = Object.assign(new Request(`https://preview.sophomores.co${webhook}`, { method: "POST",
+      headers: { "content-type": "application/json", "webhook-id": "x", "webhook-timestamp": String(Math.floor(Date.now() / 1000)),
+        "webhook-signature": "v1,AAAA" }, body: "{}" }), { payload: {} }) as unknown as PayloadRequest;
+    assert.equal((await handler.handler(forged)).status, 409, "a forged signature is refused by the installed SDK");
   });
   await t.test("forged trust and middleware headers do not confer authentication", () => {
     assert.equal(call("/_next/static/app.js", { "x-forwarded-host": "localhost", "x-real-ip": "127.0.0.1", "x-middleware-subrequest": "proxy:proxy:proxy:proxy:proxy", authorization: "Basic dGVhbTpwYXNz" }).status, 401);

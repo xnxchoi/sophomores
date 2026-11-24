@@ -66,6 +66,21 @@ function isDocument(request: NextRequest): boolean {
   );
 }
 
+/**
+ * PortOne's server-to-server webhook (the commerce plugin's endpoint `/payments/portone/webhooks` under Payload's
+ * `/api`). PortOne sends no preview cookie, so behind the gate payments would never settle or refund. Exactly this
+ * POST is let through, with no query, no other method and no prefix: the handler proves it came from PortOne by
+ * verifying the signature over the raw body (createAdapterEndpoints, `/webhooks`) and answers 409 otherwise.
+ */
+function isPortOneWebhook(request: NextRequest): boolean {
+  return (
+    request.method === "POST" &&
+    request.nextUrl.pathname === "/api/payments/portone/webhooks" &&
+    !request.nextUrl.search &&
+    !isRsc(request)
+  );
+}
+
 // A member's own pages, and public pages that vary by session (src/lib/member-auth/private-pages.ts), are never stored by a browser or shared cache, as
 // documents or as RSC payloads. Only Cache-Control: these pages keep their referrer for the payment provider.
 function privatePageResponse(request: NextRequest, response: Response): Response {
@@ -95,6 +110,7 @@ export function proxy(request: NextRequest): Response {
     }
     if (isCompiledStylesheet(request))
       return privateResponse(NextResponse.next());
+    if (isPortOneWebhook(request)) return privateResponse(NextResponse.next());
     if (
       verifySession(
         config,

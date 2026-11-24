@@ -398,8 +398,8 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
     s.radio = MathUtils.clamp(s.radio + (sig.radio ? 20 : -10) * dt, 0, 1);
     uniforms.uHolo.value = s.holo; uniforms.uRadio.value = s.radio;
     uniforms.uHoloMouse.value.lerp(state.pointer, 1 - Math.exp(-11.5 * dt));
-    // stripe.press drops the canvas to 0.9 while the hologram shows.
-    state.gl.domElement.style.opacity = String(1 - 0.1 * s.holo);
+    // stripe.press dims its canvas to 0.9 while the hologram shows. The book's canvas is now the shared root, so dimming it
+    // would dim every other View (Review-B): the hologram lives in the cover shader alone.
 
     // Open pose (#16): tilted back, following the pointer's height (6/s, 0.4× on touch), centred on the spread and
     // popped towards the camera; the book counter-turns a little as reading progresses (tuned to this model).

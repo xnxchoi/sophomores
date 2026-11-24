@@ -223,10 +223,11 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
     {/* Controls above the shared canvas: a fixed layer in a body portal, after the canvas in paint order, mirroring the
         stage's rect (scroll, resize, the phone's full-screen open state). */}
     {mounted && createPortal(<div ref={(element) => { overlay.current = element; signals.current.overlay = element; }}
-      data-open={open} className="pointer-events-none fixed z-1">
+      // The same gate as the book's View (menu, out of view): hidden controls fade out and take no pointer or focus.
+      data-open={open} data-hidden={!shown} inert={!shown} className="group/layer pointer-events-none fixed z-1">
       {open
         ? <ArcRoles><div data-book-ui role="group" aria-label={t("lookInside")}
-            className="pointer-events-auto absolute bottom-4 left-1/2 z-1 flex -translate-x-1/2 items-center gap-2 max-lg:bottom-[calc(max(var(--bar-target),var(--frame-bottom))+1rem+env(safe-area-inset-bottom))]">
+            className="pointer-events-auto absolute bottom-4 left-1/2 z-1 flex -translate-x-1/2 items-center gap-2 transition-opacity duration-300 ease-out group-data-[hidden=true]/layer:pointer-events-none group-data-[hidden=true]/layer:opacity-0 max-lg:bottom-[calc(max(var(--bar-target),var(--frame-bottom))+1rem+env(safe-area-inset-bottom))]">
             <Button variant="secondary" size="sm" aria-label={t("closeBook")} onClick={close}><XIcon aria-hidden="true" className="size-5" /></Button>
             <Button variant="secondary" size="sm" aria-label={t("previousPage")} onClick={() => signals.current.commands.push("back")}><CaretLeftIcon aria-hidden="true" className="size-5" /></Button>
             <Button variant="secondary" size="sm" aria-label={t("nextPage")} onClick={() => signals.current.commands.push("forward")}><CaretRightIcon aria-hidden="true" className="size-5" /></Button>

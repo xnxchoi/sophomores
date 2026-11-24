@@ -411,11 +411,13 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
     // lu·28°·(2 − 2n) a bone (about 188° shut to open), and as reading moves on (n) the back cover rolls 2n·28° a bone,
     // so with the body's turn both lie flat at any page. The peek and the spin flap ride on top.
     const coverStep = MathUtils.degToRad(28);
-    // The board swings stiff on a fixed spine (the whole roll at the hinge), then, as the pages fan in, takes stripe.press's
-    // bone curve (each of its five bones 0.8× the last) so it bends with the pages it carries. The front board stays
-    // hinged at the front, where the left stack's base lies (look-inside.tsx centres the stack on the spine).
-    const BONES = 3.3616; // Σ 0.8^k over five bones
-    const bone = (k: number) => MathUtils.lerp(k === 0 ? BONES : 0, 0.8 ** k, l.ld);
+    // The board swings stiff on a fixed spine (the whole roll at the hinge), then, as the pages fan in, bends along the
+    // pages' own profile (stripe.press's A(u) = 1 − (1 − u)^4 − 0.089·u^1.99, most of the bend near the spine), so it
+    // lies under the stacks it carries instead of standing above them. The front board stays hinged at the front, where
+    // the left stack's base lies (look-inside.tsx centres the stack on the spine).
+    const BONES = 3.3616; // Σ 0.8^k over five bones: the cover's total roll per 28° step
+    const profile = (u: number) => u <= 0 ? 0 : 1 - (1 - u) ** 4 - 0.089355 * u ** 1.991211, end = profile(1);
+    const bone = (k: number) => MathUtils.lerp(k === 0 ? 1 : 0, (profile(Math.min((k + 0.5) / 5, 1)) - profile(Math.max((k - 0.5) / 5, 0))) / end, l.ld) * BONES;
     front.current.forEach((g, k) => { if (g) g.rotation.y = -Math.max(s.frontA, 0) * SHARE[k] - lu * coverStep * (2 - 2 * n) * bone(k) - s.peek * 0.8 ** k; });
     back.current.forEach((g, k) => { if (g) g.rotation.y = Math.max(s.backA, 0) * SHARE[k] + 2 * n * coverStep * bone(k); });
     // The body turns π·n about the spine (stripe.press's facing counter-yaw): the gutter rises toward you mid-book while

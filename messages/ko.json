@@ -513,7 +513,14 @@
       "correctReturnReviewDetails": "반품 검토 상세 정보 수정",
       "prepareNextDrink": "다음 음료 준비",
       "continueAdmissionOperations": "입장권 작업 계속하기",
-      "reloadSavedEditor": "저장된 편집기 다시 불러오기"
+      "reloadSavedEditor": "저장된 편집기 다시 불러오기",
+      "refundRequested": "",
+      "refundAlreadyCancelled": "",
+      "refundAlreadyRefunded": "",
+      "refundUnknown": "",
+      "refundRefused": "",
+      "refundClosed": "",
+      "refundClosedNoDate": ""
     },
     "orderControls": {
       "savedFulfillmentStatus": "저장된 배송 상태: {status}",
@@ -533,7 +540,12 @@
       "iManuallyReviewedAnyUsedAttendanceOrBenefits": "해당 항목의 입장 및 혜택 사용 이력을 수동으로 검토했습니다",
       "acceptPhysicalReturn": "실물 반품 승인",
       "finalStockDisposition": "최종 재고 처리 방식",
-      "confirmFinalDisposition": "최종 재고 처리 확정"
+      "confirmFinalDisposition": "최종 재고 처리 확정",
+      "refundInFull": "",
+      "refundInFullExplainer": "",
+      "refundReason": "",
+      "refundConfirm": "",
+      "refundButton": ""
     },
     "recoveryReview": {
       "expectedRevision": "기준 리비전:",

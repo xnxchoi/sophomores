@@ -7,6 +7,7 @@ import { lockReservationContext, releaseReservation } from '../reservations'
 import { holdOrderBenefits, revokeOrderBenefits } from '../benefit-review'
 import { recordOrderRefund } from '../order-refund'
 import { releaseInvalidatedSeats } from '../seat-release'
+import { hasRefundRequest } from './refund'
 import { assertPaymentRollback, inPaymentTransaction, lockCommerce, paymentTransactionToken, relationshipID } from '../_shared/transaction'
 import { adapterConfig, parsePortOneTransaction, providerPayment, readPortOneTransaction, type AdapterDependencies } from './adapter'
 import { channelType, classifyPaymentRisk, minimalPaymentRiskProof, validatePaidPayment } from './proof'
@@ -249,7 +250,7 @@ async function reviewPaymentEvidence(req: PayloadRequest, input: ReviewInput, ev
             providerEventID: evidenceID, reason: 'verified-full-cancellation' })
           // The order itself: refunded once, with its record. Membership granted by the payment is not reversed.
           await recordOrderRefund({ req, orderID: relationshipID(current.order), transactionID: row.id,
-            providerEventID: evidenceID, source: 'provider' })
+            providerEventID: evidenceID, source: await hasRefundRequest(req, row.id) ? 'admin' : 'provider' })
           // Unlock seats wait for every key to be invalid; keys never sent were just cancelled, so release those now.
           await releaseInvalidatedSeats({ req, orderID: relationshipID(current.order) })
         }

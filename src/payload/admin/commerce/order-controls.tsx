@@ -16,6 +16,8 @@ export function OrderControls({ id, data, disabled, correctingReturn = false, ex
   const [reviewed, setReviewed] = useState(false);
   const [disposition, setDisposition] = useState("do-not-restock");
   const [confirm, setConfirm] = useState(false);
+  const [refundReason, setRefundReason] = useState("");
+  const [refundConfirmed, setRefundConfirmed] = useState(false);
   if (data.commerceVersion !== "commerce-v1") return <p>{t("historicalOrdersAreImmutableCommerceOperationsAreUnavailable")}</p>;
   const snapshot = data.commerceSnapshot as { quantity?: unknown } | undefined;
   const quantity = snapshot?.quantity;
@@ -31,6 +33,13 @@ export function OrderControls({ id, data, disabled, correctingReturn = false, ex
       <TextInput className="staff:[&_input]:min-h-[44px]" label={t("trackingNumber")} path={`${prefix}-tracking`} value={trackingNumber} readOnly={disabled} onChange={(event: ChangeEvent<HTMLInputElement>) => setTrackingNumber(event.target.value.slice(0, 120))} />
     </>}
     <div className="staff:flex staff:flex-wrap staff:gap-3">{choices.map((next) => <Button className="staff:m-0 staff:min-h-[44px]" key={next} type="button" disabled={disabled || (next === "shipped" && (!carrier.trim() || !trackingNumber.trim()))} onClick={() => void execute({ action: "fulfillment", orderID: id, status: next, actionID: crypto.randomUUID(), ...(next === "shipped" ? { carrier: carrier.trim(), trackingNumber: trackingNumber.trim() } : {}) })}>{t("markStatus", { status: next })}</Button>)}</div>
+    {(data.status === "processing" || data.status === "completed") && typeof data.amount === "number" && <>
+      <h4 className="staff:m-0">{t("refundInFull")}</h4>
+      <p className="staff:m-0">{t("refundInFullExplainer")}</p>
+      <TextInput className="staff:[&_input]:min-h-[44px]" label={t("refundReason")} path={`${prefix}-refund-reason`} value={refundReason} readOnly={disabled} onChange={(event: ChangeEvent<HTMLInputElement>) => setRefundReason(event.target.value.slice(0, 200))} />
+      <CheckboxInput className="staff:items-center staff:[&_label]:flex staff:[&_label]:min-h-[44px] staff:[&_label]:flex-1 staff:[&_label]:items-center" id={`${prefix}-refund-confirm`} name={`${prefix}-refund-confirm`} label={t("refundConfirm", { amount: data.amount })} checked={refundConfirmed} readOnly={disabled} onToggle={() => setRefundConfirmed((value) => !value)} />
+      <Button className="staff:m-0 staff:min-h-[44px]" type="button" disabled={disabled || !refundConfirmed || !refundReason.trim()} onClick={() => void execute({ action: "refund", orderID: id, reason: refundReason.trim() })}>{t("refundButton", { amount: data.amount })}</Button>
+    </>}
     <h4 className="staff:m-0">{t("physicallyReturnedUnits")}</h4>
     <p className="staff:m-0">{t("selectPurchasedUnitsReceivedAndInspectedAcceptingA")}</p>
     {Array.from({ length: quantity }, (_, index) => index + 1).map((unit) => <CheckboxInput className="staff:items-center staff:[&_label]:flex staff:[&_label]:min-h-[44px] staff:[&_label]:flex-1 staff:[&_label]:items-center" key={unit} id={`${prefix}-unit-${unit}`} name={`${prefix}-unit-${unit}`} label={t("unitUnit", { unit })} checked={units.includes(unit)} readOnly={disabled} onToggle={() => { setUnits((current) => current.includes(unit) ? current.filter((item) => item !== unit) : [...current, unit]); setReviewed(false); setConfirm(false); }} />)}

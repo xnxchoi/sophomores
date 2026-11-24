@@ -24,7 +24,7 @@ type Props = {
 
 /**
  * Mounted by every private page's layout through PrivateRoute (src/lib/member-auth/private-pages.ts). The page is
- * hidden when it is left and while its tab is hidden. On every return (the tab shown again, the window refocused) it
+ * concealed (visibility hidden and inert, never removed from display) when it is left and while its tab is hidden. On every return (the tab shown again, the window refocused) it
  * is hidden at once and the server is asked who is signed in now: the page shows again only for the member it was
  * rendered for (or, rendered signed out, only while still signed out). A different member, a sign-in since, a
  * sign-out, or no answer keeps it hidden and reloads it, so the server renders it for whoever is signed in now. A page
@@ -39,7 +39,26 @@ export function PrivatePageGuard({ children, principal, reload = reloadPage, rea
     let leaving = false;
     let disposed = false;
     let check = 0;
-    const setHidden = (hidden: boolean) => { if (content.current) content.current.hidden = hidden; };
+    // Concealed, not taken out of display (owner, 24 Nov: the sheet's entrance replayed on every switch). display:none
+    // restarts CSS animations such as Vaul's slide-in when it is lifted; visibility:hidden plus inert hides and blocks
+    // the page and its overlays without remounting or replaying anything. Focus inside returns when it is shown again.
+    let focused: HTMLElement | null = null;
+    const setHidden = (hidden: boolean) => {
+      const node = content.current;
+      if (!node || node.hasAttribute("data-concealed") === hidden) return;
+      if (hidden) {
+        const active = document.activeElement;
+        focused = active instanceof HTMLElement && node.contains(active) ? active : null;
+        node.setAttribute("data-concealed", "");
+        node.setAttribute("inert", "");
+        return;
+      }
+      node.removeAttribute("data-concealed");
+      node.removeAttribute("inert");
+      const restore = focused;
+      focused = null;
+      if (restore?.isConnected && (document.activeElement === null || document.activeElement === document.body)) restore.focus({ preventScroll: true });
+    };
     const leave = () => {
       if (disposed) return;
       leaving = true;
@@ -71,7 +90,7 @@ export function PrivatePageGuard({ children, principal, reload = reloadPage, rea
       stop();
     };
   }, [principal, reload, readPrincipal]);
-  return <div ref={content} data-private-page="" className="contents [&[hidden]]:hidden">
+  return <div ref={content} data-private-page="" className="contents data-concealed:invisible">
     <PrivatePortalHost.Provider value={portalHost}>{children}</PrivatePortalHost.Provider>
     <div ref={setPortalHost} data-private-portal-host="" className="contents" />
   </div>;

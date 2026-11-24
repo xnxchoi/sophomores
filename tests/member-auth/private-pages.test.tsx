@@ -244,6 +244,13 @@ const settle = () => new Promise((done) => setTimeout(done, 0));
 type Answer = string | null | undefined;
 /** The guard's own wrapper: the only element it ever hides. */
 const page = () => dom.window.document.querySelector<HTMLElement>("[data-private-page]")!;
+/** Concealed: visibility hidden and inert, never taken out of display (which would replay overlay entrances). */
+const concealed = (node: HTMLElement) => {
+  const on = node.hasAttribute("data-concealed");
+  assert.equal(node.hidden, false, "never display:none");
+  assert.equal(node.hasAttribute("inert"), on, "inert exactly while concealed");
+  return on;
+};
 function guard(principal: string | null, answers: Array<Answer | Promise<Answer>>) {
   const state = { reloads: 0, checks: 0 };
   const readPrincipal = async () => { state.checks += 1; return answers.shift(); };
@@ -255,14 +262,14 @@ test("the page shows again only after the server confirms the same member", asyn
   const state = guard("member-a", ["member-a", "member-a"]);
   const body = page();
   setVisibility("hidden");
-  assert.equal(body.hidden, true, "hidden while the tab is hidden");
+  assert.equal(concealed(body), true, "hidden while the tab is hidden");
   setVisibility("visible");
-  assert.equal(body.hidden, true, "still hidden while the server is asked");
+  assert.equal(concealed(body), true, "still hidden while the server is asked");
   await settle();
-  assert.equal(body.hidden, false, "same member: shown again");
+  assert.equal(concealed(body), false, "same member: shown again");
   fire("focus");
   await settle();
-  assert.equal(body.hidden, false);
+  assert.equal(concealed(body), false);
   assert.deepEqual(state, { reloads: 0, checks: 2 }, "a refocus asks again");
 });
 
@@ -271,17 +278,17 @@ test("a sign-out elsewhere keeps the page hidden and reloads it (visibility retu
   setVisibility("hidden");
   setVisibility("visible");
   await settle();
-  assert.equal(page().hidden, true);
+  assert.equal(concealed(page()), true);
   assert.equal(state.reloads, 1);
 });
 
 test("a switch to another account hides and reloads the page (focus return, no visibility change)", async () => {
   const state = guard("member-a", ["member-b"]);
   fire("blur");
-  assert.equal(page().hidden, false, "a whole page is not hidden on blur");
+  assert.equal(concealed(page()), false, "a whole page is not hidden on blur");
   fire("focus");
   await settle();
-  assert.equal(page().hidden, true);
+  assert.equal(concealed(page()), true);
   assert.equal(state.reloads, 1);
 });
 
@@ -290,7 +297,7 @@ test("when the server cannot say, the page stays hidden and reloads", async () =
   setVisibility("hidden");
   setVisibility("visible");
   await settle();
-  assert.equal(page().hidden, true);
+  assert.equal(concealed(page()), true);
   assert.equal(state.reloads, 1);
 });
 
@@ -300,7 +307,7 @@ test("an answer that arrives after the page was hidden again does not show it", 
   setVisibility("visible");
   setVisibility("hidden");
   await settle();
-  assert.equal(page().hidden, true);
+  assert.equal(concealed(page()), true);
   assert.equal(state.reloads, 0);
 });
 
@@ -316,13 +323,13 @@ test("a focus check hides the page at once and keeps it hidden while the answer 
     const request = pending();
     const state = guard("member-a", [request.answer]);
     fire("focus");
-    assert.equal(page().hidden, true, "hidden before any answer");
+    assert.equal(concealed(page()), true, "hidden before any answer");
     await settle();
-    assert.equal(page().hidden, true, "still hidden while the request stalls");
+    assert.equal(concealed(page()), true, "still hidden while the request stalls");
     assert.equal(state.reloads, 0);
     request.release(late);
     await settle();
-    assert.equal(page().hidden, hidden, `answer ${late}`);
+    assert.equal(concealed(page()), hidden, `answer ${late}`);
     assert.equal(state.reloads, reloads, `answer ${late}`);
     ui.cleanup();
   }
@@ -332,7 +339,7 @@ test("a page rendered signed out shows again only while still signed out; any si
   const still = guard(null, [null]);
   fire("focus");
   await settle();
-  assert.equal(page().hidden, false);
+  assert.equal(concealed(page()), false);
   assert.equal(still.reloads, 0);
   ui.cleanup();
   // A signs in on this page, B replaces the session elsewhere before the first check: the page cannot tell A from
@@ -340,7 +347,7 @@ test("a page rendered signed out shows again only while still signed out; any si
   const signedIn = guard(null, ["member-b"]);
   fire("focus");
   await settle();
-  assert.equal(page().hidden, true);
+  assert.equal(concealed(page()), true);
   assert.equal(signedIn.reloads, 1);
 });
 
@@ -348,7 +355,7 @@ test("leaving the route mid-check leaves the destination visible; a late reply n
   const request = pending();
   const state = guard("member-a", [request.answer]);
   fire("focus");
-  assert.equal(page().hidden, true, "the private content is hidden while asked");
+  assert.equal(concealed(page()), true, "the private content is hidden while asked");
   // A same-document Back to a public route: the guard and its wrapper go; the destination renders.
   ui.cleanup();
   const destination = ui.render(<main data-public="">public page</main>);
@@ -358,18 +365,18 @@ test("leaving the route mid-check leaves the destination visible; a late reply n
   request.release("member-b");
   await settle();
   assert.equal(state.reloads, 0, "no reload from the old guard");
-  assert.equal((destination.container.querySelector("[data-public]") as HTMLElement).closest("[hidden]"), null, "the destination stays visible");
+  assert.equal((destination.container.querySelector("[data-public]") as HTMLElement).closest("[data-concealed]"), null, "the destination stays visible");
   assert.equal(document.body.textContent?.includes("private content"), false, "the old content is gone, not revealed");
 });
 
 test("a restored page stays hidden and reloads; a normal show and an unmounted guard do nothing", async () => {
   const state = guard("member-a", []);
   fire("pagehide");
-  assert.equal(page().hidden, true, "hidden before the back-forward cache keeps a frame");
+  assert.equal(concealed(page()), true, "hidden before the back-forward cache keeps a frame");
   dom.window.dispatchEvent(pageShow(false));
   assert.equal(state.reloads, 0, "a normal load is not a restore");
   dom.window.dispatchEvent(pageShow(true));
-  assert.equal(page().hidden, true);
+  assert.equal(concealed(page()), true);
   assert.equal(state.reloads, 1, "restored: reload, so the server re-checks the session");
   ui.cleanup();
   dom.window.dispatchEvent(pageShow(true));
@@ -445,12 +452,29 @@ async function guardedTray(answers: Array<Answer | Promise<Answer>>) {
   await ui.waitFor(() => assert.ok(dom.window.document.querySelector("[data-tray-form]")));
   return state;
 }
+test("a same-member recheck conceals without remounting anything and gives focus back", async () => {
+  // Owner, 24 Nov: the sheet's entrance replayed on every switch. Concealment keeps every node mounted and in display,
+  // so CSS entrances (Vaul's slide-in) never restart; focus inside comes back when the page shows again.
+  guard("member-a", ["member-a"]);
+  const content = dom.window.document.createElement("button");
+  page().prepend(content);
+  content.focus();
+  const before = page().firstElementChild;
+  setVisibility("hidden");
+  assert.equal(concealed(page()), true);
+  setVisibility("visible");
+  await settle();
+  assert.equal(concealed(page()), false);
+  assert.equal(page().firstElementChild === before, true, "the same node: nothing remounted");
+  assert.equal(dom.window.document.activeElement === content, true, "focus is back where it was");
+});
+
 const trayForm = () => dom.window.document.querySelector("[data-tray-form]");
-/** The tray form is present AND it, or an element above it, carries the hidden attribute. A missing form fails. */
+/** The tray form is present AND it, or an element above it, is concealed. A missing form fails. */
 const trayHidden = () => {
   const form = trayForm();
   assert.ok(form, "the tray form is still mounted (hidden, not removed)");
-  return form.closest("[hidden]") !== null;
+  return form.closest("[data-concealed]") !== null;
 };
 
 test("the sign-in tray portals inside the private page's guard, not loose under body", async () => {

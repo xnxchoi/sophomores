@@ -2,7 +2,7 @@ import { commitTransaction, createLocalReq, initTransaction, killTransaction, ty
 import { z } from "zod";
 import { lockCommerce } from "@/lib/commerce/_shared/transaction";
 import { isReadOnly } from "./home-page";
-import { isReviewEditorProfile, staffAuthOrigin } from "@/lib/auth/review-editor-policy";
+import { isReviewEditorProfile, isSandboxRuntime, staffAuthOrigin } from "@/lib/auth/review-editor-policy";
 import { failureClass } from "@/lib/auth/failure-log";
 
 /**
@@ -36,14 +36,15 @@ const emailSchema = z.email();
 
 export function bootstrapSuperAdminEmail(env: Environment = process.env): string | null {
   const value = env.PAYLOAD_BOOTSTRAP_SUPERADMIN_EMAIL?.trim().toLowerCase();
-  if (!value) return null;
+  // The sandbox runtime never uses the bootstrap address (boot validation refuses it too).
+  if (!value || isSandboxRuntime(env)) return null;
   return emailSchema.safeParse(value).success ? value : null;
 }
 
 export async function ensureFirstSuperAdmin(payload: Payload, env: Environment = process.env): Promise<SuperAdminBootstrapResult> {
   const email = bootstrapSuperAdminEmail(env);
   if (!email) {
-    if (env.PAYLOAD_BOOTSTRAP_SUPERADMIN_EMAIL?.trim()) payload.logger.error("Super admin bootstrap skipped: PAYLOAD_BOOTSTRAP_SUPERADMIN_EMAIL is not a valid address.");
+    if (env.PAYLOAD_BOOTSTRAP_SUPERADMIN_EMAIL?.trim() && !isSandboxRuntime(env)) payload.logger.error("Super admin bootstrap skipped: PAYLOAD_BOOTSTRAP_SUPERADMIN_EMAIL is not a valid address.");
     return "unconfigured";
   }
   if (isReviewEditorProfile(staffAuthOrigin(env), env)) {

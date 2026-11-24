@@ -11,7 +11,7 @@ import { commerceServerField, withCommerceWrite } from '../access'
 import { serverChosenIDContext } from '../../../payload/server-chosen-ids'
 import { lockReservationContext, reservePurchase } from '../reservations'
 import { counter, lockCommerce, relationshipID, requirePaymentTransaction } from '../_shared/transaction'
-import { loadPortOneConfig, type PortOneConfig } from '../../tickets/portone/config'
+import { isPinnedSandboxChannel, loadPortOneConfig, type PortOneConfig } from '../../tickets/portone/config'
 import { orderIdFromPaymentId, paymentIdFromOrderId, providerPaymentId } from '../../tickets/portone/payment-id'
 import { classifyReconciliationPayment, minimalPaymentRiskProof } from './proof'
 import { createAdapterEndpoints } from './endpoints'
@@ -45,6 +45,10 @@ export function adapterConfig(deps: AdapterDependencies): PortOneConfig {
   const config = deps.config === undefined ? loadPortOneConfig() : deps.config
   // The env-configured channel of the validated mode is authoritative; disabled throws.
   if (!config || (config.mode !== 'test' && config.mode !== 'live')) throw new Error('Payment channel unavailable')
+  // The sandbox runtime re-checks its pinned TEST store and channel before every PortOne use, checkout initiation included.
+  if (process.env.PREVIEW_RUNTIME !== undefined && (config.mode !== 'test' || !isPinnedSandboxChannel(config))) {
+    throw new Error('Payment channel unavailable')
+  }
   return config
 }
 

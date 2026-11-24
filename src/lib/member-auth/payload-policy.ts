@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { cmsAdminCallbackPath } from "@/lib/auth/cms-login";
 import type { MemberSocialProvider } from "./contracts";
-import { assertReviewEditorRecipient, assertReviewEditorRequest, isConfiguredStaffEmail, isReviewEditorProfile, reviewEditorOrigin } from "../auth/review-editor-policy";
+import { assertReviewEditorRecipient, assertReviewEditorRequest, isConfiguredStaffEmail, isReviewEditorProfile, isReviewHostRequest } from "../auth/review-editor-policy";
 import type { PasskeyOptions } from "@better-auth/passkey";
 import { normalizeLoginEmail } from "../passwordless-login";
 import { APIError, addOAuthServerContext, createAuthMiddleware, getOAuthState, getAuthoritativeSessionFromCtx } from "better-auth/api";
@@ -72,7 +72,7 @@ export function createPayloadAuthBefore(origin: string,
       if (["callbackURL", "errorCallbackURL", "newUserCallbackURL"].includes(key) && Array.isArray(value)) throw forbidden();
       if (typeof value === "string") query.set(key, value);
     }
-    const review = isReviewEditorProfile(origin) || (context.request && new URL(context.request.url).hostname === new URL(reviewEditorOrigin).hostname);
+    const review = isReviewEditorProfile(origin) || isReviewHostRequest(context.request);
     if (review) {
       assertReviewEditorRequest(origin, path, context.body, query, context.request);
       if (path === "/get-session") {

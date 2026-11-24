@@ -1,6 +1,7 @@
 import { APIError } from "better-auth/api";
 import { isMemberMailAddress } from "@/lib/member-auth/mail-config";
 import { hasConfiguredRequestAuthority } from "@/lib/phone-verification/server/local-request";
+import { isPinnedSandboxChannel, loadPaymentMode } from "@/lib/tickets/portone/config";
 import { cmsAdminCallbackPath } from "./cms-login";
 import { isStaffEmail } from "./staff-email";
 
@@ -13,15 +14,38 @@ export function staffAuthOrigin(env: Env = process.env): string {
     "http://localhost:3000").replace(/\/+$/, "");
 }
 
-/** The known review host cannot accidentally fall back to domain-only staff access. */
+/**
+ * The explicit sandbox runtime: the preview host (behind its password gate) runs customer
+ * operations as production does, against the PortOne test channel, with the normal staff rules.
+ * Fails closed: only the exact value "sandbox", with no review owner (even an empty one), the
+ * PortOne test mode and the store and channel equal to the pinned TEST pair; anything else leaves
+ * the runtime as the review copy.
+ * Boot validation (src/payload/configuration.ts) refuses the same combinations.
+ */
+export function isSandboxRuntime(env: Env = process.env): boolean {
+  if (env.PREVIEW_RUNTIME !== "sandbox" || env.REVIEW_OWNER_EMAIL !== undefined) return false;
+  try {
+    return loadPaymentMode(env) === "test" &&
+      isPinnedSandboxChannel({ storeId: env.PORTONE_STORE_ID, channelKey: env.PORTONE_CHANNEL_KEY }, env);
+  } catch {
+    return false;
+  }
+}
+
+/** The known review host cannot accidentally fall back to domain-only staff access, unless it is the sandbox runtime. */
 export function isReviewEditorProfile(origin: string, env: Env = process.env): boolean {
-  return origin === reviewEditorOrigin || env.REVIEW_OWNER_EMAIL !== undefined;
+  return !isSandboxRuntime(env) && (origin === reviewEditorOrigin || env.REVIEW_OWNER_EMAIL !== undefined);
+}
+
+/** A request addressed to the review host, outside the sandbox runtime. */
+export function isReviewHostRequest(request?: Request, env: Env = process.env): boolean {
+  return request !== undefined && !isSandboxRuntime(env) &&
+    new URL(request.url).hostname === new URL(reviewEditorOrigin).hostname;
 }
 
 /** Review is a runtime authority boundary, not a property of the viewer cookie. */
 export function isReviewCopyRequest(request?: Request): boolean {
-  return isReviewEditorProfile(staffAuthOrigin()) ||
-    (request !== undefined && new URL(request.url).hostname === new URL(reviewEditorOrigin).hostname);
+  return isReviewEditorProfile(staffAuthOrigin()) || isReviewHostRequest(request);
 }
 
 export function denyReviewCustomerOperation(request?: Request): Response | undefined {

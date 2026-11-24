@@ -85,3 +85,16 @@ test("the refund exception never lets an amount change ride along", async () => 
   await assert.rejects(recordOrderRefund({ req, orderID: order.id, transactionID: "txn", providerEventID: "evt", source: "provider" }), forbidden);
   assert.equal(writes.length, 0);
 });
+
+test("refund policy: guest tickets until the cutoff, the book-only edition, never membership editions or the membership product", async () => {
+  const { refundPolicy } = await import("../../../src/lib/commerce/refund-policy");
+  const edition = (membershipSignet: boolean, freeLaunchTicket: boolean, eventID: string | null) => ({ version: 2, kind: "native-edition-v1", eventID, editionEntitlements: { membershipSignet, freeLaunchTicket } });
+  assert.deepEqual(refundPolicy({ version: 3, kind: "guest-ticket-v1", eventID: "event" }), { refundable: true, cutoff: "event" });
+  assert.deepEqual(refundPolicy(edition(false, false, null)), { refundable: true, cutoff: "none" });
+  for (const bundle of [edition(true, true, "event"), edition(true, false, null), edition(false, true, "event"), edition(false, false, "event")]) {
+    assert.deepEqual(refundPolicy(bundle), { refundable: false, reason: "personalised-edition" }, JSON.stringify(bundle));
+  }
+  for (const other of [{ version: 1, eventID: "event", releaseID: "membership" }, { version: 3, kind: "other", eventID: "event" }, null, "x"]) {
+    assert.deepEqual(refundPolicy(other), { refundable: false, reason: "not-refundable-product" }, JSON.stringify(other));
+  }
+});

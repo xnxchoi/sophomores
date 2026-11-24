@@ -520,7 +520,9 @@
       "refundUnknown": "PortOne didn't answer. Check the payment in the PortOne console before trying again.",
       "refundRefused": "PortOne refused the refund ({type}).",
       "refundClosed": "Refunds for this event closed {cutoff} (Seoul time).",
-      "refundClosedNoDate": "Refunds for this event are closed: its start time can't be read."
+      "refundClosedNoDate": "Refunds for this event are closed: its start time can't be read.",
+      "refundRefusedPersonalised": "Personalised edition: no refunds. Nothing was sent to PortOne.",
+      "refundRefusedProduct": "This product can't be refunded here. Nothing was sent to PortOne."
     },
     "orderControls": {
       "savedFulfillmentStatus": "Saved fulfillment: {status}",
@@ -545,7 +547,8 @@
       "refundInFullExplainer": "Cancels the whole payment in PortOne. When PortOne confirms, the order shows Refunded, unused tickets and seats are released, and keys are cancelled.",
       "refundReason": "Reason (sent to PortOne)",
       "refundConfirm": "I confirm a full refund of {amount, number} KRW.",
-      "refundButton": "Refund {amount, number} KRW"
+      "refundButton": "Refund {amount, number} KRW",
+      "noRefundsPersonalisedEdition": "Personalised edition: no refunds."
     },
     "recoveryReview": {
       "expectedRevision": "Expected revision:",

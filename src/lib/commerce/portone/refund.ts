@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { isCmsSuperAdmin } from '../../auth/access'
 import { withCommerceWrite } from '../access'
 import { refundableOrderStatuses } from '../order-refund'
+import { refundPolicy } from '../refund-policy'
 import { createCommerce, findCommerce, inCommerceTransaction, lockCommerce, readCommerce, relationshipID } from '../_shared/transaction'
 import { adapterConfig, parsePortOneTransaction, type AdapterDependencies } from './adapter'
 import type { PortOneConfig } from '../../tickets/portone/config'
@@ -36,6 +37,7 @@ export type RefundOutcome =
   | { outcome: 'requested' | 'already-cancelled' | 'refunded' | 'unknown' }
   | { outcome: 'closed'; cutoffAt: string | null }
   | { outcome: 'refused'; providerType: string }
+  | { outcome: 'refused'; reason: 'personalised-edition' | 'not-refundable-product' }
 
 /** PortOne's cancel request: the transport only, so a test passes a stand-in. */
 export type ProviderCancel = (input: { paymentId: string; storeId: string; reason: string; currentCancellableAmount: number; idempotencyKey: string })
@@ -77,9 +79,12 @@ async function recordRefundRequest(req: PayloadRequest, orderID: string, reason:
     if (transaction.status !== 'succeeded' || transaction.order == null || relationshipID(transaction.order) !== orderID) {
       throw new APIError('Only a settled payment can be refunded', 409, undefined, true)
     }
-    // The cutoff is checked before anything is written or sent. Orders without an event have none.
+    // What may be refunded, then the cutoff, both before anything is written or sent.
+    const policy = refundPolicy(transaction.portone.snapshot)
+    if (!policy.refundable) return { refused: policy.reason }
     const eventID = transaction.portone.snapshot.eventID
-    if (eventID != null) {
+    if (policy.cutoff === 'event') {
+      if (eventID == null) throw new APIError('Event unavailable', 409, undefined, true)
       const cutoff = refundCutoff((await readCommerce(req, 'commerce-events', eventID)).partIStartsAt)
       if (cutoff === null || now >= cutoff) return { closed: cutoff === null ? null : new Date(cutoff).toISOString() }
     }
@@ -111,7 +116,8 @@ export async function requestOrderRefund({ req, orderID, reason, deps = {} }: {
   const config = adapterConfig(deps)
   const request = await recordRefundRequest(req, orderID, reason, (deps.now ?? Date.now)())
   if (!request) return { outcome: 'refunded' }
-  if ('closed' in request) return { outcome: 'closed', cutoffAt: request.closed }
+  if ('closed' in request) return { outcome: 'closed', cutoffAt: request.closed ?? null }
+  if ('refused' in request) return { outcome: 'refused', reason: request.refused }
   const cancel = deps.cancelPayment ?? portOneCancel(config)
   let result: Awaited<ReturnType<ProviderCancel>>
   try {

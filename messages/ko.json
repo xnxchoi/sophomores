@@ -520,7 +520,9 @@
       "refundUnknown": "",
       "refundRefused": "",
       "refundClosed": "",
-      "refundClosedNoDate": ""
+      "refundClosedNoDate": "",
+      "refundRefusedPersonalised": "",
+      "refundRefusedProduct": ""
     },
     "orderControls": {
       "savedFulfillmentStatus": "저장된 배송 상태: {status}",
@@ -545,7 +547,8 @@
       "refundInFullExplainer": "",
       "refundReason": "",
       "refundConfirm": "",
-      "refundButton": ""
+      "refundButton": "",
+      "noRefundsPersonalisedEdition": ""
     },
     "recoveryReview": {
       "expectedRevision": "기준 리비전:",

@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useId, useState, type ChangeEvent } from "react";
 import { Button, FieldLabel, ReactSelect, TextInput, CheckboxInput } from "@payloadcms/ui";
 import type { Command } from "./operation-panel";
+import { refundPolicy } from "@/lib/commerce/refund-policy";
 
 export function OrderControls({ id, data, disabled, correctingReturn = false, execute }: { id: string; data: Record<string, unknown>; disabled: boolean; correctingReturn?: boolean; execute: (command: Command) => Promise<void> }) {
   const t = useTranslations("Staff.orderControls");
@@ -25,6 +26,9 @@ export function OrderControls({ id, data, disabled, correctingReturn = false, ex
   const fulfillment = data.fulfillment as { status?: string } | undefined;
   const status = fulfillment?.status ?? "pending";
   const choices = status === "pending" ? ["packed"] : status === "packed" ? ["shipped"] : status === "shipped" ? ["delivered", "return-requested"] : status === "delivered" ? ["return-requested"] : status === "return-requested" ? ["returned"] : [];
+  // What staff may refund: the server decides again (portone/refund.ts); this only hides the button.
+  const policy = refundPolicy(data.commerceSnapshot);
+  const refundOpen = data.status === "processing" || data.status === "completed";
   const dispositionOptions = [{ label: t("doNotRestock"), value: "do-not-restock" }, { label: t("restock"), value: "restock" }];
   return <div className="staff:flex staff:flex-col staff:gap-4">
     <p className="staff:m-0">{t("savedFulfillmentStatus", { status })}</p>
@@ -33,7 +37,8 @@ export function OrderControls({ id, data, disabled, correctingReturn = false, ex
       <TextInput className="staff:[&_input]:min-h-[44px]" label={t("trackingNumber")} path={`${prefix}-tracking`} value={trackingNumber} readOnly={disabled} onChange={(event: ChangeEvent<HTMLInputElement>) => setTrackingNumber(event.target.value.slice(0, 120))} />
     </>}
     <div className="staff:flex staff:flex-wrap staff:gap-3">{choices.map((next) => <Button className="staff:m-0 staff:min-h-[44px]" key={next} type="button" disabled={disabled || (next === "shipped" && (!carrier.trim() || !trackingNumber.trim()))} onClick={() => void execute({ action: "fulfillment", orderID: id, status: next, actionID: crypto.randomUUID(), ...(next === "shipped" ? { carrier: carrier.trim(), trackingNumber: trackingNumber.trim() } : {}) })}>{t("markStatus", { status: next })}</Button>)}</div>
-    {(data.status === "processing" || data.status === "completed") && typeof data.amount === "number" && <>
+    {refundOpen && !policy.refundable && policy.reason === "personalised-edition" && <p className="staff:m-0">{t("noRefundsPersonalisedEdition")}</p>}
+    {refundOpen && typeof data.amount === "number" && policy.refundable && <>
       <h4 className="staff:m-0">{t("refundInFull")}</h4>
       <p className="staff:m-0">{t("refundInFullExplainer")}</p>
       <TextInput className="staff:[&_input]:min-h-[44px]" label={t("refundReason")} path={`${prefix}-refund-reason`} value={refundReason} readOnly={disabled} onChange={(event: ChangeEvent<HTMLInputElement>) => setRefundReason(event.target.value.slice(0, 200))} />

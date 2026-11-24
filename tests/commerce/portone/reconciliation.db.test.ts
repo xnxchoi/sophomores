@@ -390,50 +390,103 @@ test('I2 disposable PostgreSQL admission, accounting, native fencing and restart
     assert.deepEqual(await reservationState(settled), released)
     assert.deepEqual(await allowance(settled), freed)
     assert.deepEqual(await orderRecord(settled), refunded)
-    // S2, staff refund: the request is recorded before PortOne is asked; the signed cancellation then refunds the order
-    // with source admin. A stand-in provider; no real cancel is sent.
+    // S2, staff refund (owner's rule: guest tickets until 3 days before Part I; book-only edition; never membership
+    // editions or the membership product). A stand-in PortOne; no real cancel is sent.
     {
       const { requestOrderRefund, refundRequestScope, refundCutoff } = await import('../../../src/lib/commerce/portone/refund')
-      const staffRefund = await initiateAttempt(db.payload)
-      await pace()
-      const staffConfirm = await confirmation(db.payload, staffRefund)
-      assert.equal((await runReconciliation(staffConfirm.req, { transactionID: staffRefund.transactionID,
-        paymentID: staffRefund.transactionID.replaceAll('-', ''), cartID: staffRefund.cartID }, 'confirm', staffConfirm.run, staffConfirm.deps)).status, 200)
-      const orderID = (await control.query('SELECT order_id FROM transactions WHERE id=$1', [staffRefund.transactionID])).rows[0].order_id as string
+      const { releaseInvalidatedSeatsSweep } = await import('../../../src/lib/commerce/seat-release')
+      const { seedConfiguredAttempt } = await import('../core/payment-postgres-fixture')
+      const admin = await createLocalReq({ user: { id: 'staff-refund', collection: 'admins', role: 'admin', _strategy: 'staff-better-auth' } as never }, db.payload)
+      const settle = async (f: Attempt) => {
+        await pace()
+        const confirm = await confirmation(db.payload, f)
+        assert.equal((await runReconciliation(confirm.req, { transactionID: f.transactionID,
+          paymentID: f.transactionID.replaceAll('-', ''), cartID: f.cartID }, 'confirm', confirm.run, confirm.deps)).status, 200)
+        return (await control.query('SELECT order_id FROM transactions WHERE id=$1', [f.transactionID])).rows[0].order_id as string
+      }
+      const requests = async (f: Attempt) => (await control.query('SELECT count(*)::int AS n FROM commerce_reconciliations WHERE scope=$1',
+        [refundRequestScope(f.transactionID)])).rows[0].n as number
       const calls: unknown[] = []
       const answers: ({ ok: true } | { ok: false; type: string })[] = [{ ok: true }, { ok: false, type: 'PAYMENT_ALREADY_CANCELLED' }]
-      // Owner: "Refund is only possible 3 days prior." The cutoff comes from the event's own Part I start.
-      assert.ok(staffRefund.eventID)
-      const startsAt = (await control.query('SELECT part_i_starts_at FROM commerce_events WHERE id=$1', [staffRefund.eventID])).rows[0].part_i_starts_at as Date
+      const cancelPayment = async (input: unknown) => { calls.push(input); return answers.shift()! }
+
+      // The membership product is refused: nothing written, nothing sent.
+      const membership = await initiateAttempt(db.payload)
+      const membershipOrder = await settle(membership)
+      assert.deepEqual(await requestOrderRefund({ req: admin, orderID: membershipOrder, reason: 'Owner refund', deps: { config: providerConfig, cancelPayment } }),
+        { outcome: 'refused', reason: 'not-refundable-product' })
+      assert.deepEqual([calls.length, await requests(membership)], [0, 0])
+
+      // Review-A: unknown completion stays 503 through the registered webhook. The lease expires while PortOne is read
+      // (disposable database only), so completion cannot be recorded. It fails closed: the attempt is escalated for
+      // catch-up, a redelivery is still not acknowledged, and nothing is refunded.
+      const fullCancel = provider(membership, 'CANCELLED', membership.snapshot.totalAmount, membership.snapshot.totalAmount)
+      const expiring = async () => {
+        await control.query(`UPDATE commerce_reconciliations SET state = jsonb_set(state::jsonb, '{active,expiresAt}', '0'::jsonb) WHERE scope = $1`,
+          [`reconciliation-attempt:${membership.transactionID}`])
+        return fullCancel()
+      }
+      const unknown = await signedWebhook(membership, 'membership-cancel-unknown', 'Transaction.Cancelled', expiring)
+      assert.equal(unknown.status, 503)
+      const redelivered = await signedWebhook(membership, 'membership-cancel-unknown', 'Transaction.Cancelled', fullCancel)
+      assert.ok(redelivered.status >= 400, `redelivery answered ${redelivered.status}`)
+      assert.equal((await orderRecord(membership))[0].status, 'processing')
+      assert.deepEqual([calls.length, await requests(membership)], [0, 0])
+
+      // A guest ticket order: two units, two keys owed. One key stands in as already sent and granted (fixture only).
+      const conf = { chainID: 137 as const, lock: '0x' + 'b'.repeat(40), memberLock: '0x' + 'a'.repeat(40) }
+      const guest = await seedConfiguredAttempt(db.payload, undefined, conf) as unknown as Attempt
+      const guestOrder = await settle(guest)
+      const startsAt = new Date(Date.now() + 10 * 24 * 3600_000)
+      await control.query('UPDATE commerce_events SET part_i_starts_at=$2 WHERE id=$1', [guest.eventID, startsAt])
       const cutoff = refundCutoff(startsAt.toISOString())!
-      assert.equal(cutoff, startsAt.getTime() - 3 * 24 * 60 * 60 * 1000)
-      const deps = { config: providerConfig, now: () => cutoff - 1, cancelPayment: async (input: unknown) => { calls.push(input); return answers.shift()! } }
-      const admin = await createLocalReq({ user: { id: 'staff-refund', collection: 'admins', role: 'admin', _strategy: 'staff-better-auth' } as never }, db.payload)
-      const member = await createLocalReq({ user: staffRefund.user }, db.payload)
-      await assert.rejects(requestOrderRefund({ req: member, orderID, reason: 'not staff', deps }), (error: { status?: number }) => error.status === 403)
-      // At the cutoff: refused before anything is written or sent.
-      assert.deepEqual(await requestOrderRefund({ req: admin, orderID, reason: 'Owner refund', deps: { ...deps, now: () => cutoff } }),
+      const intents = (await control.query(`SELECT k.id, a.id AS admission FROM commerce_key_grant_intents k JOIN commerce_admissions a ON a.id = k.entitlement_id
+        WHERE a.transaction_id = $1 ORDER BY a.unit`, [guest.transactionID])).rows as { id: string; admission: string }[]
+      assert.equal(intents.length, 2)
+      await control.query(`UPDATE commerce_key_grant_intents SET state='granted', token_i_d='1' WHERE id=$1`, [intents[0].id])
+      const seats = async () => (await control.query('SELECT committed_quantity::int AS n FROM commerce_events WHERE id=$1', [guest.eventID])).rows[0].n as number
+      const released = async () => (await control.query('SELECT id, seat_released_at IS NOT NULL AS released FROM commerce_admissions WHERE transaction_id=$1 ORDER BY unit',
+        [guest.transactionID])).rows.map((row) => row.released as boolean)
+      const committed = await seats()
+      const deps = { config: providerConfig, now: () => cutoff - 1, cancelPayment }
+      const member = await createLocalReq({ user: guest.user }, db.payload)
+      await assert.rejects(requestOrderRefund({ req: member, orderID: guestOrder, reason: 'not staff', deps }), (error: { status?: number }) => error.status === 403)
+      // At the cutoff: closed before anything is written or sent. Just before it: allowed.
+      assert.deepEqual(await requestOrderRefund({ req: admin, orderID: guestOrder, reason: 'Owner refund', deps: { ...deps, now: () => cutoff } }),
         { outcome: 'closed', cutoffAt: new Date(cutoff).toISOString() })
-      assert.equal(calls.length, 0)
-      assert.equal((await control.query('SELECT count(*)::int AS n FROM commerce_reconciliations WHERE scope=$1', [refundRequestScope(staffRefund.transactionID)])).rows[0].n, 0)
-      // Just before it: allowed.
-      assert.deepEqual(await requestOrderRefund({ req: admin, orderID, reason: 'Owner refund', deps }), { outcome: 'requested' })
-      assert.deepEqual(calls, [{ paymentId: staffRefund.transactionID.replaceAll('-', ''), storeId: providerConfig.storeId, reason: 'Owner refund',
-        currentCancellableAmount: staffRefund.snapshot.totalAmount, idempotencyKey: `refund:${staffRefund.transactionID}` }])
-      const request = (await control.query('SELECT state FROM commerce_reconciliations WHERE scope=$1', [refundRequestScope(staffRefund.transactionID)])).rows
-      assert.equal(request.length, 1)
-      assert.deepEqual([request[0].state.orderID, request[0].state.amount, request[0].state.requestedBy], [orderID, staffRefund.snapshot.totalAmount, 'staff-refund'])
-      // Asked again before PortOne's webhook: the same record, and PortOne's own refusal of a second full cancel.
-      assert.deepEqual(await requestOrderRefund({ req: admin, orderID, reason: 'Owner refund', deps }), { outcome: 'already-cancelled' })
-      assert.equal((await control.query('SELECT count(*)::int AS n FROM commerce_reconciliations WHERE scope=$1', [refundRequestScope(staffRefund.transactionID)])).rows[0].n, 1)
-      const done = await signedWebhook(staffRefund, 'staff-refund-cancelled', 'Transaction.Cancelled',
-        provider(staffRefund, 'CANCELLED', staffRefund.snapshot.totalAmount, staffRefund.snapshot.totalAmount))
+      assert.deepEqual([calls.length, await requests(guest)], [0, 0])
+      assert.deepEqual(await requestOrderRefund({ req: admin, orderID: guestOrder, reason: 'Owner refund', deps }), { outcome: 'requested' })
+      assert.deepEqual(calls, [{ paymentId: guest.transactionID.replaceAll('-', ''), storeId: providerConfig.storeId, reason: 'Owner refund',
+        currentCancellableAmount: guest.snapshot.totalAmount, idempotencyKey: `refund:${guest.transactionID}` }])
+      assert.equal(await requests(guest), 1)
+      assert.deepEqual(await requestOrderRefund({ req: admin, orderID: guestOrder, reason: 'Owner refund', deps }), { outcome: 'already-cancelled' })
+      assert.equal(await requests(guest), 1)
+      const done = await signedWebhook(guest, 'staff-refund-cancelled', 'Transaction.Cancelled',
+        provider(guest, 'CANCELLED', guest.snapshot.totalAmount, guest.snapshot.totalAmount))
       assert.equal(done.status, 200)
-      const staffOrder = await orderRecord(staffRefund)
-      assert.deepEqual([staffOrder[0].status, staffOrder[0].commerce_refund_source, staffOrder[0].commerce_refund_provider_event_i_d],
+      const guestRecord = await orderRecord(guest)
+      assert.deepEqual([guestRecord[0].status, guestRecord[0].commerce_refund_source, guestRecord[0].commerce_refund_provider_event_i_d],
         ['refunded', 'admin', 'staff-refund-cancelled'])
+      // The unsent key was cancelled at the refund, so its seat is released now; the granted key's seat waits.
+      const keyStates = async () => (await control.query('SELECT state, cancel_requested FROM commerce_key_grant_intents WHERE id = ANY($1) ORDER BY array_position($1, id)',
+        [intents.map((intent) => intent.id)])).rows.map((row) => [row.state, row.cancel_requested])
+      assert.deepEqual(await keyStates(), [['granted', true], ['cancelled', false]])
+      assert.deepEqual(await released(), [false, true])
+      assert.equal(await seats(), committed - 1)
+      // The owner's wallet cancels the key and Auth's tick reconciles it (stand-in: the reconciled state, written directly).
+      await control.query(`UPDATE commerce_key_grant_intents SET state='cancelled', cancelled_at=now() WHERE id=$1`, [intents[0].id])
+      // A failed release is retried on the next sweep: counters made inconsistent for one pass, then restored.
+      await control.query('UPDATE commerce_events SET committed_quantity=0 WHERE id=$1', [guest.eventID])
+      const sweeper = await createLocalReq({}, db.payload)
+      assert.equal(await releaseInvalidatedSeatsSweep({ req: sweeper }), 0)
+      assert.deepEqual(await released(), [false, true])
+      await control.query('UPDATE commerce_events SET committed_quantity=$2 WHERE id=$1', [guest.eventID, committed - 1])
+      assert.equal(await releaseInvalidatedSeatsSweep({ req: await createLocalReq({}, db.payload) }), 1)
+      assert.deepEqual(await released(), [true, true])
+      assert.equal(await seats(), committed - 2)
+      assert.equal(await releaseInvalidatedSeatsSweep({ req: await createLocalReq({}, db.payload) }), 0, 'each seat once')
       // Once refunded, the admin action does not ask PortOne again.
-      assert.deepEqual(await requestOrderRefund({ req: admin, orderID, reason: 'Owner refund', deps }), { outcome: 'refunded' })
+      assert.deepEqual(await requestOrderRefund({ req: admin, orderID: guestOrder, reason: 'Owner refund', deps }), { outcome: 'refunded' })
       assert.equal(calls.length, 2)
     }
     assert.deepEqual(await discover(settled), [])

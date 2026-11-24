@@ -1,6 +1,6 @@
 import type { PayloadRequest } from "payload";
 import { readCommerce, relationshipID, type CommerceDocument } from "../_shared/transaction";
-import { guestTicketTarget, resolveEventTicketTarget, sameTicketTarget, sharedTicketMode, sharedEventTicketsEnabled } from "../event-tickets";
+import { guestTicketTarget, matchesFrozenEventTicket, sameTicketTarget, sharedTicketMode, sharedEventTicketsEnabled } from "../event-tickets";
 import { purchaseSnapshotSchema } from "../purchase-snapshot";
 import { isTxHash, keyGrantOperationKey, memberEventGrantOperationKey, MEMBER_EVENT_GRANT, parseKeyGrantTarget, ticketTokenIdentity } from "./contracts";
 import { loadWalletConfig, predictMemberSafe } from "../../member-auth/wallet/safe";
@@ -28,9 +28,7 @@ async function resolveEventPassSources(req: PayloadRequest, admission: CommerceD
     (tier === "member" && (snapshot.data.version !== 2 || !sameTicketTarget(snapshot.data.memberTicketTarget, pinned.data))))) return null;
   const memberEvent = shared && tier === "member";
   const event = await readCommerce(req, "commerce-events", relationshipID(admission.event));
-  try {
-    if (!sameTicketTarget(resolveEventTicketTarget(event, tier, snapshot.data.productID), pinned.data)) return null;
-  } catch { return null; }
+  if (!matchesFrozenEventTicket(event, tier, snapshot.data.productID, pinned.data)) return null;
   const { docs, totalDocs } = await req.payload.find({ collection: "commerce-key-grant-intents", req,
     where: { and: [{ entitlement: { equals: admission.id } }, ...(memberEvent ? [{ purpose: { equals: MEMBER_EVENT_GRANT } }] : [])] }, limit: 2, depth: 0, overrideAccess: true });
   const [intent] = docs;

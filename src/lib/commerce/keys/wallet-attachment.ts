@@ -6,7 +6,7 @@ import { lockCommerce, readCommerce, relationshipID, requirePaymentTransaction, 
 import { keyGrantOperationKey, memberEventGrantOperationKey, MEMBER_EVENT_GRANT, parseKeyGrantTarget, type KeyGrantTarget } from "./contracts";
 import { recordKeyGrantIntents } from "./intents";
 import { readMemberWalletBinding, lockMemberWallet, recordMemberWallet } from "./member-wallet";
-import { guestTicketTarget, resolveEventTicketTarget, sameTicketTarget, sharedTicketMode, sharedEventTicketsEnabled } from "../event-tickets";
+import { guestTicketTarget, matchesFrozenEventTicket, sameTicketTarget, sharedTicketMode, sharedEventTicketsEnabled } from "../event-tickets";
 import { purchaseSnapshotSchema } from "../purchase-snapshot";
 
 const intents = "commerce-key-grant-intents";
@@ -98,9 +98,7 @@ async function attachLocked(req: PayloadRequest, previous: CommerceDocument, bin
         : snapshot.data.version !== 2 || !snapshot.data.editionEntitlements.freeLaunchTicket ||
           (ticketMode && !sameTicketTarget(snapshot.data.memberTicketTarget, pinned.data)))) return "conflict";
     const event = await readCommerce(req, "commerce-events", relationshipID(admission.event));
-    try {
-      if (!sameTicketTarget(resolveEventTicketTarget(event, admission.ticketTier, snapshot.data.productID), pinned.data)) return "conflict";
-    } catch { return "conflict"; }
+    if (!matchesFrozenEventTicket(event, admission.ticketTier, snapshot.data.productID, pinned.data, env)) return "conflict";
     lock = pinned.data.lock;
   } else {
     if (!sharedPrimary && (memberEvent || admission.ticketTier != null || admission.ticketTarget != null)) return "conflict";

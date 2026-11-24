@@ -226,10 +226,10 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
         settled_tx_hash=$3, granted_at=now(), target=$4 WHERE id=$1`, [grants.rows[0].id, tokenKey, hash, target]);
       await assert.rejects(control.query("UPDATE commerce_key_grant_intents SET ticket_token_key=$1 WHERE id=$2",
         [tokenKey, grants.rows[2].id]), { code: "23505" });
-      const read = async (user: unknown, tokenID = "7") => doorTicketLabelEndpoint.handler({
+      const read = async (user: unknown, tokenID = "7", requestedLock = lock) => doorTicketLabelEndpoint.handler({
         method: "GET", url: "http://localhost:3000/api/commerce/events/lookup",
         headers: new Headers({ "sec-fetch-site": "same-origin" }),
-        routeParams: { eventID, lock, tokenID }, payload, context: {}, user,
+        routeParams: { eventID, lock: requestedLock, tokenID }, payload, context: {}, user,
       } as unknown as import("payload").PayloadRequest);
       const staff = { collection: "admins", _strategy: "staff-better-auth", role: "staff", id: randomUUID() };
       const response = await read(staff);
@@ -309,6 +309,63 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
         assert.deepEqual(charge.rows, [{ amount: 20_000 }]);
         await assert.rejects(migrate(downCartKind), /Cannot drop persisted shared Guest cart markers|Failed query/);
       });
+
+      await shared.test("switching Guest sales preserves both frozen targets and the same event capacity", async (proof) => {
+        const { loadCommerceOffer } = await import("../../../src/lib/commerce/catalogue");
+        const guestLock = "0x" + "f".repeat(40);
+        const saleConfig = { version: 1, mode: "shared", chainID: 137, eventLock: lock, guestProductID: guest.productID, guestLock };
+        const settings = { KEY_GRANT_POLYGON_EVENT_LOCKS: `${lock},${guestLock}`, UNLOCK_SEPARATE_GUEST_LOCK_ENABLED: "1" };
+        for (const [key, value] of Object.entries(settings)) {
+          const previous = process.env[key];
+          proof.after(() => { if (previous === undefined) delete process.env[key]; else process.env[key] = previous; });
+          process.env[key] = value;
+        }
+        const configure = (config: object) => payload.update({ collection: "commerce-events" as never,
+          id: eventID, overrideAccess: true, data: { unlockTicketConfiguration: config } as never });
+        await assert.rejects(configure({ ...saleConfig, guestLock: "0x" + "A".repeat(40) }),
+          /Guest lock must differ from Signet/);
+        await configure(saleConfig);
+        await assert.rejects(configure({ ...saleConfig, guestLock: "0x" + "d".repeat(40) }), /immutable/);
+        await assert.rejects(configure({ ...saleConfig, guestLock: undefined }), /immutable/);
+        const savedEvent = await payload.findByID({ collection: "commerce-events", id: eventID, depth: 0, overrideAccess: true });
+        assert.deepEqual(savedEvent.unlockTicketConfiguration, saleConfig);
+        const offer = () => loadCommerceOffer(payload, undefined, guest.productID);
+        assert.equal((await offer())?.ticketTarget?.lock, guestLock);
+        assert.equal((await offer())?.maximumQuantity, 2);
+        assert.equal((await offer())?.availableQuantity, 0, "old reservations count against the same event");
+        await payload.update({ collection: "commerce-events" as never, id: eventID, overrideAccess: true,
+          data: { capacity: 7, transportCapacity: 7 } as never });
+        const sponsor = await seedMember(payload);
+        await payload.update({ collection: "users", id: sponsor.id, overrideAccess: true, data: { membershipStatus: "approved" } });
+        const cart = await payload.create({ collection: "carts", req: await createLocalReq({ user: sponsor }, payload), overrideAccess: false,
+          data: { items: [{ product: guest.productID, quantity: 1, ticketKind: "shared-event-guest" }], currency: "KRW" } });
+        const prepared = await initiateThroughEndpoint(payload, sponsor, {
+          cartID: cart.id, shippingAddress: guest.shippingAddress,
+          guestQuote: { productID: guest.productID, quantity: 1, totalAmount: 10_000 },
+        }) as { transactionID: ReturnType<typeof randomUUID>; paymentID: string };
+        delete process.env.UNLOCK_SEPARATE_GUEST_LOCK_ENABLED;
+        assert.equal((await offer())?.ticketTarget?.lock, lock);
+        await settleOne(payload, { ...guest, ...prepared, cartID: z.uuid().parse(cart.id) as ReturnType<typeof randomUUID>,
+          customerID: z.uuid().parse(sponsor.id) as ReturnType<typeof randomUUID>, user: sponsor, total: 10_000 });
+        const pins = await control.query(`SELECT a.ticket_target->>'lock' AS lock
+          FROM commerce_admissions a WHERE a.transaction_id IN ($1,$2) ORDER BY a.ticket_target->>'lock'`, [g.transactionID, prepared.transactionID]);
+        assert.deepEqual(pins.rows, [{ lock }, { lock: guestLock }]);
+
+        // Reuse token ID 7 on a different lock, as two independent contracts can.
+        const guestTokenKey = `137:${guestLock}:7`;
+        const granted = await control.query(`UPDATE commerce_key_grant_intents k
+          SET state='granted', token_i_d='7', ticket_token_key=$2, settled_tx_hash=$3, granted_at=now(), target=$4
+          FROM commerce_admissions a WHERE a.id=k.entitlement_id AND a.transaction_id=$1`,
+        [prepared.transactionID, guestTokenKey, hash, { ...target, lock: guestLock }]);
+        assert.equal(granted.rowCount, 1);
+        const guestLabel = await read(staff, "7", guestLock);
+        assert.equal(guestLabel.status, 200, "frozen second-lock ticket remains readable with new second-lock sales off");
+        assert.deepEqual(Object.keys(await guestLabel.clone().json()).sort(), ["sponsorRef", "tier"]);
+        assert.equal((await guestLabel.json()).tier, "guest");
+        assert.deepEqual(await (await read(staff, "7", lock)).json(), { tier: null }, "cancelled old-lock key stays unavailable");
+        assert.equal((await read(staff, "7", process.env.MEMBER_WALLET_LOCK_ADDRESS)).status, 404);
+        assert.equal((await read(sponsor, "7", guestLock)).status, 404);
+      });
     } finally {
       for (const [key, value] of Object.entries({
         UNLOCK_SHARED_TICKET_EVENT_ID: priorEvent, UNLOCK_SHARED_TICKET_GUEST_PRODUCT_ID: priorGuestProduct,
@@ -321,6 +378,16 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
   });
 
   const conf = { chainID: 137 as const, lock: "0x" + "b".repeat(40), memberLock: "0x" + "a".repeat(40) };
+  await t.test("CMS cannot replace or remove a legacy Guest lock", async () => {
+    const { eventID, productID } = await seedConfiguredAttempt(payload, undefined, conf);
+    const configuration = { chainID: conf.chainID, memberLock: conf.memberLock, guestLock: conf.lock, guestProductID: productID };
+    const configure = (config: object) => payload.update({ collection: "commerce-events" as never, id: eventID, overrideAccess: true,
+      data: { unlockTicketConfiguration: config } as never });
+    await assert.rejects(configure({ ...configuration, guestLock: "0x" + "d".repeat(40) }), /immutable/);
+    await assert.rejects(configure({ ...configuration, guestLock: undefined }));
+    const event = await payload.findByID({ collection: "commerce-events", id: eventID, depth: 0, overrideAccess: true });
+    assert.equal(Reflect.get(event.unlockTicketConfiguration as object, "guestLock"), conf.lock);
+  });
   async function guestAttempt() {
     const guest = await seedConfiguredAttempt(payload, undefined, conf);
     const { user, customerID, cartID, transactionID, snapshot } = guest;

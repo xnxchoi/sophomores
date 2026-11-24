@@ -121,7 +121,9 @@ export async function loadCommerceOffer(payload: Payload, req?: PayloadRequest, 
     const sale = sharedGuestSalePin();
     if (productID !== product.id || sale?.productID !== product.id || sale.eventID !== event.data.id ||
       !("mode" in tickets.data) || event.data.checkInAuthority !== "unlock-events") return null;
-    const target = resolveEventTicketTarget(event.data, "guest", productID);
+    let target: EventTicketTarget;
+    try { target = resolveEventTicketTarget(event.data, "guest", productID); }
+    catch { return null; }
     if (!sharedEventTicketsEnabled(event.data.id, target)) return null;
     ticketTarget = target;
   } else if (tickets.success && "mode" in tickets.data) return null; // Shared Member seats are native-edition only.

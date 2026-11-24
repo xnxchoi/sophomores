@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
 import type { Payload, PayloadRequest, Where } from "payload";
 import { withCommerceWrite } from "../access";
-import { sameTicketTarget, sharedEventTicketsEnabled, sharedTicketTarget } from "../event-tickets";
+import { matchesFrozenEventTicket, sameTicketTarget, sharedEventTicketsEnabled, sharedTicketTarget } from "../event-tickets";
+import { purchaseSnapshotSchema } from "../purchase-snapshot";
 import { findCommerce, inCommerceTransaction, lockCommerce, readCommerce, relationshipID, updateCommerce, type CommerceDocument } from "../_shared/transaction";
 import {
   cancelReplacementStopCodes, grantBroadcastPending, grantBroadcastStops, grantBroadcastSuppressed, grantRecoveryHeld, parkedCancelCodes, parkedGrantCodes, parseKeyGrantTarget, replacementStopCodes, ticketTokenConflict, ticketTokenIdentity, MEMBER_EVENT_GRANT,
@@ -153,13 +154,24 @@ async function inGrant<T>(payload: Payload, intentID: string,
       || (admission.ticketTier !== "guest" && admission.ticketTier !== "member")
       || (ticketTarget.ticketTier === "guest") !== (admission.ticketTier === "guest")
       || !sameTicketTarget(admission.ticketTarget, { chainID: ticketTarget.chainID, lock: ticketTarget.lock, ...(ticketTarget.ticketMode === "shared" ? { mode: "shared" as const } : {}) }));
-    const held = sharedMismatch || modeMismatch || signetMismatch || ticketMismatch || relationshipID(intent.order) !== orderID || relationshipID(intent.entitlement) !== admissionID
+    const frozenGuestMismatch = shared.success && admission.ticketTier === "guest" && !sharedMismatch && !ticketMismatch &&
+      !(await matchesGuestOrder(req, orderID, admission, shared.data));
+    const held = sharedMismatch || modeMismatch || signetMismatch || ticketMismatch || frozenGuestMismatch || relationshipID(intent.order) !== orderID || relationshipID(intent.entitlement) !== admissionID
       || relationshipID(admission.order) !== orderID || relationshipID(admission.transaction) !== payment.id
       || relationshipID(payment.order) !== orderID || payment.status !== "succeeded"
       || payment.commerceReviewHold === true || payment.commerceResolutionConflict === true || intent.cancelRequested === true
       || admission.benefitReview === true || admission.status === "revoked" || Boolean(admission.returnAcceptedAt);
     return withCommerceWrite(req, () => work(req, intent, held));
   });
+}
+
+async function matchesGuestOrder(req: PayloadRequest, orderID: string, admission: CommerceDocument, target: ReturnType<typeof sharedTicketTarget.parse>) {
+  const order = await readCommerce(req, "orders", orderID);
+  const snapshot = purchaseSnapshotSchema.safeParse(order.commerceSnapshot);
+  const eventID = relationshipID(admission.event);
+  if (!snapshot.success || snapshot.data.version !== 3 || snapshot.data.eventID !== eventID ||
+    snapshot.data.customerID !== relationshipID(admission.buyer) || !sameTicketTarget(snapshot.data.ticketTarget, target)) return false;
+  return matchesFrozenEventTicket(await readCommerce(req, "commerce-events", eventID), "guest", snapshot.data.productID, target);
 }
 
 async function claim(payload: Payload, intentID: string, now: Date): Promise<{ attemptID: string; intent: CommerceDocument } | null> {

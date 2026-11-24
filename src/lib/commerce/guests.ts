@@ -7,7 +7,7 @@ import { commerceSnapshotHash } from "./snapshot-hash";
 import { lockAdmissionBenefits } from "./_shared/benefits";
 import { createCommerce, findCommerce, lockCommerce, readCommerce, relationshipID, updateCommerce, type CommerceDocument } from "./_shared/transaction";
 import { eventAccountKey } from "./event-account";
-import { resolveEventTicketTarget, sameTicketTarget, usesUnlockEvents } from "./event-tickets";
+import { matchesFrozenEventTicket, sameTicketTarget, usesUnlockEvents } from "./event-tickets";
 import { readEventPassLinks } from "./keys/event-pass";
 
 function digest(token: string): string {
@@ -46,14 +46,14 @@ export async function grantOrderAdmissions({ req, orderID, transactionID }: { re
   const memberTicket = snapshot.version === 2 ? snapshot.memberTicketTarget : undefined;
   if (memberTicket) {
     const event = await readCommerce(req, "commerce-events", snapshot.eventID);
-    if (!sameTicketTarget(memberTicket, resolveEventTicketTarget(event, "member", snapshot.productID))) throw new Error("Member Ticket settlement target mismatch");
+    if (!matchesFrozenEventTicket(event, "member", snapshot.productID, memberTicket)) throw new Error("Member Ticket settlement target mismatch");
   }
   if (!guest && reservation.ticketTarget != null) throw new Error("Unexpected Guest ticket reservation target");
   if (guest) {
     const event = await readCommerce(req, "commerce-events", snapshot.eventID);
     if (!event || relationshipID(reservation.event) !== snapshot.eventID || relationshipID(reservation.product) !== snapshot.productID ||
       !sameTicketTarget(reservation.ticketTarget, snapshot.ticketTarget) ||
-      !sameTicketTarget(resolveEventTicketTarget(event, "guest", snapshot.productID), snapshot.ticketTarget)) throw new Error("Guest ticket settlement target mismatch");
+      !matchesFrozenEventTicket(event, "guest", snapshot.productID, snapshot.ticketTarget)) throw new Error("Guest ticket settlement target mismatch");
   }
   if (!Array.isArray(order.transactions) || !order.transactions.some((value) => relationshipID(value) === transactionID)) throw new Error("Order transaction does not match");
   const transaction = await readCommerce(req, "transactions", transactionID);

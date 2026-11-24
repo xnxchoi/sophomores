@@ -6,7 +6,7 @@ import { isReviewCopyRequest, staffAuthOrigin } from "@/lib/auth/review-editor-p
 import { assertCommerceBrowserAuthority } from "../access";
 import { optionalRelationshipID, purchaseSnapshotSchema } from "../purchase-snapshot";
 import { readCommerce, relationshipID } from "../_shared/transaction";
-import { sameTicketTarget, sharedEventTicketsEnabled, sharedTicketConfiguration } from "../event-tickets";
+import { matchesFrozenEventTicket, sameTicketTarget, sharedEventTicketsEnabled, sharedTicketConfiguration } from "../event-tickets";
 import { isTxHash, keyGrantOperationKey, memberEventGrantOperationKey, MEMBER_EVENT_GRANT, parseKeyGrantTarget, ticketTokenIdentity } from "./contracts";
 
 const lookup = z.strictObject({
@@ -18,11 +18,13 @@ const lookup = z.strictObject({
 async function readLabel(req: PayloadRequest, { eventID, lock, tokenID }: z.infer<typeof lookup>) {
   const event = await readCommerce(req, "commerce-events", eventID);
   const config = sharedTicketConfiguration.safeParse(event.unlockTicketConfiguration);
-  if (event.checkInAuthority !== "unlock-events" || !config.success || lock.toLowerCase() !== config.data.eventLock) return null;
+  const requestedLock = lock.toLowerCase();
+  if (event.checkInAuthority !== "unlock-events" || !config.success ||
+    (requestedLock !== config.data.eventLock && requestedLock !== config.data.guestLock)) return null;
   const chainID = config.data.chainID;
-  const expected = { chainID, lock: config.data.eventLock, mode: "shared" } as const;
+  const expected = { chainID, lock: requestedLock, mode: "shared" } as const;
   if (!sharedEventTicketsEnabled(eventID, expected)) return null;
-  const ticketTokenKey = ticketTokenIdentity(chainID, lock, tokenID);
+  const ticketTokenKey = ticketTokenIdentity(chainID, requestedLock, tokenID);
   if (!ticketTokenKey) return null;
   const found = await req.payload.find({
     collection: "commerce-key-grant-intents", where: { ticketTokenKey: { equals: ticketTokenKey } },
@@ -55,6 +57,7 @@ async function readLabel(req: PayloadRequest, { eventID, lock, tokenID }: z.infe
     relationshipID(order.customer) !== sponsor || payment.status !== "succeeded" || optionalRelationshipID(payment.order) !== orderID ||
     relationshipID(payment.customer) !== sponsor || payment.commerceReviewHold || payment.commerceResolutionConflict ||
     !snapshot.success || snapshot.data.customerID !== sponsor || snapshot.data.eventID !== eventID ||
+    !matchesFrozenEventTicket(event, tier, snapshot.data.productID, expected) ||
     admission.unit > snapshot.data.quantity ||
     (tier === "guest" ? snapshot.data.version !== 3 || !sameTicketTarget(snapshot.data.ticketTarget, expected)
       : snapshot.data.version !== 2 || !sameTicketTarget(snapshot.data.memberTicketTarget, expected))) return null;

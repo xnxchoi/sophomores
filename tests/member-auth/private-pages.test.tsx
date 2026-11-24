@@ -12,6 +12,7 @@ import type { MemberClient, MemberStatus } from "@/lib/member-auth/client";
 import { GUEST_CART_STORAGE_KEY } from "@/lib/commerce/browser-cart";
 import { TICKET_SELECTION_DRAFT_KEY } from "@/lib/tickets/selection-draft";
 import { checkoutIntentKey } from "@/components/tickets/_shared/checkout-intent";
+import { EnglishMessages } from "../fixtures/english-messages";
 
 // Owner, 23 Nov: standard web security is the baseline for pages with personal data. These check that OUR code does
 // it: the private list, the no-store header, the restore guard, clearing on sign-out and query keys without
@@ -434,19 +435,23 @@ async function guardedTray(answers: Array<Answer | Promise<Answer>>) {
   VerificationTray ??= (await import("@/components/Authentication/phone-verification/verification-tray")).VerificationTray;
   const state = { reloads: 0 };
   const readPrincipal = async () => answers.shift();
-  ui.render(<PrivatePageGuard principal="member-a" reload={() => { state.reloads += 1; }} readPrincipal={readPrincipal}>
+  ui.render(<EnglishMessages><PrivatePageGuard principal="member-a" reload={() => { state.reloads += 1; }} readPrincipal={readPrincipal}>
     <p>private content</p>
     <VerificationTray open onOpenChange={() => {}} headingId="tray-h" descriptionId="tray-d" description="Sign in" closeLabel="Close"
       locale="en" mode="focused" onCancel={() => {}} cancelLabel="Cancel">
       <form data-tray-form=""><input aria-label="Email" defaultValue="member-a@example.invalid" /></form>
     </VerificationTray>
-  </PrivatePageGuard>);
+  </PrivatePageGuard></EnglishMessages>);
   await ui.waitFor(() => assert.ok(dom.window.document.querySelector("[data-tray-form]")));
   return state;
 }
 const trayForm = () => dom.window.document.querySelector("[data-tray-form]");
-/** Hidden when it, or any element above it, carries the hidden attribute. */
-const trayHidden = () => trayForm()?.closest("[hidden]") !== null;
+/** The tray form is present AND it, or an element above it, carries the hidden attribute. A missing form fails. */
+const trayHidden = () => {
+  const form = trayForm();
+  assert.ok(form, "the tray form is still mounted (hidden, not removed)");
+  return form.closest("[hidden]") !== null;
+};
 
 test("the sign-in tray portals inside the private page's guard, not loose under body", async () => {
   await guardedTray([]);
@@ -485,8 +490,8 @@ test("leaving for a public route takes the tray with it", async () => {
 
 test("outside a private page, overlays keep their usual place", async () => {
   VerificationTray ??= (await import("@/components/Authentication/phone-verification/verification-tray")).VerificationTray;
-  ui.render(<VerificationTray open onOpenChange={() => {}} headingId="tray-h" descriptionId="tray-d" description="Sign in" closeLabel="Close"
-    locale="en" mode="focused" onCancel={() => {}} cancelLabel="Cancel"><form data-tray-form="" /></VerificationTray>);
+  ui.render(<EnglishMessages><VerificationTray open onOpenChange={() => {}} headingId="tray-h" descriptionId="tray-d" description="Sign in" closeLabel="Close"
+    locale="en" mode="focused" onCancel={() => {}} cancelLabel="Cancel"><form data-tray-form="" /></VerificationTray></EnglishMessages>);
   await ui.waitFor(() => assert.ok(trayForm()));
   assert.equal(trayForm()?.closest("[data-private-portal-host]"), null);
   // The shared sheet takes the same host on a private page.

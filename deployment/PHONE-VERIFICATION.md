@@ -376,7 +376,7 @@ docker build -f deployment/Dockerfile --target builder -t sphmrs-phone-receiver:
 docker volume create sphmrs-phone-receiver-health
 docker run --rm -v sphmrs-phone-receiver-health:/health node:24-bookworm-slim \
   sh -c 'chown 1000:1000 /health && chmod 0700 /health'
-docker run -d --name sphmrs-preview-phone-receiver --restart on-failure:5 \
+docker run -d --name sphmrs-preview-phone-receiver --restart on-failure:5 --init \
   --user node --read-only --tmpfs /tmp:rw,size=64m,mode=1777 \
   --memory 512m --cpus 0.5 \
   --network <preview-network> \

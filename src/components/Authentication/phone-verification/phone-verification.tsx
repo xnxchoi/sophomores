@@ -15,10 +15,8 @@ import {
   useState
 } from "react";
 import { NextIntlClientProvider, useLocale, useTranslations } from "next-intl";
-import {
-  messagesByLocale,
-  type VerificationLocale
-} from "../../../lib/phone-verification/i18n";
+import type { VerificationLocale } from "../../../lib/phone-verification/i18n";
+import { VerificationCataloguesContext } from "./verification-messages";
 import { VerificationCountdown } from "./verification-countdown";
 import Link from "next/link";
 import { PhoneNumberField } from "./phone-number-field";
@@ -60,6 +58,9 @@ const headingKeys = {
   expired: "headingExpired"
 } as const;
 
+const missingVerificationMessages =
+  "VerificationProvider needs VerificationMessages above it (src/app/(site)/_intl/segment-messages.tsx delivers it where a segment lists Verification).";
+
 const LocaleControl = createContext<(locale: VerificationLocale) => void>(
   () => {}
 );
@@ -79,6 +80,12 @@ export function VerificationProvider({
 }: VerificationProviderProps) {
   const [localLocale, setLocalLocale] = useState(initialLocale);
   const currentLocale = locale ?? localLocale;
+  // Both locales, handed over by the segment layout (SegmentMessages); no client bundle imports a catalogue.
+  const catalogues = useContext(VerificationCataloguesContext);
+  // The flow chooses its own language (the phone step is always English), so the parent page's copy is never a
+  // valid substitute. The delivery is mandatory in every environment: without it the flow does not render at all
+  // (the route's error boundary shows instead), never in the wrong language.
+  if (!catalogues) throw new Error(missingVerificationMessages);
   const changeLocale = useCallback(
     (next: VerificationLocale) => {
       if (locale === undefined) setLocalLocale(next);
@@ -91,7 +98,7 @@ export function VerificationProvider({
     <LocaleControl.Provider value={changeLocale}>
       <NextIntlClientProvider
         locale={currentLocale}
-        messages={messagesByLocale[currentLocale]}
+        messages={catalogues[currentLocale]}
         timeZone="Asia/Seoul"
       >
         {children}

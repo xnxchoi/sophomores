@@ -172,8 +172,9 @@ test("failure diagnostics never carry the configured address", async () => {
   assert.equal(await ensureFirstSuperAdmin(f.payload, env), "failed");
   const text = JSON.stringify(f.logged);
   assert.equal(text.toLowerCase().includes("owner@example.com"), false);
-  assert.match(text, /DrizzleQueryError/);
-  assert.match(text, /23505/);
+  // A fixed label and correlation ID only: no property value of the thrown error is logged.
+  assert.doesNotMatch(text, /DrizzleQueryError|23505|Failed query/);
+  assert.match(text, /"errorClass":"Error","correlationId":"[0-9a-f-]{36}"/);
 });
 
 test("the CMS magic link uses the same staff-address rule as sign-in", () => {

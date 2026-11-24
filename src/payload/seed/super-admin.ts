@@ -3,6 +3,7 @@ import { z } from "zod";
 import { lockCommerce } from "@/lib/commerce/_shared/transaction";
 import { isReadOnly } from "./home-page";
 import { isReviewEditorProfile, staffAuthOrigin } from "@/lib/auth/review-editor-policy";
+import { failureClass } from "@/lib/auth/failure-log";
 
 /**
  * Makes sure the CMS has its first super admin, so super-admin-only grants (such as the setlist
@@ -20,17 +21,14 @@ import { isReviewEditorProfile, staffAuthOrigin } from "@/lib/auth/review-editor
  *   address configured; the check is here, in the promotion itself, not only at sign-in.
  * - **Success only when durable:** the adapter can swallow a failed commit, so "promoted" is reported
  *   only after a fresh read outside the transaction sees the new role.
- * - **Diagnostics never carry the address:** errors are logged by class and code only.
+ * - **Diagnostics never carry the address:** errors are logged by a fixed label and a correlation ID only.
  * - **At startup** (`superAdminEnsurePlugin`), scheduled outside `onInit` like the home-page ensure.
  */
 export type SuperAdminBootstrapResult = "unconfigured" | "present" | "promoted" | "missing-staff" | "review-copy" | "read-only" | "failed";
 
-/** Class and code only: database errors can quote query parameters, including the configured address. */
+/** A fixed label and correlation ID only: no property value of the thrown error is logged, since database errors can quote query parameters, the configured address included. */
 function errorSummary(error: unknown): Record<string, string> {
-  const e = error as { name?: unknown; code?: unknown; cause?: { code?: unknown } } | null;
-  const code = e?.code ?? e?.cause?.code;
-  return { errorClass: typeof e?.name === "string" ? e.name.slice(0, 80) : "Error",
-    ...(typeof code === "string" ? { errorCode: code.slice(0, 40) } : {}) };
+  return { errorClass: failureClass(error), correlationId: crypto.randomUUID() };
 }
 
 type Environment = Record<string, string | undefined>;

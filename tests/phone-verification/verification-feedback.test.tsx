@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { renderToStaticMarkup } from "react-dom/server";
+import { renderVerificationMarkup } from "../fixtures/verification-messages";
 import { VerificationProvider } from "@/components/Authentication/phone-verification/phone-verification";
 import { ChallengeCard } from "@/components/Authentication/phone-verification/verification-ui";
 import { copyVerificationValue } from "@/lib/phone-verification/clipboard";
@@ -19,7 +19,7 @@ test("unavailable or rejected clipboard never reports success", async () => {
 
 test("challenge offers separate localized copy actions and selectable exact values", () => {
   for (const locale of ["en", "ko"] as const) {
-    const html = renderToStaticMarkup(<VerificationProvider initialLocale={locale}><ChallengeCard recipient="verify@example.invalid" body="SPHMRS EXACT 123456" /></VerificationProvider>);
+    const html = renderVerificationMarkup(<VerificationProvider initialLocale={locale}><ChallengeCard recipient="verify@example.invalid" body="SPHMRS EXACT 123456" /></VerificationProvider>);
     assert.match(html, /SPHMRS EXACT 123456/);
     assert.match(html, /verify@example.invalid/);
     assert.match(html, /select-all/);

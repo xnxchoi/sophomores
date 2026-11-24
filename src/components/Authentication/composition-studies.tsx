@@ -343,7 +343,7 @@ export function CompositionPreview({
             <code className="font-sans tabular-nums text-neutral-300">{demoEmailCode}</code>
           </p>
           <details className="mt-2">
-            <summary className="w-fit cursor-pointer rounded-md py-2 text-neutral-400 outline-none focus-visible:outline-2 focus-visible:outline-white">
+            <summary className="w-fit rounded-md py-2 text-neutral-400 outline-none focus-visible:outline-2 focus-visible:outline-white">
               {locale === "ko" ? "다른 상태 미리보기" : "Preview another state"}
             </summary>
             <label className="mt-2 flex flex-wrap items-center gap-3">

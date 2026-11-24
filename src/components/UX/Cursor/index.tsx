@@ -314,7 +314,7 @@ export default function RP_Cursor() {
     <m.span
       className={cn("cursor rp__cursor will-change-transform", {
         text__cursor: isTextCursor,
-        "show_cursor cursor-none": isEnabled
+        "show_cursor": isEnabled
       })}
       data-theme={cursorTheme}
       data-state={cursorState || "null"}
@@ -330,7 +330,7 @@ export default function RP_Cursor() {
               <m.span
                 key={"wrap"}
                 className={cn(
-                  "pointer-events-none flex shrink-0 cursor-none flex-col items-center justify-center overflow-hidden outline-none",
+                  "pointer-events-none flex shrink-0 flex-col items-center justify-center overflow-hidden outline-none",
                   "rounded-[8px] bg-nav-button/10 font-dots backdrop-blur-xs perspective-distant"
                 )}
                 style={{ width: containerWidth, height: containerHeight }}
@@ -390,7 +390,7 @@ export default function RP_Cursor() {
                 // over the home glow (60 positions): worst 3.57:1, against 1.18:1 without. FOCUS there stays
                 // 2.40-2.75:1 at 4 nav links; owner accepted for now, 20 Nov (.tmp/cursor-visibility-20261120).
                 className={cn(
-                  "absolute top-0 left-0 z-[999] h-full w-full cursor-none",
+                  "absolute top-0 left-0 z-[999] h-full w-full",
                   cursorTheme === "dark"
                     ? "[filter:drop-shadow(0_0_1.5px_oklch(10.17%_0.0013_218.99))_drop-shadow(0_0_1.5px_oklch(10.17%_0.0013_218.99))]"
                     : "[filter:drop-shadow(0_0_1.5px_oklch(97.5%_0.0013_218.99))_drop-shadow(0_0_1.5px_oklch(97.5%_0.0013_218.99))]"

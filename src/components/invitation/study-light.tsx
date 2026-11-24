@@ -1,5 +1,6 @@
 "use client";
 
+// Kept unused on purpose (owner, 24 Nov): not mounted anywhere.
 import {
   Component,
   type ReactNode,

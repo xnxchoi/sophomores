@@ -2,8 +2,12 @@ import messages from "../../messages/en.json";
 import { EnglishMessages } from "../fixtures/english-messages";
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { renderToStaticMarkup } from "react-dom/server";
+import { renderVerificationMarkup } from "../fixtures/verification-messages";
 import { JSDOM } from "jsdom";
+import type { ReactNode } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { NextIntlClientProvider } from "next-intl";
+import { messagesByLocale } from "@/i18n/messages";
 import { VerificationProvider } from "@/components/Authentication/phone-verification/phone-verification";
 import { TrialVerificationView } from "@/components/Authentication/phone-verification/phone-verification-trial";
 import { MemberAccountView } from "@/components/Authentication/member-auth/account-view";
@@ -42,7 +46,7 @@ function render(
     busy,
     error
   };
-  const html = renderToStaticMarkup(
+  const html = renderVerificationMarkup(
     <EnglishMessages><VerificationProvider initialLocale={locale}>
       <TrialVerificationView
         presentation="registration"
@@ -205,7 +209,7 @@ test("completed manual checks distinguish pending, review and verified outcomes 
     ["review", "Needs review"],
     ["verified", "Message verified"]
   ] as const) {
-    const html = renderToStaticMarkup(
+    const html = renderVerificationMarkup(
       <EnglishMessages><VerificationProvider initialLocale="en">
         <VerificationStatus
           state={state}
@@ -233,7 +237,7 @@ test("completed manual checks distinguish pending, review and verified outcomes 
 });
 
 test("member phone integration opts into the uncluttered registration presentation", () => {
-  const html = renderToStaticMarkup(
+  const html = renderVerificationMarkup(
     <EnglishMessages><MemberPhoneStep busy={false} onPrepare={async () => true} onBind={() => {}} /></EnglishMessages>
   );
   const document = new JSDOM(html).window.document;
@@ -300,7 +304,7 @@ test("registration phone entry and Korean pending remain free of trial and langu
 });
 
 test("member phone wrapper does not prepend duplicate email-confirmed instructions", () => {
-  const html = renderToStaticMarkup(
+  const html = renderVerificationMarkup(
     <EnglishMessages><MemberAccountView
       snapshot={{
         ...emptyMemberSnapshot,
@@ -423,4 +427,32 @@ test("expired and unusable registration proof has an obvious full-width restart 
   const restart = [...verified.querySelectorAll("button")].find(button => button.textContent?.trim() === "Start again");
   assert.ok(restart);
   assert.ok(!restart.classList.contains("bg-neutral-100"), "valid proof keeps Finish registration as its primary next action");
+});
+
+// The phone step is always English (owner), even inside a Korean page; its own bilingual delivery makes that so.
+function KoreanPage({ children }: { children: ReactNode }) {
+  return <NextIntlClientProvider locale="ko" messages={messagesByLocale.ko} timeZone="Asia/Seoul">{children}</NextIntlClientProvider>;
+}
+const phoneStep = () => <MemberPhoneStep busy={false} onPrepare={async () => true} onBind={() => {}} />;
+
+test("the member phone step stays English under a Korean page", () => {
+  const document = new JSDOM(renderVerificationMarkup(<KoreanPage>{phoneStep()}</KoreanPage>)).window.document;
+  const text = visibleText(document);
+  assert.match(text, /Verify your phone/);
+  assert.match(text, /Phone number/);
+  assert.doesNotMatch(text, /휴대폰 인증|휴대폰 번호/);
+});
+
+test("without the bilingual delivery the phone step never renders in the Korean page's copy, in any environment", () => {
+  const previous = process.env.NODE_ENV;
+  try {
+    for (const environment of ["development", "test", "production"]) {
+      (process.env as Record<string, string | undefined>).NODE_ENV = environment;
+      let html = "";
+      assert.throws(() => { html = renderToStaticMarkup(<KoreanPage>{phoneStep()}</KoreanPage>); }, /VerificationProvider needs VerificationMessages/, environment);
+      assert.equal(html, "", `${environment}: nothing rendered, in neither language`);
+    }
+  } finally {
+    (process.env as Record<string, string | undefined>).NODE_ENV = previous;
+  }
 });

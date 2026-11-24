@@ -65,7 +65,7 @@ export default function GeneralSectionClient({ user }: GeneralSectionClientProps
 
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
             <label className={cn(
-              "flex min-h-16 cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-4 has-[:focus-visible]:outline-foreground has-[:disabled]:cursor-wait has-[:disabled]:opacity-60",
+              "flex min-h-16 items-center gap-3 rounded-xl border px-4 py-3 transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-4 has-[:focus-visible]:outline-foreground has-[:disabled]:opacity-60",
               locale === "en"
                 ? "border-foreground bg-muted text-foreground"
                 : "border-border bg-background text-muted-foreground hover:border-foreground/40 hover:text-foreground"
@@ -82,7 +82,7 @@ export default function GeneralSectionClient({ user }: GeneralSectionClientProps
             </label>
 
             <label className={cn(
-              "flex min-h-16 cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-4 has-[:focus-visible]:outline-foreground has-[:disabled]:cursor-wait has-[:disabled]:opacity-60",
+              "flex min-h-16 items-center gap-3 rounded-xl border px-4 py-3 transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-4 has-[:focus-visible]:outline-foreground has-[:disabled]:opacity-60",
               locale === "ko"
                 ? "border-foreground bg-muted text-foreground"
                 : "border-border bg-background text-muted-foreground hover:border-foreground/40 hover:text-foreground"

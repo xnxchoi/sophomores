@@ -1,6 +1,6 @@
 import { betterAuthOptions } from "@/lib/auth/options";
 import { normalizeMemberEmailEntryRequest } from "@/lib/member-auth/email-entry";
-import { memberJson } from "@/lib/member-auth/http";
+import { authHandlerFailed, authUnavailable, memberJson } from "@/lib/member-auth/http";
 import { getPayload } from "@/payload";
 
 export const runtime = "nodejs";
@@ -20,13 +20,10 @@ async function handle(request: Request): Promise<Response> {
       return new Response(response.body, { status: response.status, headers });
     }
   } catch (error) {
-    console.error("Auth handler error:", error);
+    // A fixed label and a correlation ID only: no property value of the thrown error is logged (src/lib/auth/failure-log.ts).
+    return authHandlerFailed(discovery, error);
   }
-  if (discovery) return memberJson(503, { success: false, error: { code: "UNAVAILABLE", message: "Authentication service is unavailable." } });
-  return Response.json(
-    { success: false, error: { code: "UNAVAILABLE", message: "Authentication service is unavailable." } },
-    { status: 503, headers: { "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" } }
-  );
+  return authUnavailable(discovery);
 }
 
 export const GET = handle;

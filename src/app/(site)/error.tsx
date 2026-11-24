@@ -43,7 +43,7 @@ export default function SiteError({ retry }: { error: unknown; retry: () => void
             onClick={() => {
               if (!retrying) startRetry(() => retry());
             }}
-            className="min-h-12 rounded-full px-6 text-sm aria-disabled:cursor-default aria-disabled:opacity-50"
+            className="min-h-12 rounded-full px-6 text-sm aria-disabled:opacity-50"
           >
             {/* Both labels share one cell, so the button keeps its width while the label swaps. */}
             <span className="grid">

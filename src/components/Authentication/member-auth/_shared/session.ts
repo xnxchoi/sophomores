@@ -8,6 +8,7 @@ import {
 import { normalizeLoginEmail } from "../../../../lib/passwordless-login";
 import type { TrialSnapshot } from "../../../../lib/phone-verification/client-contracts";
 import type { MemberSocialProvider } from "../../../../lib/member-auth/contracts";
+import { clearMemberBrowserCopies } from "../../../../lib/member-auth/browser-copies";
 
 export type MemberSnapshot = {
   status: MemberStatus | null;
@@ -354,6 +355,8 @@ export function createMemberSession(
         await client.signOut();
         const status = await client.status();
         if (status.authenticated) throw new Error("Sign-out was not confirmed");
+        // Signed out: this browser keeps no copy of the account or its purchases.
+        clearMemberBrowserCopies();
         await client.clearPhoneIdentifier();
         pendingPasskey = undefined;
         update({

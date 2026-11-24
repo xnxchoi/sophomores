@@ -15,6 +15,7 @@ import { shippingAddressSchema, type ShippingAddress } from "@/lib/commerce/cont
 import { providerPaymentId } from "@/lib/tickets/portone/payment-id";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { ActionButton, CopyButton } from "@/components/core/ArcFocus/ArcFocus";
+import { commercePaymentIntentPrefix } from "@/lib/member-auth/browser-copies";
 
 const identifier = z.string().min(1).max(128);
 /** Thrown after every Pay press so the action button returns to idle rather than showing success. */
@@ -62,7 +63,7 @@ function PaymentPanel({ shippingAddress, disabled = false, onBusyChange, onAttem
   // The actual canonical document returned by useCart is the available authority.
   const cartID = cart?.id;
   const { initiatePayment, confirmOrder } = usePayments();
-  const storageKey = user ? "sphmrs:commerce-payment:" + user.id : null;
+  const storageKey = user ? commercePaymentIntentPrefix + user.id : null;
   const subscribe = useCallback((notify: () => void) => {
     window.addEventListener("storage", notify); window.addEventListener("commerce-payment-update", notify);
     return () => { window.removeEventListener("storage", notify); window.removeEventListener("commerce-payment-update", notify); };

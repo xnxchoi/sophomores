@@ -26,7 +26,7 @@ function InputOTP({
         containerClassName
       )}
       spellCheck={false}
-      className={cn("disabled:cursor-not-allowed", className)}
+      className={cn(className)}
       {...props}
     />
   );
@@ -137,7 +137,7 @@ function HA_InputOTP({
         "flex items-center gap-2 has-disabled:opacity-50",
         containerClassName
       )}
-      className={HA_cn("disabled:cursor-not-allowed", className)}
+      className={HA_cn(className)}
       {...props}
     />
   );

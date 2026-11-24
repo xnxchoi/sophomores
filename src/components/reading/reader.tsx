@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
-import { sliceBody } from "@/lib/content/highlight";
+import { sliceBody, type TextPart } from "@/lib/content/highlight";
 import type { HighlightRange } from "@/lib/content/slots";
 import { Button } from "@/components/core/ArcFocus/ArcFocus";
 
@@ -21,7 +21,7 @@ export function Reader({
     null
   );
   const [lastHighlightId, setLastHighlightId] = useState<string | null>(null);
-  const parts = sliceBody(body, highlights);
+  const parts = hideOuterBlankLines(sliceBody(body, highlights), body);
   const alreadyHighlighted = draft !== null && highlights.some(
     (range) => range.start === draft.start && range.end === draft.end
   );
@@ -51,14 +51,14 @@ export function Reader({
 
   return (
     <div className="relative">
-      <article ref={articleRef} tabIndex={0} className="font-serif text-xl leading-relaxed font-light">
+      <article ref={articleRef} tabIndex={0} className="font-serif text-xl leading-relaxed font-light whitespace-pre-line">
         {parts.map((part, index) =>
           part.id ? (
             <mark key={part.id} className="port-mark bg-[oklch(from_var(--port-shade)_l_c_h_/_0.15)] text-inherit">
               {part.text}
             </mark>
           ) : (
-            <span key={`plain-${index}`}>{part.text}</span>
+            <span key={`plain-${index}`} hidden={part.hidden}>{part.text}</span>
           )
         )}
       </article>
@@ -94,4 +94,26 @@ export function Reader({
       </div>
     </div>
   );
+}
+
+/**
+ * The body is shown with its own line breaks, so blank lines before or after the text would show as empty space.
+ * They stay in the DOM as hidden text instead of being trimmed: stored citation offsets and the selection offsets
+ * above are counted over the untrimmed body, and Range.toString() still counts hidden text.
+ */
+function hideOuterBlankLines(parts: TextPart[], body: string): (TextPart & { hidden?: boolean })[] {
+  const visibleStart = body.length - body.trimStart().length;
+  const visibleEnd = body.trimEnd().length;
+  let offset = 0;
+  return parts.flatMap((part) => {
+    const start = offset;
+    offset += part.text.length;
+    const from = Math.min(Math.max(visibleStart - start, 0), part.text.length);
+    const to = Math.max(Math.min(visibleEnd - start, part.text.length), from);
+    return [
+      { text: part.text.slice(0, from), hidden: true },
+      { text: part.text.slice(from, to), id: part.id },
+      { text: part.text.slice(to), hidden: true }
+    ].filter((piece) => piece.text.length > 0);
+  });
 }

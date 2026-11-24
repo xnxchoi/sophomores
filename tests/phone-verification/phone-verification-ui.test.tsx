@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { renderToStaticMarkup } from "react-dom/server";
+import { renderVerificationMarkup } from "../fixtures/verification-messages";
 
 import { PhoneVerification } from "@/components/Authentication/phone-verification/phone-verification";
 
 test("keeps verification a single compact form rather than a landing page", () => {
-  const html = renderToStaticMarkup(<PhoneVerification />);
+  const html = renderVerificationMarkup(<PhoneVerification />);
   assert.match(html, /휴대폰 인증/);
   assert.doesNotMatch(
     html,
@@ -14,7 +14,7 @@ test("keeps verification a single compact form rather than a landing page", () =
 });
 
 test("renders an accessible Korean mobile-number entry screen", () => {
-  const html = renderToStaticMarkup(<PhoneVerification />);
+  const html = renderVerificationMarkup(<PhoneVerification />);
   assert.match(html, /data-slot="input-group"/);
   assert.match(html, /data-slot="field-label"/);
   assert.match(html, /<label[^>]*for="([^"]+)"[^>]*>[^<]*휴대폰 번호/);
@@ -33,7 +33,7 @@ test("renders an accessible Korean mobile-number entry screen", () => {
 });
 
 test("makes the preview boundary visible and never opens Messages or Mail initially", () => {
-  const html = renderToStaticMarkup(<PhoneVerification />);
+  const html = renderVerificationMarkup(<PhoneVerification />);
   assert.match(html, /프리뷰|PREVIEW/i);
   assert.match(html, /연결/);
   assert.doesNotMatch(html, /href="(?:sms|mailto):/i);

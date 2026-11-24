@@ -247,7 +247,7 @@ export function TrackSearchDrawer({
                         className={cn(
                           "inline-flex h-9 items-center justify-center rounded-lg px-3 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white",
                           isSelected
-                            ? "bg-neutral-800 text-neutral-300 cursor-default"
+                            ? "bg-neutral-800 text-neutral-300"
                             : "bg-white text-black hover:bg-neutral-200"
                         )}
                       >

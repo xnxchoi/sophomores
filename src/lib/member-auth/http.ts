@@ -4,6 +4,7 @@ import { MemberError, type MemberCapabilities, type MemberPrincipal } from "./co
 import type { MemberBindingService } from "./service";
 import { productionOrigin } from "../phone-verification/server/config";
 import { hasConfiguredRequestAuthority } from "../phone-verification/server/local-request";
+import { logAuthFailure } from "../auth/failure-log";
 
 type Dependencies = {
   origin: string;
@@ -20,6 +21,21 @@ export function memberJson(status: number, body: unknown): Response {
 }
 export function memberUnavailable(): Response {
   return memberJson(503, { success: false, error: { code: "UNAVAILABLE", message: "Member authentication is unavailable." } });
+}
+/**
+ * The auth route's answer when its handler throws: the failure is logged by a fixed label and a correlation ID
+ * (no property value of the thrown error), and the 503 carries that ID so a report can be matched to its log line.
+ */
+export function authHandlerFailed(discovery: boolean, error: unknown, log?: (...values: unknown[]) => void): Response {
+  return authUnavailable(discovery, logAuthFailure("Auth handler error.", error, log));
+}
+export function authUnavailable(discovery: boolean, correlationId?: string): Response {
+  const body = { success: false, error: { code: "UNAVAILABLE", message: "Authentication service is unavailable." } };
+  const response = discovery
+    ? memberJson(503, body)
+    : Response.json(body, { status: 503, headers: { "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" } });
+  if (correlationId) response.headers.set("X-Correlation-Id", correlationId);
+  return response;
 }
 export function memberRequestFailure(error: unknown): Response {
   if (error instanceof HttpError) return memberJson(error.status, { success: false, error: { code: error.code, message: "The member request could not be accepted." } });

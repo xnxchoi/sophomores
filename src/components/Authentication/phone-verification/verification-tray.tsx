@@ -18,7 +18,8 @@ import { Drawer } from "vaul";
 import { authenticationViewportGeometry } from "@/lib/authentication-entry";
 import { Bar, Close, Modal } from "./verification-ui";
 import { cn } from "@/lib/utils";
-import messages from "../../../../messages/en.json";
+import { useTranslations } from "next-intl";
+import { usePrivatePortalContainer } from "@/components/auth/private-page-guard";
 
 type VerificationTrayProps = {
   open: boolean;
@@ -90,9 +91,12 @@ export function VerificationTray({
   chrome = "standard",
   mode = "focused",
   onCancel,
-  cancelLabel = messages.Common.cancel
+  cancelLabel: givenCancelLabel
 }: VerificationTrayProps) {
+  const common = useTranslations("Common");
+  const cancelLabel = givenCancelLabel ?? common("cancel");
   const viewport = useTrayViewport();
+  const privatePortal = usePrivatePortalContainer();
   const locked = mode === "focused";
   const compact = chrome === "compact";
   const compactFocused = compact && locked;
@@ -123,7 +127,8 @@ export function VerificationTray({
         autoFocus
         repositionInputs={false}
       >
-        <Drawer.Portal>
+        {/* On a private page the tray mounts inside the page's guard, so it hides with the page. */}
+        <Drawer.Portal container={privatePortal ?? undefined}>
           <Drawer.Overlay data-authentication-presentation={modal ? "modal" : "tray"} className="fixed inset-0 z-50 bg-transparent backdrop-blur-sm data-[authentication-presentation=tray]:bg-transparent data-[authentication-presentation=tray]:backdrop-blur-[0.5px]" />
           <Drawer.Content
             asChild

@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { NextIntlClientProvider, useLocale } from "next-intl";
 import { messagesByLocale } from "../../src/i18n/messages";
+import { WithVerificationMessages } from "./verification-messages";
 
 function LocaleBoundary({ children }: { children: ReactNode }) {
   const locale = useLocale();
@@ -22,7 +23,7 @@ export function AuthenticationMessages({ children, locale = "en" }: {
         setSelection({ initial: locale, current: target.value });
       }
     }}>
-      <LocaleBoundary>{children}</LocaleBoundary>
+      <LocaleBoundary><WithVerificationMessages>{children}</WithVerificationMessages></LocaleBoundary>
     </div>
   </NextIntlClientProvider>;
 }

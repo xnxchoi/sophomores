@@ -15,7 +15,7 @@ import {
   TextButton,
   Note
 } from "@/components/Authentication/phone-verification/verification-ui";
-import { messagesByLocale } from "@/lib/phone-verification/i18n";
+import { messagesByLocale } from "@/i18n/messages";
 import { readFileSync } from "node:fs";
 
 test("verification sheet follows the page theme while retaining short-screen internal scrolling", () => {

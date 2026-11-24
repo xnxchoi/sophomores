@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { flushSync } from "react-dom";
 import { useTranslations } from "next-intl";
 import { receiptDeliverySchema } from "@/lib/commerce/receipt/delivery";
-import { subscribeVisibility } from "@/utils/browser/visibility";
+import { watchPrivateView } from "@/lib/member-auth/private-view";
 
 type Delivery = ReturnType<typeof receiptDeliverySchema.parse>;
 
@@ -12,11 +12,10 @@ export function ReceiptDelivery({ orderID, principal }: { orderID: string; princ
   const t = useTranslations("Customer.components_commerce_orders");
   const [delivery, setDelivery] = useState<Delivery | null>(null);
   useEffect(() => {
-    let blurred = false;
     let pending: AbortController | undefined;
     const discard = () => { pending?.abort(); pending = undefined; };
     const load = async () => {
-      if (blurred || document.visibilityState !== "visible" || pending) return;
+      if (document.visibilityState !== "visible" || pending) return;
       const request = new AbortController();
       pending = request;
       try {
@@ -38,30 +37,13 @@ export function ReceiptDelivery({ orderID, principal }: { orderID: string; princ
       // Clear before the browser can freeze a document in its back/forward cache.
       flushSync(() => setDelivery(null));
     };
-    const reveal = () => { void load(); };
-    const onBlur = () => { blurred = true; conceal(); };
-    const onFocus = () => { blurred = false; reveal(); };
-    const unsubscribe = subscribeVisibility(() => {
-      if (document.visibilityState === "visible") reveal();
-      else conceal();
-    });
-    const onRestore = (event: PageTransitionEvent) => {
-      if (!event.persisted) return;
-      conceal();
-      reveal();
-    };
-    window.addEventListener("pagehide", conceal);
-    window.addEventListener("pageshow", onRestore);
-    window.addEventListener("blur", onBlur);
-    window.addEventListener("focus", onFocus);
-    reveal();
+    // The shared private-view mechanism (src/lib/member-auth/private-view.ts): concealed on pagehide, while the tab
+    // is hidden and while the window has no focus; read afresh on return and after a back-forward restore.
+    const stop = watchPrivateView({ conceal, reveal: () => { void load(); }, concealOnBlur: true });
+    void load();
     return () => {
       discard();
-      unsubscribe();
-      window.removeEventListener("pagehide", conceal);
-      window.removeEventListener("pageshow", onRestore);
-      window.removeEventListener("blur", onBlur);
-      window.removeEventListener("focus", onFocus);
+      stop();
     };
   }, [orderID, principal]);
 

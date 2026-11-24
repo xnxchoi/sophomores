@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { readFileSync } from 'node:fs'
+import { commercePaymentIntentPrefix } from '@/lib/member-auth/browser-copies'
 
 const checkout = readFileSync('src/components/commerce/checkout.tsx', 'utf8')
 const payment = readFileSync('src/components/commerce/payment.tsx', 'utf8')
@@ -17,6 +18,9 @@ test('T009 own-account refresh fails closed and preserves identity-specific stat
 })
 
 test('T009 retained purchase attempts are member-keyed and require matching provider identity', () => {
-  assert.equal(payment.includes('const storageKey = user ? "sphmrs:commerce-payment:" + user.id : null'), true)
+  // The key is one fixed prefix plus the member's ID (the prefix lives where sign-out clears by it).
+  assert.equal(commercePaymentIntentPrefix, 'sphmrs:commerce-payment:')
+  assert.equal(payment.includes('const storageKey = user ? commercePaymentIntentPrefix + user.id : null'), true)
+  assert.equal(payment.includes('from "@/lib/member-auth/browser-copies"'), true)
   assert.equal(payment.includes('request.customer.customerId !== String(user.id)'), true)
 })

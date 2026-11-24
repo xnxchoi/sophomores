@@ -144,7 +144,7 @@ export function LookInside({ source, look, root, signals, sound, width, height, 
 
   const group = useRef<Group>(null), hit = useRef<Mesh>(null), leafGroups = useRef<(Group | null)[]>([]), rightBlock = useRef<Mesh>(null), leftBlock = useRef<Mesh>(null);
   const gesture = useRef<Gesture | null>(null);
-  const hover = useRef({ side: "" as "" | "left" | "right", x: 0, y: 0, v: 0, lift: 0, curl: 0, edge: 0, edgeSince: -1, brakeUntil: 0, swipe: 0, swipeAt: 0, lastTurnAt: 0, clock: 0 });
+  const hover = useRef({ side: "" as "" | "left" | "right", x: 0, y: 0, v: 0, curl: 0, edge: 0, brakeUntil: 0, swipe: 0, swipeAt: 0, lastTurnAt: 0, clock: 0 });
 
   // Highlighter (#28): each page side gets an ink canvas on first use; strokes are kept as page coordinates, so they replay
   // onto fresh canvases and save small. Marks are kept in localStorage (debounced 400 ms).
@@ -391,13 +391,18 @@ export function LookInside({ source, look, root, signals, sound, width, height, 
     const spread = l.angle.filter((a) => a > PI / 2).length;
     if (l.active && spread !== l.spread) { l.spread = spread; onSpread(spread); }
 
-    // Hover: the top page on the cursor's side lifts (9/s) and its corner curls (0.06/frame); near the screen's edge
-    // (after 200 ms) the block on that side is pushed and its edge lifts (ease 7/s).
-    const edgeSide = Math.abs(state.pointer.x) > 0.75 ? (state.pointer.x > 0 ? "right" : "left") : "";
-    if (edgeSide) { if (h.edgeSince < 0) h.edgeSince = h.clock; } else h.edgeSince = -1;
-    const edgeTarget = edgeSide && h.clock - h.edgeSince > 0.2 ? (Math.abs(state.pointer.x) - 0.75) / 0.25 : 0;
-    h.edge += (edgeTarget - h.edge) * (1 - Math.exp(-7 * dt));
-    h.lift += ((h.side && l.active ? 0.03 : 0) - h.lift) * (1 - Math.exp(-9 * dt));
+    // Hover (TEARDOWN §4.2, §6.4): leaves stay hinged on the spine. The hovered top page only curls from its free corner
+    // (0.06/frame). The open spread leans rigidly about the spine toward or away from the pointer's side, as stripe.press
+    // pushes its reading progress n through the cover angles (front 28°·(2 − 2n), back 2n·28°, so 2·28° per unit):
+    // with x the viewport pointer, n = |x|, i = 1 − (1 − n)^4,
+    // push = −side·(1 − n)·(1 − i)·0.2 + side·i·max(0, 0.3 − pages on that side), eased at rate 7, held during a gesture.
+    // (Owner, 24 Nov: nothing lifts off or slides away from the spine.)
+    const px = signals.current.pointer.x, n = Math.min(Math.abs(px), 1), side = px >= 0 ? 1 : -1, ii = 1 - (1 - n) ** 4;
+    const pagesThatSide = (side > 0 ? LEAVES - spread : spread) / LEAVES;
+    const pushTarget = l.active ? -side * (1 - n) * (1 - ii) * 0.2 + side * ii * Math.max(0, 0.3 - pagesThatSide) : 0;
+    if (!gesture.current) h.edge += (pushTarget - h.edge) * (1 - Math.exp(-7 * dt));
+    // Only a push toward the pointer's side (near an edge) lifts that side's corner; the centre's lean away curls nothing.
+    const edgeSide = h.edge * side > 0.01 ? (side > 0 ? "right" : "left") : "";
     h.curl += ((h.side && l.active && !gesture.current ? 7.02 * 0.14 * 2 : 0) - h.curl) * (1 - (1 - 0.06) ** f);
     const topRight = spread < LEAVES ? spread : -1, topLeft = spread - 1;
 
@@ -422,7 +427,7 @@ export function LookInside({ source, look, root, signals, sound, width, height, 
       const right = a < PI / 2, isTop = i === topRight || i === topLeft;
       const onHoverSide = isTop && (right ? h.side === "right" : h.side === "left");
       const pushSide = isTop && edgeSide !== "" && (right ? edgeSide === "right" : edgeSide === "left");
-      uni.uAngle.value = a + (onHoverSide ? (right ? h.lift : -h.lift) : 0);
+      uni.uAngle.value = a;
       l.bend[i] += (MathUtils.clamp(-l.vel[i] * 4, -0.35, 0.35) - l.bend[i]) * (1 - Math.exp(-10 * dt));
       uni.uBend.value = l.bend[i];
       uni.uCurlSign.value = right ? 1 : -1;
@@ -432,7 +437,7 @@ export function LookInside({ source, look, root, signals, sound, width, height, 
       }
       // Curl strengths: hover and edge are stripe.press's (7.02×0.14×2, 0.3) scaled to this bend model; the drag curl is
       // held to 0.6 so a dragged corner bends rather than flies (owner, 24 Nov).
-      const curlTarget = dragging ? 0.6 : onHoverSide ? h.curl * 0.1 : pushSide ? 0.3 * h.edge ** 4 * 4 : 0;
+      const curlTarget = dragging ? 0.6 : onHoverSide ? h.curl * 0.1 : pushSide ? h.edge * side * 4 : 0;
       uni.uCurl.value += (curlTarget - uni.uCurl.value) * (1 - (1 - (dragging ? 0.04 : 0.06)) ** f);
       leaf.visible = isTop || Math.abs(a - (right ? 0 : PI)) > 0.002 || !l.active;
     });
@@ -440,7 +445,13 @@ export function LookInside({ source, look, root, signals, sound, width, height, 
       hit.current.position.set(spine, 0, thickness / 2 + 0.05);
       hit.current.raycast = l.active ? Mesh.prototype.raycast : () => {};
     }
-    if (group.current) group.current.position.x = edgeSide ? (edgeSide === "right" ? 1 : -1) * 0.2 * h.edge ** 4 : 0;
+    // The lean: a rigid turn of the spread about the spine's axis (2·28° per unit of push; the right side lifts toward the
+    // viewer for a positive push), so the spine itself never moves.
+    if (group.current) {
+      const theta = -2 * MathUtils.degToRad(28) * h.edge;
+      group.current.rotation.y = theta;
+      group.current.position.set(spine - spine * Math.cos(theta), 0, spine * Math.sin(theta));
+    }
 
     // The 3D marker over the page: follows the pointer, rolls (±0.4) and pitches (±0.2) with its velocity on a spring
     // (120, damping 13), and lifts when not pressed. stripe.press's 0.07 lift is scaled to this model.

@@ -1,12 +1,14 @@
 "use client";
 
+import { GeistMono } from "geist/font/mono";
 import { useTranslations } from "next-intl";
 import { useEffect, useState, type ComponentProps, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 /**
  * The open book's controls, rebuilt from stripe.press's LookInsideControlBar and PeekPill (bundle 06w9:8393-8999,
- * 10174-10209), in our sans and colours (no mono: owner rule). One solid bar of plain text buttons under the book:
+ * 10174-10209), in our colours. The bar is set in Geist Mono at stripe.press's 11 px (owner, 24 Nov: "bottom bar is mono -
+ * Geist for now"; the one mono exception, so the pills stay sans). One solid bar of plain text buttons under the book:
  * [ ← ] spread [ → ]  magnifier  inks  [ X ]. No pills, blur, shadow or disabled states (prev/next at an end do nothing).
  * It appears when the book has opened, fades in over 200 ms and staggers its items in (320 ms each, 80 ms + 60 ms apart),
  * and on a phone becomes a full-width band with a rule under it.
@@ -26,7 +28,7 @@ export function BookControlBar({ shown, spread, leaves, magnifier, ink, onBack, 
   return <div data-book-ui data-shown={shown} inert={!shown}
     // Clicks on the bar never reach the book (stripe.press stops pointerdown and click on its inner bar).
     onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}
-    className="pointer-events-auto flex items-center gap-1.5 rounded-t-[5px] bg-muted pt-2 pr-3.5 pb-3 pl-3.5 text-foreground transition-opacity duration-200 ease-out starting:opacity-0 data-[shown=false]:pointer-events-none data-[shown=false]:opacity-0 group-data-[hidden=true]/layer:pointer-events-none group-data-[hidden=true]/layer:opacity-0 max-lg:w-full max-lg:justify-between max-lg:gap-0.5 max-lg:rounded-none max-lg:border-b max-lg:border-current max-lg:py-2">
+    className={cn(GeistMono.className, "pointer-events-auto flex items-center gap-1.5 rounded-t-[5px] bg-muted pt-2 pr-3.5 pb-3 pl-3.5 text-foreground transition-opacity duration-200 ease-out starting:opacity-0 data-[shown=false]:pointer-events-none data-[shown=false]:opacity-0 group-data-[hidden=true]/layer:pointer-events-none group-data-[hidden=true]/layer:opacity-0 max-lg:w-full max-lg:justify-between max-lg:gap-0.5 max-lg:rounded-none max-lg:border-b max-lg:border-current max-lg:py-2")}>
     <Group>
       <BarItem index={0}><BarButton aria-label={t("previousPage")} onClick={onBack} className="lg:pl-1"><Bracketed><Arrow /></Bracketed></BarButton></BarItem>
       <BarItem index={1}><span className="flex items-center px-1 text-[10px] tracking-[0.03em] tabular-nums max-lg:px-0.5 max-lg:text-[11.2px]">

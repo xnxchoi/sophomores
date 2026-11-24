@@ -3,6 +3,7 @@ import { commerceServerWrite } from '@/lib/commerce/access'
 import { attemptAccountingSchema, gateSchema, reconciliationEventSchema, reconciliationCatchupSchema, settlementObservationSchema, reconciliationEventScope, paidReviewCaseSchema, paidReviewScope, paidDispositionSchema, paidDispositionScope, paymentContradictionSchema, paymentContradictionScope } from '@/lib/commerce/portone/accounting'
 import { isVerifiedPaymentCancellation } from '@/lib/commerce/portone/review'
 import { refundRequestSchema, refundRequestScope } from '@/lib/commerce/portone/refund'
+import { seatSweepSchema, seatSweepScope } from '@/lib/commerce/seat-release'
 import type { CollectionConfig } from 'payload'
 
 /** Independent of plugin settlement, so pre-dispatch debits survive its rollback. */
@@ -53,6 +54,7 @@ export const CommerceReconciliations: CollectionConfig = {
       const contradiction = paymentContradictionSchema.parse(data.state)
       if (scope !== paymentContradictionScope(contradiction.identity.transactionID, contradiction.sequence)) throw new Error('Payment contradiction scope mismatch')
     }
+    else if (scope === seatSweepScope) seatSweepSchema.parse(data.state)
     else if (scope.startsWith('reconciliation-refund-request:')) {
       // Staff refund (portone/refund.ts): written once, before PortOne is asked to cancel.
       if (operation !== 'create') throw new Error('Refund request is immutable')

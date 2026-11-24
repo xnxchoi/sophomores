@@ -522,7 +522,8 @@
       "refundClosed": "",
       "refundClosedNoDate": "",
       "refundRefusedPersonalised": "",
-      "refundRefusedProduct": ""
+      "refundRefusedProduct": "",
+      "refundRefusedOtherChannel": ""
     },
     "orderControls": {
       "savedFulfillmentStatus": "저장된 배송 상태: {status}",

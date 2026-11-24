@@ -37,7 +37,12 @@ export type RefundOutcome =
   | { outcome: 'requested' | 'already-cancelled' | 'refunded' | 'unknown' }
   | { outcome: 'closed'; cutoffAt: string | null }
   | { outcome: 'refused'; providerType: string }
-  | { outcome: 'refused'; reason: 'personalised-edition' | 'not-refundable-product' }
+  | { outcome: 'refused'; reason: RefusalReason }
+
+type RefusalReason = 'personalised-edition' | 'not-refundable-product' | 'other-payment-channel'
+type RefundRequest = z.infer<typeof refundRequestSchema>
+type Recorded = null | { closed: string | null } | { refused: RefusalReason } | { request: RefundRequest; cutoff: number | null }
+const cutoffAt = (cutoff: number | null) => cutoff === null ? null : new Date(cutoff).toISOString()
 
 /** PortOne's cancel request: the transport only, so a test passes a stand-in. */
 export type ProviderCancel = (input: { paymentId: string; storeId: string; reason: string; currentCancellableAmount: number; idempotencyKey: string })
@@ -63,9 +68,12 @@ function portOneCancel(config: PortOneConfig): ProviderCancel {
   }
 }
 
-/** The ledger row, written once per payment inside its own committed transaction; a repeat request reuses it. */
-async function recordRefundRequest(req: PayloadRequest, orderID: string, reason: string, now: number) {
-  return inCommerceTransaction(req, () => withCommerceWrite(req, async () => {
+/**
+ * The ledger row, written once per payment inside its own committed transaction; a repeat request reuses it. The clock
+ * is read here, after the locks and reads, so the cutoff holds at the moment of the write (Review-A, 24 Nov).
+ */
+async function recordRefundRequest(req: PayloadRequest, orderID: string, reason: string, config: PortOneConfig, clock: () => number): Promise<Recorded> {
+  return inCommerceTransaction(req, () => withCommerceWrite(req, async (): Promise<Recorded> => {
     await lockCommerce(req, [`order-benefits:${orderID}`])
     const order = await readCommerce(req, 'orders', orderID)
     if (order.commerceVersion !== 'commerce-v1') throw new APIError('Historical orders cannot be refunded here', 409, undefined, true)
@@ -79,22 +87,25 @@ async function recordRefundRequest(req: PayloadRequest, orderID: string, reason:
     if (transaction.status !== 'succeeded' || transaction.order == null || relationshipID(transaction.order) !== orderID) {
       throw new APIError('Only a settled payment can be refunded', 409, undefined, true)
     }
+    // The cancel goes to the store and channel configured now; it may only be the one this payment was taken on.
+    if (transaction.portone.storeID !== config.storeId || transaction.portone.channelKey !== config.channelKey) return { refused: 'other-payment-channel' }
     // What may be refunded, then the cutoff, both before anything is written or sent.
     const policy = refundPolicy(transaction.portone.snapshot)
     if (!policy.refundable) return { refused: policy.reason }
-    const eventID = transaction.portone.snapshot.eventID
+    let cutoff: number | null = null
     if (policy.cutoff === 'event') {
+      const eventID = transaction.portone.snapshot.eventID
       if (eventID == null) throw new APIError('Event unavailable', 409, undefined, true)
-      const cutoff = refundCutoff((await readCommerce(req, 'commerce-events', eventID)).partIStartsAt)
-      if (cutoff === null || now >= cutoff) return { closed: cutoff === null ? null : new Date(cutoff).toISOString() }
+      cutoff = refundCutoff((await readCommerce(req, 'commerce-events', eventID)).partIStartsAt)
+      if (cutoff === null || clock() >= cutoff) return { closed: cutoffAt(cutoff) }
     }
     const scope = refundRequestScope(transactionID)
     const existing = await findCommerce(req, 'commerce-reconciliations', 'scope', scope)
-    if (existing) return refundRequestSchema.parse(existing.state)
+    if (existing) return { request: refundRequestSchema.parse(existing.state), cutoff }
     const state = refundRequestSchema.parse({ orderID, transactionID, paymentID, amount: transaction.amount, reason,
-      requestedBy: String(req.user?.id), requestedAt: new Date().toISOString() })
+      requestedBy: String(req.user?.id), requestedAt: new Date(clock()).toISOString() })
     await createCommerce(req, 'commerce-reconciliations', { scope, state })
-    return state
+    return { request: state, cutoff }
   }))
 }
 
@@ -114,10 +125,14 @@ export async function requestOrderRefund({ req, orderID, reason, deps = {} }: {
   if (!isCmsSuperAdmin(req.user)) throw new APIError('Refunds are started by an administrator', 403, undefined, true)
   if (await req.transactionID) throw new Error('A refund request cannot run inside a caller transaction')
   const config = adapterConfig(deps)
-  const request = await recordRefundRequest(req, orderID, reason, (deps.now ?? Date.now)())
-  if (!request) return { outcome: 'refunded' }
-  if ('closed' in request) return { outcome: 'closed', cutoffAt: request.closed ?? null }
-  if ('refused' in request) return { outcome: 'refused', reason: request.refused }
+  const clock = deps.now ?? Date.now
+  const recorded = await recordRefundRequest(req, orderID, reason, config, clock)
+  if (!recorded) return { outcome: 'refunded' }
+  if ('closed' in recorded) return { outcome: 'closed', cutoffAt: recorded.closed }
+  if ('refused' in recorded) return { outcome: 'refused', reason: recorded.refused }
+  const { request, cutoff } = recorded
+  // Checked again just before PortOne is asked: the write may have waited on locks across the cutoff.
+  if (cutoff !== null && clock() >= cutoff) return { outcome: 'closed', cutoffAt: cutoffAt(cutoff) }
   const cancel = deps.cancelPayment ?? portOneCancel(config)
   let result: Awaited<ReturnType<ProviderCancel>>
   try {

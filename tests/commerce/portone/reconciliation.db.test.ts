@@ -455,6 +455,20 @@ test('I2 disposable PostgreSQL admission, accounting, native fencing and restart
       assert.deepEqual(await requestOrderRefund({ req: admin, orderID: guestOrder, reason: 'Owner refund', deps: { ...deps, now: () => cutoff } }),
         { outcome: 'closed', cutoffAt: new Date(cutoff).toISOString() })
       assert.deepEqual([calls.length, await requests(guest)], [0, 0])
+      // Review-A: the cancel goes to the store and channel configured now, so a payment settled on another one is
+      // refused before anything is written or sent.
+      for (const config of [{ ...providerConfig, storeId: 'store-other' }, { ...providerConfig, channelKey: 'channel-other' }]) {
+        assert.deepEqual(await requestOrderRefund({ req: admin, orderID: guestOrder, reason: 'Owner refund', deps: { ...deps, config } }),
+          { outcome: 'refused', reason: 'other-payment-channel' })
+      }
+      assert.deepEqual([calls.length, await requests(guest)], [0, 0])
+      // Review-A: the cutoff is checked again just before PortOne is asked. Here the write happens a moment before it and
+      // the send would happen at it: closed, the request recorded, PortOne not asked.
+      const crossing = [cutoff - 1, cutoff]
+      assert.deepEqual(await requestOrderRefund({ req: admin, orderID: guestOrder, reason: 'Owner refund', deps: { ...deps, now: () => crossing.shift() ?? cutoff } }),
+        { outcome: 'closed', cutoffAt: new Date(cutoff).toISOString() })
+      assert.deepEqual([calls.length, await requests(guest)], [0, 1])
+      // Before the cutoff: allowed (the recorded request is reused).
       assert.deepEqual(await requestOrderRefund({ req: admin, orderID: guestOrder, reason: 'Owner refund', deps }), { outcome: 'requested' })
       assert.deepEqual(calls, [{ paymentId: guest.transactionID.replaceAll('-', ''), storeId: providerConfig.storeId, reason: 'Owner refund',
         currentCancellableAmount: guest.snapshot.totalAmount, idempotencyKey: `refund:${guest.transactionID}` }])
@@ -481,7 +495,15 @@ test('I2 disposable PostgreSQL admission, accounting, native fencing and restart
       assert.equal(await releaseInvalidatedSeatsSweep({ req: sweeper }), 0)
       assert.deepEqual(await released(), [false, true])
       await control.query('UPDATE commerce_events SET committed_quantity=$2 WHERE id=$1', [guest.eventID, committed - 1])
-      assert.equal(await releaseInvalidatedSeatsSweep({ req: await createLocalReq({}, db.payload) }), 1)
+      // Review-A and Wallet ML: the sweep is fair. At one admission per pass, refunded admissions that can never release
+      // (here the earlier membership order's, which is not an Unlock event) cannot starve this seat: the durable cursor
+      // moves past them, so it is reached within one round.
+      const queued = (await control.query(`SELECT count(*)::int AS n FROM commerce_admissions WHERE status = 'revoked' AND benefit_review
+        AND seat_released_at IS NULL AND checked_in_at IS NULL`)).rows[0].n as number
+      assert.ok(queued >= 2, `refunded admissions in the queue: ${queued}`)
+      let passes = 0, swept = 0
+      while (swept === 0 && passes <= queued) { swept = await releaseInvalidatedSeatsSweep({ req: await createLocalReq({}, db.payload), limit: 1 }); passes++ }
+      assert.equal(swept, 1, `released within ${passes} passes of ${queued}`)
       assert.deepEqual(await released(), [true, true])
       assert.equal(await seats(), committed - 2)
       assert.equal(await releaseInvalidatedSeatsSweep({ req: await createLocalReq({}, db.payload) }), 0, 'each seat once')

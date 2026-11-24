@@ -522,7 +522,8 @@
       "refundClosed": "Refunds for this event closed {cutoff} (Seoul time).",
       "refundClosedNoDate": "Refunds for this event are closed: its start time can't be read.",
       "refundRefusedPersonalised": "Personalised edition: no refunds. Nothing was sent to PortOne.",
-      "refundRefusedProduct": "This product can't be refunded here. Nothing was sent to PortOne."
+      "refundRefusedProduct": "This product can't be refunded here. Nothing was sent to PortOne.",
+      "refundRefusedOtherChannel": "Paid through another PortOne store or channel. Nothing was sent to PortOne."
     },
     "orderControls": {
       "savedFulfillmentStatus": "Saved fulfillment: {status}",

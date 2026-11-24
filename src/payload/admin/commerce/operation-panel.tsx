@@ -105,12 +105,12 @@ function SavedOperations({ kind, operatorID, id }: { kind: "order" | "admission"
         if (Object.keys(result).length !== 1 || new Set(units).size !== units.length || units.some((unit) => !(command.units as number[]).includes(unit))) throw new Error("receipt");
       } else if (command.action === "refund") {
         const result = z.object({ outcome: z.enum(["requested", "already-cancelled", "refunded", "unknown", "refused", "closed"]),
-          providerType: z.string().max(100).optional(), reason: z.enum(["personalised-edition", "not-refundable-product"]).optional(), cutoffAt: z.iso.datetime().nullable().optional() }).parse(receipt);
+          providerType: z.string().max(100).optional(), reason: z.enum(["personalised-edition", "not-refundable-product", "other-payment-channel"]).optional(), cutoffAt: z.iso.datetime().nullable().optional() }).parse(receipt);
         const cutoff = result.cutoffAt ? new Intl.DateTimeFormat(undefined, { timeZone: "Asia/Seoul", dateStyle: "medium", timeStyle: "short" }).format(new Date(result.cutoffAt)) : null;
         refundFeedback = result.outcome === "requested" ? t("refundRequested") : result.outcome === "already-cancelled" ? t("refundAlreadyCancelled")
           : result.outcome === "refunded" ? t("refundAlreadyRefunded") : result.outcome === "unknown" ? t("refundUnknown")
           : result.outcome === "closed" ? (cutoff ? t("refundClosed", { cutoff }) : t("refundClosedNoDate"))
-          : result.reason === "personalised-edition" ? t("refundRefusedPersonalised") : result.reason ? t("refundRefusedProduct")
+          : result.reason === "personalised-edition" ? t("refundRefusedPersonalised") : result.reason === "other-payment-channel" ? t("refundRefusedOtherChannel") : result.reason ? t("refundRefusedProduct")
           : t("refundRefused", { type: result.providerType ?? "" });
       } else z.strictObject({ success: z.literal(true) }).parse(receipt);
       receiptAccepted = true;

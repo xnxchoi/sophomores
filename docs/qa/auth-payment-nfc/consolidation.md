@@ -436,7 +436,9 @@ Page branches only see the states below. However authentication or payment works
 
 If a page needs a state that isn't listed, add it to the request list below instead of building it on the page branch.
 
-**Requests from page work:** none yet.
+**Requests from page work:**
+
+- **Products: a 'featured' flag (UI-Commerce, 24 Nov; low priority; needs the owner's OK).** A checkbox in the product's page fields (`page.featured`, boolean, default false, editable in the admin). `/shop` lists only featured products under "New and featured"; every product stays on the shelf. It changes the products schema, so no one builds it before the owner agrees.
 
 ## How changes are made
 

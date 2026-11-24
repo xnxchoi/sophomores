@@ -184,7 +184,8 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
   // Touch zoom and pan of the open book (#27): pinch between 1× and 2× (rubber 0.35 beyond), two fingers or a 300 ms
   // hold pan (rubber 0.28 past the edge, a quarter of the spread stays on screen), and on release it springs back in.
   useEffect(() => {
-    const element = stage.current, view = signals.current.view;
+    // On the book's hit area: it lives in the control layer, so its events no longer bubble through the stage.
+    const element = signals.current.hitRect, view = signals.current.view;
     if (!element || !open || !shown) return;
     const points = new Map<number, { x: number; y: number }>();
     let start: null | { dist: number; x: number; y: number; zoom: number; viewX: number; viewY: number } = null;
@@ -245,21 +246,23 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
     onDragStart={(event) => event.preventDefault()}
     className={cn("pointer-events-none select-none [-webkit-touch-callout:none] [-webkit-user-drag:none] [&_img]:[-webkit-user-drag:none] max-lg:data-[open=true]:fixed max-lg:data-[open=true]:inset-0 max-lg:data-[open=true]:z-50 max-lg:data-[open=true]:h-dvh max-lg:data-[open=true]:bg-background", className)}>
     {children}
-    {/* The book draws in the site's shared canvas through a drei View; the View's own element is its hit area (the
-        stripe.press hit-rect): it spans the stage, and the book clips its hit-testing to its own bounds each frame (the
-        whole stage while Look inside is open). It starts clipped to nothing. Pointer engagement holds a frameloop claim. */}
-    <BookCanvas signals={signals} textures={textures} visible={shown} dark={dark}
-      onOpen={() => setOpen(true)} onClose={close} storageKey={"book3d:" + id} pageTextures={pageTextures} magnifier={magnifier}
-      onElement={(element) => { signals.current.hitRect = element; }}
-      onPointerEnter={engage} onPointerDown={engage} onPointerMove={hovering ? undefined : engage} onPointerLeave={release}
-      // Hidden (menu, out of view) means no input target either: drei's View passes `visible` to the canvas, not to this
-      // DOM tracker (Review-B r2).
-      inert={!usable} className={cn("pointer-events-auto absolute inset-0 touch-pan-y in-data-[open=true]:touch-none", !usable && "pointer-events-none")} />
-    {/* Controls above the shared canvas: a fixed layer in a body portal, after the canvas in paint order, mirroring the
-        stage's rect (scroll, resize, the phone's full-screen open state). */}
+    {/* The book's layer above the shared canvas: a fixed body portal, after the canvas in paint order, mirroring the
+        stage's rect (scroll, resize, the phone's full-screen open state). It holds the book's View and its controls. */}
     {mounted && createPortal(<div ref={(element) => { overlay.current = element; signals.current.overlay = element; }}
       // The same gate as the book's View (menu, out of view): hidden controls fade out and take no pointer or focus.
-      data-open={open} data-hidden={!usable} inert={!usable} className="group/layer pointer-events-none fixed z-1">
+      data-open={open} data-hidden={!usable} inert={!usable} onDragStart={(event) => event.preventDefault()}
+      className="group/layer pointer-events-none fixed z-1 select-none [-webkit-touch-callout:none] [-webkit-user-drag:none]">
+      {/* The book draws in the site's shared canvas through a drei View. The View's own element is its hit area (the
+          stripe.press hit-rect) and lives in this layer, so its rect follows the stage's, and can travel (the carry, step
+          3). It spans the layer; the book clips its hit-testing to its own bounds each frame (none while Look inside is
+          open). It starts clipped to nothing. Pointer engagement holds a frameloop claim. */}
+      <BookCanvas signals={signals} textures={textures} visible={shown} dark={dark}
+        onOpen={() => setOpen(true)} onClose={close} storageKey={"book3d:" + id} pageTextures={pageTextures} magnifier={magnifier}
+        onElement={(element) => { signals.current.hitRect = element; }}
+        onPointerEnter={engage} onPointerDown={engage} onPointerMove={hovering ? undefined : engage} onPointerLeave={release}
+        // Hidden (menu, out of view) means no input target either: drei's View passes `visible` to the canvas, not to this
+        // DOM tracker (Review-B r2).
+        inert={!usable} className={cn("pointer-events-auto absolute inset-0 touch-pan-y in-data-[open=true]:touch-none", !usable && "pointer-events-none")} />
       {open
         ? <ArcRoles><div data-book-ui role="group" aria-label={t("lookInside")}
             className="pointer-events-auto absolute bottom-4 left-1/2 z-1 flex -translate-x-1/2 items-center gap-2 transition-opacity duration-300 ease-out group-data-[hidden=true]/layer:pointer-events-none group-data-[hidden=true]/layer:opacity-0 max-lg:bottom-[calc(max(var(--bar-target),var(--frame-bottom))+1rem+env(safe-area-inset-bottom))]">

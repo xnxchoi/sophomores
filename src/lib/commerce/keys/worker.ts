@@ -674,6 +674,8 @@ async function replaceStuck(payload: Payload, operation: Operation, chain: Repla
     if (outcome.kind === "notSent") {
       // A ceiling or an unrecordable replacement waits for a person; anything else is tried again later.
       const stopped = { fee_ceiling_reached: "fee_ceiling", write_ahead_failed: "write_ahead_failed" }[outcome.code];
+      // A role hook on the lock waits for a person; the pending send stays reconciled and is retried after.
+      if (outcome.code === "role_hook_set") logParked(row.id, `${prefix}${outcome.code}`);
       await markAttempt(payload, operation, row, stopped ? operation.stop(`${prefix}${stopped}`) : { lastErrorCode: code(`${prefix}${outcome.code}`) });
       continue;
     }
@@ -736,7 +738,10 @@ async function recordCancel(payload: Payload, intentID: string, cancelAttemptID:
     if (intent.cancelAttemptID !== cancelAttemptID || intent.state !== "granted") return;
     let data: Record<string, unknown>;
     if (outcome.kind === "skipped") data = { state: "cancelled", cancelledAt: now.toISOString(), lastErrorCode: "key_not_valid", nextAttemptAt: null };
-    else if (outcome.kind === "notSent") data = cancelNotSentData(outcome.code, now);
+    else if (outcome.kind === "notSent") {
+      if (parkedCancel(outcome.code)) logParked(intentID, `cancel_${outcome.code}`);
+      data = cancelNotSentData(outcome.code, now);
+    }
     else if (outcome.answer.kind === "definitelyNotSent") {
       // Recorded, then proven unsent: the whole attempt is cleared together.
       data = { ...cancelNotSentData(outcome.answer.code, now), cancelTxHash: null, cancelNonce: null, cancelSigner: null, cancelSubmittedAt: null, cancelSends: null, cancelLastSentAt: null };

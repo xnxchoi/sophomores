@@ -13,6 +13,12 @@ The code is `src/lib/commerce/keys/` (worker passes, `grant-catch-up.ts`, `unloc
 - **One tick at a time:** a PostgreSQL advisory lock enforces it. A second tick sees `busy` and exits.
 - **Output:** one JSON line per run, such as `{"outcome":"off"}`, `{"outcome":"busy"}`, `{"outcome":"ran","reconciled":0,"replaced":0,"dispatched":1,"cancelled":0}` or `{"outcome":"failure","reason":"..."}`. It never prints a key or an error's details.
 - **Parks are loud:** every grant parked for a person writes one stderr line, `{"event":"key_grant_parked","intent":"<id>","code":"<code>"}` (no address, order or customer data). Point an alert at it.
+  Parked owner cancels write the same line with a `cancel_` code.
+- **Role hook (PublicLock v15):** the Signet lock is v15 and Edition I is v14. On a v15 lock, a lock manager can set
+  `onHasRoleHook`, which then decides who holds the key-granter and lock-manager roles. Every Polygon grant and cancel
+  first reads `publicLockVersion()` and, on v15, `onHasRoleHook()`. A non-zero hook parks the operation with
+  `role_hook_set`. A replacement logs `replacement_role_hook_set`, while the pending send stays reconciled. Nothing
+  is signed until a person clears the hook or confirms it. A failed read retries; it does not park.
 - **Off** (the default): it prints `{"outcome":"off"}` before loading anything.
 - **What the tick never does:**
   - It never retries an `ambiguous` grant; that waits for reconcile and a person.

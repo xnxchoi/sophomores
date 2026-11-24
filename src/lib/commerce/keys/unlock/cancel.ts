@@ -2,7 +2,7 @@ import PublicLockV14 from "@unlock-protocol/contracts/dist/abis/PublicLock/Publi
 import { decodeFunctionData, encodeFunctionData, getAddress, isAddressEqual, parseEventLogs, type Abi, type Address, type Hex, type LocalAccount, type Transport } from "viem";
 import { isTxHash, parseKeyGrantTarget, type CancelPrepareOutcome, type CancelReconcileOutcome, type KeyCancelAdapter, type KeyGrantTarget, type ReplaceOutcome } from "../contracts";
 import { reverted } from "./adapter";
-import { POLYGON_CHAIN_ID, polygonEventLocks, polygonLockPinned, POLYGON_SIGNET_LOCK } from "./polygon";
+import { POLYGON_CHAIN_ID, polygonEventLocks, polygonLockPinned, POLYGON_SIGNET_LOCK, polygonRoleHookClear, roleHookSet } from "./polygon";
 import { createSignerTransactions, replacementFee } from "./transactions";
 
 /*
@@ -76,6 +76,7 @@ export function createUnlockKeyCancelAdapter({ chainID, account, transport, hold
       const release = await chain.hold();
       try {
         if (!(await chain.onChain())) { release(); return notSent("chain_mismatch"); }
+        if (chainID === POLYGON_CHAIN_ID && !(await polygonRoleHookClear(client, target.lock))) { release(); return notSent(roleHookSet); }
         if (await read(target.lock, "isLockManager", [chain.address]) !== true) { release(); return notSent("not_lock_manager"); }
         const owner = await read(target.lock, "ownerOf", [token]) as Address;
         if (!isAddressEqual(owner, target.recipient)) { release(); return notSent("token_mismatch"); }
@@ -112,6 +113,7 @@ export function createUnlockKeyCancelAdapter({ chainID, account, transport, hold
         if (!(await chain.onChain())) { release(); return { kind: "definitelyNotSent", code: "chain_mismatch" }; }
         // Exactly one transaction per nonce can mine; once the chain counts this one as used, reconcile settles it.
         if (await chain.nonceConsumed(nonce)) { release(); return { kind: "nonceConsumed" }; }
+        if (chainID === POLYGON_CHAIN_ID && !(await polygonRoleHookClear(client, target.lock))) { release(); return { kind: "definitelyNotSent", code: roleHookSet }; }
         if (await read(target.lock, "isLockManager", [chain.address]) !== true) { release(); return { kind: "definitelyNotSent", code: "not_lock_manager" }; }
         const fees = replacementFee(previous, await chain.estimateFees(), chain.ceiling);
         if (!fees) { release(); return { kind: "definitelyNotSent", code: "fee_ceiling_reached" }; }

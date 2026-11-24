@@ -121,7 +121,7 @@ export type ReconcileOutcome =
  * a target corrected, an existing key resolved). The worker parks these in
  * `failed_retryable` with the code instead of retrying them.
  */
-export const parkedGrantCodes = ["chain_not_enabled", "lock_not_enabled", "invalid_target", "recipient_has_key"] as const;
+export const parkedGrantCodes = ["chain_not_enabled", "lock_not_enabled", "invalid_target", "recipient_has_key", "role_hook_set"] as const;
 
 /**
  * Codes that end automatic replacement of a stuck grant; it stays `ambiguous`
@@ -172,7 +172,7 @@ export type CancelReconcileOutcome =
   | { kind: "unknown" };
 
 /** Cancel codes that wait for a person; the worker never retries them. */
-export const parkedCancelCodes = ["chain_not_enabled", "lock_not_enabled", "invalid_target", "invalid_token", "token_mismatch", "not_lock_manager", "cancel_signer_is_granter", "cancel_reverted"] as const;
+export const parkedCancelCodes = ["chain_not_enabled", "lock_not_enabled", "invalid_target", "invalid_token", "token_mismatch", "not_lock_manager", "cancel_signer_is_granter", "cancel_reverted", "role_hook_set"] as const;
 
 /**
  * The separate lock-manager authority (ADR-0008); never the grant signer. Same

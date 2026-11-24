@@ -4,7 +4,7 @@ import {
   type Abi, type Address, type Hex, type LocalAccount, type Transport,
 } from "viem";
 import { isTxHash, parseKeyGrantTarget, type KeyGrantAdapter, type KeyGrantTarget, type PrepareOutcome, type ReconcileOutcome, type ReplaceOutcome } from "../contracts";
-import { POLYGON_CHAIN_ID, polygonEventLocks, polygonLockPinned, polygonPins, type PolygonPins } from "./polygon";
+import { POLYGON_CHAIN_ID, polygonEventLocks, polygonLockPinned, polygonPins, polygonRoleHookClear, roleHookSet, type PolygonPins } from "./polygon";
 import type { KeyStateReader } from "../worker";
 import { createSignerTransactions, replacementFee, type Inspection } from "./transactions";
 
@@ -92,6 +92,7 @@ export function createUnlockKeyGrantAdapter({ chainID, account, transport, now =
       const release = await chain.hold();
       try {
         if (!(await chain.onChain())) { release(); return notSent("chain_mismatch"); }
+        if (chainID === POLYGON_CHAIN_ID && !(await polygonRoleHookClear(client, target.lock))) { release(); return notSent(roleHookSet); }
         const held = await client.readContract({ address: target.lock, abi: lockAbi, functionName: "totalKeys", args: [target.recipient] }) as bigint;
         if (held > 0n && value.ticketTier !== "guest" && value.ticketMode !== "shared") { release(); return notSent("recipient_has_key"); }
         const call = await grantCall(target);
@@ -114,6 +115,7 @@ export function createUnlockKeyGrantAdapter({ chainID, account, transport, now =
         if (!(await chain.onChain())) { release(); return notSent("chain_mismatch"); }
         // Exactly one transaction per nonce can mine; once the chain counts this one as used, reconcile settles it.
         if (await chain.nonceConsumed(nonce)) { release(); return { kind: "nonceConsumed" }; }
+        if (chainID === POLYGON_CHAIN_ID && !(await polygonRoleHookClear(client, target.lock))) { release(); return notSent(roleHookSet); }
         const fees = replacementFee(previous, await chain.estimateFees(), chain.ceiling);
         if (!fees) { release(); return notSent("fee_ceiling_reached"); }
         const call = await grantCall(target);

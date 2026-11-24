@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import { getAddress, isAddressEqual, type Address } from "viem";
+import { getAddress, isAddressEqual, parseAbi, zeroAddress, type Address, type PublicClient } from "viem";
 import type { PrivateKeyAccount } from "viem/accounts";
 import { loadSignerAccount, signerDirectory, SignerLoadError } from "./signer";
 
@@ -53,3 +53,18 @@ export async function loadPolygonKeyGranterAccount(file = polygonKeyGranterFile)
   return account;
 }
 
+
+/**
+ * PublicLock v15 lets a lock manager install `onHasRoleHook`, which then decides who holds the key-granter and
+ * lock-manager roles (owner, 24 Nov: "our lock is v15"). A pinned lock with a hook set is not the lock our grant and
+ * cancel checks were reviewed against, so its operations park (`role_hook_set`) until a person looks. v14 locks
+ * (Edition I) have no hook. A failed read throws, so the caller retries instead of sending.
+ */
+const roleHookAbi = parseAbi(["function publicLockVersion() pure returns (uint16)", "function onHasRoleHook() view returns (address)"]);
+export const roleHookSet = "role_hook_set";
+export async function polygonRoleHookClear(client: Pick<PublicClient, "readContract">, lock: Address): Promise<boolean> {
+  const version = await client.readContract({ address: lock, abi: roleHookAbi, functionName: "publicLockVersion" });
+  if (version < 15) return true;
+  const hook = await client.readContract({ address: lock, abi: roleHookAbi, functionName: "onHasRoleHook" });
+  return isAddressEqual(hook, zeroAddress);
+}

@@ -240,6 +240,31 @@ function createCoverMaterial(maps: Record<string, Texture | undefined>, uniforms
   return material;
 }
 
+/** The closed book's size in world units: cover width, height, and depth across the boards (what a spine shows). */
+export const BOOK_SIZE = { width: W, height: H, depth: T + 2 * BOARD };
+
+/**
+ * A closed book alone: the same atlas, cover material and proportions as Book, with no physics, pages or Look inside.
+ * The shop's shelf draws these (shelf-canvas.tsx). Centred like Book's body: the spine on the left (−x), front cover +z.
+ */
+export function ClosedBook({ textures, small }: { textures: BookTextures; small: boolean }) {
+  const slots = useMemo(() => Object.fromEntries(Object.entries(textures).filter(([, url]) => url)) as Record<string, string>, [textures]);
+  const maps = useTexture(slots) as unknown as Record<string, Texture>;
+  const uniforms = useMemo(() => createUniforms(), []);
+  const material = useMemo(() => createCoverMaterial(maps, uniforms, small), [maps, uniforms, small]);
+  const geometry = useMemo(() => ({
+    front: atlasBox("front", W, H, BOARD), back: atlasBox("back", W, H, BOARD),
+    spine: atlasBox("spine", BOARD, H, T + 2 * BOARD), pages: atlasBox("pages", W - 0.15, H - 0.3, T)
+  }), []);
+  useEffect(() => () => { material.bumpMap?.dispose(); material.dispose(); Object.values(geometry).forEach((g) => g.dispose()); }, [geometry, material]);
+  return <group>
+    <mesh geometry={geometry.spine} material={material} position={[-W / 2 - BOARD / 2, 0, 0]} castShadow />
+    <mesh geometry={geometry.pages} material={material} position={[-0.075, 0, 0]} castShadow />
+    <mesh geometry={geometry.front} material={material} position={[-W / 2, 0, T / 2]} castShadow />
+    <mesh geometry={geometry.back} material={material} position={[-W / 2, 0, -T / 2]} castShadow />
+  </group>;
+}
+
 /** A five-segment board: each segment hangs off the previous one's far edge, so the board can swing and flex. */
 function Board({ geometries, segments, meshes, material, k = 0 }: { geometries: BoxGeometry[]; segments: RefObject<(Group | null)[]>; meshes: RefObject<(Mesh | null)[]>; material: MeshPhysicalMaterial; k?: number }) {
   if (k >= geometries.length) return null;

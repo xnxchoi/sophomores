@@ -20,6 +20,11 @@ export function endCarry(id: string) {
   if (pending?.id === id) pending = null;
 }
 
+/** Records a start rect directly (the shop shelf's 3D book, which has no DOM cover to measure). */
+export function recordCarry(id: string, rect: { left: number; top: number; width: number; height: number }) {
+  pending = { id, rect, at: performance.now() };
+}
+
 /** A shop card's link that records its cover (`[data-carry-cover]`) as the start of the book's carry. */
 export function CarryLink({ productId, onClick, ...props }: ComponentProps<typeof Link> & { productId: string }) {
   return <Link {...props} onClick={(event) => {

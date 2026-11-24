@@ -834,7 +834,9 @@
       "magnifier": "Magnifier",
       "highlighterPink": "Pink highlighter",
       "highlighterYellow": "Yellow highlighter",
-      "copyPageLink": "Copy page link"
+      "copyPageLink": "Copy page link",
+      "featured": "New and featured",
+      "viewDetails": "View details"
     },
     "components_commerce_checkout": {
       "customerSignInIsOffInThisReviewCopy": "Customer sign-in is off in this review copy.",

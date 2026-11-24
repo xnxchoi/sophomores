@@ -152,7 +152,7 @@ function ShelfStrip({ shelf, label }: { shelf: readonly ShelfEntry[]; label: str
  * The stage's ground: the product's own art, full bleed and not draggable. With none, nothing: the book stands on the
  * page itself, not in a box (owner, 24 Nov: "the 3D book is NOT inside a boxed container").
  */
-function StageArt({ art }: { art: ProductMedia | null }) {
+export function StageArt({ art }: { art: ProductMedia | null }) {
   // eslint-disable-next-line @next/next/no-img-element
   if (art) return <img src={art.url} alt={art.alt ?? ""} loading="eager" draggable={false} className="absolute inset-0 size-full object-cover" />;
   return null;
@@ -196,13 +196,13 @@ function physicalDetails(content: ProductPageContent, locale: string, t: Transla
   ].filter((item): item is string => item !== null);
 }
 
-function firstImage(product: EditionProduct): ProductMedia | null {
+export function firstImage(product: EditionProduct): ProductMedia | null {
   for (const { image } of product.images) if (typeof image === "object" && image?.url) return { url: image.url, alt: image.alt ?? null };
   return null;
 }
 
 /** The product's own book textures, slot by slot; an empty slot leaves the cover plain (no borrowed textures ship). */
-function bookTextures(content: ProductPageContent): BookTextures {
+export function bookTextures(content: ProductPageContent): BookTextures {
   const book = content.book;
   return {
     coverDiffuse: book?.coverDiffuse?.url, coverBumpBase: book?.coverBumpBase?.url, coverBumpCustom: book?.coverBumpCustom?.url,
@@ -210,7 +210,7 @@ function bookTextures(content: ProductPageContent): BookTextures {
   };
 }
 
-function pageTextures(content: ProductPageContent): string[] {
+export function pageTextures(content: ProductPageContent): string[] {
   // Only a complete run of pages from the first leaf: the leaves take images in reading order.
   const urls: string[] = [];
   for (const page of content.book?.pages ?? []) { if (!page.front?.url || !page.back?.url) break; urls.push(page.front.url, page.back.url); }

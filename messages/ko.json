@@ -834,7 +834,9 @@
       "magnifier": "",
       "highlighterPink": "",
       "highlighterYellow": "",
-      "copyPageLink": ""
+      "copyPageLink": "",
+      "featured": "",
+      "viewDetails": ""
     },
     "components_commerce_checkout": {
       "customerSignInIsOffInThisReviewCopy": "",

@@ -1,41 +1,45 @@
 import type { ReactNode } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import type { CommerceEditionCatalogue, CommerceEditionOffer, CommerceEditionShop } from "@/lib/commerce/editions";
+import type { CommerceEditionOffer, CommerceEditionShop } from "@/lib/commerce/editions";
 import { Link } from "@/components/core/Link/Link";
 import { PageInset } from "@/components/core/PageInset/PageInset";
 import { Badge } from "@/components/arc/badge/badge";
 import { ArcRoles } from "./arc-roles";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
-import { CarryLink } from "./book3d/book-carry";
+import { BookStage } from "./book3d/book-stage";
+import { FeaturedReleases, ShopShelf } from "./shop/shop-front";
+import { bookTextures, firstImage, pageTextures, StageArt } from "./product-page/product-page";
+import { readProductPageContent, type ProductPageContent } from "./product-page/_shared/content";
 
-type EditionProduct = Extract<CommerceEditionCatalogue, { status: "displayable" }>["product"];
-
-/** Book shop: each edition is its own product (owner), listed separately with no picker. Display facts only. */
-export function CommerceShopView({ shop }: { shop: CommerceEditionShop | null }) {
+/**
+ * Book shop: each edition is its own product (owner), listed separately with no picker. Display facts only. Laid out as
+ * stripe.press's home: new and featured books first, each on its own art with the 3D book over it, then every edition on
+ * one shelf, spine out (shop/shop-front.tsx). Order follows each product's shelf order, then the shop's own order.
+ * `contents`: each product's page fields by product ID (art, book textures, shelf title); a product without them shows
+ * its first image and a plain book.
+ */
+export function CommerceShopView({ shop, contents = {} }: { shop: CommerceEditionShop | null; contents?: Record<string, ProductPageContent> }) {
   const t = useTranslations("Customer.components_commerce_book_offer");
+  const locale = useLocale();
   if (!shop || shop.status === "unavailable" || shop.products.length === 0) return <BookUnavailable />;
-  return <PageInset as="main" className="pt-28 pb-24 text-foreground sm:pt-36 lg:pt-[clamp(7rem,18svh,9rem)]">
-    <header className="border-b border-foreground pb-3">
-      <h1 className="font-display text-[2.5rem] font-normal leading-[1.05] tracking-[-0.02em]">{t("book")}</h1>
-    </header>
-    <ul className="mt-10 grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
-      {shop.products.map(({ product, offer }) => <ProductCard key={product.productID} product={product} offer={offer} />)}
-    </ul>
+  const empty = readProductPageContent(null), money = new Intl.NumberFormat(locale, { style: "currency", currency: "KRW", maximumFractionDigits: 0 });
+  const entries = shop.products
+    .map((entry, index) => ({ entry, index, content: contents[entry.product.productID] ?? empty }))
+    .sort((a, b) => (a.content.shelfOrder ?? Number.MAX_SAFE_INTEGER) - (b.content.shelfOrder ?? Number.MAX_SAFE_INTEGER) || a.index - b.index)
+    .map(({ entry, content }) => ({ product: entry.product, content, title: content.shelfTitle ?? entry.product.title,
+      price: money.format(entry.offer.priceKRW), href: "/shop/products/" + encodeURIComponent(entry.product.productID) }));
+  return <PageInset as="main" className="pt-[4.5rem] pb-24 text-foreground">
+    <h1 className="sr-only">{t("book")}</h1>
+    <FeaturedReleases label={t("featured")} viewDetails={t("viewDetails")} items={entries.map(({ product, content, title, price, href }) => ({
+      id: product.productID, title, price, href,
+      stage: <BookStage id={product.productID} textures={bookTextures(content)} pageTextures={pageTextures(content)}
+        className="relative aspect-[4/5] w-full overflow-hidden rounded-[10px] sm:aspect-[5/4] lg:aspect-auto lg:h-[calc(100svh-13rem)]">
+        <StageArt art={content.stageArt ?? firstImage(product)} />
+      </BookStage>
+    }))} />
+    <ShopShelf label={t("allProducts")} viewDetails={t("viewDetails")}
+      books={entries.map(({ product, content, title, price, href }) => ({ id: product.productID, title, price, href, textures: bookTextures(content) }))} />
   </PageInset>;
-}
-
-type ShopEntry = Extract<CommerceEditionShop, { status: "displayable" }>["products"][number];
-
-/** One product in the shop list: cover, title and facts, linking to its page. */
-function ProductCard({ product, offer }: ShopEntry) {
-  return <li className="min-w-0">
-    {/* The click records the cover's rect: the product page's book starts there (the carry, book3d/book-carry.tsx). */}
-    <CarryLink productId={product.productID} href={"/shop/products/" + encodeURIComponent(product.productID)} className="group block min-w-0 outline-offset-4 focus-visible:outline-2">
-      <ProductCover product={product} />
-      <h2 className="mt-5 text-2xl leading-snug tracking-tight underline-offset-4 [overflow-wrap:anywhere] group-hover:underline">{product.title}</h2>
-      <ProductFacts offer={offer} className="mt-3" />
-    </CarryLink>
-  </li>;
 }
 
 /** Price, what the product includes and the per-account limit, from E1's server offer. Shared by the shop, product and checkout. */
@@ -73,14 +77,6 @@ export function PurchaseNotOpen({ priceKRW }: { priceKRW: number }) {
     <p id="book-purchase-heading">{t("purchaseNotOpen")}</p>
     <p className="tabular-nums">{new Intl.NumberFormat(locale, { style: "currency", currency: "KRW", maximumFractionDigits: 0 }).format(priceKRW)}</p>
   </div>;
-}
-
-function ProductCover({ product }: { product: EditionProduct }) {
-  const cover = product.images.flatMap(({ image }) => typeof image === "object" && image.url ? [{ src: image.url, alt: image.alt || product.title }] : [])[0];
-  return cover
-    // eslint-disable-next-line @next/next/no-img-element
-    ? <img data-carry-cover src={cover.src} alt={cover.alt} className="aspect-square w-full rounded-xl border border-border bg-muted object-contain" />
-    : <div data-carry-cover aria-hidden="true" className="aspect-square w-full rounded-xl border border-border bg-muted" />;
 }
 
 /** No published product to show (also the product page's fail-closed state). */

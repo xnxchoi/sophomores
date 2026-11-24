@@ -24,15 +24,14 @@ async function shop() {
   return value as Extract<CommerceEditionShop, { status: "displayable" }>;
 }
 
-test("the shop lists three separate products, each linking to its own page, with no picker", async () => {
+test("the shop lists three separate products, each with its price and its own page, with no picker", async () => {
   const html = render(<CommerceShopView shop={await shop()} />);
   const order = ["Book only", "Édition personnelle", "Premium edition"].map((name) => html.indexOf(name));
   assert.deepEqual([...order].sort((a, b) => a - b), order, "sorted by price");
   assert.equal(order.every((index) => index >= 0), true);
   for (const id of ["book", "personal", "premium"]) assert.match(html, new RegExp('href="/shop/products/' + id + '"'));
   assert.match(html, /₩35,000/); assert.match(html, /₩82,000/); assert.match(html, /₩329,000/);
-  assert.match(html, /The book only\. No membership token or ticket\./);
-  assert.equal((html.match(/Includes the book, one membership token and one free Member Ticket\./g) ?? []).length, 2);
+  // What each product includes is on its own page; the shop shows title and price under each book (stripe.press's home).
   assert.doesNotMatch(html, /<select\b|<input\b|role="radio|coin|Editions/i);
 });
 

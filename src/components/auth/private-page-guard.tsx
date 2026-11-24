@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, type ReactNode, useContext, useEffect, useRef, useState } from "react";
+import { createContext, type ReactNode, useContext, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { readSignedInMemberID, watchPrivateView } from "@/lib/member-auth/private-view";
 
 const reloadPage = () => window.location.reload();
@@ -12,6 +12,34 @@ const PrivatePortalHost = createContext<HTMLElement | null>(null);
 /** The portal container for an overlay on a private page (null elsewhere). Pass it as the portal's `container`. */
 export function usePrivatePortalContainer(): HTMLElement | null {
   return useContext(PrivatePortalHost);
+}
+
+// The private page on screen now, for overlays mounted outside every guard: the layout's in-place sign-in sheet
+// (Review-A, 24 Nov). The newest mounted guard wins; none mounted means null, the usual place under <body>.
+let hosts: readonly HTMLElement[] = [];
+const listeners = new Set<() => void>();
+const activeHost = () => hosts.at(-1) ?? null;
+const subscribe = (listener: () => void) => {
+  listeners.add(listener);
+  return () => { listeners.delete(listener); };
+};
+function registerHost(host: HTMLElement): () => void {
+  hosts = [...hosts, host];
+  listeners.forEach((listener) => listener());
+  return () => {
+    hosts = hosts.filter((entry) => entry !== host);
+    listeners.forEach((listener) => listener());
+  };
+}
+
+/**
+ * For an overlay that lives outside the page (a layout's sheet): while a private page is on screen, the overlay
+ * portals into that page's host, so the page's concealment (left, tab hidden, rechecking, a different member) hides
+ * and blocks it too. On a public page it portals as usual.
+ */
+export function ActivePrivatePortal({ children }: { children: ReactNode }) {
+  const host = useSyncExternalStore(subscribe, activeHost, () => null);
+  return <PrivatePortalHost.Provider value={host}>{children}</PrivatePortalHost.Provider>;
 }
 
 type Props = {
@@ -35,6 +63,7 @@ type Props = {
 export function PrivatePageGuard({ children, principal, reload = reloadPage, readPrincipal = readSignedInMemberID }: Props) {
   const content = useRef<HTMLDivElement>(null);
   const [portalHost, setPortalHost] = useState<HTMLElement | null>(null);
+  useEffect(() => (portalHost ? registerHost(portalHost) : undefined), [portalHost]);
   useEffect(() => {
     let leaving = false;
     let disposed = false;

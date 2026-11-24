@@ -450,6 +450,101 @@ test("the in-place sheet closes and refreshes the page once the member is confir
   assert.equal(refreshes, 1, "once");
 });
 
+// Review-A, 24 Nov: the layout's sheet follows the page it opened over (pagehide, private-page rechecks, navigation),
+// and the NFC tap asks for a new tap after a sign-in instead of promising to continue.
+function SheetTrigger() {
+  const signIn = SheetHooks.useAccountSheetTrigger();
+  return <a href={signIn.href} onClick={signIn.onClick}>Log in</a>;
+}
+async function openSheetEmail(): Promise<HTMLInputElement> {
+  ui.fireEvent.click(ui.screen.getByRole("link", { name: "Log in" }));
+  ui.fireEvent.click(await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Sign in" })));
+  return untilAsserted(ui, () => {
+    const field = ui.screen.getByLabelText("Email address") as HTMLInputElement;
+    assert.equal(field.disabled, false);
+    return field;
+  });
+}
+const typedEmailShown = () => [...document.querySelectorAll("input")].some((input) => input.value === "member@example.com");
+const sheetOpen = () => document.querySelector("[data-vaul-drawer][data-state=open]") !== null;
+
+test("pagehide disposes the open sheet, so nothing typed into it is kept for a back-forward restore", async () => {
+  const c = client();
+  ui.render(<Sheet.AccountSheetProvider client={c.value}><SheetTrigger /></Sheet.AccountSheetProvider>, { wrapper: MemberAuthProviders });
+  ui.fireEvent.change(await openSheetEmail(), { target: { value: "member@example.com" } });
+  assert.equal(typedEmailShown(), true);
+  ui.act(() => { dom.window.dispatchEvent(new dom.window.Event("pagehide")); });
+  assert.equal(sheetOpen(), false, "closed at once");
+  assert.equal(typedEmailShown(), false, "and the typed email is gone");
+  const reopened = await openSheetEmail();
+  assert.equal(reopened.value, "", "reopening starts empty");
+});
+
+test("on a private page the sheet joins the page's concealment: hidden while a recheck is pending, kept hidden for a different member", async () => {
+  const { PrivatePageGuard } = await import("@/components/auth/private-page-guard");
+  const c = client();
+  let answer: (value: string | null) => void = () => {};
+  let reloads = 0;
+  const readPrincipal = () => new Promise<string | null | undefined>((resolve) => { answer = resolve; });
+  ui.render(<Sheet.AccountSheetProvider client={c.value}>
+    <PrivatePageGuard principal={null} reload={() => { reloads += 1; }} readPrincipal={readPrincipal}><SheetTrigger /></PrivatePageGuard>
+  </Sheet.AccountSheetProvider>, { wrapper: MemberAuthProviders });
+  const email = await openSheetEmail();
+  ui.fireEvent.change(email, { target: { value: "member@example.com" } });
+  const page = document.querySelector("[data-private-page]")!;
+  assert.equal(document.querySelector("[data-private-portal-host]")!.contains(email), true, "the sheet portals into the page's host");
+  ui.act(() => { dom.window.dispatchEvent(new dom.window.Event("focus")); });
+  await untilAsserted(ui, () => assert.equal(page.hasAttribute("data-concealed") && page.hasAttribute("inert"), true));
+  assert.equal(page.contains(email), true, "hidden and blocked with the page while the answer is pending");
+  await ui.act(async () => { answer("member-b"); });
+  await untilAsserted(ui, () => assert.equal(reloads, 1));
+  assert.equal(page.hasAttribute("data-concealed"), true, "a different member never sees it again");
+});
+
+test("a navigation disposes the open sheet", async () => {
+  const { PathnameContext } = await import("next/dist/shared/lib/hooks-client-context.shared-runtime");
+  const c = client();
+  function At({ path }: { path: string }) {
+    return <PathnameContext.Provider value={path}><Sheet.AccountSheetProvider client={c.value}><SheetTrigger /></Sheet.AccountSheetProvider></PathnameContext.Provider>;
+  }
+  const view = ui.render(<At path="/shop" />, { wrapper: MemberAuthProviders });
+  ui.fireEvent.change(await openSheetEmail(), { target: { value: "member@example.com" } });
+  view.rerender(<At path="/me/orders" />);
+  await untilAsserted(ui, () => assert.equal(sheetOpen(), false));
+  assert.equal(typedEmailShown(), false);
+});
+
+test("the NFC tap: signing in through the sheet asks for a new tap and does not refresh", async () => {
+  const { TapConfirm } = await import("@/app/(nfc)/nfc/_tap/tap-confirm");
+  const { AppRouterContext } = await import("next/dist/shared/lib/app-router-context.shared-runtime");
+  let refreshes = 0;
+  const router = { back() {}, forward() {}, refresh() { refreshes += 1; }, push() {}, replace() {}, prefetch() {}, bfcacheId: "tap-test" };
+  const c = client();
+  c.value.verifyEmailCode = async (...args) => { c.calls.push(["verify", ...args]); c.setStatus(active); };
+  ui.render(<AppRouterContext.Provider value={router as never}><Sheet.AccountSheetProvider client={c.value}>
+    <TapConfirm view={{ state: "signed-out" }} />
+  </Sheet.AccountSheetProvider></AppRouterContext.Provider>, { wrapper: MemberAuthProviders });
+  const tap = messages.Customer.app_site_nfc_tap;
+  assert.ok(ui.screen.getByRole("heading", { name: tap.signedOut.title }));
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: tap.signIn }));
+  ui.fireEvent.click(await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Sign in" })));
+  const email = await untilAsserted(ui, () => {
+    const field = ui.screen.getByLabelText("Email address") as HTMLInputElement;
+    assert.equal(field.disabled, false);
+    return field;
+  });
+  ui.fireEvent.change(email, { target: { value: "member@example.com" } });
+  ui.fireEvent.submit(email.closest("form")!);
+  ui.fireEvent.click(await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Send sign-in code" })));
+  await untilAsserted(ui, () => assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code)));
+  ui.fireEvent.change(firstCodeCell(ui.screen), { target: { value: "A1B2C3" } });
+  await untilAsserted(ui, () => assert.ok(ui.screen.getByRole("heading", { name: tap.signedIn.title })));
+  assert.ok(ui.screen.getByText(tap.signedIn.line));
+  assert.equal(ui.screen.queryByRole("button", { name: tap.signIn }), null, "no sign-in left to press");
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  assert.equal(refreshes, 0, "the tap can't continue in place, so nothing refreshes");
+});
+
 test("the sign-in page keeps an account still in setup on its setup step, inline, without leaving", async () => {
   // A new social member returns to /sign-in signed in but not yet a member: the server opens the login flow, which
   // shows the explicit setup gate (as the account sheet does after a provider return), and next is kept for later.

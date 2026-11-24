@@ -7,7 +7,11 @@ import { memberSignInHref, memberSignInNext } from "@/lib/member-auth/paths";
 // Kept apart from AccountSheetProvider so a sign-in button never pulls the sheet (and its copy) into a page's bundle:
 // the provider in the layout owns the sheet; buttons only reach it through this context.
 export type AccountSheetFlow = "login" | "signup";
-export type AccountSheetOpen = (flow: AccountSheetFlow | undefined, trigger: HTMLElement | null) => void;
+/**
+ * Opens the sheet. `onMember` runs once the member is confirmed in it, in place of refreshing the page: for a page
+ * whose state can't carry over a sign-in (the NFC tap), which shows its own next step instead.
+ */
+export type AccountSheetOpen = (flow: AccountSheetFlow | undefined, trigger: HTMLElement | null, onMember?: () => void) => void;
 export const AccountSheet = createContext<AccountSheetOpen | null>(null);
 
 /**
@@ -25,13 +29,16 @@ export function useAccountSheetTrigger(flow?: AccountSheetFlow): { href: string;
   return { href: memberSignInHref(memberSignInNext(pathname)), onClick };
 }
 
-/** For a sign-in form (the NFC tap's GET form): submitting opens the sheet; without JavaScript the form goes to /sign-in. */
-export function useAccountSheetSubmit(): (event: SyntheticEvent<HTMLFormElement>) => void {
+/**
+ * For a sign-in form (the NFC tap's GET form): submitting opens the sheet; without JavaScript the form goes to
+ * /sign-in. `onMember`: see AccountSheetOpen.
+ */
+export function useAccountSheetSubmit(onMember?: () => void): (event: SyntheticEvent<HTMLFormElement>) => void {
   const open = useContext(AccountSheet);
   return useCallback((event: SyntheticEvent<HTMLFormElement>) => {
     if (!open) return;
     event.preventDefault();
     const submitter = (event.nativeEvent as SubmitEvent).submitter;
-    open(undefined, submitter instanceof HTMLElement ? submitter : event.currentTarget);
-  }, [open]);
+    open(undefined, submitter instanceof HTMLElement ? submitter : event.currentTarget, onMember);
+  }, [open, onMember]);
 }

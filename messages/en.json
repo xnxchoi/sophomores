@@ -1660,6 +1660,10 @@
         "title": "Sign in first",
         "line": "Then tap your card again."
       },
+      "signedIn": {
+        "title": "Signed in",
+        "line": "Now tap your card again."
+      },
       "ready": {
         "title": "Your card",
         "line": "Confirm it's you to continue."

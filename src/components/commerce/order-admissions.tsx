@@ -11,9 +11,10 @@ import { motionTokens } from "@/lib/motion-tokens";
 import { CopyButton } from "@/components/core/ArcFocus/ArcFocus";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 
+const walletPassPath = z.string().regex(/^\/api\/commerce\/orders\/[a-f0-9-]{36}\/admissions\/[a-f0-9-]{36}\/wallet-pass\/(ios|android)$/i);
 const admissionSchema = z.object({ admissionID: z.uuid(), unit: z.int().min(1).max(3), name: z.string().max(100).nullable(),
   status: z.enum(["available", "claimed", "checked-in", "revoked"]), claimed: z.boolean(), reviewRequired: z.boolean(),
-  ticketTier: z.enum(["member", "guest"]).optional(), applePassURL: z.url({ protocol: /^https$/ }).nullish(), androidPassURL: z.url({ protocol: /^https$/ }).nullish() });
+  ticketTier: z.enum(["member", "guest"]).optional(), applePassURL: walletPassPath.nullish(), androidPassURL: walletPassPath.nullish() });
 const admissionsSchema = z.array(admissionSchema).max(3);
 const issuedClaimSchema = z.object({ token: z.string().regex(/^[A-Za-z0-9_-]{43}$/), expiresAt: z.iso.datetime({ offset: true }) });
 
@@ -85,7 +86,7 @@ function AdmissionCard({ admission }: { admission: z.infer<typeof admissionSchem
       <div className="flex flex-wrap items-center gap-3">
         {admission.applePassURL && <a className="group/focus inline-flex min-h-12 items-center underline" href={admission.applePassURL} referrerPolicy="no-referrer"><FocusShape className="group-focus-visible/focus:outline-current">{t('appleWalletPass')}</FocusShape></a>}
         {admission.androidPassURL && <a className="group/focus inline-flex min-h-12 items-center underline" href={admission.androidPassURL} referrerPolicy="no-referrer"><FocusShape className="group-focus-visible/focus:outline-current">{t('googleWalletPass')}</FocusShape></a>}
-        {admission.ticketTier === "guest" && admission.androidPassURL && <CopyButton value={admission.androidPassURL} label={t('copyGoogleWalletPass')} className="min-h-12!" />}
+        {admission.ticketTier === "guest" && admission.androidPassURL && <ShareGooglePass key={admission.androidPassURL} path={admission.androidPassURL} />}
       </div>
       {!admission.applePassURL && !admission.androidPassURL && <p>{t('walletPassUnavailable')}</p>}
       {admission.ticketTier === "guest" && (admission.applePassURL || admission.androidPassURL) && <p>{t('forwardGuestQR')}</p>}
@@ -112,4 +113,37 @@ function AdmissionCard({ admission }: { admission: z.infer<typeof admissionSchem
     </div></motion.div>}
     </>}
   </motion.article>;
+}
+
+
+function ShareGooglePass({ path }: { path: string }) {
+  const t = useTranslations("Customer.components_commerce_order_admissions");
+  const [state, setState] = useState<{ status: "idle" | "loading" | "error" } | { status: "ready"; url: string }>({ status: "idle" });
+  const request = useRef<AbortController | null>(null);
+  useEffect(() => () => request.current?.abort(), []);
+  async function load() {
+    if (request.current) return;
+    const controller = new AbortController();
+    request.current = controller;
+    setState({ status: "loading" });
+    try {
+      const response = await fetch(path, { credentials: "same-origin", cache: "no-store", redirect: "error",
+        headers: { Accept: "application/json" }, signal: controller.signal });
+      if (!response.ok) throw new Error("Wallet pass unavailable");
+      const { passObjectUrl } = z.object({ passObjectUrl: z.url({ protocol: /^https$/, hostname: /^pay\.google\.com$/ }) }).parse(await response.json());
+      if (!controller.signal.aborted) setState({ status: "ready", url: passObjectUrl });
+    } catch {
+      if (!controller.signal.aborted) setState({ status: "error" });
+    } finally {
+      if (request.current === controller) request.current = null;
+    }
+  }
+  return state.status === "ready"
+    ? <CopyButton value={state.url} label={t("copyGoogleWalletPass")} className="min-h-12!" />
+    : <>
+      <Button type="button" variant="outline" onClick={() => void load()} disabled={state.status === "loading"} className="min-h-12">
+        {t(state.status === "loading" ? "gettingGoogleWalletPass" : "getGoogleWalletPass")}
+      </Button>
+      {state.status === "error" && <p role="status">{t("googleWalletPassFailed")}</p>}
+    </>;
 }

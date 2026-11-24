@@ -104,6 +104,7 @@ before(async () => {
     if (url.pathname === '/api/addresses') return Response.json({ docs: [] })
     if (url.origin === 'http://localhost' && url.pathname === '/api/payments/portone/pending') return Response.json({ attempts: discovered })
     if (url.pathname === '/api/carts/cart-1') return Response.json({ id: 'cart-1', currency: 'KRW', items: [{ id: 'item-1', product: 'product-1', quantity: 1 }] })
+    if (url.pathname.endsWith('/initiate') && preparationOutcome === 'guest-quote-changed') return Response.json({ message: 'Guest quote changed', outcome: preparationOutcome })
     if (url.pathname.endsWith('/initiate')) return Response.json({ transactionID, paymentID, outcome: preparationOutcome, ...(preparationOutcome === 'prepared' ? { paymentRequest: sdkRequest } : {}) })
     if (url.pathname.endsWith('/confirm-order')) return confirmationStatus === 200 ? Response.json({ orderID, transactionID }) : Response.json({ message: 'Unconfirmed' }, { status: confirmationStatus })
     if (url.pathname.endsWith('/resume')) return Response.json({ transactionID, paymentID, outcome: resumeOutcome, ...(resumeOutcome === 'resumable' ? { paymentRequest: sdkRequest } : {}) })
@@ -387,9 +388,23 @@ test('recovery rows show the order name the server froze for each attempt', asyn
   await ui.screen.findByText('PREVIEW Édition personnelle')
 })
 
-function render(sdk: typeof requestPayment, recovery = false) {
-  ui.render(<EnglishMessages><Provider><Payment shippingAddress={address} recovery={recovery} requestPayment={sdk} /></Provider></EnglishMessages>)
+function render(sdk: typeof requestPayment, recovery = false, guestQuote?: import("@/lib/commerce/contracts").GuestCheckoutQuote) {
+  ui.render(<EnglishMessages><Provider><Payment shippingAddress={address} recovery={recovery} guestQuote={guestQuote} requestPayment={sdk} /></Provider></EnglishMessages>)
 }
+
+test('a stale Guest quote never opens the SDK or retains a rejected fresh attempt', async () => {
+  preparationOutcome = 'guest-quote-changed'
+  let opens = 0
+  const quote = { productID: orderID, quantity: 2, totalAmount: 20_000 }
+  render(async () => { opens++; return undefined }, false, quote)
+  const pay = await ui.screen.findByRole('button', { name: 'Pay by card' })
+  await ui.waitFor(() => assert.equal((pay as HTMLButtonElement).disabled, false))
+  ui.fireEvent.click(pay)
+  await ui.screen.findByText('Your guest ticket selection or price changed. Reload and review the total before paying.')
+  assert.deepEqual(calls.find(call => call.path.endsWith('/initiate'))?.body.guestQuote, quote)
+  assert.equal(opens, 0)
+  assert.equal(dom.window.sessionStorage.getItem(storageKey), null)
+})
 
 test('SDK cancellation keeps exact attempt and address, makes no second charge, and never claims paid', async () => {
   confirmationStatus = 409

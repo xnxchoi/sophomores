@@ -44,6 +44,15 @@ export const shippingAddressSchema = z.strictObject({
 });
 export type ShippingAddress = Readonly<z.infer<typeof shippingAddressSchema>>;
 
+/** The displayed Guest quote is a precondition, never a source of price or cart authority. */
+export const guestCheckoutQuoteSchema = z.strictObject({
+  productID: z.uuid(),
+  quantity: z.int().min(1).max(MAX_ORDER_UNITS),
+  totalAmount: amount.positive(),
+});
+export type GuestCheckoutQuote = Readonly<z.infer<typeof guestCheckoutQuoteSchema>>;
+
+
 export const purchaseChargeFields = {
   customerID: identifier, cartID: identifier, productID: identifier, eventID: identifier,
   quantity: z.int().min(1).max(MAX_ORDER_UNITS), accountLimit: z.int().min(1).max(MAX_ORDER_UNITS), currency: z.literal("KRW"),

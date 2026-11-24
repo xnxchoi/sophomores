@@ -135,14 +135,16 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
         [{ reserved_quantity: 0, committed_quantity: 0 }]);
       }
       process.env.MEMBER_WALLET_OWNER_ADDRESS = "0x" + "c".repeat(40);
-      await assert.rejects(initiateThroughEndpoint(payload, member, { cartID: guest.cartID, shippingAddress: guest.shippingAddress }), /initiate answered (403|500)/);
+      await assert.rejects(initiateThroughEndpoint(payload, member, {
+        cartID: guest.cartID, shippingAddress: guest.shippingAddress, guestQuote: { productID: guest.productID, quantity: 1, totalAmount: 10_000 },
+      }), /initiate answered (403|500)/);
       assert.deepEqual((await control.query("SELECT id FROM transactions WHERE cart_id=$1", [guest.cartID])).rows, []);
       assert.deepEqual((await control.query(
         "SELECT reserved_quantity::int, committed_quantity::int FROM commerce_events WHERE id=$1", [eventID])).rows,
       [{ reserved_quantity: 0, committed_quantity: 0 }]);
       const m = await prepare(payload, memberCart);
       await settleOne(payload, m);
-      const g = await initiateThroughEndpoint(payload, member, { cartID: guest.cartID, shippingAddress: guest.shippingAddress }) as { transactionID: ReturnType<typeof randomUUID>; paymentID: string };
+      const g = await initiateThroughEndpoint(payload, member, { cartID: guest.cartID, shippingAddress: guest.shippingAddress, guestQuote: { productID: guest.productID, quantity: 1, totalAmount: 10_000 } }) as { transactionID: ReturnType<typeof randomUUID>; paymentID: string };
       await settleOne(payload, { ...guest, ...g, total: 10_000 });
 
       const req = await createLocalReq({ user: member }, payload);
@@ -273,7 +275,19 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
           collection: "carts", id: saved.id, req: await createLocalReq({ user: sponsor }, payload), overrideAccess: false, depth: 0,
           data: { items: [{ ...line, quantity: 3 }] },
         }), /Only two Guest Tickets per purchase/);
-        const attempt = await initiateThroughEndpoint(payload, sponsor, { cartID: reloaded.id, shippingAddress: guest.shippingAddress }) as { transactionID: string };
+        const checkout = { cartID: reloaded.id, shippingAddress: guest.shippingAddress };
+        for (const guestQuote of [
+          { productID: guest.productID, quantity: 1, totalAmount: 10_000 },
+          { productID: guest.productID, quantity: 2, totalAmount: 18_000 },
+          { productID: randomUUID(), quantity: 2, totalAmount: 20_000 },
+          undefined,
+        ]) {
+          assert.deepEqual(await initiateThroughEndpoint(payload, sponsor, { ...checkout, guestQuote }), { message: "Guest quote changed", outcome: "guest-quote-changed" });
+          assert.deepEqual((await control.query("SELECT id FROM transactions WHERE cart_id=$1", [reloaded.id])).rows, []);
+          assert.deepEqual((await control.query("SELECT id FROM commerce_reservations WHERE customer_id=$1", [sponsor.id])).rows, []);
+        }
+        const attempt = await initiateThroughEndpoint(payload, sponsor, { ...checkout,
+          guestQuote: { productID: guest.productID, quantity: 2, totalAmount: 20_000 } }) as { transactionID: string };
         const charge = await control.query("SELECT amount::int FROM transactions WHERE id=$1", [attempt.transactionID]);
         assert.deepEqual(charge.rows, [{ amount: 20_000 }]);
         await assert.rejects(migrate(downCartKind), /Cannot drop persisted shared Guest cart markers|Failed query/);

@@ -3,7 +3,7 @@ import { createHash, randomUUID } from 'node:crypto'
 import { APIError, type PayloadRequest, type GroupField, type CollectionSlug } from 'payload'
 import type { PaymentAdapter } from '@payloadcms/plugin-ecommerce/types'
 import { z } from 'zod'
-import { shippingAddressSchema } from '../contracts'
+import { guestCheckoutQuoteSchema, shippingAddressSchema } from '../contracts'
 import { optionalRelationshipID, purchaseSnapshotSchema } from '../purchase-snapshot'
 import { commerceSnapshotHash } from '../snapshot-hash'
 import { buildCommerceSnapshot } from '../catalogue'
@@ -250,6 +250,12 @@ export function createPortOneAdapter(deps: AdapterDependencies = {}): PaymentAda
             return { message: 'Existing payment attempt', transactionID: row.id, paymentID: row.portone.paymentID, outcome: 'status-only' }
           }
           const snapshot = await buildCommerceSnapshot({ req, cart, shippingAddress, allowNativeEditions: deps.allowNativeEditions })
+          const expected = guestCheckoutQuoteSchema.optional().parse(req.data?.guestQuote)
+          // A fresh Guest charge needs the reviewed quote. Do not return a payment request or
+          // write an attempt/reservation on mismatch; replay above still uses its saved attempt.
+          if (snapshot.version === 3
+            ? !expected || expected.productID !== snapshot.productID || expected.quantity !== snapshot.quantity || expected.totalAmount !== snapshot.totalAmount
+            : expected) return { message: 'Guest quote changed', outcome: 'guest-quote-changed' }
           const variant = snapshot.version === 2 ? { variantID: snapshot.variantID,
             productVersion: snapshot.productVersion, variantVersion: snapshot.variantVersion } : undefined
           if (snapshot.customerID !== String(req.user!.id) || snapshot.cartID !== String(data.cart.id)) throw new Error('Snapshot owner mismatch')

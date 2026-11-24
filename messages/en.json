@@ -925,6 +925,9 @@
       "forwardGuestQR": "Send this ticket privately. Open its Wallet pass to share the QR image, or copy the Google Wallet link for a guest on Android.",
       "googleWalletPass": "Google Wallet pass",
       "copyGoogleWalletPass": "Copy Google Wallet link",
+      "getGoogleWalletPass": "Get a shareable Google Wallet link",
+      "gettingGoogleWalletPass": "Getting the link...",
+      "googleWalletPassFailed": "We couldn't get the Google Wallet link. Try again.",
       "appleWalletPass": "Add to Apple Wallet",
       "walletPassUnavailable": "A Wallet pass is not available yet.",
       "purchaseIncludesOneAdmissionAddTheGuest": "This purchase includes one admission. Add the guest’s name here. Registration is optional and is not required to attend.",
@@ -954,6 +957,7 @@
       "privateLinkExpiry": "Expires {date} KST. Anyone with this link can attempt to claim it."
     },
     "components_commerce_payment": {
+      "guestQuoteChanged": "Your guest ticket selection or price changed. Reload and review the total before paying.",
     "copyOrderReference": "Copy order reference",
       "viewOrder": "View order",
       "paymentConfirmedYourOrderHasBeenReceived": "Payment confirmed. Your order has been received.",

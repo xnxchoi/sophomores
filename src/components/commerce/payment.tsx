@@ -11,7 +11,7 @@ import Link from "next/link";
 import { useCart, useEcommerce, usePayments } from "@payloadcms/plugin-ecommerce/client/react";
 import { requestPayment as portOneRequestPayment, type PaymentRequest } from "@portone/browser-sdk/v2";
 import { z } from "zod";
-import { shippingAddressSchema, type ShippingAddress } from "@/lib/commerce/contracts";
+import { shippingAddressSchema, type GuestCheckoutQuote, type ShippingAddress } from "@/lib/commerce/contracts";
 import { providerPaymentId } from "@/lib/tickets/portone/payment-id";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { ActionButton, CopyButton } from "@/components/core/ArcFocus/ArcFocus";
@@ -43,6 +43,7 @@ type CommercePaymentProps = {
   onBusyChange?: (busy: boolean) => void; onAttemptChange?: (retained: boolean) => void;
   requestPayment?: typeof portOneRequestPayment;
   productID?: string;
+  guestQuote?: GuestCheckoutQuote;
 };
 
 /** Payment failures show as toasts (owner, for payment failures only); confirmed and cancelled results stay inline. */
@@ -52,7 +53,7 @@ export function CommercePayment(props: CommercePaymentProps) {
 }
 
 /** No shipping, customer details, cart secrets or SDK requests are stored in browser storage. */
-function PaymentPanel({ shippingAddress, disabled = false, onBusyChange, onAttemptChange, recovery = false, productID, requestPayment = portOneRequestPayment }: CommercePaymentProps) {
+function PaymentPanel({ shippingAddress, disabled = false, onBusyChange, onAttemptChange, recovery = false, productID, guestQuote, requestPayment = portOneRequestPayment }: CommercePaymentProps) {
   const t = useTranslations('Customer.components_commerce_payment');
   const { toast } = useToastStack();
   const fail = (title: string) => { toast({ type: "error", title }); };
@@ -131,7 +132,7 @@ function PaymentPanel({ shippingAddress, disabled = false, onBusyChange, onAttem
     if (!storageKey) return false;
     const saved = window.sessionStorage.getItem(storageKey);
     const current = saved ? intentSchema.safeParse(JSON.parse(saved)) : null;
-    if (current?.success && current.data.transactionID === value.transactionID
+    if (current?.success && (value.transactionID !== undefined || current.data.attemptID === value.attemptID) && current.data.transactionID === value.transactionID
       && current.data.paymentID === value.paymentID && current.data.cartID === value.cartID) {
       window.sessionStorage.removeItem(storageKey);
       window.dispatchEvent(new Event("commerce-payment-update"));
@@ -206,10 +207,17 @@ function PaymentPanel({ shippingAddress, disabled = false, onBusyChange, onAttem
     const attempt = intent ?? { version: 1 as const, attemptID: crypto.randomUUID(), cartID: String(cartID) };
     if (attempt.cartID !== String(cartID) || !attempt.attemptID) throw new Error("Cart changed");
     saveIntent(attempt); // Same preparation ID survives a lost response; no silent new charge.
-    const prepared = preparedSchema.parse(await initiatePayment("portone", { additionalData: { shippingAddress, attemptID: attempt.attemptID } }));
+    const result = await initiatePayment("portone", { additionalData: { shippingAddress, attemptID: attempt.attemptID, guestQuote } });
+    if (z.strictObject({ message: z.literal("Guest quote changed"), outcome: z.literal("guest-quote-changed") }).safeParse(result).success) {
+      clearMatchingIntent(attempt);
+      fail(t('guestQuoteChanged'));
+      return;
+    }
+    const prepared = preparedSchema.parse(result);
     const retained = { ...attempt, transactionID: prepared.transactionID, paymentID: prepared.paymentID };
     saveIntent(retained);
     if (prepared.outcome !== "prepared" || !prepared.paymentRequest) { fail(t('anExistingAttemptWasFoundCheckItsStatusBefore')); return; }
+    if (guestQuote && prepared.paymentRequest.totalAmount !== guestQuote.totalAmount) throw new Error("Guest quote mismatch");
     await openSDK(retained, prepared.paymentRequest);
   }
   /** Resolves true only when a retire landed; every failure has already shown its toast. */

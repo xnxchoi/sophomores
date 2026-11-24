@@ -11,7 +11,7 @@ import { commerceEditionProductSchema } from "./editions";
 import { Orders } from "../../payload/collections/orders";
 import { assertCommerceBrowserMutation, commerceAdmin, commerceAdminField, commerceAttemptCreate, commerceOwnerRead, commerceServerField, commerceServerWrite } from "./access";
 import { commerceProductSchema, commercePublicationSchema, loadCommerceCatalogue } from "./catalogue";
-import { shippingAddressSchema } from "./contracts";
+import { guestCheckoutQuoteSchema, shippingAddressSchema } from "./contracts";
 import { CART_EXPECTED_MEMBER_HEADER, cartRefusalData, cartRefusalMessage } from "./cart-refusal";
 import { cartQuantityError, SHARED_GUEST_CART_KIND } from "./cart-quantity";
 import { sharedTicketMode } from "./event-tickets";
@@ -267,7 +267,7 @@ function productsOverride(defaultCollection: CollectionConfig): CollectionConfig
 }
 
 const paymentBase = { cartID: z.uuid(), currency: z.literal("KRW").optional(), secret: z.null().optional() };
-const initiateInput = z.strictObject({ ...paymentBase, attemptID: z.uuid(), shippingAddress: shippingAddressSchema });
+const initiateInput = z.strictObject({ ...paymentBase, attemptID: z.uuid(), shippingAddress: shippingAddressSchema, guestQuote: guestCheckoutQuoteSchema.optional() });
 const confirmInput = z.strictObject({ ...paymentBase, transactionID: z.uuid(), paymentID: z.string().regex(/^[a-f0-9]{32}$/) });
 
 /** Wrap generated browser endpoints without replacing official cart/payment operations. */

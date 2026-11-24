@@ -6,7 +6,8 @@ import { isTxHash, keyGrantOperationKey, memberEventGrantOperationKey, MEMBER_EV
 import { loadWalletConfig, predictMemberSafe } from "../../member-auth/wallet/safe";
 
 /** Called only after the order and admission have been scoped to the verified buyer. No provider requests. */
-export async function readEventPassLinks(req: PayloadRequest, admission: CommerceDocument, order: CommerceDocument, buyer: string) {
+async function resolveEventPassSources(req: PayloadRequest, admission: CommerceDocument, order: CommerceDocument, buyer: string) {
+  if (req.user?.collection !== "users" || String(req.user.id) !== buyer) return null;
   const host = process.env.UNLOCK_PASS_ORIGIN;
   if (!host || process.env.UNLOCK_HOSTED_PASSES_ENABLED !== "1" || admission.benefitReview ||
     relationshipID(admission.buyer) !== buyer || relationshipID(admission.order) !== order.id ||
@@ -65,4 +66,21 @@ export async function readEventPassLinks(req: PayloadRequest, admission: Commerc
     // Keep the newly approved Android handoff limited to shared Guest tickets.
     androidPassURL: shared && tier === "guest" ? new URL(route + "/android", origin).href : null,
   };
+}
+
+export async function readEventPassLinks(req: PayloadRequest, admission: CommerceDocument, order: CommerceDocument, buyer: string) {
+  const sources = await resolveEventPassSources(req, admission, order, buyer);
+  if (!sources) return null;
+  const route = `/api/commerce/orders/${encodeURIComponent(order.id)}/admissions/${encodeURIComponent(admission.id)}/wallet-pass`;
+  return { applePassURL: route + "/ios", androidPassURL: sources.androidPassURL ? route + "/android" : null };
+}
+
+export async function readOwnedEventPassSource(req: PayloadRequest, buyer: string, orderID: string, admissionID: string, platform: "ios" | "android") {
+  const order = await req.payload.findByID({ collection: "orders", id: orderID, overrideAccess: false,
+    disableErrors: true, depth: 0, req });
+  if (!order || order.id !== orderID || order.commerceVersion !== "commerce-v1" || relationshipID(order.customer) !== buyer) return null;
+  const admission = await readCommerce(req, "commerce-admissions", admissionID);
+  if (admission.id !== admissionID) return null;
+  const sources = await resolveEventPassSources(req, admission, { ...order }, buyer);
+  return platform === "ios" ? sources?.applePassURL : sources?.androidPassURL;
 }

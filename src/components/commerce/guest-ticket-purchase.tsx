@@ -89,6 +89,7 @@ function PurchaseForm({ customerID, productID, title, priceKRW, available, limit
       <div className="flex justify-between gap-4 border-t border-border pt-4"><span>{t("total")}</span><span>{price.format(priceKRW * savedQuantity)}</span></div>
     </>}
     <CommercePayment productID={productID} shippingAddress={address}
+      guestQuote={orderReady ? { productID, quantity: savedQuantity, totalAmount: priceKRW * savedQuantity } : undefined}
       disabled={disabled || !orderReady || !shippingAddressSchema.safeParse(address).success}
       onBusyChange={setPaymentBusy} onAttemptChange={setPaymentLocked} />
   </section>;

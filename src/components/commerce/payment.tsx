@@ -11,7 +11,7 @@ import Link from "next/link";
 import { useCart, useEcommerce, usePayments } from "@payloadcms/plugin-ecommerce/client/react";
 import { requestPayment as portOneRequestPayment, type PaymentRequest } from "@portone/browser-sdk/v2";
 import { z } from "zod";
-import { shippingAddressSchema, type GuestCheckoutQuote, type ShippingAddress } from "@/lib/commerce/contracts";
+import { shippingAddressSchema, TICKET_EMAIL_CONSENT, type GuestCheckoutQuote, type ShippingAddress } from "@/lib/commerce/contracts";
 import { providerPaymentId } from "@/lib/tickets/portone/payment-id";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { ActionButton, CopyButton } from "@/components/core/ArcFocus/ArcFocus";
@@ -44,6 +44,7 @@ type CommercePaymentProps = {
   requestPayment?: typeof portOneRequestPayment;
   productID?: string;
   guestQuote?: GuestCheckoutQuote;
+  offerTicketEmailConsent?: boolean;
 };
 
 /** Payment failures show as toasts (owner, for payment failures only); confirmed and cancelled results stay inline. */
@@ -53,12 +54,13 @@ export function CommercePayment(props: CommercePaymentProps) {
 }
 
 /** No shipping, customer details, cart secrets or SDK requests are stored in browser storage. */
-function PaymentPanel({ shippingAddress, disabled = false, onBusyChange, onAttemptChange, recovery = false, productID, guestQuote, requestPayment = portOneRequestPayment }: CommercePaymentProps) {
+function PaymentPanel({ shippingAddress, disabled = false, onBusyChange, onAttemptChange, recovery = false, productID, guestQuote, offerTicketEmailConsent = false, requestPayment = portOneRequestPayment }: CommercePaymentProps) {
   const t = useTranslations('Customer.components_commerce_payment');
   const { toast } = useToastStack();
   const fail = (title: string) => { toast({ type: "error", title }); };
   const { user } = useEcommerce();
   const customerID = user?.id;
+  const [ticketEmailConsent, setTicketEmailConsent] = useState(false);
   const { cart, refreshCart } = useCart();
   // 3.92.1 declares context.cartID but omits it from the runtime provider value.
   // The actual canonical document returned by useCart is the available authority.
@@ -207,7 +209,9 @@ function PaymentPanel({ shippingAddress, disabled = false, onBusyChange, onAttem
     const attempt = intent ?? { version: 1 as const, attemptID: crypto.randomUUID(), cartID: String(cartID) };
     if (attempt.cartID !== String(cartID) || !attempt.attemptID) throw new Error("Cart changed");
     saveIntent(attempt); // Same preparation ID survives a lost response; no silent new charge.
-    const result = await initiatePayment("portone", { additionalData: { shippingAddress, attemptID: attempt.attemptID, guestQuote } });
+    const result = await initiatePayment("portone", { additionalData: { shippingAddress, attemptID: attempt.attemptID, guestQuote,
+      ...(offerTicketEmailConsent && ticketEmailConsent ? { ticketEmailConsent: TICKET_EMAIL_CONSENT } : {}),
+    } });
     if (z.strictObject({ message: z.literal("Guest quote changed"), outcome: z.literal("guest-quote-changed") }).safeParse(result).success) {
       clearMatchingIntent(attempt);
       fail(t('guestQuoteChanged'));
@@ -280,6 +284,11 @@ function PaymentPanel({ shippingAddress, disabled = false, onBusyChange, onAttem
         <span className="min-w-0 tabular-nums">{attempt.orderName && <span className="mb-1 block font-medium wrap-anywhere">{attempt.orderName}</span>}{attempt.totalAmount.toLocaleString("ko-KR")} KRW <span className="mt-1 block wrap-anywhere text-xs text-muted-foreground">{t('referenceEnding')}{attempt.paymentID.slice(-6)}</span></span><span className="font-medium">{attempt.reviewHold || attempt.resolutionConflict ? t('reviewNeeded') : t('viewAttempt')}</span>
       </button>)}
     </div>}
+    {offerTicketEmailConsent && !recovery && !retained && !orderID && <label className="flex min-h-11 items-center gap-3 text-sm">
+      <input type="checkbox" checked={ticketEmailConsent} disabled={unavailable || disabled}
+        onChange={event => setTicketEmailConsent(event.target.checked)} className="size-5 shrink-0 accent-foreground" />
+      <span>{t('ticketEmailConsent')}</span>
+    </label>}
     {/* Always settles back to idle: a confirmed payment replaces this button with the order, so it never shows a success state. */}
     {!recovery && !retained && !orderID && <ActionButton label={t('payByCard')} pendingLabel={t('preparing')} successLabel={t('payByCard')} resetAfterMs={0}
       disabled={(unavailable && !busy) || disabled || !cartID || discovery.state !== "ready" || discovery.attempts.length > 0}

@@ -3,7 +3,7 @@ import { createHash, randomUUID } from 'node:crypto'
 import { APIError, type PayloadRequest, type GroupField, type CollectionSlug } from 'payload'
 import type { PaymentAdapter } from '@payloadcms/plugin-ecommerce/types'
 import { z } from 'zod'
-import { guestCheckoutQuoteSchema, shippingAddressSchema } from '../contracts'
+import { guestCheckoutQuoteSchema, shippingAddressSchema, ticketEmailConsentSchema } from '../contracts'
 import { optionalRelationshipID, purchaseSnapshotSchema } from '../purchase-snapshot'
 import { commerceSnapshotHash } from '../snapshot-hash'
 import { buildCommerceSnapshot } from '../catalogue'
@@ -249,7 +249,12 @@ export function createPortOneAdapter(deps: AdapterDependencies = {}): PaymentAda
               || row.portone.channelKey !== config.channelKey) throw new Error('Payment attempt cannot be rebound')
             return { message: 'Existing payment attempt', transactionID: row.id, paymentID: row.portone.paymentID, outcome: 'status-only' }
           }
-          const snapshot = await buildCommerceSnapshot({ req, cart, shippingAddress, allowNativeEditions: deps.allowNativeEditions })
+          const purchase = await buildCommerceSnapshot({ req, cart, shippingAddress, allowNativeEditions: deps.allowNativeEditions })
+          const consent = ticketEmailConsentSchema.parse(req.data?.ticketEmailConsent)
+          // Capture only fresh event-ticket consent, never infer it from an existing attempt.
+          const snapshot = consent && process.env.UNLOCK_TICKET_EMAIL_CONSENT_ENABLED === '1' &&
+            (purchase.version === 3 || (purchase.version === 2 && purchase.memberTicketTarget))
+            ? { ...purchase, ticketEmailConsent: consent } : purchase
           const expected = guestCheckoutQuoteSchema.optional().parse(req.data?.guestQuote)
           // A fresh Guest charge needs the reviewed quote. Do not return a payment request or
           // write an attempt/reservation on mismatch; replay above still uses its saved attempt.

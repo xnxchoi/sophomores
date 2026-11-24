@@ -388,8 +388,26 @@ test('recovery rows show the order name the server froze for each attempt', asyn
   await ui.screen.findByText('PREVIEW Édition personnelle')
 })
 
-function render(sdk: typeof requestPayment, recovery = false, guestQuote?: import("@/lib/commerce/contracts").GuestCheckoutQuote) {
-  ui.render(<EnglishMessages><Provider><Payment shippingAddress={address} recovery={recovery} guestQuote={guestQuote} requestPayment={sdk} /></Provider></EnglishMessages>)
+function render(sdk: typeof requestPayment, recovery = false, guestQuote?: import("@/lib/commerce/contracts").GuestCheckoutQuote, offerTicketEmailConsent = false) {
+  ui.render(<EnglishMessages><Provider><Payment shippingAddress={address} recovery={recovery} guestQuote={guestQuote} offerTicketEmailConsent={offerTicketEmailConsent} requestPayment={sdk} /></Provider></EnglishMessages>)
+}
+
+for (const consent of [false, true]) {
+  test(`ticket email choice is optional and only explicit consent is submitted (${consent})`, async () => {
+    preparationOutcome = 'status-only'
+    render(async () => { throw new Error("SDK must not open") }, false, undefined, true)
+    const checkbox = ui.screen.getByRole('checkbox', { name: /share my checkout email with Unlock/i }) as HTMLInputElement
+    assert.equal(checkbox.checked, false)
+    if (consent) ui.fireEvent.click(checkbox)
+    const pay = await ui.screen.findByRole('button', { name: 'Pay by card' })
+    await ui.waitFor(() => assert.equal((pay as HTMLButtonElement).disabled, false))
+    ui.fireEvent.click(pay)
+    await ui.screen.findByText('An existing attempt was found. Check its status before continuing.')
+    const body = calls.find(call => call.path.endsWith('/initiate'))?.body
+    assert.ok(body)
+    assert.equal(body.ticketEmailConsent, consent ? "unlock-ticket-email-v1" : undefined)
+    assert.equal(Object.hasOwn(body, "email"), false)
+  })
 }
 
 test('a stale Guest quote never opens the SDK or retains a rejected fresh attempt', async () => {

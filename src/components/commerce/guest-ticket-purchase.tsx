@@ -11,7 +11,7 @@ import { CommerceIdentityBoundary, CommerceProvider } from "./checkout";
 import { CommercePayment } from "./payment";
 import { ShippingAddressForm } from "./shipping-address";
 
-type GuestOffer = { customerID: string; productID: string; title: string; priceKRW: number; available: number; limit: number; locale: string };
+type GuestOffer = { customerID: string; productID: string; title: string; priceKRW: number; available: number; limit: number; locale: string; offerTicketEmailConsent?: boolean };
 
 export function GuestTicketPurchase(props: GuestOffer) {
   return <CommerceProvider>
@@ -21,7 +21,7 @@ export function GuestTicketPurchase(props: GuestOffer) {
   </CommerceProvider>;
 }
 
-function PurchaseForm({ customerID, productID, title, priceKRW, available, limit, locale }: GuestOffer) {
+function PurchaseForm({ customerID, productID, title, priceKRW, available, limit, locale, offerTicketEmailConsent }: GuestOffer) {
   const t = useTranslations("Customer.app_site_shop_invitations_page");
   const { cart, isLoading, refreshCart } = useCart();
   const { user, onLogin } = useEcommerce();
@@ -89,6 +89,7 @@ function PurchaseForm({ customerID, productID, title, priceKRW, available, limit
       <div className="flex justify-between gap-4 border-t border-border pt-4"><span>{t("total")}</span><span>{price.format(priceKRW * savedQuantity)}</span></div>
     </>}
     <CommercePayment productID={productID} shippingAddress={address}
+      offerTicketEmailConsent={offerTicketEmailConsent && orderReady}
       guestQuote={orderReady ? { productID, quantity: savedQuantity, totalAmount: priceKRW * savedQuantity } : undefined}
       disabled={disabled || !orderReady || !shippingAddressSchema.safeParse(address).success}
       onBusyChange={setPaymentBusy} onAttemptChange={setPaymentLocked} />

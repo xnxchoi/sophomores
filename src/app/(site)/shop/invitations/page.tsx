@@ -27,7 +27,8 @@ export default async function GuestInvitationsPage() {
     return <PageFrame title={t("title")}>
       <GuestTicketPurchase customerID={String(user.id)} productID={offer.productID} title={offer.title}
         priceKRW={offer.priceKRW} available={Math.min(offer.maximumQuantity, offer.availableQuantity)}
-        limit={offer.maximumQuantity} locale={await getLocale()} />
+        limit={offer.maximumQuantity} locale={await getLocale()}
+        offerTicketEmailConsent={process.env.UNLOCK_TICKET_EMAIL_CONSENT_ENABLED === "1"} />
     </PageFrame>;
   } catch {
     return frame(t("unavailable"));

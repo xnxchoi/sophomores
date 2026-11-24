@@ -144,7 +144,19 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
       [{ reserved_quantity: 0, committed_quantity: 0 }]);
       const m = await prepare(payload, memberCart);
       await settleOne(payload, m);
-      const g = await initiateThroughEndpoint(payload, member, { cartID: guest.cartID, shippingAddress: guest.shippingAddress, guestQuote: { productID: guest.productID, quantity: 1, totalAmount: 10_000 } }) as { transactionID: ReturnType<typeof randomUUID>; paymentID: string };
+      const priorConsent = process.env.UNLOCK_TICKET_EMAIL_CONSENT_ENABLED;
+      shared.after(() => {
+        if (priorConsent === undefined) delete process.env.UNLOCK_TICKET_EMAIL_CONSENT_ENABLED;
+        else process.env.UNLOCK_TICKET_EMAIL_CONSENT_ENABLED = priorConsent;
+      });
+      delete process.env.UNLOCK_TICKET_EMAIL_CONSENT_ENABLED;
+      const g = await initiateThroughEndpoint(payload, member, {
+        cartID: guest.cartID, shippingAddress: guest.shippingAddress,
+        guestQuote: { productID: guest.productID, quantity: 1, totalAmount: 10_000 },
+        ticketEmailConsent: "unlock-ticket-email-v1",
+      }) as { transactionID: ReturnType<typeof randomUUID>; paymentID: string };
+      const withoutConsent = await payload.findByID({ collection: "transactions", id: g.transactionID, overrideAccess: true, depth: 0 });
+      assert.equal((withoutConsent.portone.snapshot as Record<string, unknown>).ticketEmailConsent, undefined);
       await settleOne(payload, { ...guest, ...g, total: 10_000 });
 
       const req = await createLocalReq({ user: member }, payload);
@@ -275,6 +287,7 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
           collection: "carts", id: saved.id, req: await createLocalReq({ user: sponsor }, payload), overrideAccess: false, depth: 0,
           data: { items: [{ ...line, quantity: 3 }] },
         }), /Only two Guest Tickets per purchase/);
+        process.env.UNLOCK_TICKET_EMAIL_CONSENT_ENABLED = "1";
         const checkout = { cartID: reloaded.id, shippingAddress: guest.shippingAddress };
         for (const guestQuote of [
           { productID: guest.productID, quantity: 1, totalAmount: 10_000 },
@@ -287,7 +300,11 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
           assert.deepEqual((await control.query("SELECT id FROM commerce_reservations WHERE customer_id=$1", [sponsor.id])).rows, []);
         }
         const attempt = await initiateThroughEndpoint(payload, sponsor, { ...checkout,
-          guestQuote: { productID: guest.productID, quantity: 2, totalAmount: 20_000 } }) as { transactionID: string };
+          guestQuote: { productID: guest.productID, quantity: 2, totalAmount: 20_000 },
+          ticketEmailConsent: "unlock-ticket-email-v1" }) as { transactionID: string };
+        const stored = await payload.findByID({ collection: "transactions", id: attempt.transactionID, overrideAccess: true, depth: 0 });
+        assert.equal((stored.portone.snapshot as Record<string, unknown>).ticketEmailConsent, "unlock-ticket-email-v1");
+        assert.equal((stored.portone.snapshot as Record<string, unknown>).email, undefined);
         const charge = await control.query("SELECT amount::int FROM transactions WHERE id=$1", [attempt.transactionID]);
         assert.deepEqual(charge.rows, [{ amount: 20_000 }]);
         await assert.rejects(migrate(downCartKind), /Cannot drop persisted shared Guest cart markers|Failed query/);

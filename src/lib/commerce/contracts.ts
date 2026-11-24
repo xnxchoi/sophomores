@@ -52,6 +52,10 @@ export const guestCheckoutQuoteSchema = z.strictObject({
 });
 export type GuestCheckoutQuote = Readonly<z.infer<typeof guestCheckoutQuoteSchema>>;
 
+// Version the disclosure without duplicating the checkout email in a snapshot.
+export const TICKET_EMAIL_CONSENT = "unlock-ticket-email-v1";
+export const ticketEmailConsentSchema = z.literal(TICKET_EMAIL_CONSENT).optional();
+
 
 export const purchaseChargeFields = {
   customerID: identifier, cartID: identifier, productID: identifier, eventID: identifier,

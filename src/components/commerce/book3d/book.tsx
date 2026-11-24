@@ -352,7 +352,7 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
     stepLookTimeline(l, want, dt);
     if (l.dir > 0 && l.ld >= 0.95 && !revealed.current) { revealed.current = true; sig.onReading?.({ spread: l.spread, leaves: LEAVES, shown: true }); }
     if (l.dir < 0 && revealed.current) { revealed.current = false; sig.onReading?.({ spread: l.spread, leaves: LEAVES, shown: false }); }
-    if (l.dir < 0 && l.lu === 0) sig.onReading?.(null);
+    if (l.dir < 0 && l.lu === 0 && l.luFrom > 0) { l.luFrom = 0; sig.onReading?.(null); }
     const lu = l.lu, n = l.n;
     if (closedPages.current) closedPages.current.visible = lu === 0;
 

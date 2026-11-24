@@ -232,7 +232,7 @@ export function LookInside({ source, look, signals, sound, width, height, thickn
    *  hovered, the tip flop, the hover nudge, and whether its flight was dragged. */
   const leafFx = useRef(Array.from({ length: LEAVES }, () => ({ curl: 0, tilt: 0, amount: 0, amountV: 0, grabU: 1, grabV: 0.5, flop: 0, nudge: 0, dragged: false })));
   const hover = useRef({ inside: false, left: false, grabU: 0, grabV: 0.5, x: 0, y: 0, lastSide: 0, sideSince: 0, pushFrom: 0 });
-  const timing = useRef({ lockoutUntil: 0, stack: ((LEAVES - 1) / 2) * per, fanAt: -1, fine: true });
+  const timing = useRef({ lockoutUntil: 0, fanAt: -1, fine: true });
   useEffect(() => { timing.current.fine = window.matchMedia("(pointer: fine)").matches; }, []);
   /** The spread's screen rect in the View's pixels and the spine's x (stripe.press's book rect and spineScreenX). */
   const rect = useRef({ left: 0, top: 0, right: 0, bottom: 0, spine: 0, ready: false });
@@ -648,8 +648,9 @@ export function LookInside({ source, look, signals, sound, width, height, thickn
     const chunkAngle = c.left ? PI - c.p * PI - MathUtils.degToRad(16) * c.lift : c.p * PI + MathUtils.degToRad(16) * c.lift;
 
     // ---- Drawing ----
-    // The leaves' roots are spread across the spine, centred; the centring eases so a turn doesn't jump it.
-    timing.current.stack += (((LEAVES - 1) / 2 - l.spread) * per - timing.current.stack) * (1 - Math.exp(-10 * dt));
+    // Each leaf's depth: its place in the stack from the split, re-centred on the spine (stripe.press's leafOffset plus
+    // normalStackOffset), which comes to ((N − 1)/2 − i)·spacing whatever the page, so a turn never shifts the stack.
+    const depthOf = (i: number) => ((LEAVES - 1) / 2 - i) * per;
     const ld2 = l.ld * l.ld, open = l.ld, fx = leafFx.current;
     const hovered = h.inside && l.active && !g ? pick(h.left) : -1;
     const dragCurl = 1.82 * CURL_RAD * open, peekCurl = CURL_RAD * open * 0.14 * 2;
@@ -681,7 +682,7 @@ export function LookInside({ source, look, signals, sound, width, height, thickn
       const nudgeOn = i === (h.left ? topLeft : topRight) && h.inside && l.active;
       e.nudge += ((nudgeOn ? open * (1 - Math.abs(Math.sin(l.angle[i]))) : 0) - e.nudge) * (1 - Math.exp(-9 * dt));
       if (e.nudge < 1e-4) e.nudge = 0;
-      uni.uOffset.value = (l.spread - i) * per + timing.current.stack + (right ? 1 : -1) * 0.5 * per * e.nudge;
+      uni.uOffset.value = depthOf(i) + (right ? 1 : -1) * 0.5 * per * e.nudge;
       uni.uDepth.value = 0;
       // Corner curl (04ud:1287-1354): dragging rolls the held corner (target 12.8), hovering peeks (1.97), a released
       // flight keeps rolling (shown through a 0.1 s smoothDamp), otherwise it relaxes. The fold tilts with the hold.
@@ -721,7 +722,7 @@ export function LookInside({ source, look, signals, sound, width, height, thickn
       if (!count) return;
       uni.uCurl.value = (isLeft ? 1 - tE : -tE) * ld2; uni.uThin.value = smooth(0.6, 1, isLeft ? 1 - tE : tE);
       // Right: depths run down from the leaf under the top one; left: the other way (the left sheets' normal points down).
-      const shallow = (l.spread - (isLeft ? leftLast : rightFirst)) * per + timing.current.stack;
+      const shallow = depthOf(isLeft ? leftLast : rightFirst);
       uni.uOffset.value = isLeft ? shallow - 0.5 * per : shallow + 0.5 * per;
       uni.uDepth.value = isLeft ? -count * per : count * per;
       uni.uLiftSign.value = isLeft ? -1 : 1;

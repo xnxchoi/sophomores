@@ -142,7 +142,7 @@ export default function BookView({ signals, textures, visible, dark, onOpen, onC
       <group onPointerMissed={(event) => { if (signals.current.look && source && event.target === source) onClose?.(); }}><Intro><Book source={source} textures={textures} signals={signals} onOpen={onOpen} onClose={onClose} small={small} storageKey={storageKey} pageTextures={pageTextures} /></Intro></group>
     </Suspense>
     {magnifier && <Magnifier touch={small} source={source} />}
-    {/* The dark theme's shadow catcher; the shared canvas renders shadow maps (shadows="soft", as Hideaway's MainInternal). */}
+    {/* The dark theme's shadow catcher; the shared canvas renders shadow maps (shadows="percentage", UI-Shell dd1b91ac). */}
     {dark && <mesh position={[0, 0, -4]} receiveShadow>
       <planeGeometry args={[120, 120]} />
       <shadowMaterial opacity={0.855 * 0.4} />

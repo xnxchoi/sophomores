@@ -715,12 +715,22 @@ Same columns as above. Quotes come from the coordinator's relay of the owner's w
 | Refunds close 3 days before the event | "Refund is only possible 3 days prior." | Refunds are possible only until 3 days before the event's Part I start, enforced by the admin refund action; a verified PortOne-side cancel is still reconciled. This refines the refund lines in [Your decisions so far](#your-decisions-so-far) (15 Nov "no refunds after purchase except by hand"; the cancelled-event full refund). Open for the content owner: the policy page copy (the Hideaway as-is draft) needs this rule. |
 | Membership-included editions are not refundable; the book-only variant is | "Well, refunding the book is impossible for the main membership included one- we talked about this already. We're going to give them an entry in the magazine - personalized; it's custom-made, so it's subject to the "No Refunds" rule."<br><br>Correction, same day: "huh? no, the cheaper variant is not customized and subject to return." | Only the membership-included editions (book, ticket and the rest, and the premium) are custom-made and not refundable. This reaffirms [Your decisions so far](#your-decisions-so-far): 14 Nov "Customised product, so no returns" and 15 Nov "One refund rule: no refunds after purchase except by hand". Their personalised magazine entry is part of the edition and is what makes it custom-made. The cheaper book-only variant is not customised: it can be returned and refunded. The admin refund button covers the book-only variant (no event cutoff) and guest ticket orders (the 3-day cutoff above). An owner-initiated PortOne cancel (for example, a cancelled event: 15 Nov "Cancelled event: full refund through PortOne") is still reconciled. |
 
+### 25 Nov coordinator decisions (under the owner's delegation)
+
+These are the coordinator's decisions, not owner rulings. The owner delegated them; his own words are quoted where given.
+
+| Decision | Basis | Follow-through |
+| --- | --- | --- |
+| Each event may carry a separate Guest lock, built behind a switch that stays off | The owner leaned towards "a separate ticket" (relayed by the coordinator). His 24 Nov ruling "One lock + guest label at door" remains in force while the switch is off. | AMW's separate Guest lock r2 (`448e845f`): with `UNLOCK_SEPARATE_GUEST_LOCK_ENABLED` unset nothing changes; the Guest lock must differ from Signet, and once set both locks stay pinned. |
+| Door rule: amber means refuse | Coordinator decision, 25 Nov | A door scan that shows amber is refused entry. |
+
 ## Change log
 
 Every change with its impact, newest first.
 
 | Date | Change | Touches | Breaks or kept | Status |
 | --- | --- | --- | --- | --- |
+| 2026-11-25 | Coordinator decisions under the owner's delegation: a separate Guest lock per event, built behind a switch that stays off; at the door, amber means refuse | Event lock configuration, door check | Nothing changes while the switch is off; the 24 Nov one-lock ruling stays in force | Recorded |
 | 2026-11-24 | Records sweep: decided items no longer read as open. Polygon one-grant check ticked done (22 Nov); two locks per event marked superseded by "One lock + guest label at door"; NFC sourcing answered 21 Nov and tags ordered 22 Nov; the owner's live Naver Pay rounds noted; the cancel authority (the owner's wallet) restated | Owner to-dos, event lock settings, lock ledger rows, ADR-0012 amendment, Polygon owner commands | Schedule and records only; earlier text kept as history | Recorded |
 | 2026-11-24 | Launch moved to about 26 Nov. Owner, verbatim: "we need to launch in 2 days"; "Admin refunds, guest invites deadline is tonight. Polygon keys too. sandbox live tomorrow 2am." The one-grant check is done; Auth will send the transaction facts. | Tonight's landing queue: guest invites, Polygon keys, admin refunds; the sandbox goes live at 02:00 on 25 Nov | Schedule only; no behaviour change | Recorded |
 | 2026-11-24 | Owner rulings of 23–24 Nov recorded: pdfmake pinned at latest, ticker crown and tape player out of scope, sleeping branches and worktrees cleared under the read-each-one standard, recovery after a pause, FX opt-out cleared, "Code sent to", personal-data baseline, `articles/` local only | Receipt PDF dependency, reading surfaces, branch and worktree hygiene, sign-in copy, review checklist | Ticker crown and tape player leave `src` (kept on a bundled branch); no other behaviour change | Recorded |

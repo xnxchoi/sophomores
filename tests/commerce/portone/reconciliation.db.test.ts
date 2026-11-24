@@ -353,7 +353,9 @@ test('I2 disposable PostgreSQL admission, accounting, native fencing and restart
     await purchaseGate(settled)
     // A verified full cancellation follows.
     const cancel = provider(settled, 'CANCELLED', settled.snapshot.totalAmount, settled.snapshot.totalAmount)
-    await signedWebhook(settled, 'cancelled-after-settlement', 'Transaction.Cancelled', cancel)
+    const cancelDelivery = await signedWebhook(settled, 'cancelled-after-settlement', 'Transaction.Cancelled', cancel)
+    // What PortOne is answered: a non-2xx makes it redeliver (each redelivery is one more GET, and a no-op here).
+    st.diagnostic(`verified full cancellation answered ${cancelDelivery.status}`)
     const cancelled = await readPortOneTransaction(browser.req, settled.transactionID.replaceAll('-', ''))
     assert.deepEqual([cancelled.status, cancelled.commerceReviewHold, cancelled.commerceResolutionConflict], ['cancelled', true, false])
     const reservationState = async (f: Attempt) => (await control.query(
@@ -382,7 +384,8 @@ test('I2 disposable PostgreSQL admission, accounting, native fencing and restart
     assert.deepEqual(await localResult(settled), ['local-terminal', 'cancelled'])
     // Case 11 replay: the same cancellation changes nothing and releases nothing twice.
     const freed = await allowance(settled)
-    await signedWebhook(settled, 'cancelled-after-settlement', 'Transaction.Cancelled', cancel)
+    const replayDelivery = await signedWebhook(settled, 'cancelled-after-settlement', 'Transaction.Cancelled', cancel)
+    st.diagnostic(`replayed cancellation answered ${replayDelivery.status}`)
     assert.deepEqual(await evidence(settled.transactionID), closed)
     assert.deepEqual(await reservationState(settled), released)
     assert.deepEqual(await allowance(settled), freed)

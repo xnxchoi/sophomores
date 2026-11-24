@@ -8,7 +8,7 @@ import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { createUnlockKeyGrantAdapter } from "@/lib/commerce/keys/unlock/adapter";
 import { createUnlockKeyCancelAdapter } from "@/lib/commerce/keys/unlock/cancel";
 import {
-  loadPolygonKeyGranterAccount, POLYGON_KEY_GRANTER, POLYGON_SIGNET_LOCK, polygonKeyGrantsLive,
+  loadPolygonKeyGranterAccount, loadPolygonLockManagerAccount, POLYGON_KEY_GRANTER, POLYGON_SIGNET_LOCK, polygonKeyGrantsLive,
 } from "@/lib/commerce/keys/unlock/polygon";
 import { chainEnabled, confirmationDepth, maxFeeCeiling } from "@/lib/commerce/keys/unlock/transactions";
 import { dispatchKeyGrants } from "@/lib/commerce/keys/worker";
@@ -136,6 +136,23 @@ test("the pinned signer file refuses a key that derives any other address, witho
       assert.equal(error.message.includes(key.slice(2)), false);
       return true;
     });
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("the Polygon lock-manager signer is optional: no file means no cancels, a valid file loads, a bad one is refused", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "polygon-manager-"));
+  try {
+    const file = join(directory, "polygon-lock-manager.env");
+    assert.equal(await loadPolygonLockManagerAccount(file), null, "absent: cancel requests stay recorded");
+    const key = generatePrivateKey();
+    const address = privateKeyToAccount(key).address;
+    await writeFile(file, `UNLOCK_LIVE_LOCK_MANAGER_PRIVATE_KEY=${key}\nUNLOCK_LIVE_LOCK_MANAGER_ADDRESS=${address}\n`);
+    await chmod(file, 0o644);
+    await assert.rejects(loadPolygonLockManagerAccount(file), /mode 0600/);
+    await chmod(file, 0o600);
+    assert.equal((await loadPolygonLockManagerAccount(file))?.address, address);
   } finally {
     await rm(directory, { recursive: true, force: true });
   }

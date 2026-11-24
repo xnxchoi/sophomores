@@ -15,7 +15,7 @@ import { privateKeyToAccount, type PrivateKeyAccount } from "viem/accounts";
 export const signerDirectory = join(homedir(), ".config", "sphmrs");
 export const keyGranterFile = join(signerDirectory, "base-sepolia-key-granter.env");
 export const lockManagerFile = join(signerDirectory, "base-sepolia-lock-manager.env");
-export type SignerPrefix = "UNLOCK_TEST_GRANTER" | "UNLOCK_TEST_LOCK_MANAGER" | "UNLOCK_LIVE_GRANTER";
+export type SignerPrefix = "UNLOCK_TEST_GRANTER" | "UNLOCK_TEST_LOCK_MANAGER" | "UNLOCK_LIVE_GRANTER" | "UNLOCK_LIVE_LOCK_MANAGER";
 
 const privateKeyPattern = /^0x[0-9a-f]{64}$/i;
 

@@ -712,6 +712,7 @@ Same columns as above. Quotes come from the coordinator's relay of the owner's w
 | The sign-in recipient line reads "Code sent to" | "Yeah, code sent to member@example.com is so much bette…" (cut short in the relay) | English is "Code sent to" before the address (`c1064ec3`). The Korean value stays empty until translated; the Korean pass left it out because its English changed. |
 | Personal-data pages follow standard web security | "Isn't this like web security 101? Why are we like treating this like some pioneering shit?" | Recorded in AGENTS.md ("Personal-data baseline") with the `sphmrs-personal-data-pages` skill. Reviewers fail a change that exposes personal data without the checklist's safeguards. |
 | The owner's `articles/` folder is local only | Relayed by the coordinator; no verbatim quote. | The top-level `articles/` folder of example essays stays untracked: never committed, moved, formatted or gitignored without asking. UI-Content reads it to seed the local database. |
+| Refunds close 3 days before the event | "Refund is only possible 3 days prior." | Refunds are possible only until 3 days before the event's Part I start, enforced by the admin refund action; a verified PortOne-side cancel is still reconciled. This refines the refund lines in [Your decisions so far](#your-decisions-so-far) (15 Nov "no refunds after purchase except by hand"; the cancelled-event full refund). Open for the content owner: the policy page copy (the Hideaway as-is draft) needs this rule. |
 
 ## Change log
 

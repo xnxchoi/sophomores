@@ -241,11 +241,11 @@ function createCoverMaterial(maps: Record<string, Texture | undefined>, uniforms
 }
 
 /** A five-segment board: each segment hangs off the previous one's far edge, so the board can swing and flex. */
-function Board({ geometries, segments, material, k = 0 }: { geometries: BoxGeometry[]; segments: RefObject<(Group | null)[]>; material: MeshPhysicalMaterial; k?: number }) {
+function Board({ geometries, segments, meshes, material, k = 0 }: { geometries: BoxGeometry[]; segments: RefObject<(Group | null)[]>; meshes: RefObject<(Mesh | null)[]>; material: MeshPhysicalMaterial; k?: number }) {
   if (k >= geometries.length) return null;
   return <group ref={(group) => { segments.current[k] = group; }} position={[k === 0 ? 0 : SEG, 0, 0]}>
-    <mesh geometry={geometries[k]} material={material} castShadow />
-    <Board geometries={geometries} segments={segments} material={material} k={k + 1} />
+    <mesh ref={(mesh) => { meshes.current[k] = mesh; }} geometry={geometries[k]} material={material} castShadow />
+    <Board geometries={geometries} segments={segments} meshes={meshes} material={material} k={k + 1} />
   </group>;
 }
 
@@ -286,6 +286,7 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
   }, [geometry, material]);
 
   const root = useRef<Group>(null), front = useRef<(Group | null)[]>([]), back = useRef<(Group | null)[]>([]);
+  const frontMeshes = useRef<(Mesh | null)[]>([]), backMeshes = useRef<(Mesh | null)[]>([]), backHinge = useRef<Group>(null);
   const frontHinge = useRef<Group>(null), closedPages = useRef<Mesh>(null), body = useRef<Group>(null);
   // The control bar shows once the pages have nearly fanned in (stripe.press: 95%), and fades as the book closes.
   const revealed = useRef(false);
@@ -420,6 +421,14 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
     const bone = (k: number) => MathUtils.lerp(k === 0 ? 1 : 0, (profile(Math.min((k + 0.5) / 5, 1)) - profile(Math.max((k - 0.5) / 5, 0))) / end, l.ld) * BONES;
     front.current.forEach((g, k) => { if (g) g.rotation.y = -Math.max(s.frontA, 0) * SHARE[k] - lu * coverStep * (2 - 2 * n) * bone(k) - s.peek * 0.8 ** k; });
     back.current.forEach((g, k) => { if (g) g.rotation.y = Math.max(s.backA, 0) * SHARE[k] + 2 * n * coverStep * bone(k); });
+    // Each board lies half the book's thickness out from the spine. Shut, that offset is the hinge's (the board swings
+    // on its edge); as the pages fan in it moves onto each segment, along that segment's own normal, so the bent board
+    // traces the stack's outer face (an offset curve) instead of rising to the top page's height.
+    const onSegments = l.ld;
+    if (frontHinge.current) frontHinge.current.position.z = (T / 2) * (1 - onSegments);
+    if (backHinge.current) backHinge.current.position.z = (-T / 2) * (1 - onSegments);
+    frontMeshes.current.forEach((m) => { if (m) m.position.z = (T / 2) * onSegments; });
+    backMeshes.current.forEach((m) => { if (m) m.position.z = (-T / 2) * onSegments; });
     // The body turns π·n about the spine (stripe.press's facing counter-yaw): the gutter rises toward you mid-book while
     // the covers and pages, bent back by the same amount, stay flat.
     if (body.current) {
@@ -526,8 +535,8 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
     <group ref={body}>
       <mesh geometry={geometry.spine} material={material} position={[-W / 2 - BOARD / 2, 0, 0]} castShadow />
       <mesh ref={closedPages} geometry={geometry.pages} material={material} position={[-0.075, 0, 0]} castShadow />
-      <group ref={frontHinge} position={[-W / 2, 0, T / 2]}><Board geometries={geometry.front} segments={front} material={material} /></group>
-      <group position={[-W / 2, 0, -T / 2]}><Board geometries={geometry.back} segments={back} material={material} /></group>
+      <group ref={frontHinge} position={[-W / 2, 0, T / 2]}><Board geometries={geometry.front} segments={front} meshes={frontMeshes} material={material} /></group>
+      <group ref={backHinge} position={[-W / 2, 0, -T / 2]}><Board geometries={geometry.back} segments={back} meshes={backMeshes} material={material} /></group>
       <LookInside source={source} look={look} signals={signals} sound={sound} width={W - 0.15} height={H - 0.3} thickness={T} pageTextures={pageTextures} marksKey={storageKey && storageKey + ":marks"}
         onSpread={(spread) => { signals.current.onReading?.({ spread, leaves: LEAVES, shown: revealed.current }); if (storageKey) try { window.sessionStorage.setItem(storageKey, String(spread)); } catch { /* storage unavailable */ } }} />
     </group>

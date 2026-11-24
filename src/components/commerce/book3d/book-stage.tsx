@@ -41,12 +41,14 @@ const BookCanvas = dynamic(() => import("./book-canvas"), { ssr: false });
  * Esc, ← and h close it too, as does a click on empty canvas or a tap past either end. The control bar turns pages and
  * switches the magnifier; on touch, two fingers zoom and pan the open book, and a 300 ms hold pans with one.
  */
-export function BookStage({ id, className, textures: own = {}, pageTextures: pageList = [], children }: {
+export function BookStage({ id, className, textures: own = {}, pageTextures: pageList = [], closedZ, children }: {
   /** The product, so each book keeps its own saved page. */
   id: string;
   className?: string; textures?: BookTextures;
   /** Page images in reading order (two per leaf); none yet, so the pages are blank. */
   pageTextures?: string[];
+  /** How near the closed book stands (book.tsx; the shop's featured rows bring it closer). */
+  closedZ?: number;
   children?: ReactNode;
 }) {
   const t = useTranslations("Customer.components_commerce_book_offer");
@@ -312,7 +314,7 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
           stripe.press hit-rect) and lives in this layer, so its rect follows the stage's, and can travel (the carry, step
           3). It spans the layer; the book clips its hit-testing to its own bounds each frame (none while Look inside is
           open). It starts clipped to nothing. Pointer engagement holds a frameloop claim. */}
-      <BookCanvas signals={signals} textures={textures} visible={shown} dark={dark} intro={!carried}
+      <BookCanvas signals={signals} textures={textures} visible={shown} dark={dark} intro={!carried} closedZ={closedZ}
         onOpen={() => setOpen(true)} onClose={close} storageKey={"book3d:" + id} pageTextures={pageTextures} magnifier={magnifier}
         onElement={(element) => { signals.current.hitRect = element; }}
         onPointerEnter={engage} onPointerDown={engage} onPointerMove={hovering ? undefined : engage} onPointerLeave={release}

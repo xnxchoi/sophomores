@@ -35,7 +35,7 @@ function TitleRail({ titles, active, label, onPick }: { titles: string[]; active
       className="flex w-max items-baseline gap-x-8 whitespace-nowrap transition-transform duration-[600ms] ease-[cubic-bezier(0.16,1,0.3,1)] lg:gap-x-12">
       {titles.map((title, index) => <li key={index}>
         <button ref={(item) => { items.current[index] = item; }} type="button" aria-current={index === active || undefined} onClick={() => onPick(index)}
-          className="font-display text-[1.75rem] leading-none tracking-[-0.02em] text-foreground/25 outline-offset-4 transition-colors duration-300 hover:text-foreground/60 focus-visible:outline-2 aria-[current]:text-foreground lg:text-[3.5rem]">
+          className="font-display text-[1.75rem] leading-none tracking-[-0.02em] text-foreground/25 outline-offset-4 transition-colors duration-300 hover:text-foreground/60 focus-visible:outline-2 aria-[current]:text-foreground lg:text-[4.5rem]">
           {title}
         </button>
       </li>)}
@@ -111,7 +111,7 @@ export function ShopShelf({ books, label, viewDetails }: {
   return <section aria-label={label} className="mt-20 lg:mt-28">
     <SectionLabel>{label}</SectionLabel>
     <TitleRail titles={books.map((entry) => entry.title)} active={selected} label={label} onPick={setSelected} />
-    <div className="relative h-[min(70svh,46rem)] w-full max-lg:h-[min(80svh,36rem)]">
+    <div className="relative h-[min(84svh,58rem)] w-full max-lg:h-[min(80svh,36rem)]">
       <ShelfView books={books} selected={selected} onSelect={setSelected} onOpen={open}
         className="absolute inset-0 touch-pan-y outline-offset-4 focus-visible:outline-2" />
     </div>

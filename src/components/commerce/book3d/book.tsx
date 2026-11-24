@@ -285,7 +285,7 @@ export const easeInOutQuad = (x: number) => x < 0.5 ? 2 * x * x : 1 - (-2 * x + 
  * coupling, and the hologram and radio effects. `onOpen` gets a click (a press under 5 px and 500 ms).
  * Look inside (signals.look) opens the book in place; the pages are LookInside's. The spread you leave is saved.
  */
-export function Book({ textures, signals, onOpen, small, storageKey, pageTextures = [], samples, source }: {
+export function Book({ textures, signals, onOpen, small, storageKey, pageTextures = [], samples, source, closedZ = CLOSED_Z }: {
   /** The book's DOM hit area (the View's element): its pointer listeners and cursor state live there. */
   source?: HTMLElement;
   textures: BookTextures; signals: RefObject<BookSignals>; onOpen?: () => void; onClose?: () => void; small: boolean;
@@ -293,6 +293,8 @@ export function Book({ textures, signals, onOpen, small, storageKey, pageTexture
   storageKey?: string;
   pageTextures?: string[];
   samples?: BookSamples;
+  /** How near the closed book stands (default CLOSED_Z): the shop's featured book comes closer, larger than its art. */
+  closedZ?: number;
 }) {
   const sound = useBookSound(samples);
   const slots = useMemo(() => Object.fromEntries(Object.entries(textures).filter(([, url]) => url)) as Record<string, string>, [textures]);
@@ -516,7 +518,7 @@ export function Book({ textures, signals, onOpen, small, storageKey, pageTexture
     // The rise ends with the book's centre 1.4 frame heights above the top (stripe.press's 40 units at its 90-unit
     // distance), so it leaves at 2–3× the scroll; it tips back and rolls toward spine-on as it goes, following the same
     // eased weight with a lag (04ud:19817-19873, 20175-20215).
-    const tan9 = Math.tan(MathUtils.degToRad(9)), halfHeight = tan9 * (54 - CLOSED_Z), exitEase = easeInOutQuad(s.exit);
+    const tan9 = Math.tan(MathUtils.degToRad(9)), halfHeight = tan9 * (54 - closedZ), exitEase = easeInOutQuad(s.exit);
     // Measured live against stripe.press (24 Nov): its book is gone by ~1000 px of scroll after a ~500 px hold, so the
     // rise runs 1.5× the 40-unit clearance's equivalent.
     const exitY = exitEase * (halfHeight - CLOSED_Y + 2.808 * halfHeight) * 1.5;
@@ -536,7 +538,7 @@ export function Book({ textures, signals, onOpen, small, storageKey, pageTexture
       const spreadPx = small ? 2 * fr.width * 0.96 : Math.min(window.innerWidth * 0.604, fr.width * 1.25);
       const zOpen = MathUtils.clamp(54 - W * fr.height / (tan9 * Math.max(spreadPx, 1)), -60, 30);
       root.current.position.set(MathUtils.lerp(CLOSED_X, W / 2, b), MathUtils.lerp(CLOSED_Y + exitY, 0, b),
-        MathUtils.lerp(CLOSED_Z + s.lift - dip - s.scroll * 6, zOpen, b));
+        MathUtils.lerp(closedZ + s.lift - dip - s.scroll * 6, zOpen, b));
     }
     // The camera is framed on the stage inside the window-wide View: a lens shift puts the frame's centre on its axis.
     const cam = state.camera as PerspectiveCamera, frame = sig.frame ?? { left: 0, top: 0, width: sw, height: sh };

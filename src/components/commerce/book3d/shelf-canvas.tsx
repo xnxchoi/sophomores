@@ -1,7 +1,7 @@
 "use client";
 
-import { PerspectiveCamera, View } from "@react-three/drei";
-import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
+import { Environment, Lightformer, PerspectiveCamera, View } from "@react-three/drei";
+import { useFrame, useThree } from "@react-three/fiber";
 import { Suspense, useEffect, useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { Box3, Vector3, type Group } from "three";
 import { BOOK_SIZE, ClosedBook, type BookTextures } from "./book";
@@ -12,21 +12,36 @@ export type ShelfRect = { left: number; top: number; width: number; height: numb
 // stripe.press's spine row (TEARDOWN §3.2, notes A §5), scaled to our book: every book stands spine out except the
 // selected one, which turns to face you (yaw 0 → 1, τ 0.2 s) and comes forward while the others sit back.
 const GAP = 0.3, FORWARD = 2.5, BACK = 0.5, TAU = 0.2, DRAG_PX = 140;
+// The camera stands close enough that the books fill most of the shelf's height (stripe.press's spines run ~65% of the
+// screen).
+const CAMERA_Z = 40;
 
 /**
- * The shop's shelf in the site's shared canvas, through a drei View in the page's flow (so R3F's own pointer events
- * reach the books). A click on a spine selects it; a click on the selected book opens its page (onOpen gets the book's
- * rect on screen, for the carry). ← → step, Enter opens; a horizontal drag steps one book per 140 px.
+ * The shop's shelf in the site's shared canvas, through a drei View in the page's flow. Each frame the books report
+ * their rects on screen, and a click picks the book under it from those (the selected book first): a spine selects,
+ * the selected book opens its page (onOpen gets its rect, for the carry). ← → step, Enter opens; a horizontal drag
+ * steps one book per 140 px.
  */
 export default function ShelfView({ books, selected, onSelect, onOpen, className }: {
   books: ShelfBook[]; selected: number; onSelect: (index: number) => void; onOpen: (index: number, rect: ShelfRect) => void; className?: string;
 }) {
   const small = typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
   const [track, setTrack] = useState<HTMLElement | null>(null);
-  const rect = useRef<ShelfRect | null>(null);
+  const rects = useRef<ShelfRect[]>([]);
   const drag = useRef<{ x: number; moved: boolean } | null>(null);
   const step = (by: number) => onSelect(Math.min(Math.max(selected + by, 0), books.length - 1));
-  const open = () => { if (rect.current) onOpen(selected, rect.current); };
+  // The rects are kept as fractions of the shelf (the canvas draws on demand, so a scroll doesn't refresh them): they
+  // become screen pixels against the shelf's rect at the moment they're used.
+  const onScreen = (index: number): ShelfRect | null => {
+    const rect = rects.current[index], box = track?.getBoundingClientRect();
+    return rect && box ? { left: box.left + rect.left * box.width, top: box.top + rect.top * box.height, width: rect.width * box.width, height: rect.height * box.height } : null;
+  };
+  const open = () => { const rect = onScreen(selected); if (rect) onOpen(selected, rect); };
+  const pick = (x: number, y: number) => {
+    const inside = (index: number) => { const rect = onScreen(index); return Boolean(rect && x >= rect.left && x <= rect.left + rect.width && y >= rect.top && y <= rect.top + rect.height); };
+    if (inside(selected)) return selected;
+    return books.findIndex((_, index) => inside(index));
+  };
   // Keys and the drag on a focusable wrapper (drei's View types take neither); the View inside is the pointer target R3F
   // raycasts from, and its pointer events bubble here.
   return <div tabIndex={0} className={className}
@@ -41,23 +56,33 @@ export default function ShelfView({ books, selected, onSelect, onOpen, className
       step(event.clientX < d.x ? 1 : -1); d.x = event.clientX; d.moved = true;
     }}
     // Cleared after the click that ends the drag has been seen (so a drag never also picks a book).
-    onPointerUp={() => { setTimeout(() => { drag.current = null; }, 0); }} onPointerCancel={() => { drag.current = null; }}>
+    onPointerUp={() => { setTimeout(() => { drag.current = null; }, 0); }} onPointerCancel={() => { drag.current = null; }}
+    onClick={(event) => {
+      if (drag.current?.moved) return;
+      const index = pick(event.clientX, event.clientY);
+      if (index === selected) open(); else if (index >= 0) onSelect(index);
+    }}>
   <View className="absolute inset-0"
     // drei re-attaches the ref on every render: keep the element, ignore the null.
     ref={(element: HTMLElement | null) => { if (element && element !== track) setTrack(element); }}>
-    <PerspectiveCamera makeDefault fov={18} position={[0, 0, 62]} near={1} far={400} />
+    <PerspectiveCamera makeDefault fov={18} position={[0, 0, CAMERA_Z]} near={1} far={400} />
+    {/* The product book's light (book-canvas.tsx): soft fill, a key from the upper right, reflections from light panels. */}
     <ambientLight intensity={0.6} />
     <directionalLight position={[10, 14, 30]} intensity={1.1} />
+    <directionalLight position={[-14, 6, 18]} intensity={0.45} />
+    <Environment resolution={128}>
+      <Lightformer form="rect" intensity={2} position={[0, 6, 20]} scale={[30, 8, 1]} />
+      <Lightformer form="rect" intensity={1} position={[-20, -4, 10]} rotation-y={Math.PI / 3} scale={[20, 6, 1]} />
+    </Environment>
     <Suspense fallback={null}>
-      <Row books={books} selected={selected} small={small} track={track} onRect={(next) => { rect.current = next; }}
-        onPick={(index) => { if (drag.current?.moved) return; if (index === selected) open(); else onSelect(index); }} />
+      <Row books={books} selected={selected} small={small} onRects={(next) => { rects.current = next; }} />
     </Suspense>
   </View>
   </div>;
 }
 
-function Row({ books, selected, small, track, onRect, onPick }: {
-  books: ShelfBook[]; selected: number; small: boolean; track: HTMLElement | null; onRect: (rect: ShelfRect) => void; onPick: (index: number) => void;
+function Row({ books, selected, small, onRects }: {
+  books: ShelfBook[]; selected: number; small: boolean; onRects: (rects: ShelfRect[]) => void;
 }) {
   const groups = useRef<(Group | null)[]>([]);
   const yaw = useRef<number[]>(books.map((_, i) => (i === selected ? 1 : 0)));
@@ -86,24 +111,26 @@ function Row({ books, selected, small, track, onRect, onPick }: {
       group.rotation.y = (Math.PI / 2) * (1 - y);
     });
     if (moving) state.invalidate();
-    // The selected book's rect on screen (for the carry into its page).
-    const chosen = groups.current[selected];
-    if (chosen && track) {
-      box.current.setFromObject(chosen);
-      const r = track.getBoundingClientRect(), { min, max } = box.current;
-      let left = Infinity, right = -Infinity, top = Infinity, bottom = -Infinity;
-      for (const x of [min.x, max.x]) for (const y of [min.y, max.y]) for (const z of [min.z, max.z]) {
-        corner.current.set(x, y, z).project(state.camera);
-        const px = r.left + (corner.current.x + 1) / 2 * r.width, py = r.top + (1 - corner.current.y) / 2 * r.height;
-        left = Math.min(left, px); right = Math.max(right, px); top = Math.min(top, py); bottom = Math.max(bottom, py);
-      }
-      onRect({ left, top, width: right - left, height: bottom - top });
+    // Every book's rect on the shelf, as fractions of it: the click picks from these, and the selected one starts the
+    // carry into its page.
+    {
+      onRects(groups.current.map((group) => {
+        if (!group) return { left: 0, top: 0, width: 0, height: 0 };
+        box.current.setFromObject(group);
+        const { min, max } = box.current;
+        let left = Infinity, right = -Infinity, top = Infinity, bottom = -Infinity;
+        for (const x of [min.x, max.x]) for (const y of [min.y, max.y]) for (const z of [min.z, max.z]) {
+          corner.current.set(x, y, z).project(state.camera);
+          const px = (corner.current.x + 1) / 2, py = (1 - corner.current.y) / 2;
+          left = Math.min(left, px); right = Math.max(right, px); top = Math.min(top, py); bottom = Math.max(bottom, py);
+        }
+        return { left, top, width: right - left, height: bottom - top };
+      }));
     }
   });
 
   return <group>
-    {books.map((book, i) => <group key={book.id} ref={(group) => { groups.current[i] = group; }}
-      onClick={(event: ThreeEvent<MouseEvent>) => { event.stopPropagation(); if (event.delta <= 6) onPick(i); }}>
+    {books.map((book, i) => <group key={book.id} ref={(group) => { groups.current[i] = group; }}>
       <ClosedBook textures={book.textures} small={small} />
     </group>)}
   </group>;

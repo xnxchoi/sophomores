@@ -110,7 +110,7 @@ function Magnifier({ touch, source }: { touch: boolean; source?: HTMLElement }) 
  * BookStage. The View's own element is the book's hit area (see BookSignals.hitRect): drei raycasts only events that
  * target it, so it spans the stage and the book clips its hit-testing to its own bounds. Hidden while covered.
  */
-export default function BookView({ signals, textures, visible, dark, intro = true, onOpen, onClose, storageKey, pageTextures, magnifier = false, onElement, ...hit }: {
+export default function BookView({ signals, textures, visible, dark, intro = true, onOpen, onClose, storageKey, pageTextures, magnifier = false, onElement, closedZ, ...hit }: {
   signals: RefObject<BookSignals>;
   textures: BookTextures;
   visible: boolean;
@@ -123,6 +123,7 @@ export default function BookView({ signals, textures, visible, dark, intro = tru
   /** The intro dolly; off when the book arrives by the carry. */
   intro?: boolean;
   onElement?: (element: HTMLElement | null) => void;
+  closedZ?: number;
 } & Pick<ComponentProps<"div">, "className" | "inert" | "onPointerEnter" | "onPointerDown" | "onPointerMove" | "onPointerLeave">) {
   const small = typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
   const [source, setSource] = useState<HTMLElement>();
@@ -142,7 +143,7 @@ export default function BookView({ signals, textures, visible, dark, intro = tru
         clicks elsewhere (the controls, the page) don't count. Only the book is in this group, so the shadow catcher or
         the lens never counts as a hit. */}
     <Suspense fallback={null}>
-      <group><Intro skip={!intro}><Book source={source} textures={textures} signals={signals} onOpen={onOpen} onClose={onClose} small={small} storageKey={storageKey} pageTextures={pageTextures} /></Intro></group>
+      <group><Intro skip={!intro}><Book source={source} textures={textures} signals={signals} onOpen={onOpen} onClose={onClose} small={small} storageKey={storageKey} pageTextures={pageTextures} closedZ={closedZ} /></Intro></group>
     </Suspense>
     {magnifier && <Magnifier touch={small} source={source} />}
     {/* The dark theme's shadow catcher; the shared canvas renders shadow maps (shadows="percentage", UI-Shell dd1b91ac). */}

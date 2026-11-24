@@ -32,9 +32,13 @@ export function CommerceShopView({ shop, contents = {} }: { shop: CommerceEditio
     <h1 className="sr-only">{t("book")}</h1>
     <FeaturedReleases label={t("featured")} viewDetails={t("viewDetails")} items={entries.map(({ product, content, title, price, href }) => ({
       id: product.productID, title, price, href,
-      stage: <BookStage id={product.productID} textures={bookTextures(content)} pageTextures={pageTextures(content)}
-        className="relative aspect-[4/5] w-full overflow-hidden rounded-[10px] sm:aspect-[5/4] lg:aspect-auto lg:h-[calc(100svh-13rem)]">
-        <StageArt art={content.stageArt ?? firstImage(product)} />
+      // stripe.press's proportions: the art is a band across the middle of the row and the book stands larger than it,
+      // spilling over the band's top and bottom edges (and the title rail) by about a sixth of its height.
+      stage: <BookStage id={product.productID} textures={bookTextures(content)} pageTextures={pageTextures(content)} closedZ={21}
+        className="relative aspect-[4/5] w-full sm:aspect-[5/4] lg:aspect-auto lg:h-[calc(100svh-11rem)]">
+        <div className="absolute inset-x-0 top-[11%] bottom-[11%] overflow-hidden rounded-[10px] bg-muted">
+          <StageArt art={content.stageArt ?? firstImage(product)} />
+        </div>
       </BookStage>
     }))} />
     <ShopShelf label={t("allProducts")} viewDetails={t("viewDetails")}

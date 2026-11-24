@@ -9,11 +9,6 @@ export type HA_CURSOR = {
     y: number;
   };
   marquee: boolean;
-  /** Who set the current state through claimCursor, if anyone; a plain setCursorState clears it. */
-  cursorOwner: object | null;
-  /** How the claimed text state leaves: "instant" (the site's default) or "fade", stripe.press's follower pill (fades out
-   *  while growing to 1.1×). It belongs to the claim: any other state resets it, so it never applies to another label. */
-  cursorExit: "instant" | "fade";
   cursorTheme: "light" | "dark";
   baseCursorTheme: "light" | "dark";
 };
@@ -25,10 +20,6 @@ export type HA_CURSOR_ACT = {
   setBaseCursorTheme: (theme: "light" | "dark") => void;
   resetCursorTheme: () => void;
   setMarquee: (marquee: boolean) => void;
-  /** Set a state as its owner. */
-  claimCursor: (owner: object, nextState: HA_CURSOR["cursorState"], exit?: HA_CURSOR["cursorExit"]) => void;
-  /** Clear the state only if this owner still holds it (compare-and-release); the exit stays for the leaving pill. */
-  releaseCursor: (owner: object) => void;
 };
 
 const curInit: HA_CURSOR = {
@@ -39,9 +30,7 @@ const curInit: HA_CURSOR = {
   },
   baseCursorTheme: "light",
   cursorTheme: "light",
-  marquee: false,
-  cursorOwner: null,
-  cursorExit: "instant"
+  marquee: false
 };
 
 export type HA_CURS = HA_CURSOR & HA_CURSOR_ACT;
@@ -51,9 +40,7 @@ export const createCursorStore = (initState: HA_CURSOR = curInit) => {
       ...initState,
 
       setMouseCoordinates: (mouseCoordinates) => set({ mouseCoordinates }),
-      setCursorState: (cursorState) => set({ cursorState, cursorOwner: null, cursorExit: "instant" }),
-      claimCursor: (owner, cursorState, exit = "instant") => set({ cursorState, cursorOwner: owner, cursorExit: exit }),
-      releaseCursor: (owner) => { if (get().cursorOwner === owner) set({ cursorState: null, cursorOwner: null }); },
+      setCursorState: (cursorState) => set({ cursorState }),
       setCursorTheme: (l: "light" | "dark") => set({ cursorTheme: l }),
       setBaseCursorTheme: (l: "light" | "dark") => set({ baseCursorTheme: l }),
       toggleCursorTheme: () =>

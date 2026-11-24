@@ -36,7 +36,7 @@ export function ProductPage({ product, offer, content, shelf }: { product: Editi
   const hasTable = details.length > 0 || content.typefaces.length > 0 || content.materials.length > 0 || content.techniques.length > 0;
   const hasFullWidth = content.praise.length > 0 || hasTable || content.gallery.length > 0;
   return <PageInset as="main" className="pt-[4.5rem] pb-24 text-foreground lg:grid lg:grid-cols-[minmax(0,1.58fr)_minmax(0,1fr)] lg:items-start lg:gap-x-10">
-    <div className="sticky top-[4.5rem] z-0 flex min-w-0 flex-col max-lg:has-[[data-open=true]]:z-50 lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:h-[calc(100svh-5.5rem)]">
+    <div className="relative z-0 flex min-w-0 flex-col lg:sticky lg:top-[4.5rem] max-lg:has-[[data-open=true]]:z-50 lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:h-[calc(100svh-5.5rem)]">
       <ShelfStrip shelf={shelf} label={t("shelf")} />
       <BookStage id={product.productID} textures={bookTextures(content)} pageTextures={pageTextures(content)}
         className="relative aspect-[4/5] w-full sm:aspect-[5/4] lg:aspect-auto lg:min-h-0 lg:flex-1">

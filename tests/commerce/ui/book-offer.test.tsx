@@ -44,8 +44,9 @@ test("a product page shows one product, its facts and that purchase is not open,
   assert.match(html, /One per account/);
   assert.match(html, /Release pending/);
   assert.match(html, /href="\/shop"/);
-  // The only button is the 3D book's own Look inside control; nothing buys, carts or pays.
-  assert.deepEqual(html.match(/<button\b[^>]*>/g)?.map((tag) => tag.includes("data-book-ui")), [true]);
+  // No button in the server HTML: the book's Look inside control mounts on the client, in its layer above the shared
+  // canvas. Nothing buys, carts or pays.
+  assert.equal(/<button\b/.test(html), false);
   assert.doesNotMatch(html, /Book only|Premium edition|<input\b|<form\b|href="[^"]*(?:checkout|payment)/i);
 });
 

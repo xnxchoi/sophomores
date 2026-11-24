@@ -3,13 +3,14 @@
 import { CaretLeftIcon, CaretRightIcon, MagnifyingGlassIcon, XIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
 import dynamic from "next/dynamic";
-import { useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { useInView } from "react-intersection-observer";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/core/ArcFocus/ArcFocus";
 import { ArcRoles } from "../arc-roles";
 import { useTheme } from "@/providers/Theme";
-import { CurContext } from "@/providers/RP_Pro";
+import { useRPStore } from "@/providers/RP_Pro";
 import { useCanvasClaim } from "@/components/gl/canvas-frameloop";
 import type { BookSignals, BookTextures } from "./book";
 
@@ -21,15 +22,17 @@ const BookCanvas = dynamic(() => import("./book-canvas"), { ssr: false });
  * The product page's stage: the art (children) with the 3D book over it. The book draws in the site's shared canvas
  * through a drei View (book-canvas.tsx); only its clipped hit area takes the pointer, so the art's own controls keep
  * working. The book's View draws while the stage is in view and not covered by a
- * full-width section (`data-covers-stage`), which still counts as "in view" when it scrolls over the pinned stage.
+ * section marked `data-covers-stage`: the canvas sits above the page, so the book hides from the first pixel a covering
+ * section overlaps it, and while the site menu is open. Its controls live in a layer above the canvas (a body portal
+ * that mirrors the stage's rect), as stripe.press keeps its pills above its fixed canvas.
  *
  * The page talks to the book through window events, so a row or the cart can drive it without importing three:
  * `book3d:spin` ({ direction: 1 | -1 }, add or remove) and `book3d:effect` ({ hologram?, radio? }, row hovers).
  *
- * No system pointer over the book (the site hides it; owner, 24 Nov). The site's own cursor is the follower instead, as
- * stripe.press's '+ Open book +' pill follows the pointer over its book: "Look inside" while the pointer is on the closed
- * book, the drag state while a drag holds it. A click on the book opens it; there is no fixed button (a keyboard-only
- * one appears on focus). Look inside opens in the stage (full screen on a phone). Close sits on the left;
+ * No system pointer over the book (the site hides it; owner, 24 Nov). The owner chose stripe.press's follow: the closed
+ * book turns toward the pointer (book.tsx), and "Look inside" is anchored at the book's centre, fading in while the pointer
+ * is on the book (scale 1.1 → 1, 300 ms; TEARDOWN §4.4). A click on the book or the label opens it; keyboard focus shows
+ * the label too. Look inside opens in the stage (full screen on a phone). Close sits on the left;
  * Esc, ← and h close it too, as does a click on empty canvas or a tap past either end. The control bar turns pages and
  * switches the magnifier; on touch, two fingers zoom and pan the open book, and a 300 ms hold pans with one.
  */
@@ -61,7 +64,12 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
   const pickInk = (next: "pink" | "yellow") => setInk((current) => current === next ? null : next);
   const stage = useRef<HTMLDivElement>(null);
   const signals = useRef<BookSignals>({ scroll: 0, hologram: false, radio: false, spins: [], look: false, peek: false, commands: [],
-    view: { zoom: 1, x: 0, y: 0, panning: false, unitsPerPx: 0.02 }, marker: null, hitRect: null, invalidate: null });
+    view: { zoom: 1, x: 0, y: 0, panning: false, unitsPerPx: 0.02 }, marker: null, hitRect: null, invalidate: null,
+    pointer: { x: 0, y: 0 }, overlay: null });
+  const overlay = useRef<HTMLDivElement>(null), sync = useRef<(() => void) | null>(null);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { const id = requestAnimationFrame(() => setMounted(true)); return () => cancelAnimationFrame(id); }, []);
+  const menuOpen = useRPStore((state) => state.navIsOpen);
   useEffect(() => { signals.current.marker = ink; }, [ink]);
   const { ref: inViewRef, inView } = useInView({ initialInView: true });
   const [covered, setCovered] = useState(false);
@@ -71,29 +79,10 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
   // while something it shows still moves (book.tsx), so an idle page draws nothing (Review-B r2: demand on release).
   const [hovering, setHovering] = useState(false);
   // The shared canvas runs 'always' while any View holds a claim (gl/canvas-frameloop.tsx), otherwise on demand.
-  useCanvasClaim(inView && !covered && (hovering || open));
+  const shown = inView && !covered && !menuOpen;
+  useCanvasClaim(shown && (hovering || open));
   const engage = () => setHovering(true), release = () => setHovering(false);
   const poke = () => signals.current.invalidate?.();
-  // The site cursor follows the book's pointer state (book.tsx and look-inside.tsx write it to the hit area's data-book).
-  // The book claims the cursor with its own token and releases only what it still holds (compare-and-release), so it never
-  // clears another control's state. Its label leaves with the fade (stripe.press's pill); the exit belongs to the claim.
-  const cursor = useContext(CurContext);
-  const lookLabel = t("lookInside");
-  const owner = useRef({});
-  useEffect(() => {
-    const node = stage.current, me = owner.current;
-    if (!node || !cursor) return;
-    const sync = () => {
-      const book = (signals.current.hitRect ?? node).dataset.book;
-      const state = book === "drag" ? "DRAG" : book === "hover" && !open ? lookLabel : null;
-      if (state === null) cursor.getState().releaseCursor(me);
-      else cursor.getState().claimCursor(me, state, state === lookLabel ? "fade" : "instant");
-    };
-    const observer = new MutationObserver(sync);
-    observer.observe(node, { attributes: true, attributeFilter: ["data-book"], subtree: true });
-    sync();
-    return () => { observer.disconnect(); cursor.getState().releaseCursor(me); };
-  }, [cursor, open, lookLabel]);
   // The theme's change re-lights the book.
   useEffect(() => { signals.current.invalidate?.(); }, [dark]);
 
@@ -105,8 +94,22 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
       const scroll = range > 0 ? Math.min(Math.max(window.scrollY / range, 0), 1) : 0;
       if (scroll !== signals.current.scroll) poke();
       signals.current.scroll = scroll;
-      const cover = main?.querySelector("[data-covers-stage]"), top = stage.current?.getBoundingClientRect().top;
-      setCovered(cover !== null && cover !== undefined && top !== undefined && cover.getBoundingClientRect().top <= top);
+      // Covered from the first pixel a marked section overlaps the stage (the canvas paints above the page DOM).
+      const rect = stage.current?.getBoundingClientRect();
+      setCovered(Boolean(rect) && [...(main?.querySelectorAll("[data-covers-stage]") ?? [])].some((cover) => {
+        const c = cover.getBoundingClientRect();
+        return rect !== undefined && c.top < rect.bottom && c.bottom > rect.top && c.left < rect.right && c.right > rect.left;
+      }));
+      // The control layer mirrors the stage's rect.
+      const layer = overlay.current;
+      if (layer && rect) { layer.style.left = rect.left + "px"; layer.style.top = rect.top + "px"; layer.style.width = rect.width + "px"; layer.style.height = rect.height + "px"; }
+    };
+    // The closed book's tilt follows the pointer over the whole viewport (mouse and pen; touch has no hover).
+    let lastPoke = 0;
+    const onPointer = (event: PointerEvent) => {
+      if (event.pointerType === "touch") return;
+      signals.current.pointer = { x: event.clientX / window.innerWidth * 2 - 1, y: 1 - event.clientY / window.innerHeight * 2 };
+      if (event.timeStamp - lastPoke > 33) { lastPoke = event.timeStamp; poke(); }
     };
     const onSpin = (event: Event) => { poke(); signals.current.spins.push((event as CustomEvent<{ direction?: number }>).detail?.direction ?? 1); };
     const onEffect = (event: Event) => {
@@ -116,25 +119,33 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
       if (detail.radio !== undefined) signals.current.radio = detail.radio;
     };
     onScroll();
+    sync.current = onScroll;
+    const resize = new ResizeObserver(onScroll);
+    if (stage.current) resize.observe(stage.current);
+    document.addEventListener("pointermove", onPointer, { passive: true });
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll);
     window.addEventListener("book3d:spin", onSpin);
     window.addEventListener("book3d:effect", onEffect);
     return () => {
+      resize.disconnect();
+      document.removeEventListener("pointermove", onPointer);
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
       window.removeEventListener("book3d:spin", onSpin);
       window.removeEventListener("book3d:effect", onEffect);
     };
-  }, []);
+  }, [mounted]);
 
   useEffect(() => {
     signals.current.look = open;
+    // The phone's open state moves the stage to a fixed full screen: the control layer follows on the next frame.
+    const frame = requestAnimationFrame(() => sync.current?.());
     if (open) signals.current.peek = false;
-    if (!open) { Object.assign(signals.current.view, { zoom: 1, x: 0, y: 0, panning: false }); return; }
+    if (!open) { Object.assign(signals.current.view, { zoom: 1, x: 0, y: 0, panning: false }); return () => cancelAnimationFrame(frame); }
     const onKey = (event: KeyboardEvent) => { if (event.key === "Escape" || event.key === "ArrowLeft" || event.key === "h") close(); };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => { cancelAnimationFrame(frame); window.removeEventListener("keydown", onKey); };
   }, [open]);
 
   // Touch zoom and pan of the open book (#27): pinch between 1× and 2× (rubber 0.35 beyond), two fingers or a 300 ms
@@ -204,30 +215,36 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
     {/* The book draws in the site's shared canvas through a drei View; the View's own element is its hit area (the
         stripe.press hit-rect): it spans the stage, and the book clips its hit-testing to its own bounds each frame (the
         whole stage while Look inside is open). It starts clipped to nothing. Pointer engagement holds a frameloop claim. */}
-    <BookCanvas signals={signals} textures={textures} visible={inView && !covered} dark={dark}
+    <BookCanvas signals={signals} textures={textures} visible={shown} dark={dark}
       onOpen={() => setOpen(true)} onClose={close} storageKey={"book3d:" + id} pageTextures={pageTextures} magnifier={magnifier}
       onElement={(element) => { signals.current.hitRect = element; }}
       onPointerEnter={engage} onPointerDown={engage} onPointerMove={hovering ? undefined : engage} onPointerLeave={release}
       className="pointer-events-auto absolute inset-0 touch-pan-y in-data-[open=true]:touch-none" />
-    {open
-      ? <ArcRoles><div data-book-ui role="group" aria-label={t("lookInside")}
-          className="pointer-events-auto absolute bottom-4 left-1/2 z-1 flex -translate-x-1/2 items-center gap-2 max-lg:bottom-[calc(max(var(--bar-target),var(--frame-bottom))+1rem+env(safe-area-inset-bottom))]">
-          <Button variant="secondary" size="sm" aria-label={t("closeBook")} onClick={close}><XIcon aria-hidden="true" className="size-5" /></Button>
-          <Button variant="secondary" size="sm" aria-label={t("previousPage")} onClick={() => signals.current.commands.push("back")}><CaretLeftIcon aria-hidden="true" className="size-5" /></Button>
-          <Button variant="secondary" size="sm" aria-label={t("nextPage")} onClick={() => signals.current.commands.push("forward")}><CaretRightIcon aria-hidden="true" className="size-5" /></Button>
-          <Button variant="secondary" size="sm" aria-label={t("magnifier")} aria-pressed={magnifier} onClick={() => setMagnifier((on) => !on)}><MagnifyingGlassIcon aria-hidden="true" weight={magnifier ? "fill" : "regular"} className="size-5" /></Button>
-          {/* TEMPORARY: Stripe Press's two ink colours; colours are on hold for the owner. */}
-          <Button variant="secondary" size="sm" aria-label={t("highlighterPink")} aria-pressed={ink === "pink"} onClick={() => pickInk("pink")}>
-            <span aria-hidden="true" className={cn("size-4 rounded-full bg-[#ff5fa8]", ink === "pink" && "ring-2 ring-current ring-offset-2 ring-offset-transparent")} />
-          </Button>
-          <Button variant="secondary" size="sm" aria-label={t("highlighterYellow")} aria-pressed={ink === "yellow"} onClick={() => pickInk("yellow")}>
-            <span aria-hidden="true" className={cn("size-4 rounded-full bg-[#f4e400]", ink === "yellow" && "ring-2 ring-current ring-offset-2 ring-offset-transparent")} />
-          </Button>
-        </div></ArcRoles>
-      : <button type="button" data-book-ui onClick={() => { setOpen(true); setHovering(false); }}
-          onFocus={() => { signals.current.peek = true; poke(); }} onBlur={() => { signals.current.peek = false; poke(); }}
-          className="sr-only focus-visible:not-sr-only focus-visible:pointer-events-auto focus-visible:absolute focus-visible:bottom-4 focus-visible:left-1/2 focus-visible:z-1 focus-visible:inline-flex focus-visible:h-10 focus-visible:-translate-x-1/2 focus-visible:items-center focus-visible:rounded-full focus-visible:border focus-visible:border-foreground focus-visible:bg-background focus-visible:px-4 focus-visible:text-[13px] focus-visible:uppercase focus-visible:tracking-[0.04em] focus-visible:outline-2 focus-visible:outline-offset-2">
-          {t("lookInside")}
-        </button>}
+    {/* Controls above the shared canvas: a fixed layer in a body portal, after the canvas in paint order, mirroring the
+        stage's rect (scroll, resize, the phone's full-screen open state). */}
+    {mounted && createPortal(<div ref={(element) => { overlay.current = element; signals.current.overlay = element; }}
+      data-open={open} className="pointer-events-none fixed z-1">
+      {open
+        ? <ArcRoles><div data-book-ui role="group" aria-label={t("lookInside")}
+            className="pointer-events-auto absolute bottom-4 left-1/2 z-1 flex -translate-x-1/2 items-center gap-2 max-lg:bottom-[calc(max(var(--bar-target),var(--frame-bottom))+1rem+env(safe-area-inset-bottom))]">
+            <Button variant="secondary" size="sm" aria-label={t("closeBook")} onClick={close}><XIcon aria-hidden="true" className="size-5" /></Button>
+            <Button variant="secondary" size="sm" aria-label={t("previousPage")} onClick={() => signals.current.commands.push("back")}><CaretLeftIcon aria-hidden="true" className="size-5" /></Button>
+            <Button variant="secondary" size="sm" aria-label={t("nextPage")} onClick={() => signals.current.commands.push("forward")}><CaretRightIcon aria-hidden="true" className="size-5" /></Button>
+            <Button variant="secondary" size="sm" aria-label={t("magnifier")} aria-pressed={magnifier} onClick={() => setMagnifier((on) => !on)}><MagnifyingGlassIcon aria-hidden="true" weight={magnifier ? "fill" : "regular"} className="size-5" /></Button>
+            {/* TEMPORARY: Stripe Press's two ink colours; colours are on hold for the owner. */}
+            <Button variant="secondary" size="sm" aria-label={t("highlighterPink")} aria-pressed={ink === "pink"} onClick={() => pickInk("pink")}>
+              <span aria-hidden="true" className={cn("size-4 rounded-full bg-[#ff5fa8]", ink === "pink" && "ring-2 ring-current ring-offset-2 ring-offset-transparent")} />
+            </Button>
+            <Button variant="secondary" size="sm" aria-label={t("highlighterYellow")} aria-pressed={ink === "yellow"} onClick={() => pickInk("yellow")}>
+              <span aria-hidden="true" className={cn("size-4 rounded-full bg-[#f4e400]", ink === "yellow" && "ring-2 ring-current ring-offset-2 ring-offset-transparent")} />
+            </Button>
+          </div></ArcRoles>
+        : <button type="button" data-book-ui data-shown={hovering && shown} onClick={() => { setOpen(true); setHovering(false); }}
+            onPointerEnter={() => { signals.current.peek = true; engage(); }} onPointerLeave={() => { signals.current.peek = false; release(); }}
+            onFocus={() => { signals.current.peek = true; poke(); }} onBlur={() => { signals.current.peek = false; poke(); }}
+            className="pointer-events-none absolute top-(--book-y) left-(--book-x) inline-flex h-10 -translate-1/2 scale-110 items-center rounded-full border border-foreground bg-background px-4 text-[13px] tracking-[0.04em] uppercase opacity-0 outline-offset-2 transition-[opacity,scale] duration-300 ease-out pointer-coarse:hidden focus-visible:pointer-events-auto focus-visible:scale-100 focus-visible:opacity-100 focus-visible:outline-2 data-[shown=true]:pointer-events-auto data-[shown=true]:scale-100 data-[shown=true]:opacity-100">
+            {t("lookInside")}
+          </button>}
+    </div>, document.body)}
   </div>;
 }

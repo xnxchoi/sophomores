@@ -1,19 +1,17 @@
 "use client";
 
-import { CaretLeftIcon, CaretRightIcon, MagnifyingGlassIcon, XIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useInView } from "react-intersection-observer";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/core/ArcFocus/ArcFocus";
-import { ArcRoles } from "../arc-roles";
 import { useTheme } from "@/providers/Theme";
 import { useRPStore } from "@/providers/RP_Pro";
 import { useCanvasClaim } from "@/components/gl/canvas-frameloop";
 import type { BookSignals, BookTextures } from "./book";
 import { endCarry, peekCarry } from "./book-carry";
+import { BookControlBar, BookPill } from "./book-controls";
 
 // Not three's MathUtils: the stage loads with the page, and three must stay in the lazy canvas chunk.
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
@@ -72,7 +70,13 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
   const stage = useRef<HTMLDivElement>(null);
   const signals = useRef<BookSignals>({ scroll: 0, hologram: false, radio: false, spins: [], look: false, peek: false, commands: [],
     view: { zoom: 1, x: 0, y: 0, panning: false, unitsPerPx: 0.02 }, marker: null, hitRect: null, invalidate: null,
-    exit: 0, pointer: { x: 0, y: 0 }, overlay: null, onGone: null });
+    exit: 0, pointer: { x: 0, y: 0 }, overlay: null, onGone: null, onReading: null });
+  // The open spread while reading (null until the book has opened): the control bar shows then and reads its pages.
+  const [reading, setReading] = useState<{ spread: number; leaves: number } | null>(null);
+  useEffect(() => { const sig = signals.current; sig.onReading = setReading; return () => { sig.onReading = null; }; }, []);
+  // The keys read the latest tool state without re-binding (Escape turns off the magnifier, then the ink, then closes).
+  const tools = useRef({ magnifier, ink, lastInk: "pink" as "pink" | "yellow" });
+  useEffect(() => { tools.current.magnifier = magnifier; tools.current.ink = ink; if (ink) tools.current.lastInk = ink; }, [magnifier, ink]);
   const overlay = useRef<HTMLDivElement>(null), sync = useRef<(() => void) | null>(null);
   const [mounted, setMounted] = useState(false);
   useEffect(() => { const id = requestAnimationFrame(() => setMounted(true)); return () => cancelAnimationFrame(id); }, []);
@@ -202,9 +206,35 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
     const frame = requestAnimationFrame(() => sync.current?.());
     if (open) signals.current.peek = false;
     if (!open) { Object.assign(signals.current.view, { zoom: 1, x: 0, y: 0, panning: false }); return () => cancelAnimationFrame(frame); }
-    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape" || event.key === "ArrowLeft" || event.key === "h") close(); };
-    window.addEventListener("keydown", onKey);
-    return () => { cancelAnimationFrame(frame); window.removeEventListener("keydown", onKey); };
+    // stripe.press's keys while open: ← → turn a page and repeat while held (every 300 ms, quickening to 50 ms over 3 s);
+    // < > turn too; x closes; m toggles the magnifier; h the highlighter (last ink); Escape steps back one thing at a time.
+    let repeat = 0;
+    const stopRepeat = () => { clearTimeout(repeat); repeat = 0; };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.metaKey || event.ctrlKey || event.altKey || (event.target as Element | null)?.closest?.("input, textarea, [contenteditable=true]")) return;
+      const { key } = event, push = (command: "back" | "forward") => { signals.current.commands.push(command); poke(); };
+      if (key === "ArrowLeft" || key === "ArrowRight") {
+        event.preventDefault();
+        if (event.repeat) return;
+        const command = key === "ArrowLeft" ? "back" : "forward", start = performance.now();
+        stopRepeat(); push(command);
+        const again = () => { push(command); repeat = window.setTimeout(again, 300 - 250 * Math.min((performance.now() - start) / 3000, 1)); };
+        repeat = window.setTimeout(again, 300);
+      }
+      else if (key === "<" || key === ">") push(key === "<" ? "back" : "forward");
+      else if (key === "x") close();
+      else if (key === "m") setMagnifier((on) => !on);
+      else if (key === "h") setInk((current) => current ? null : tools.current.lastInk);
+      else if (key === "Escape") {
+        if (tools.current.magnifier) setMagnifier(false); else if (tools.current.ink) setInk(null); else close();
+      }
+    };
+    const onKeyUp = (event: KeyboardEvent) => { if (event.key === "ArrowLeft" || event.key === "ArrowRight") stopRepeat(); };
+    window.addEventListener("keydown", onKey); window.addEventListener("keyup", onKeyUp); window.addEventListener("blur", stopRepeat);
+    return () => {
+      cancelAnimationFrame(frame); stopRepeat();
+      window.removeEventListener("keydown", onKey); window.removeEventListener("keyup", onKeyUp); window.removeEventListener("blur", stopRepeat);
+    };
   }, [open]);
 
   // Touch zoom and pan of the open book (#27): pinch between 1× and 2× (rubber 0.35 beyond), two fingers or a 300 ms
@@ -289,27 +319,23 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
         // Hidden (menu, out of view) means no input target either: drei's View passes `visible` to the canvas, not to this
         // DOM tracker (Review-B r2).
         inert={!usable} className={cn("pointer-events-auto absolute inset-0 touch-pan-y in-data-[open=true]:touch-none", !usable && "pointer-events-none")} />
+      {/* Reading: stripe.press's bar under the book (desktop 17 px up, phone a band 28 px up), and its centre "- Close -"
+          pill at the cover or the last spread. Closed: the anchored "+ Look inside +" pill on hover. */}
       {open
-        ? <ArcRoles><div data-book-ui role="group" aria-label={t("lookInside")}
-            className="pointer-events-auto absolute bottom-4 left-1/2 z-1 flex -translate-x-1/2 items-center gap-2 transition-opacity duration-300 ease-out group-data-[hidden=true]/layer:pointer-events-none group-data-[hidden=true]/layer:opacity-0 max-lg:bottom-[calc(max(var(--bar-target),var(--frame-bottom))+1rem+env(safe-area-inset-bottom))]">
-            <Button variant="secondary" size="sm" aria-label={t("closeBook")} onClick={close}><XIcon aria-hidden="true" className="size-5" /></Button>
-            <Button variant="secondary" size="sm" aria-label={t("previousPage")} onClick={() => signals.current.commands.push("back")}><CaretLeftIcon aria-hidden="true" className="size-5" /></Button>
-            <Button variant="secondary" size="sm" aria-label={t("nextPage")} onClick={() => signals.current.commands.push("forward")}><CaretRightIcon aria-hidden="true" className="size-5" /></Button>
-            <Button variant="secondary" size="sm" aria-label={t("magnifier")} aria-pressed={magnifier} onClick={() => setMagnifier((on) => !on)}><MagnifyingGlassIcon aria-hidden="true" weight={magnifier ? "fill" : "regular"} className="size-5" /></Button>
-            {/* TEMPORARY: Stripe Press's two ink colours; colours are on hold for the owner. */}
-            <Button variant="secondary" size="sm" aria-label={t("highlighterPink")} aria-pressed={ink === "pink"} onClick={() => pickInk("pink")}>
-              <span aria-hidden="true" className={cn("size-4 rounded-full bg-[#ff5fa8]", ink === "pink" && "ring-2 ring-current ring-offset-2 ring-offset-transparent")} />
-            </Button>
-            <Button variant="secondary" size="sm" aria-label={t("highlighterYellow")} aria-pressed={ink === "yellow"} onClick={() => pickInk("yellow")}>
-              <span aria-hidden="true" className={cn("size-4 rounded-full bg-[#f4e400]", ink === "yellow" && "ring-2 ring-current ring-offset-2 ring-offset-transparent")} />
-            </Button>
-          </div></ArcRoles>
-        : <button type="button" data-book-ui data-shown={hovering && usable} onClick={() => { setOpen(true); setHovering(false); }}
+        ? reading !== null && <>
+          <div className="pointer-events-none absolute inset-x-0 bottom-[17px] z-1 flex justify-center max-lg:bottom-[calc(max(var(--bar-target),var(--frame-bottom))+28px+env(safe-area-inset-bottom))]">
+            <BookControlBar spread={reading.spread} leaves={reading.leaves} magnifier={magnifier} ink={ink} onClose={close}
+              onBack={() => { signals.current.commands.push("back"); poke(); }} onForward={() => { signals.current.commands.push("forward"); poke(); }}
+              onMagnifier={() => setMagnifier((on) => !on)} onInk={pickInk} />
+          </div>
+          {(reading.spread <= 0 || reading.spread >= reading.leaves) && <BookPill sign="-" label={t("closeBook")} shown onClick={close}
+            className="pointer-events-auto absolute top-1/2 left-1/2 z-1 -translate-1/2 group-data-[hidden=true]/layer:pointer-events-none group-data-[hidden=true]/layer:opacity-0" />}
+        </>
+        : <BookPill sign="+" label={t("lookInside")} typed shown={hovering && usable} onClick={() => { setOpen(true); setHovering(false); }}
             onPointerEnter={() => { signals.current.peek = true; engage(); }} onPointerLeave={() => { signals.current.peek = false; release(); }}
             onFocus={() => { signals.current.peek = true; poke(); }} onBlur={() => { signals.current.peek = false; poke(); }}
-            className="pointer-events-none absolute top-(--book-y) left-(--book-x) inline-flex h-10 -translate-1/2 scale-110 items-center rounded-full border border-foreground bg-background px-4 text-[13px] tracking-[0.04em] uppercase opacity-0 outline-offset-2 transition-[opacity,scale] duration-300 ease-out pointer-coarse:hidden focus-visible:pointer-events-auto focus-visible:scale-100 focus-visible:opacity-100 focus-visible:outline-2 data-[shown=true]:pointer-events-auto data-[shown=true]:scale-100 data-[shown=true]:opacity-100">
-            {t("lookInside")}
-          </button>}
+            // Anchored on the book's centre; it fades in from 1.1× over 300 ms (stripe.press's open pill).
+            className="pointer-events-none absolute top-(--book-y) left-(--book-x) -translate-1/2 scale-110 opacity-0 outline-offset-2 transition-[opacity,scale,background-color,color] duration-300 focus-visible:pointer-events-auto focus-visible:scale-100 focus-visible:opacity-100 focus-visible:outline-2 data-[shown=true]:pointer-events-auto data-[shown=true]:scale-100 data-[shown=true]:opacity-100" />}
     </div>, document.body)}
   </div>;
 }

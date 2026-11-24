@@ -63,6 +63,9 @@ export type BookSignals = {
   overlay: HTMLElement | null;
   /** Told when the closed book has fully left its view (the scroll exit) or comes back, so its controls follow it. */
   onGone: ((gone: boolean) => void) | null;
+  /** Told the open spread (leaves on the left) once the book has opened and on every turn, and null as it closes: the
+   *  control bar shows while reading and reads its page numbers from it. */
+  onReading: ((reading: { spread: number; leaves: number } | null) => void) | null;
 };
 
 const hitBox = new Box3(), hitPart = new Box3(), hitCorner = new Vector3();
@@ -339,7 +342,7 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
     // Look inside timeline (#15): opens over OPEN_SECONDS, closes over 1.88 s.
     const want = sig.look ? 1 : -1;
     if (want !== l.dir) {
-      l.dir = want; l.active = false;
+      l.dir = want; l.active = false; sig.onReading?.(null);
       if (want > 0) {
         sound.play("crackle");
         // Turn the shortest way to the reading pose, and stop any fling.
@@ -348,7 +351,7 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
     }
     l.t = MathUtils.clamp(l.t + (l.dir > 0 ? dt : -dt * OPEN_SECONDS / 1.88), 0, OPEN_SECONDS);
     if (l.dir > 0 && l.t >= OPEN_SECONDS && !l.active) {
-      l.active = true; l.angle.forEach((_, i) => { l.target[i] = i < l.spread ? Math.PI : 0; });
+      l.active = true; l.angle.forEach((_, i) => { l.target[i] = i < l.spread ? Math.PI : 0; }); sig.onReading?.({ spread: l.spread, leaves: LEAVES });
     }
     const open = openCurves(l.t);
     if (closedPages.current) closedPages.current.visible = l.t === 0;
@@ -471,6 +474,6 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
     <group position={[-W / 2, 0, -T / 2]}><Board geometries={geometry.back} segments={back} material={material} /></group>
     <LookInside source={source} look={look} root={root} signals={signals} sound={sound} width={W - 0.15} height={H - 0.3} thickness={T} pageTextures={pageTextures} marksKey={storageKey && storageKey + ":marks"}
       onClose={() => onClose?.()}
-      onSpread={(spread) => { if (storageKey) try { window.sessionStorage.setItem(storageKey, String(spread)); } catch { /* storage unavailable */ } }} />
+      onSpread={(spread) => { signals.current.onReading?.({ spread, leaves: LEAVES }); if (storageKey) try { window.sessionStorage.setItem(storageKey, String(spread)); } catch { /* storage unavailable */ } }} />
   </group>;
 }

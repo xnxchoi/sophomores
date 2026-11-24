@@ -1,7 +1,8 @@
 import type { PayloadRequest } from "payload";
 import { usesUnlockEvents } from "./event-tickets";
 import { lockOrderReservation } from "./reservations";
-import { findCommerce, lockCommerce, readCommerce, updateCommerce, counter } from "./_shared/transaction";
+import { withCommerceWrite } from "./access";
+import { findCommerce, inCommerceTransaction, lockCommerce, readCommerce, relationshipID, updateCommerce, counter } from "./_shared/transaction";
 
 /**
  * Unlock events: a refunded seat (owner, 24 Nov: "yes, cancel. release seat.").
@@ -37,6 +38,32 @@ export async function releaseInvalidatedSeats({ req, orderID, now = Date.now() }
   if (released) {
     if (counter(event.committedQuantity) < released) throw new Error("Release capacity counters are inconsistent");
     await req.payload.db.updateOne({ collection: "commerce-events" as never, id: event.id, data: { committedQuantity: { $inc: -released } }, req });
+  }
+  return released;
+}
+
+/**
+ * The durable catch-up (Review-A, 24 Nov): finds every refunded admission whose seat is not yet released and runs the
+ * release for its order, each order in its own transaction, so a missed or failed release is retried on the next pass.
+ * Auth's key tick calls it every pass, after it reconciles owner-signed cancels; the refund and the key worker still
+ * release right away where they can. Ineligible orders (keys still valid, Part I started, not Unlock) cost a check and
+ * are left for the next pass. Returns how many seats it released.
+ */
+export async function releaseInvalidatedSeatsSweep({ req, limit = 25, now = Date.now() }: { req: PayloadRequest; limit?: number; now?: number }): Promise<number> {
+  if (await req.transactionID) throw new Error("The seat sweep runs each order in its own transaction");
+  const orders = new Set<string>();
+  for (let page = 1; orders.size < limit; page++) {
+    const found = await req.payload.find({ collection: "commerce-admissions" as never, depth: 0, overrideAccess: true, limit: 100, page, sort: "createdAt", req,
+      where: { and: [{ status: { equals: "revoked" } }, { benefitReview: { equals: true } }, { seatReleasedAt: { exists: false } }, { checkedInAt: { exists: false } }] } });
+    for (const admission of found.docs as unknown as { order?: unknown }[]) {
+      if (admission.order != null && orders.size < limit) orders.add(relationshipID(admission.order));
+    }
+    if (!found.hasNextPage) break;
+  }
+  let released = 0;
+  for (const orderID of orders) {
+    try { released += await inCommerceTransaction(req, () => withCommerceWrite(req, () => releaseInvalidatedSeats({ req, orderID, now }))); }
+    catch { req.payload.logger?.error({ msg: "Seat release sweep: order skipped until the next pass", orderID }); }
   }
   return released;
 }

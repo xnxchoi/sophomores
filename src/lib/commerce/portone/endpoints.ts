@@ -7,7 +7,7 @@ import { adapterConfig, attemptReadStop, paymentRequest, providerPayment, readOw
 import { assertPaymentRiskReviewed, assertPurchaseWithoutPaidReview, PaymentReviewRequired, retireFailedPayment } from './review'
 import { createPendingEndpoint } from './pending'
 import { createResultEndpoint } from './result'
-import { runReconciliation, settleIfProviderPaid } from './admission'
+import { ReconciliationCompletionUnknown, runReconciliation, settleIfProviderPaid } from './admission'
 import { withPaidReviewDecision, withSignedRiskEvidence } from './accounting'
 import { channelType } from './proof'
 
@@ -171,6 +171,9 @@ export function createAdapterEndpoints(deps: AdapterDependencies,
         req.data = previousData
         req.text = previousText
       }
-    } catch { return unavailable() }
+    } catch (error) {
+      // Unknown completion stays a 503 for PortOne (Review-A, 24 Nov); every other failure is the generic 409.
+      return error instanceof ReconciliationCompletionUnknown ? response(503, { message: 'Payment outcome is being confirmed' }) : unavailable()
+    }
   } }]
 }

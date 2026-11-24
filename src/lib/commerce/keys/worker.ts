@@ -3,7 +3,7 @@ import type { Payload, PayloadRequest, Where } from "payload";
 import { withCommerceWrite } from "../access";
 import { matchesFrozenEventTicket, sameTicketTarget, sharedEventTicketsEnabled, sharedTicketTarget } from "../event-tickets";
 import { purchaseSnapshotSchema } from "../purchase-snapshot";
-import { releaseInvalidatedSeats } from "../seat-release";
+import { releaseInvalidatedSeats, releaseInvalidatedSeatsSweep } from "../seat-release";
 import { findCommerce, inCommerceTransaction, lockCommerce, readCommerce, relationshipID, updateCommerce, type CommerceDocument } from "../_shared/transaction";
 import {
   cancelReplacementStopCodes, grantBroadcastPending, grantBroadcastStops, grantBroadcastSuppressed, grantRecoveryHeld, parkedCancelCodes, parkedGrantCodes, parseKeyGrantTarget, replacementStopCodes, ticketTokenConflict, ticketTokenIdentity, MEMBER_EVENT_GRANT,
@@ -851,6 +851,9 @@ export async function cancelKeyGrants({ payload, adapter, limit = 10, now = () =
     }), adapter, row.id);
     await recordCancel(payload, row.id, claimed.cancelAttemptID, now(), outcome);
   }
+  // Durable catch-up for refunded Unlock seats whose keys are now all invalid (seat-release.ts); never fails the pass.
+  try { await releaseInvalidatedSeatsSweep({ req: requestFor(payload), limit, now: now().getTime() }); }
+  catch { payload.logger?.error({ msg: "Seat release sweep failed" }); }
   return dispatched;
 }
 

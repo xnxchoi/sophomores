@@ -8,6 +8,10 @@ import { projectLocalResult } from './result'
 import { reconciliationPolicy } from './policy'
 import { optionalRelationshipID } from '../purchase-snapshot'
 
+/** The financial outcome may have committed but its completion is unrecorded: PortOne must redeliver (503, never 409). */
+export class ReconciliationCompletionUnknown extends APIError {
+  constructor() { super('Reconciliation completion unknown', 503) }
+}
 const reply = (outcome: string, status = 202, extra = {}) => Response.json({ outcome, ...extra }, { status,
   headers: { 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff' } })
 
@@ -131,7 +135,7 @@ async function reconcile(req: PayloadRequest, input: ReconciliationInput, kind: 
       try { completionUnknown = await endReconciliation(req, outcome) === 'unknown' }
       catch { completionUnknown = true }
       if (paid) await recordPaidReviewCase(req, identity, event.id, completionUnknown ? 'ownership-unknown' : 'review-required')
-      if (completionUnknown) throw new APIError('Reconciliation completion unknown', 503)
+      if (completionUnknown) throw new ReconciliationCompletionUnknown()
       if (error instanceof PaymentReviewRequired && await cancellationVerified(req, input.paymentID, tuple, event)) return reply('cancellation-verified', 200)
       throw error
     }

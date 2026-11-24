@@ -60,4 +60,25 @@ test("the link gate hides exactly what the config sends to the 404, directly or 
   const paths = ["/essays", "/essays/x", "/ESSAYS/x", "/Essays/in/2", "/read", "/read/x", "/READ/x", "/reading", "/reading/x", "/Reading/x",
     "/", "/essaysx", "/readings", "/reader", "/music", "/shop/cart", "/setlists/a"];
   for (const pathname of paths) assert.equal(reachableHref(pathname) === undefined, leadsTo404(pathname), pathname);
+
+  // Review-B r2: the gate reads the link as the browser resolves it. A same-origin absolute URL and a dot-segment path
+  // reach the server as their resolved pathname; external origins pass unchanged.
+  const previous = process.env.NEXT_PUBLIC_SERVER_URL;
+  process.env.NEXT_PUBLIC_SERVER_URL = "https://site.example";
+  try {
+    const links = ["https://site.example/ESSAYS/story", "https://site.example/read/x?y=1", "https://site.example/music",
+      "/shop/../reading/story", "/music/../Essays", "/essays/../music", "/%65ssays/x", "https://other.example/essays/x", "//other.example/essays"];
+    for (const href of links) {
+      const url = new URL(href, "https://site.example");
+      const sameOrigin = url.origin === "https://site.example";
+      const expected = sameOrigin && (leadsTo404(url.pathname) || leadsTo404(decodeURIComponent(url.pathname)));
+      assert.equal(reachableHref(href) === undefined, expected, href);
+    }
+    assert.equal(reachableHref("https://site.example/ESSAYS/story"), undefined);
+    assert.equal(reachableHref("/shop/../reading/story"), undefined);
+    assert.equal(reachableHref("https://other.example/essays/x"), "https://other.example/essays/x");
+  } finally {
+    if (previous === undefined) delete process.env.NEXT_PUBLIC_SERVER_URL;
+    else process.env.NEXT_PUBLIC_SERVER_URL = previous;
+  }
 });

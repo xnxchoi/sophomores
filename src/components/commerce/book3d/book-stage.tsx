@@ -119,11 +119,14 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
       const scroll = range > 0 ? Math.min(Math.max(window.scrollY / range, 0), 1) : 0;
       if (scroll !== signals.current.scroll) poke();
       signals.current.scroll = scroll;
-      // The scroll exit (TEARDOWN §7, desktop branch): exit = (vh − (sectionTop − 220)) / ((0.5 / 1.3) × 3 × vh), clamped.
+      // The scroll exit (TEARDOWN §7, desktop branch): exit = (vh − (sectionTop − lead)) / ((0.5 / 1.3) × 3 × vh), clamped.
+      // stripe.press's lead is 220 px; our pages are shorter and the section can start near the fold, so the lead shrinks
+      // to the room left below the fold at the top of the page, and the book always starts at rest (seen live, 24 Nov).
       const rect = stage.current?.getBoundingClientRect(), vh = window.innerHeight;
       const section = main?.querySelector("[data-covers-stage]")?.getBoundingClientRect();
+      const lead = section ? Math.min(section.top + window.scrollY - vh, 220) : 0;
       const exit = section && window.matchMedia("(min-width: 64rem)").matches
-        ? Math.min(Math.max((vh - (section.top - 220)) / ((0.5 / 1.3) * 3 * vh), 0), 1) : 0;
+        ? Math.min(Math.max((vh - (section.top - lead)) / ((0.5 / 1.3) * 3 * vh), 0), 1) : 0;
       if (exit !== signals.current.exit) { signals.current.exit = exit; poke(); }
       // The control layer mirrors the stage's rect.
       const layer = overlay.current;

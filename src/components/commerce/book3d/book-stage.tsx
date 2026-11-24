@@ -72,7 +72,7 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
     view: { zoom: 1, x: 0, y: 0, panning: false, unitsPerPx: 0.02 }, marker: null, hitRect: null, invalidate: null,
     exit: 0, pointer: { x: 0, y: 0 }, overlay: null, onGone: null, onReading: null });
   // The open spread while reading (null until the book has opened): the control bar shows then and reads its pages.
-  const [reading, setReading] = useState<{ spread: number; leaves: number } | null>(null);
+  const [reading, setReading] = useState<{ spread: number; leaves: number; shown: boolean } | null>(null);
   useEffect(() => { const sig = signals.current; sig.onReading = setReading; return () => { sig.onReading = null; }; }, []);
   // The keys read the latest tool state without re-binding (Escape turns off the magnifier, then the ink, then closes).
   const tools = useRef({ magnifier, ink, lastInk: "pink" as "pink" | "yellow" });
@@ -321,17 +321,16 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
         inert={!usable} className={cn("pointer-events-auto absolute inset-0 touch-pan-y in-data-[open=true]:touch-none", !usable && "pointer-events-none")} />
       {/* Reading: stripe.press's bar under the book (desktop 17 px up, phone a band 28 px up), and its centre "- Close -"
           pill at the cover or the last spread. Closed: the anchored "+ Look inside +" pill on hover. */}
-      {open
-        ? reading !== null && <>
+      {reading !== null && <>
           <div className="pointer-events-none absolute inset-x-0 bottom-[17px] z-1 flex justify-center max-lg:bottom-[calc(max(var(--bar-target),var(--frame-bottom))+28px+env(safe-area-inset-bottom))]">
-            <BookControlBar spread={reading.spread} leaves={reading.leaves} magnifier={magnifier} ink={ink} onClose={close}
+            <BookControlBar shown={reading.shown && open} spread={reading.spread} leaves={reading.leaves} magnifier={magnifier} ink={ink} onClose={close}
               onBack={() => { signals.current.commands.push("back"); poke(); }} onForward={() => { signals.current.commands.push("forward"); poke(); }}
               onMagnifier={() => setMagnifier((on) => !on)} onInk={pickInk} />
           </div>
-          {(reading.spread <= 0 || reading.spread >= reading.leaves) && <BookPill sign="-" label={t("closeBook")} shown onClick={close}
+          {open && reading.shown && (reading.spread <= 0 || reading.spread >= reading.leaves) && <BookPill sign="-" label={t("closeBook")} shown onClick={close}
             className="pointer-events-auto absolute top-1/2 left-1/2 z-1 -translate-1/2 group-data-[hidden=true]/layer:pointer-events-none group-data-[hidden=true]/layer:opacity-0" />}
-        </>
-        : <BookPill sign="+" label={t("lookInside")} typed shown={hovering && usable} onClick={() => { setOpen(true); setHovering(false); }}
+        </>}
+      {!open && <BookPill sign="+" label={t("lookInside")} typed shown={hovering && usable} onClick={() => { setOpen(true); setHovering(false); }}
             onPointerEnter={() => { signals.current.peek = true; engage(); }} onPointerLeave={() => { signals.current.peek = false; release(); }}
             onFocus={() => { signals.current.peek = true; poke(); }} onBlur={() => { signals.current.peek = false; poke(); }}
             // Anchored on the book's centre; it fades in from 1.1× over 300 ms (stripe.press's open pill).

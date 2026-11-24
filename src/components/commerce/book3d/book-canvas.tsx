@@ -142,7 +142,7 @@ export default function BookView({ signals, textures, visible, dark, intro = tru
         clicks elsewhere (the controls, the page) don't count. Only the book is in this group, so the shadow catcher or
         the lens never counts as a hit. */}
     <Suspense fallback={null}>
-      <group onPointerMissed={(event) => { if (signals.current.look && source && event.target === source) onClose?.(); }}><Intro skip={!intro}><Book source={source} textures={textures} signals={signals} onOpen={onOpen} onClose={onClose} small={small} storageKey={storageKey} pageTextures={pageTextures} /></Intro></group>
+      <group><Intro skip={!intro}><Book source={source} textures={textures} signals={signals} onOpen={onOpen} onClose={onClose} small={small} storageKey={storageKey} pageTextures={pageTextures} /></Intro></group>
     </Suspense>
     {magnifier && <Magnifier touch={small} source={source} />}
     {/* The dark theme's shadow catcher; the shared canvas renders shadow maps (shadows="percentage", UI-Shell dd1b91ac). */}

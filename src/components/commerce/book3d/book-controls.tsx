@@ -11,17 +11,17 @@ import { cn } from "@/lib/utils";
  * It appears when the book has opened, fades in over 200 ms and staggers its items in (320 ms each, 80 ms + 60 ms apart),
  * and on a phone becomes a full-width band with a rule under it.
  */
-export function BookControlBar({ spread, leaves, magnifier, ink, onBack, onForward, onMagnifier, onInk, onClose }: {
-  spread: number; leaves: number; magnifier: boolean; ink: null | "pink" | "yellow";
+export function BookControlBar({ shown, spread, leaves, magnifier, ink, onBack, onForward, onMagnifier, onInk, onClose }: {
+  shown: boolean; spread: number; leaves: number; magnifier: boolean; ink: null | "pink" | "yellow";
   onBack: () => void; onForward: () => void; onMagnifier: () => void; onInk: (ink: "pink" | "yellow") => void; onClose: () => void;
 }) {
   const t = useTranslations("Customer.components_commerce_book_offer");
   // Page numbers of the open spread: leaf k carries pages 2k+1 (front) and 2k+2 (back). The cover has none.
   const readout = spread <= 0 ? "" : spread >= leaves ? String(2 * spread) : 2 * spread + "–" + (2 * spread + 1);
-  return <div data-book-ui role="group" aria-label={t("lookInside")}
+  return <div data-book-ui role="group" aria-label={t("lookInside")} data-shown={shown} inert={!shown}
     // Clicks on the bar never reach the book (stripe.press stops pointerdown and click on its inner bar).
     onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}
-    className="pointer-events-auto flex items-center gap-1.5 rounded-[5px] bg-muted pt-2 pr-3.5 pb-3 pl-3.5 text-foreground transition-opacity duration-200 ease-out starting:opacity-0 group-data-[hidden=true]/layer:pointer-events-none group-data-[hidden=true]/layer:opacity-0 max-lg:w-full max-lg:justify-between max-lg:gap-0.5 max-lg:rounded-none max-lg:border-b max-lg:border-current max-lg:py-2">
+    className="pointer-events-auto flex items-center gap-1.5 rounded-[5px] bg-muted pt-2 pr-3.5 pb-3 pl-3.5 text-foreground transition-opacity duration-200 ease-out starting:opacity-0 data-[shown=false]:pointer-events-none data-[shown=false]:opacity-0 group-data-[hidden=true]/layer:pointer-events-none group-data-[hidden=true]/layer:opacity-0 max-lg:w-full max-lg:justify-between max-lg:gap-0.5 max-lg:rounded-none max-lg:border-b max-lg:border-current max-lg:py-2">
     <Group>
       <BarItem index={0}><BarButton aria-label={t("previousPage")} onClick={onBack} className="lg:pl-1"><Bracketed><Arrow /></Bracketed></BarButton></BarItem>
       <BarItem index={1}><span className="px-1 text-[10px] tracking-[0.03em] tabular-nums max-lg:px-0.5 max-lg:text-[11.2px]">{readout || "–"}</span></BarItem>

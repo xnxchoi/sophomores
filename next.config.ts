@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 import { withPayload } from "@payloadcms/next/withPayload";
 import createNextIntlPlugin from "next-intl/plugin";
+import { essaysEnabled } from "./src/lib/content/essays";
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
@@ -35,7 +36,14 @@ const nextConfig: NextConfig = {
         {
           source: `/:section(shop|me)/orders/:id((?!(?:${orderId})$)[^/]+)`,
           destination: siteNotFound
-        }
+        },
+        // Essays are switched off (src/lib/content/essays.ts): every /essays URL is the site's 404.
+        ...(essaysEnabled
+          ? []
+          : [
+              { source: "/essays", destination: siteNotFound },
+              { source: "/essays/:path*", destination: siteNotFound }
+            ])
       ],
       afterFiles: [],
       fallback: []

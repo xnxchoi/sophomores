@@ -10,6 +10,7 @@ import { siteLayer } from "@/constants/site-layers";
 import { useRPStore } from "@/providers/RP_Pro";
 import { DISCOVER, START } from "../header-panels";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
+import { reachableHref } from "@/lib/content/essays";
 
 type SearchPost = { slug: string; title: string; dek: string };
 
@@ -84,6 +85,8 @@ function SheetBody({ posts, onClose }: { posts: SearchPost[]; onClose: () => voi
     if (!needle) return [];
     return posts.filter((post) => `${post.title} ${post.dek}`.toLowerCase().includes(needle)).slice(0, 10);
   }, [posts, query]);
+  // Results lead to essays; none show while the site has them switched off (src/lib/content/essays.ts).
+  const reachableResults = results.filter((post) => reachableHref(`/essays/${post.slug}`) !== undefined);
 
   return (
     <>
@@ -129,9 +132,9 @@ function SheetBody({ posts, onClose }: { posts: SearchPost[]; onClose: () => voi
               ))}
             </Section>
           </>
-        ) : results.length > 0 ? (
+        ) : reachableResults.length > 0 ? (
           <Section label={t("results")}>
-            {results.map((post) => (
+            {reachableResults.map((post) => (
               <Row key={post.slug} href={`/essays/${post.slug}`} title={post.title} subtitle={post.dek} onSelect={onClose} trailing />
             ))}
           </Section>

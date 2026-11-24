@@ -1,3 +1,5 @@
+import { reachableHref } from "./essays";
+
 export type MenuPreview = {
   src: string;
   alt: string;
@@ -9,7 +11,7 @@ export type MenuLink = {
   preview?: MenuPreview;
 };
 
-export const menuLinks: MenuLink[] = [
+const allMenuLinks: MenuLink[] = [
   {
     href: "/essays",
     label: "reading",
@@ -43,3 +45,5 @@ export const menuLinks: MenuLink[] = [
   }
 ];
 
+/** The menu's links, without any the site has switched off (src/lib/content/essays.ts). */
+export const menuLinks: MenuLink[] = allMenuLinks.filter((link) => reachableHref(link.href) !== undefined);

@@ -833,7 +833,8 @@
       "nextPage": "",
       "magnifier": "",
       "highlighterPink": "",
-      "highlighterYellow": ""
+      "highlighterYellow": "",
+      "copyPageLink": ""
     },
     "components_commerce_checkout": {
       "customerSignInIsOffInThisReviewCopy": "",

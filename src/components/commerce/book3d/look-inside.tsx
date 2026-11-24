@@ -8,7 +8,7 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, type RefObject } from "react";
 import type { BookSignals } from "./book";
 import type { BookSound } from "./book-sound";
-import { BoxGeometry, CanvasTexture, DoubleSide, MathUtils, MeshStandardMaterial, PlaneGeometry, Vector3, type Group, type Texture } from "three";
+import { BoxGeometry, CanvasTexture, DoubleSide, MathUtils, MeshStandardMaterial, PlaneGeometry, SRGBColorSpace, Vector3, type Group, type Texture } from "three";
 
 /*
  * Look inside, rebuilt from stripe.press's own code (bundles 04ud, 3fe6, 06w9, 12s2).
@@ -41,7 +41,10 @@ export type LookState = {
 };
 
 const noPick = () => {};
-export const LEAVES = 12;
+/** The preview book's leaves (340 pages). Like stripe.press, only a few live leaves are drawn as sheets (SLOTS); the rest
+ *  are two page blocks, and a riffled run of leaves is a third. */
+export const LEAVES = 170;
+const SLOTS = 8;
 const PI = Math.PI;
 // stripe.press (12s2, 3fe6): sweep min(205.35°, 6·stiffness), damping, corner curl tuning; its page is 15.05 wide.
 const SWEEP = MathUtils.degToRad(205.349254), DAMPING = 0.32839134, CURL_RAD = 7.02, CURL_POWER = 0.86, FOLD_TILT = MathUtils.degToRad(31.5);
@@ -92,7 +95,7 @@ export function stepLookTimeline(l: LookState, want: 1 | -1, dt: number) {
 function createSheetMaterial(width: number, height: number, front?: Texture, back?: Texture, color = 0xf3f3f1) {
   const uniforms = {
     uW: { value: width }, uH: { value: height }, uCurl: { value: 0 }, uSweep: { value: SWEEP }, uThin: { value: 0 }, uFlop: { value: 0 },
-    uTipFlop: { value: 0 }, uOffset: { value: 0 }, uDepth: { value: 0 },
+    uTipFlop: { value: 0 }, uOffset: { value: 0 }, uDepth: { value: 0 }, uStack: { value: 0 },
     uCurlAmount: { value: 0 }, uCurlPower: { value: CURL_POWER }, uCurlAngle: { value: 0 }, uPivotU: { value: 0.74 }, uPivotV: { value: 0.5 },
     uSpan: { value: SPAN * width / STRIPE_PAGE_W }, uLiftSign: { value: 1 },
     uFront: { value: front ?? null }, uBack: { value: back ?? null }, uHasFront: { value: front ? 1 : 0 }, uHasBack: { value: back ? 1 : 0 },
@@ -105,7 +108,7 @@ function createSheetMaterial(width: number, height: number, front?: Texture, bac
     Object.assign(shader.uniforms, uniforms);
     shader.vertexShader = shader.vertexShader
       .replace("#include <common>", `#include <common>
-        uniform float uW, uH, uCurl, uSweep, uThin, uFlop, uTipFlop, uOffset, uDepth;
+        uniform float uW, uH, uCurl, uSweep, uThin, uFlop, uTipFlop, uOffset, uDepth, uStack;
         uniform float uCurlAmount, uCurlPower, uCurlAngle, uPivotU, uPivotV, uSpan, uLiftSign;
         varying vec2 vLeafUv;
         float sheetA(float u) {
@@ -146,7 +149,7 @@ function createSheetMaterial(width: number, height: number, front?: Texture, bac
         float depth = clamp(uOffset + position.z * uDepth, -0.9 / kappa, 0.9 / kappa);
         vec3 sheetT = vec3(tan2.x, 0.0, tan2.y), sheetN = vec3(nor2.x, 0.0, nor2.y), sheetB = vec3(0.0, 1.0, 0.0);
         vec3 liftN = sheetN * uLiftSign;
-        vec3 sheetPos = vec3(land.x + nor2.x * depth, position.y + dAlong * curlDir.y, land.y + nor2.y * depth) + dOut * liftN;
+        vec3 sheetPos = vec3(land.x + nor2.x * depth, position.y + dAlong * curlDir.y, land.y + nor2.y * depth + uStack) + dOut * liftN;
         vec3 curledN = normalize(cos(curlEnd) * liftN - sin(curlEnd) * (curlDir.x * sheetT + curlDir.y * sheetB)) * uLiftSign;
         vec3 objectNormal = normalize(sheetT * normal.x + sheetB * normal.y + curledN * normal.z);`)
       .replace("#include <begin_vertex>", "vec3 transformed = sheetPos;\nvLeafUv = uv;");
@@ -198,13 +201,40 @@ type Gesture = {
  *  lifts (16°); a press holds it, a fast move (0.7 px/ms) or the release turns it, a miss of 90 ms drops it. */
 type Chunk = { phase: "idle" | "gather" | "release"; left: boolean; count: number; lift: number; p: number; commit: boolean; missAt: number; checkedAt: number };
 
+/**
+ * A placeholder page until the product's page images exist: paper, a running head, ragged lines of grey type (no words),
+ * now and then a figure, and the folio at the outer foot. Seeded by the page, so a page always looks the same.
+ */
+function drawPage(face: { canvas: HTMLCanvasElement; texture: CanvasTexture }, page: number) {
+  const { canvas, texture } = face, c = canvas.getContext("2d"); if (!c) return;
+  const w = canvas.width, h = canvas.height, left = page % 2 === 0, margin = w * 0.13, measure = w - 2 * margin;
+  let seed = (page * 7919) % 233280;
+  const random = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+  c.fillStyle = "#f6f5f1"; c.fillRect(0, 0, w, h);
+  c.fillStyle = "#cfcec9"; c.fillRect(left ? margin : w - margin - measure * 0.3, h * 0.06, measure * 0.3, h * 0.007);
+  const figure = random() < 0.3 ? { at: h * (0.16 + random() * 0.35), height: h * (0.18 + random() * 0.1) } : null;
+  const line = h * 0.027;
+  for (let y = h * 0.11; y < h * 0.88; y += line) {
+    if (figure && y >= figure.at && y < figure.at + figure.height) {
+      c.strokeStyle = "#d8d7d2"; c.lineWidth = 2; c.strokeRect(margin, figure.at, measure, figure.height - line);
+      y = figure.at + figure.height; continue;
+    }
+    const end = random() < 0.12;
+    c.fillStyle = "#c4c3be"; c.fillRect(margin, y, measure * (end ? 0.25 + random() * 0.5 : 0.94 + random() * 0.06), h * 0.008);
+    if (end) y += line * 0.6;
+  }
+  c.fillStyle = "#8f8e89"; c.font = Math.round(h * 0.02) + "px sans-serif"; c.textAlign = left ? "left" : "right";
+  c.fillText(String(page), left ? margin : w - margin, h * 0.94);
+  texture.colorSpace = SRGBColorSpace; texture.needsUpdate = true;
+}
+
 /** Root frame (the spread laid flat) to the body's frame (turned π·n about the spine, book.tsx). */
 function toBody(v: Vector3, n: number) {
   const a = PI * n, x = v.x, z = v.z;
   return v.set(x * Math.cos(a) + z * Math.sin(a), v.y, -x * Math.sin(a) + z * Math.cos(a));
 }
 
-export function LookInside({ source, look, signals, sound, width, height, thickness, pageTextures, marksKey, onClose, onSpread }: {
+export function LookInside({ source, look, signals, sound, width, height, thickness, pageTextures, marksKey, onSpread }: {
   source?: HTMLElement;
   look: RefObject<LookState | null>; signals: RefObject<BookSignals>; sound: BookSound;
   width: number; height: number; thickness: number;
@@ -212,27 +242,34 @@ export function LookInside({ source, look, signals, sound, width, height, thickn
   pageTextures: string[];
   /** localStorage key for the highlighter's marks (#28). */
   marksKey?: string;
-  onClose: () => void; onSpread: (spread: number) => void;
+  onSpread: (spread: number) => void;
 }) {
   const maps = useTexture(pageTextures) as Texture[];
-  const leaves = useMemo(() => Array.from({ length: LEAVES }, (_, i) => createSheetMaterial(width, height, maps[2 * i], maps[2 * i + 1])), [maps, width, height]);
-  const blocks = useMemo(() => [createSheetMaterial(width, height, undefined, undefined, 0xe9e9e6), createSheetMaterial(width, height, undefined, undefined, 0xe9e9e6)], [width, height]);
+  // The live sheets: each slot shows whichever leaf it is given, with that leaf's page images (the product's, or a drawn
+  // placeholder page until the real pages exist) and ink.
+  const slots = useMemo(() => Array.from({ length: SLOTS }, () => {
+    const sheet = createSheetMaterial(width, height);
+    const faces = [0, 1].map(() => { const canvas = document.createElement("canvas"); canvas.width = 512; canvas.height = Math.round(512 * height / width); return { canvas, texture: new CanvasTexture(canvas) }; });
+    return { ...sheet, faces, leaf: -1 };
+  }), [width, height]);
+  const blocks = useMemo(() => [0, 1, 2].map(() => createSheetMaterial(width, height, undefined, undefined, 0xe9e9e6)), [width, height]);
   // stripe.press's page plane: 48 across and in proportion down. The blocks bend across their width only.
   const geometry = useMemo(() => { const g = new PlaneGeometry(width, height, 48, Math.floor(48 * height / width)); g.translate(width / 2, 0, 0); return g; }, [width, height]);
   const block = useMemo(() => { const g = new BoxGeometry(width, height, 1, 48, 1, 1); g.translate(width / 2, 0, -0.5); return g; }, [width, height]);
   useEffect(() => () => {
-    geometry.dispose(); block.dispose(); leaves.forEach((l) => l.material.dispose()); blocks.forEach((b) => b.material.dispose());
-  }, [geometry, block, leaves, blocks]);
+    geometry.dispose(); block.dispose(); blocks.forEach((b) => b.material.dispose());
+    slots.forEach((slot) => { slot.material.dispose(); slot.faces.forEach((face) => face.texture.dispose()); });
+  }, [geometry, block, slots, blocks]);
 
   const per = thickness / LEAVES;
-  const group = useRef<Group>(null), leafMeshes = useRef<(Group | null)[]>([]), blockMeshes = useRef<(Group | null)[]>([]);
+  const group = useRef<Group>(null), slotMeshes = useRef<(Group | null)[]>([]), blockMeshes = useRef<(Group | null)[]>([]);
   const gesture = useRef<Gesture | null>(null);
   const chunk = useRef<Chunk>({ phase: "idle", left: false, count: 0, lift: 0, p: 0, commit: false, missAt: 0, checkedAt: 0 });
   /** Per leaf drawing state: corner curl (target, tilt, shown amount and its smoothing velocity), where it was held or
    *  hovered, the tip flop, the hover nudge, and whether its flight was dragged. */
   const leafFx = useRef(Array.from({ length: LEAVES }, () => ({ curl: 0, tilt: 0, amount: 0, amountV: 0, grabU: 1, grabV: 0.5, flop: 0, nudge: 0, dragged: false })));
   const hover = useRef({ inside: false, left: false, grabU: 0, grabV: 0.5, x: 0, y: 0, lastSide: 0, sideSince: 0, pushFrom: 0 });
-  const timing = useRef({ lockoutUntil: 0, fanAt: -1, fine: true });
+  const timing = useRef({ lockoutUntil: 0, fanAt: -1, shownAt: -1, fine: true });
   useEffect(() => { timing.current.fine = window.matchMedia("(pointer: fine)").matches; }, []);
   /** The spread's screen rect in the View's pixels and the spine's x (stripe.press's book rect and spineScreenX). */
   const rect = useRef({ left: 0, top: 0, right: 0, bottom: 0, spine: 0, ready: false });
@@ -251,8 +288,6 @@ export function LookInside({ source, look, signals, sound, width, height, thickn
       const canvas = document.createElement("canvas"); canvas.width = 512; canvas.height = Math.round(512 * height / width);
       const context = canvas.getContext("2d"); if (!context) return null;
       found = { context, canvas, texture: new CanvasTexture(canvas) }; surfaces.current.set(key, found);
-      const uni = leaves[leaf].uniforms;
-      if (back) { uni.uInkBack.value = found.texture; uni.uHasInkBack.value = 1; } else { uni.uInkFront.value = found.texture; uni.uHasInkFront.value = 1; }
     }
     return found;
   }
@@ -282,9 +317,9 @@ export function LookInside({ source, look, signals, sound, width, height, thickn
     try { storage = window.localStorage; } catch { storage = null; }
     marks.current = createMarkStore(marksKey, storage);
     replay(marks.current.strokes());
-    // paint() reads leaves (a dependency) and the stable refs only.
+    // paint() reads the stable refs only.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [leaves, marksKey]);
+  }, [marksKey]);
   useEffect(() => () => { marks.current?.flush(); markerMaterial.dispose(); markerGeometry.dispose(); surfaces.current.forEach(({ texture }) => texture.dispose()); }, [markerMaterial, markerGeometry]);
 
   // ---- Turning (stripe.press's index model, 04ud:2037-2060, 17605-17626) ----
@@ -397,7 +432,7 @@ export function LookInside({ source, look, signals, sound, width, height, thickn
         return;
       }
       const leaf = pick(p.left);
-      if (leaf < 0) { g.mode = "cover"; gesture.current = g; return; } // the cover side at either end: a click closes
+      if (leaf < 0) { g.mode = "cover"; gesture.current = g; return; } // the cover side at either end: nothing to turn
       if (now < timing.current.lockoutUntil) return; // a settled leaf right after a turn
       gesture.current = g; grab(g, leaf);
     };
@@ -473,7 +508,7 @@ export function LookInside({ source, look, signals, sound, width, height, thickn
       if (e.type !== "pointerup" || signals.current.view.panning) { restore(g); return; }
       const now = performance.now(), click = g.moved < 5;
       if (g.mode === "edge") { Object.assign(chunk.current, { phase: "release", commit: true }); timing.current.lockoutUntil = now + 250; return; }
-      if (g.mode === "cover") { if (click) onClose(); return; }
+      if (g.mode === "cover") return; // the book never closes from a click on it: only [ X ] and Escape close it
       if (g.mode === "brake") { unbrake(); if (click && now - g.downAt < 400) step(g.left ? -1 : 1); return; }
       // Release (04ud:6561-6612): a click turns by side; a 5 px drag in the turning direction commits; velocity is dropped
       // and the spring (or the shared flight speed) carries the page.
@@ -510,29 +545,6 @@ export function LookInside({ source, look, signals, sound, width, height, thickn
     timing.current.lockoutUntil = performance.now() + 60;
   }
 
-  // Closing from around the book (06w9:16254-16313): a mouse press more than 24 px outside the spread, or a tap there (one
-  // finger, 12 px or less), closes it. The book's own controls don't count.
-  useEffect(() => {
-    let tap: { id: number; x: number; y: number } | null = null;
-    const outside = (x: number, y: number) => {
-      const box = source?.getBoundingClientRect(), r = rect.current;
-      if (!box || !r.ready) return false;
-      const lx = x - box.left, ly = y - box.top;
-      return lx < r.left - 24 || lx > r.right + 24 || ly < r.top - 24 || ly > r.bottom + 24;
-    };
-    const onDown = (e: PointerEvent) => {
-      if (!look.current?.active || (e.target as Element | null)?.closest?.("[data-book-ui]") || !outside(e.clientX, e.clientY)) return;
-      if (e.pointerType === "touch") { tap = e.isPrimary ? { id: e.pointerId, x: e.clientX, y: e.clientY } : null; return; }
-      if (e.button === 0) onClose();
-    };
-    const onUp = (e: PointerEvent) => {
-      if (tap && tap.id === e.pointerId && Math.hypot(e.clientX - tap.x, e.clientY - tap.y) <= 12 && look.current?.active) onClose();
-      tap = null;
-    };
-    const arm = window.setTimeout(() => { document.addEventListener("pointerdown", onDown); document.addEventListener("pointerup", onUp); }, 0);
-    return () => { clearTimeout(arm); document.removeEventListener("pointerdown", onDown); document.removeEventListener("pointerup", onUp); };
-  }, [source, look, onClose]);
-
   const point = useMemo(() => new Vector3(), []);
   useFrame((state, delta) => {
     const l = look.current, dt = Math.min(delta, 0.05), f = dt * 60, now = performance.now();
@@ -541,7 +553,7 @@ export function LookInside({ source, look, signals, sound, width, height, thickn
     while (signals.current.commands.length) { const command = signals.current.commands.shift(); if (l.active) step(command === "back" ? -1 : 1); }
     const shown = l.lu > 0;
     if (group.current) group.current.visible = shown;
-    if (!shown) { rect.current.ready = false; return; }
+    if (!shown) { rect.current.ready = false; signals.current.spreadRect = null; return; }
     if (!l.active && gesture.current) cancel();
     const g = gesture.current, h = hover.current, r = rect.current;
 
@@ -562,13 +574,19 @@ export function LookInside({ source, look, signals, sound, width, height, thickn
     const tE = clamp01(l.tx + l.push);
     l.n = tE * l.ld;
 
-    // Opening: every leaf stands at π/2 until the fan is a fifth in, then falls to its side; the curl comes in with ld²
-    // and a stagger of 90 ms a leaf (420 ms each) from the gutter out (04ud:2499-2502). Closing stands them up again.
+    // Opening: the live leaves around the page (stripe.press's window, 04ud:1787-1864) stand at π/2 until the fan is a
+    // fifth in, then fall to their sides; the curl comes in with ld² and a stagger of 90 ms a leaf (420 ms each) from the
+    // gutter out (04ud:2499-2502). The rest of the book is the two blocks. Closing stands the live leaves up again.
+    const lo = Math.max(0, l.spread - 3), hi = Math.min(LEAVES, l.spread + 3), inWindow = (i: number) => i >= lo && i < hi;
     const holdUpright = l.dir < 0 || l.ld < 0.2;
-    if (l.ld <= 0.01) for (let i = 0; i < LEAVES; i++) { l.angle[i] = l.render[i] = PI / 2; l.vel[i] = 0; l.target[i] = PI / 2; l.brake[i] = null; }
+    if (l.ld <= 0.01) for (let i = 0; i < LEAVES; i++) {
+      l.angle[i] = l.render[i] = l.target[i] = inWindow(i) ? PI / 2 : i < l.spread ? PI : 0; l.vel[i] = 0; l.brake[i] = null;
+    }
     if (l.dir > 0 && l.ld >= 0.25 && timing.current.fanAt < 0) timing.current.fanAt = now;
     if (l.dir > 0 && l.ld < 0.25) timing.current.fanAt = -1;
-    if (l.dir > 0) for (let i = 0; i < LEAVES; i++) {
+    // The sheets show 200 ms after the fan starts (04ud:2916-2921).
+    if (l.ld <= 0.03) timing.current.shownAt = -1; else if (timing.current.shownAt < 0) timing.current.shownAt = now;
+    if (l.dir > 0) for (let i = lo; i < hi; i++) {
       const k = Math.abs(i + 0.5 - l.spread) - 0.5;
       l.fan[i] = timing.current.fanAt < 0 ? 0 : smooth(0, 1, (now - timing.current.fanAt - 90 * k) / 420);
     }
@@ -583,7 +601,7 @@ export function LookInside({ source, look, signals, sound, width, height, thickn
     for (let i = 0; i < LEAVES; i++) {
       if (i === dragged || l.brake[i] !== null) continue;
       const t = l.target[i], busy = t !== null && t !== PI / 2 && Math.abs(l.angle[i] - t) > 0.1;
-      if (!busy) l.target[i] = holdUpright ? PI / 2 : i < l.spread ? PI : 0;
+      if (!busy) l.target[i] = holdUpright && inWindow(i) ? PI / 2 : i < l.spread ? PI : 0;
     }
     for (let i = 0; i < LEAVES; i++) {
       const before = l.angle[i];
@@ -648,31 +666,53 @@ export function LookInside({ source, look, signals, sound, width, height, thickn
     const chunkAngle = c.left ? PI - c.p * PI - MathUtils.degToRad(16) * c.lift : c.p * PI + MathUtils.degToRad(16) * c.lift;
 
     // ---- Drawing ----
-    // Each leaf's depth: its place in the stack from the split, re-centred on the spine (stripe.press's leafOffset plus
-    // normalStackOffset), which comes to ((N − 1)/2 − i)·spacing whatever the page, so a turn never shifts the stack.
-    const depthOf = (i: number) => ((LEAVES - 1) / 2 - i) * per;
+    // Depths (04ud:2509, 2593): a leaf lies (split − i) spacings along its normal from the top of its stack, and the whole
+    // stack is centred on the spine by ((N − 1)/2 − split) spacings, so the roots spread across the spine's width.
+    const offsetOf = (i: number) => (l.spread - i) * per, stack = ((LEAVES - 1) / 2 - l.spread) * per;
     const ld2 = l.ld * l.ld, open = l.ld, fx = leafFx.current;
     const hovered = h.inside && l.active && !g ? pick(h.left) : -1;
     const dragCurl = 1.82 * CURL_RAD * open, peekCurl = CURL_RAD * open * 0.14 * 2;
     let topRight = -1, topLeft = -1;
     for (let i = 0; i < LEAVES; i++) if (!inChunk(i) && l.render[i] < PI / 2) { topRight = i; break; }
     for (let i = LEAVES - 1; i >= 0; i--) if (!inChunk(i) && l.render[i] >= PI / 2) { topLeft = i; break; }
-    let rightHidden = 0, leftHidden = 0, rightFirst = -1, leftLast = -1;
-    leafMeshes.current.forEach((mesh, i) => {
-      if (!mesh) return;
-      const a = inChunk(i) ? chunkAngle : l.render[i], uni = leaves[i].uniforms, e = fx[i];
-      const right = a < PI / 2, settled = Math.abs(a - (right ? 0 : PI)) < 0.002;
-      const draw = l.ld > 0.03 && (!settled || i === topRight || i === topLeft || inChunk(i));
-      mesh.visible = draw;
-      if (!draw) {
-        if (right) { rightHidden++; if (rightFirst < 0) rightFirst = i; } else { leftHidden++; leftLast = i; }
-        return;
-      }
+    // The live leaves: the two top leaves and every leaf in flight, nearest the page first, up to SLOTS. A leaf in flight
+    // that gets no slot lands at once (stripe.press recycles its six live leaves the same way).
+    const live: number[] = [];
+    if (l.ld > 0.03 && timing.current.shownAt >= 0 && now - timing.current.shownAt >= 200) {
+      const moving: number[] = [];
+      for (let i = 0; i < LEAVES; i++) if (!inChunk(i) && Math.abs(l.render[i] - (l.render[i] < PI / 2 ? 0 : PI)) >= 0.002) moving.push(i);
+      moving.sort((x, y) => Math.abs(x + 0.5 - l.spread) - Math.abs(y + 0.5 - l.spread));
+      for (const i of [topRight, topLeft, ...moving]) if (i >= 0 && !live.includes(i) && live.length < SLOTS) live.push(i);
+      for (const i of moving) if (!live.includes(i)) { const side = l.target[i] ?? (l.angle[i] > PI / 2 ? PI : 0); l.angle[i] = l.render[i] = side; l.target[i] = side; l.vel[i] = 0; }
+    }
+    // Slots keep their leaf while it stays live; a freed slot takes a new leaf and draws its pages.
+    slots.forEach((slot) => { if (!live.includes(slot.leaf)) slot.leaf = -1; });
+    for (const i of live) {
+      if (slots.some((slot) => slot.leaf === i)) continue;
+      const slot = slots.find((candidate) => candidate.leaf < 0); if (!slot) break;
+      slot.leaf = i; drawPage(slot.faces[0], 2 * i + 1); drawPage(slot.faces[1], 2 * i + 2);
+    }
+    let rightCount = 0, leftCount = 0, rightFirst = LEAVES, leftLast = -1;
+    for (let i = 0; i < LEAVES; i++) {
+      if (live.includes(i) || inChunk(i)) continue;
+      if (l.render[i] < PI / 2) { rightCount++; rightFirst = Math.min(rightFirst, i); } else { leftCount++; leftLast = Math.max(leftLast, i); }
+    }
+    slots.forEach((slot, k) => {
+      const mesh = slotMeshes.current[k]; if (!mesh) return;
+      mesh.visible = slot.leaf >= 0;
+      if (slot.leaf < 0) return;
+      const i = slot.leaf, a = l.render[i], uni = slot.uniforms, e = fx[i], right = a < PI / 2;
+      // Its pages: the product's page images where there are some, otherwise the drawn placeholder pages; and its ink.
+      const front = maps[2 * i] ?? slot.faces[0].texture, back = maps[2 * i + 1] ?? slot.faces[1].texture;
+      const inkFront = surfaces.current.get(i + "f"), inkBack = surfaces.current.get(i + "b");
+      uni.uFront.value = front; uni.uBack.value = back; uni.uHasFront.value = 1; uni.uHasBack.value = 1;
+      uni.uInkFront.value = inkFront?.texture ?? null; uni.uHasInkFront.value = inkFront ? 1 : 0;
+      uni.uInkBack.value = inkBack?.texture ?? null; uni.uHasInkBack.value = inkBack ? 1 : 0;
       // liveCurl (04ud:2504): f is the leaf's turn state; lying right it curls by −x, lying left by 1 − x.
       const fTurn = smooth(0, 1, (a / PI - 0.03) / 0.87), droop = (1 - fTurn) * tE + fTurn * (1 - tE);
-      const live = (-(1 - fTurn) * tE + fTurn * (1 - tE)) * l.fan[i] * ld2;
-      uni.uCurl.value = live; uni.uThin.value = smooth(0.6, 1, droop);
-      uni.uFlop.value = -Math.tanh(8 * live) * 0.6 * Math.max(0, (Math.sin(a) - 0.6) / 0.4);
+      const curl = (-(1 - fTurn) * tE + fTurn * (1 - tE)) * (inWindow(i) ? l.fan[i] : 1) * ld2;
+      uni.uCurl.value = curl; uni.uThin.value = smooth(0.6, 1, droop);
+      uni.uFlop.value = -Math.tanh(8 * curl) * 0.6 * Math.max(0, (Math.sin(a) - 0.6) / 0.4);
       // Tip flop while dragged (04ud:2511-2536): mid-turn, the tip leads in the direction of the drag.
       const dragging = i === dragged, turn = a / PI, band = 1 - smooth(0, 1, Math.abs(turn - 0.5) / 0.28);
       e.flop += ((dragging && g ? band * Math.tanh((g.dragTarget - PI / 2) * 6) : 0) - e.flop) * perFrame(0.18, f);
@@ -682,8 +722,7 @@ export function LookInside({ source, look, signals, sound, width, height, thickn
       const nudgeOn = i === (h.left ? topLeft : topRight) && h.inside && l.active;
       e.nudge += ((nudgeOn ? open * (1 - Math.abs(Math.sin(l.angle[i]))) : 0) - e.nudge) * (1 - Math.exp(-9 * dt));
       if (e.nudge < 1e-4) e.nudge = 0;
-      uni.uOffset.value = depthOf(i) + (right ? 1 : -1) * 0.5 * per * e.nudge;
-      uni.uDepth.value = 0;
+      uni.uOffset.value = offsetOf(i) + (right ? 1 : -1) * 0.5 * per * e.nudge; uni.uDepth.value = 0; uni.uStack.value = stack;
       // Corner curl (04ud:1287-1354): dragging rolls the held corner (target 12.8), hovering peeks (1.97), a released
       // flight keeps rolling (shown through a 0.1 s smoothDamp), otherwise it relaxes. The fold tilts with the hold.
       const isHovered = i === hovered, target = l.target[i];
@@ -714,18 +753,29 @@ export function LookInside({ source, look, signals, sound, width, height, thickn
       if (!dragging && target !== null && Math.abs(a - target) < 0.005) e.dragged = false;
     });
 
-    // The page blocks: the leaves resting in each stack under its top leaf, bent with that side's curl.
+    // The page blocks (3fe6:5187-5233): the resting leaves of each side under its top leaf, bent with that side's curl,
+    // and a riffled run of leaves as one block turning over.
     blockMeshes.current.forEach((mesh, k) => {
       if (!mesh) return;
-      const isLeft = k === 1, count = isLeft ? leftHidden : rightHidden, uni = blocks[k].uniforms;
-      mesh.visible = count > 0;
-      if (!count) return;
-      uni.uCurl.value = (isLeft ? 1 - tE : -tE) * ld2; uni.uThin.value = smooth(0.6, 1, isLeft ? 1 - tE : tE);
-      // Right: depths run down from the leaf under the top one; left: the other way (the left sheets' normal points down).
-      const shallow = depthOf(isLeft ? leftLast : rightFirst);
-      uni.uOffset.value = isLeft ? shallow - 0.5 * per : shallow + 0.5 * per;
-      uni.uDepth.value = isLeft ? -count * per : count * per;
-      uni.uLiftSign.value = isLeft ? -1 : 1;
+      const uni = blocks[k].uniforms;
+      uni.uFlop.value = 0; uni.uTipFlop.value = 0; uni.uCurlAmount.value = 0; uni.uStack.value = stack;
+      if (k < 2) {
+        const isLeft = k === 1, count = isLeft ? leftCount : rightCount;
+        mesh.visible = count > 0;
+        if (!count) return;
+        uni.uCurl.value = (isLeft ? 1 - tE : -tE) * ld2; uni.uThin.value = smooth(0.6, 1, isLeft ? 1 - tE : tE);
+        // Right: depths run down from the leaf under the top one; left: the other way (the left sheets' normal points down).
+        uni.uOffset.value = isLeft ? offsetOf(leftLast) - 0.5 * per : offsetOf(rightFirst) + 0.5 * per;
+        uni.uDepth.value = isLeft ? -count * per : count * per;
+        uni.uLiftSign.value = isLeft ? -1 : 1;
+        return;
+      }
+      mesh.visible = chunkOn && c.count > 0;
+      if (!mesh.visible) return;
+      const fTurn = smooth(0, 1, (chunkAngle / PI - 0.03) / 0.87);
+      uni.uCurl.value = (-(1 - fTurn) * tE + fTurn * (1 - tE)) * ld2; uni.uThin.value = smooth(0.6, 1, (1 - fTurn) * tE + fTurn * (1 - tE));
+      uni.uOffset.value = c.left ? 0.5 * per : 0.5 * per; uni.uDepth.value = c.left ? -c.count * per : c.count * per;
+      uni.uLiftSign.value = Math.cos(chunkAngle) >= 0 ? 1 : -1;
     });
     if (group.current) group.current.position.set(-width / 2 - 0.075, 0, 0);
 
@@ -743,6 +793,8 @@ export function LookInside({ source, look, signals, sound, width, height, thickn
         const [sx, sy] = toScreen(x, y); minX = Math.min(minX, sx); maxX = Math.max(maxX, sx); minY = Math.min(minY, sy); maxY = Math.max(maxY, sy);
       }
       Object.assign(r, { left: minX, right: maxX, top: minY, bottom: maxY, spine: toScreen(0, 0)[0], ready: l.ld > 0.3 });
+      // The open book's hit area is this rect (book.tsx), once the pages are in.
+      signals.current.spreadRect = r.ready ? { left: minX, top: minY, right: maxX, bottom: maxY } : null;
     }
 
     // The 3D marker over the page: follows the pointer, rolls (±0.4) and pitches (±0.2) with its velocity on a spring
@@ -772,7 +824,7 @@ export function LookInside({ source, look, signals, sound, width, height, thickn
     {blocks.map(({ material }, k) => <group key={"block" + k} ref={(g) => { blockMeshes.current[k] = g; }}>
       <mesh geometry={block} material={material} receiveShadow raycast={noPick} />
     </group>)}
-    {leaves.map(({ material }, i) => <group key={i} ref={(g) => { leafMeshes.current[i] = g; }}>
+    {slots.map(({ material }, k) => <group key={k} ref={(g) => { slotMeshes.current[k] = g; }}>
       <mesh geometry={geometry} material={material} receiveShadow raycast={noPick} />
     </group>)}
   </group>;

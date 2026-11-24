@@ -66,13 +66,20 @@ export type BookSignals = {
   /** Told the open spread (leaves on the left) once the book has opened and on every turn, and null as it closes: the
    *  control bar shows while reading and reads its page numbers from it. */
   onReading: ((reading: { spread: number; leaves: number; shown: boolean } | null) => void) | null;
+  /** The stage's rect in the View's pixels (the View spans the window): the camera is framed on it. */
+  frame: { left: number; top: number; width: number; height: number } | null;
+  /** The open spread's rect in the View's pixels (Look inside writes it): the open book's hit area. */
+  spreadRect: { left: number; top: number; right: number; bottom: number } | null;
 };
 
 const hitBox = new Box3(), hitPart = new Box3(), hitCorner = new Vector3();
-/** Clip the hit area to the book's on-screen bounds (padded 6%), writing to the DOM only when it moved a pixel. */
-function fitHitRect(element: HTMLElement, overlay: HTMLElement | null, root: Group, camera: PerspectiveCamera, width: number, height: number, full: boolean, onGone: ((gone: boolean) => void) | null) {
+/** Clip the hit area to the book's on-screen bounds (padded 6%; the open spread padded 24 px), writing to the DOM only
+ *  when it moved a pixel. */
+function fitHitRect(element: HTMLElement, overlay: HTMLElement | null, root: Group, camera: PerspectiveCamera, width: number, height: number, spread: BookSignals["spreadRect"], onGone: ((gone: boolean) => void) | null) {
   let box = "0,0," + width + "," + height;
-  if (!full) {
+  const full = Boolean(spread);
+  if (spread) box = [Math.round(spread.left - 24), Math.round(spread.top - 24), Math.round(spread.right - spread.left + 48), Math.round(spread.bottom - spread.top + 48)].join(",");
+  else {
     // Visible meshes only: the closed book's hidden parts (Look inside's leaves and its double-width hit plane) don't count.
     hitBox.makeEmpty();
     root.traverseVisible((object) => {
@@ -113,17 +120,21 @@ const SHARE = [0.6, 0.1, 0.1, 0.1, 0.1];
 // stripe.press constants (map §C1). Rates are per 60 fps frame unless named per second.
 const DRAG_RATE = 0.01125, MOUSE_MUL = 0.75, FLING_MAX = 0.42, FLING_DECAY = 0.95, TOUCH_PITCH_ARM_PX = 10;
 const CLICK_PX = 5, CLICK_MS = 500, FLAP_GAIN = 0.037, FLAP_MAX = 0.35 * MathUtils.degToRad(80), FLAP_K = 40;
-const PEEK = MathUtils.degToRad(5), PEEK_EASE = 0.075, REST_YAW = 0.5;
+const PEEK = MathUtils.degToRad(5), PEEK_EASE = 0.075, REST_YAW = 0.36;
 // The closed book's framing, as stripe.press sets it on the art: large and on a diagonal, its lower corner at the
 // stage's lower edge. At z 0 the camera sees 17.1 units, so the turned book (about 13.2 tall, 11.9 wide) stays whole
 // on a 4:5 phone stage and on the wide desktop one (r3 shots: z 12 cropped it on every side). The open pose is as before.
-const REST_PITCH = 0.32, REST_ROLL = -0.55, CLOSED_X = 0.6, CLOSED_Y = -2, CLOSED_Z = 0;
+// The closed book stands upright, turned a little to show its spine (stripe.press's detail book), filling most of the
+// stage's height.
+const REST_PITCH = -0.12, REST_ROLL = -0.04, CLOSED_X = 0.2, CLOSED_Y = -0.2, CLOSED_Z = 10;
 // Look inside pose (map §C2 #16): tilted back 22° (12.5° on touch); pointer height adds up to +10° / −12°.
 const OPEN_TILT = MathUtils.degToRad(22), OPEN_TILT_TOUCH = MathUtils.degToRad(12.5), POINTER_UP = MathUtils.degToRad(10), POINTER_DOWN = MathUtils.degToRad(12);
 
+/** The page you left the book at, or the middle of the book (stripe.press opens its preview mid-book). */
 function readSavedSpread(key?: string) {
-  if (!key) return 0;
-  try { return Number(window.sessionStorage.getItem(key)) || 0; } catch { return 0; }
+  const middle = Math.round(LEAVES / 2);
+  if (!key) return middle;
+  try { const saved = window.sessionStorage.getItem(key); return saved === null ? middle : Number(saved) || 0; } catch { return middle; }
 }
 
 type Face = "front" | "back" | "spine" | "pages";
@@ -283,7 +294,7 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
     yaw: 0, pitch: 0, velYaw: 0, velPitch: 0, lastYaw: 0, spinSpeed: 0, dragging: false, hovered: false,
     released: -Infinity, pitchFrom: 0, returning: false, touch: false, armed: false, totalX: 0, lastX: 0, lastY: 0,
     downX: 0, downY: 0, downAt: 0, frontA: 0, frontV: 0, backA: 0, backV: 0, peek: 0, lift: 0, liftT: 0,
-    spin: null as null | { dir: number; t: number }, scroll: 0, holo: 0, holoSince: -1, radio: 0, clock: 0, openTilt: 0, tiltYaw: 0, tiltPitch: 0, exit: 0,
+    spin: null as null | { dir: number; t: number }, exitRot: 0, scroll: 0, holo: 0, holoSince: -1, radio: 0, clock: 0, openTilt: 0, tiltYaw: 0, tiltPitch: 0, exit: 0,
     lastPointer: new Vector2()
   });
   // Audio starts on the first press anywhere on the stage.
@@ -339,7 +350,7 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
     const dt = Math.min(delta, 0.05), f = dt * 60, sig = signals.current, s = physics.current;
     s.clock += dt; uniforms.uTime.value = s.clock;
     const l = (look.current ??= createLookState(readSavedSpread(storageKey)));
-    if (sig.hitRect && root.current) fitHitRect(sig.hitRect, sig.overlay, root.current, state.camera as PerspectiveCamera, sw, sh, l.lu > 0, sig.onGone);
+    if (sig.hitRect && root.current) fitHitRect(sig.hitRect, sig.overlay, root.current, state.camera as PerspectiveCamera, sw, sh, l.lu > 0 ? sig.spreadRect : null, sig.onGone);
 
     // Look inside (stripe.press, 06w9:16057-16166): the cover opens over 980 ms (t²) and, from half open, the pages fan
     // in over 900 ms; closing runs both back together (easeOutCubic). The pages own the leaves (look-inside.tsx).
@@ -386,9 +397,11 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
     // lu·28°·(2 − 2n) a bone (about 188° shut to open), and as reading moves on (n) the back cover rolls 2n·28° a bone,
     // so with the body's turn both lie flat at any page. The peek and the spin flap ride on top.
     const coverStep = MathUtils.degToRad(28);
-    front.current.forEach((g, k) => { if (g) g.rotation.y = -Math.max(s.frontA, 0) * SHARE[k] - (lu * coverStep * (2 - 2 * n) + s.peek) * 0.8 ** k; });
+    // The boards stay rigid (stripe.press renders a stiff cover on a fixed spine): the whole roll goes to the hinge.
+    const BONES = 3.3616; // Σ 0.8^k over its five bones
+    front.current.forEach((g, k) => { if (g) g.rotation.y = -Math.max(s.frontA, 0) * SHARE[k] - (k === 0 ? lu * coverStep * (2 - 2 * n) * BONES : 0) - s.peek * 0.8 ** k; });
     if (frontHinge.current) frontHinge.current.position.z = MathUtils.lerp(T / 2, -T / 2, lu);
-    back.current.forEach((g, k) => { if (g) g.rotation.y = Math.max(s.backA, 0) * SHARE[k] + 2 * n * coverStep * 0.8 ** k; });
+    back.current.forEach((g, k) => { if (g) g.rotation.y = Math.max(s.backA, 0) * SHARE[k] + (k === 0 ? 2 * n * coverStep * BONES : 0); });
     // The body turns π·n about the spine (stripe.press's facing counter-yaw): the gutter rises toward you mid-book while
     // the covers and pages, bent back by the same amount, stay flat.
     if (body.current) {
@@ -437,29 +450,38 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
     // height through the top of its view, plus 40 units of clearance. Opening blends it out.
     s.exit += (sig.exit - s.exit) * (1 - Math.exp(-12 * dt));
     if (Math.abs(sig.exit - s.exit) < 1e-4) s.exit = sig.exit;
-    const halfHeight = Math.tan(MathUtils.degToRad(9)) * state.camera.position.z;
-    const exitY = easeInOutQuad(s.exit) * (halfHeight - CLOSED_Y + 40);
+    // The rise ends with the book's centre 1.4 frame heights above the top (stripe.press's 40 units at its 90-unit
+    // distance), so it leaves at 2–3× the scroll; it tips back and rolls toward spine-on as it goes, following the same
+    // eased weight with a lag (04ud:19817-19873, 20175-20215).
+    const tan9 = Math.tan(MathUtils.degToRad(9)), halfHeight = tan9 * (54 - CLOSED_Z), exitEase = easeInOutQuad(s.exit);
+    const exitY = exitEase * (halfHeight - CLOSED_Y + 2.808 * halfHeight);
+    s.exitRot += (exitEase - s.exitRot) * (1 - 0.8 ** f);
     // The closed tilt and pose blend out with the cover (× 1 − lu): the open book faces you, pitched back.
     const b = lu, closedYaw = REST_YAW + s.yaw + s.tiltYaw + spinYaw + s.scroll * 0.9;
     if (root.current) {
       root.current.rotation.set(
-        MathUtils.lerp(REST_PITCH + s.pitch + s.tiltPitch, -(small ? OPEN_TILT_TOUCH : OPEN_TILT) + s.openTilt, b),
-        MathUtils.lerp(closedYaw, 0, b),
-        MathUtils.lerp(REST_ROLL, 0, b));
+        MathUtils.lerp(REST_PITCH + s.pitch + s.tiltPitch - 0.9 * s.exitRot, -(small ? OPEN_TILT_TOUCH : OPEN_TILT) + s.openTilt, b),
+        MathUtils.lerp(closedYaw + 0.3 * s.exitRot, 0, b),
+        MathUtils.lerp(REST_ROLL - 0.8 * s.exitRot, 0, b));
+      // Open: the spine on the frame's centre and the spread about 60% of the window wide (stripe.press's ~870 px at
+      // 1440), free to spill past the stage; on a phone one page fills the width.
+      const fr = sig.frame ?? { left: 0, top: 0, width: sw, height: sh };
+      const spreadPx = small ? 2 * fr.width * 0.96 : Math.min(window.innerWidth * 0.604, fr.width * 1.25);
+      const zOpen = MathUtils.clamp(54 - W * fr.height / (tan9 * Math.max(spreadPx, 1)), -60, 30);
       root.current.position.set(MathUtils.lerp(CLOSED_X, W / 2, b), MathUtils.lerp(CLOSED_Y + exitY, 0, b),
-        MathUtils.lerp(CLOSED_Z + s.lift - dip - s.scroll * 6, 4, b));
+        MathUtils.lerp(CLOSED_Z + s.lift - dip - s.scroll * 6, zOpen, b));
     }
-    // The open spread is twice as wide: on a narrow stage the camera backs off until it fits (after the intro dolly).
-    if (s.clock > 2) {
-      const aspect = sw / Math.max(sh, 1), fit = Math.max(54, (W * 1.1) / (Math.tan(MathUtils.degToRad(9)) * aspect) + 4);
-      state.camera.position.z = MathUtils.lerp(54, fit, b);
-    }
+    // The camera is framed on the stage inside the window-wide View: a lens shift puts the frame's centre on its axis.
+    const cam = state.camera as PerspectiveCamera, frame = sig.frame ?? { left: 0, top: 0, width: sw, height: sh };
+    const fullW = sw * frame.height / Math.max(sh, 1), offX = fullW / 2 - frame.left - frame.width / 2, offY = -frame.top, v = cam.view;
+    if (!v || !v.enabled || Math.abs(v.fullWidth - fullW) > 0.01 || v.fullHeight !== frame.height || Math.abs(v.offsetX - offX) > 0.01 || v.offsetY !== offY || v.width !== sw || v.height !== sh)
+      cam.setViewOffset(fullW, frame.height, offX, offY, sw, sh);
     // Touch zoom and pan apply only while the book is open.
     const view = sig.view, camera = state.camera as PerspectiveCamera;
     camera.position.x = view.x * b; camera.position.y = view.y * b;
     const zoom = MathUtils.lerp(1, view.zoom, b);
     if (camera.zoom !== zoom) { camera.zoom = zoom; camera.updateProjectionMatrix(); }
-    view.unitsPerPx = (2 * (camera.position.z - 4) * Math.tan(MathUtils.degToRad(9))) / Math.max(sh, 1) / zoom;
+    view.unitsPerPx = (2 * (camera.position.z - (root.current?.position.z ?? 0)) * tan9) / Math.max(frame.height, 1) / zoom;
   });
 
   // On-demand rendering (the stage idles the loop when nothing is engaged): while anything still moves, or a released
@@ -487,7 +509,6 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
       <group ref={frontHinge} position={[-W / 2, 0, T / 2]}><Board geometries={geometry.front} segments={front} material={material} /></group>
       <group position={[-W / 2, 0, -T / 2]}><Board geometries={geometry.back} segments={back} material={material} /></group>
       <LookInside source={source} look={look} signals={signals} sound={sound} width={W - 0.15} height={H - 0.3} thickness={T} pageTextures={pageTextures} marksKey={storageKey && storageKey + ":marks"}
-        onClose={() => onClose?.()}
         onSpread={(spread) => { signals.current.onReading?.({ spread, leaves: LEAVES, shown: revealed.current }); if (storageKey) try { window.sessionStorage.setItem(storageKey, String(spread)); } catch { /* storage unavailable */ } }} />
     </group>
   </group>;

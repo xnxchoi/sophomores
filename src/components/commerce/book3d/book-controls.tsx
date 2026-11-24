@@ -17,14 +17,25 @@ export function BookControlBar({ shown, spread, leaves, magnifier, ink, onBack, 
 }) {
   const t = useTranslations("Customer.components_commerce_book_offer");
   // Page numbers of the open spread: leaf k carries pages 2k+1 (front) and 2k+2 (back). The cover has none.
-  const readout = spread <= 0 ? "" : spread >= leaves ? String(2 * spread) : 2 * spread + "–" + (2 * spread + 1);
-  return <div data-book-ui role="group" aria-label={t("lookInside")} data-shown={shown} inert={!shown}
+  const leftPage = spread > 0 ? String(2 * spread) : "", rightPage = spread < leaves ? String(2 * spread + 1) : "";
+  // The link between them copies the page's address (stripe.press shows a tick for 2 s).
+  const [copied, setCopied] = useState(false);
+  useEffect(() => { if (!copied) return; const id = setTimeout(() => setCopied(false), 2000); return () => clearTimeout(id); }, [copied]);
+  const copy = () => { navigator.clipboard?.writeText(window.location.href).then(() => setCopied(true), () => {}); };
+  // A tab on the stage's bottom edge (stripe.press's bar: square foot, 5 px top corners).
+  return <div data-book-ui data-shown={shown} inert={!shown}
     // Clicks on the bar never reach the book (stripe.press stops pointerdown and click on its inner bar).
     onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}
-    className="pointer-events-auto flex items-center gap-1.5 rounded-[5px] bg-muted pt-2 pr-3.5 pb-3 pl-3.5 text-foreground transition-opacity duration-200 ease-out starting:opacity-0 data-[shown=false]:pointer-events-none data-[shown=false]:opacity-0 group-data-[hidden=true]/layer:pointer-events-none group-data-[hidden=true]/layer:opacity-0 max-lg:w-full max-lg:justify-between max-lg:gap-0.5 max-lg:rounded-none max-lg:border-b max-lg:border-current max-lg:py-2">
+    className="pointer-events-auto flex items-center gap-1.5 rounded-t-[5px] bg-muted pt-2 pr-3.5 pb-3 pl-3.5 text-foreground transition-opacity duration-200 ease-out starting:opacity-0 data-[shown=false]:pointer-events-none data-[shown=false]:opacity-0 group-data-[hidden=true]/layer:pointer-events-none group-data-[hidden=true]/layer:opacity-0 max-lg:w-full max-lg:justify-between max-lg:gap-0.5 max-lg:rounded-none max-lg:border-b max-lg:border-current max-lg:py-2">
     <Group>
       <BarItem index={0}><BarButton aria-label={t("previousPage")} onClick={onBack} className="lg:pl-1"><Bracketed><Arrow /></Bracketed></BarButton></BarItem>
-      <BarItem index={1}><span className="px-1 text-[10px] tracking-[0.03em] tabular-nums max-lg:px-0.5 max-lg:text-[11.2px]">{readout || "–"}</span></BarItem>
+      <BarItem index={1}><span className="flex items-center px-1 text-[10px] tracking-[0.03em] tabular-nums max-lg:px-0.5 max-lg:text-[11.2px]">
+        {leftPage}<span className="sr-only">–</span>
+        <button type="button" aria-label={t("copyPageLink")} onClick={copy} className="mx-1 inline-flex min-h-6 items-center pt-[5px] pb-[7px] transition-opacity duration-150 ease-out hover:opacity-70">
+          {copied ? <Tick /> : <Chain />}
+        </button>
+        {rightPage}
+      </span></BarItem>
       <BarItem index={2}><BarButton aria-label={t("nextPage")} onClick={onForward}><Bracketed><Arrow className="-scale-x-100" /></Bracketed></BarButton></BarItem>
     </Group>
     <Group>
@@ -58,6 +69,18 @@ function BarButton({ className, ...props }: ComponentProps<"button">) {
     className={cn("inline-flex items-center justify-center gap-[1ch] rounded-full px-3.5 pt-[5px] pb-[7px] text-[11px] tracking-[0.02em] whitespace-nowrap transition-opacity duration-150 ease-out hover:opacity-70 max-lg:px-[9px] max-lg:text-[12.3px]", className)} />;
 }
 
+function Chain() {
+  return <svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.4} className="relative top-px size-[10.9375px] max-lg:size-[15.3125px]">
+    <path d="M6.6 9.4 9.4 6.6M7.2 4.4l1.5-1.5a2.6 2.6 0 0 1 3.7 3.7l-1.5 1.5M8.8 11.6l-1.5 1.5a2.6 2.6 0 0 1-3.7-3.7l1.5-1.5" />
+  </svg>;
+}
+
+function Tick() {
+  return <svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.6} className="relative top-px size-[10.9375px] max-lg:size-[15.3125px]">
+    <path d="m3 8.5 3.2 3L13 4.5" />
+  </svg>;
+}
+
 function Bracketed({ children }: { children: ReactNode }) {
   return <><span aria-hidden="true">[</span>{children}<span aria-hidden="true">]</span></>;
 }
@@ -81,7 +104,7 @@ function Lens({ on }: { on: boolean }) {
 /** One half of the ink pair: a filled square; when picked it turns hollow with a red slash (click again to stop). */
 function Swatch({ on, className, ...props }: ComponentProps<"button"> & { on: boolean }) {
   return <button type="button" aria-pressed={on} {...props}
-    className={cn("flex min-h-[calc(12.75px+12px)] items-center pt-[5px] pb-[7px] transition-opacity duration-150 ease-out hover:opacity-70 max-lg:min-h-[calc(17.85px+12px)]", className)}>
+    className={cn("flex h-6 items-center transition-opacity duration-150 ease-out hover:opacity-70 max-lg:h-[calc(17.85px+12px)]", className)}>
     <svg aria-hidden="true" viewBox="0 0 14 14" className="size-[13.7px] overflow-visible">
       <rect x="0.5" y="0.5" width="13" height="13" stroke="currentColor" className={cn("transition-[fill] duration-150 ease-out", on ? "fill-transparent" : "fill-current")} />
       {on && <path d="M1 13 13 1" stroke="#e5322d" strokeWidth={1.4} />}

@@ -44,7 +44,7 @@ export function ProductPage({ product, offer, content, shelf }: { product: Editi
       </BookStage>
     </div>
 
-    <div className="relative z-1 min-w-0 bg-background pt-6 lg:col-start-2 lg:row-start-1 lg:min-h-[calc(100svh-5.5rem)] lg:bg-transparent lg:pt-0">
+    <div className="relative z-1 min-w-0 bg-background pt-6 lg:col-start-2 lg:row-start-1 lg:min-h-[calc(100lvh+488px)] lg:bg-transparent lg:pt-0">
       <div className="flex h-14 items-center">
         <Link href="/shop" className="group/focus inline-flex min-h-11 items-center gap-1.5 text-[13px] text-muted-foreground transition-colors hover:text-foreground">
           <FocusShape className="inline-flex items-center gap-[inherit]"><ArrowLeftIcon aria-hidden="true" className="size-3.5" />{t("allProducts")}</FocusShape>
@@ -85,7 +85,11 @@ export function ProductPage({ product, offer, content, shelf }: { product: Editi
       </ColumnSection>}
     </div>
 
-    {hasFullWidth && <div data-covers-stage className="relative z-1 bg-background pt-10 lg:col-span-full lg:row-start-2 lg:pt-1">
+    {/* stripe.press's detail geometry (desktop): the info column runs to 100lvh + 560 px down the page and the full-width
+        sections start under a 160 px top padding, where the book's scroll exit is measured from (the anchor), so the book
+        holds for about 500 px of scroll before it leaves (book-stage.tsx). */}
+    {hasFullWidth && <div data-covers-stage className="relative z-1 bg-background pt-10 lg:col-span-full lg:row-start-2 lg:pt-40">
+      <div data-book-exit-anchor aria-hidden="true" />
       {content.praise.length > 0 && <section aria-label={t("praise")} className="border-t border-foreground pt-3">
         <Label>{t("praise")}</Label>
         <ul className="mt-3 grid gap-x-10 md:grid-cols-2">

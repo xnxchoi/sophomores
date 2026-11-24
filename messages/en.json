@@ -833,7 +833,8 @@
       "nextPage": "Next page",
       "magnifier": "Magnifier",
       "highlighterPink": "Pink highlighter",
-      "highlighterYellow": "Yellow highlighter"
+      "highlighterYellow": "Yellow highlighter",
+      "copyPageLink": "Copy page link"
     },
     "components_commerce_checkout": {
       "customerSignInIsOffInThisReviewCopy": "Customer sign-in is off in this review copy.",

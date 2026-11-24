@@ -11,6 +11,7 @@ import { Link } from "@/components/core/Link/Link";
 import { PageFrame } from "@/components/commerce/page-frame";
 import { InvoiceCertificate, OrderRecordView } from "@/components/commerce/receipt";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
+import { memberSignInHref } from "@/lib/member-auth/paths";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("PageMetadata");
@@ -31,7 +32,7 @@ export default async function OrderDetailPage({
   if (isReviewCopyRequest()) notFound();
   const payload = await getPayload();
   const { user } = await payload.auth({ headers: await headers() });
-  if (!user) redirect("/account?next=/me/orders");
+  if (!user) redirect(memberSignInHref("/me/orders"));
   const detail = await readOrderDetail({ payload, user }, result.data);
   const t = await getTranslations("Customer.app_site_me_orders_id_page");
   const orders = await getTranslations("Customer.components_commerce_orders");

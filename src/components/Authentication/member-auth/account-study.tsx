@@ -33,6 +33,7 @@ import {
   type MemberSnapshot
 } from "./_shared/session";
 import { Link } from "@/components/core/Link/Link";
+import { ArcRoles } from "@/components/commerce/arc-roles";
 
 const noSubscription = () => () => {};
 /**
@@ -195,6 +196,83 @@ export function MemberAccountDialog({
             />
           ))}
       </VerificationTray>
+  );
+}
+
+/**
+ * The sign-in page (owner, 24 Nov: a signed-out /account redirects here; no modal). The account sheet's chooser and
+ * flow, rendered inline. Social sign-in returns here with the same `next` (pinned server-side). Once the member is
+ * complete it leaves for `next`; an account still in setup finishes it here first.
+ */
+export function MemberSignInPage({
+  next,
+  client,
+  initialFlow,
+  initialCapabilities,
+  navigate = (url) => window.location.replace(url)
+}: {
+  next: string;
+  /** "login" for an account signed in but still in setup (a new social member back from the provider). */
+  initialFlow?: "login" | "signup";
+  client?: MemberClient;
+  initialCapabilities?: Readonly<MemberCapabilities>;
+  /** A full navigation, so the next page renders on the server for the signed-in member. */
+  navigate?: (url: string) => void;
+}) {
+  const t = useTranslations("MemberAuth");
+  const providerReturnFlow = useProviderReturnFlow();
+  const [choice, setChoice] = useState<"chooser" | "login" | "signup" | null>(null);
+  const step = choice ?? initialFlow ?? providerReturnFlow ?? "chooser";
+  const resolvedClient = useMemo(() => client ?? createMemberClient(undefined, undefined, "sign-in", next), [client, next]);
+  const id = useId();
+  const headingId = `${id}-${step}`;
+  const login = useRef<HTMLButtonElement>(null);
+  const signup = useRef<HTMLButtonElement>(null);
+  const lastChoice = useRef<"login" | "signup" | null>(null);
+  const left = useRef(false);
+  useEffect(() => {
+    // Back from a flow, focus returns to the choice that opened it.
+    if (step === "chooser" && lastChoice.current) (lastChoice.current === "login" ? login : signup).current?.focus({ preventScroll: true });
+  }, [step]);
+  function choose(flow: "login" | "signup") {
+    lastChoice.current = flow;
+    setChoice(flow);
+  }
+  function leaveWhenMember(snapshot: MemberSnapshot) {
+    if (left.current || !snapshot.status?.member) return;
+    left.current = true;
+    navigate(next);
+  }
+  return (
+    <main data-member-sign-in="" className="mx-auto w-full max-w-md px-6 pt-10 pb-16 text-foreground">
+      <ArcRoles>
+        {step === "chooser" ? (
+          <section data-member-account-chooser="" aria-labelledby={headingId} className="[font-family:system-ui]">
+            <Heading id={headingId} tabIndex={-1} className="mt-0 mb-2 text-[24px] leading-[30px] font-medium tracking-[-0.025em]">
+              {t("welcome")}
+            </Heading>
+            <Description className="mb-6 text-[14px] leading-5">{t("logInOrCreateAnAccount")}</Description>
+            <PrimaryButton ref={login} type="button" className="mt-0! h-12 min-h-12 justify-center px-5 py-0 text-center text-[15px] leading-5 font-medium" onClick={() => choose("login")}>
+              {t("logIn")}
+            </PrimaryButton>
+            <SecondaryButton ref={signup} type="button" className="mt-3 mb-0 h-12 min-h-12 justify-center px-5 py-0 text-center text-[15px] leading-5 font-medium" onClick={() => choose("signup")}>
+              {t("signUp")}
+            </SecondaryButton>
+          </section>
+        ) : (
+          <MemberAccountFlow
+            key={step}
+            client={resolvedClient}
+            initialCapabilities={initialCapabilities}
+            headingId={headingId}
+            flow={step}
+            onSnapshot={leaveWhenMember}
+            onChooser={() => setChoice("chooser")}
+            onExit={() => setChoice("chooser")}
+          />
+        )}
+      </ArcRoles>
+    </main>
   );
 }
 

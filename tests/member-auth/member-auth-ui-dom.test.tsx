@@ -11,6 +11,7 @@ let MemberAuthProviders: typeof import("./fixtures/providers").MemberAuthProvide
 let dom: JSDOM;
 let ui: typeof import("@testing-library/react/pure");
 let Study: typeof import("@/components/Authentication/member-auth/account-study").MemberAccountStudy;
+let SignIn: typeof import("@/components/Authentication/member-auth/account-study").MemberSignInPage;
 let View: typeof import("@/components/Authentication/member-auth/account-view").MemberAccountView;
 let Phone: typeof import("@/components/Authentication/member-auth/phone-step").MemberPhoneStep;
 const previous = new Map<string, PropertyDescriptor | undefined>();
@@ -101,6 +102,7 @@ before(async () => {
   ui = await import("@testing-library/react/pure");
   Study = (await import("@/components/Authentication/member-auth/account-study"))
     .MemberAccountStudy;
+  SignIn = (await import("@/components/Authentication/member-auth/account-study")).MemberSignInPage;
   View = (await import("@/components/Authentication/member-auth/account-view")).MemberAccountView;
   Phone = (await import("@/components/Authentication/member-auth/phone-step"))
     .MemberPhoneStep;
@@ -347,6 +349,44 @@ test("once an email is in, the other ways in become one row of icon-only buttons
   ui.fireEvent.change(email, { target: { value: "" } });
   await untilAsserted(ui, () => assert.equal(row().dataset.compact, "false"));
   await untilAsserted(ui, () => assert.deepEqual(alternatives().map((button) => [button.getAttribute("aria-label"), button.textContent?.trim()]), labelled, "the labels come back"));
+});
+
+test("the sign-in page renders the chooser and flow inline, never a sheet, and leaves for next once a member", async () => {
+  // Owner, 24 Nov: a signed-out /account redirects to /sign-in; no modal. Sign-in returns to where they were.
+  const c = client();
+  c.value.verifyEmailCode = async (...args) => { c.calls.push(["verify", ...args]); c.setStatus(active); };
+  const visited: string[] = [];
+  ui.render(<SignIn next="/me/orders" client={c.value} navigate={(url) => visited.push(url)} />, { wrapper: MemberAuthProviders });
+  assert.ok(ui.screen.getByRole("heading", { name: "Welcome" }));
+  assert.equal(document.querySelector("[data-vaul-drawer], [role=dialog]") === null, true, "no sheet or dialog");
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign in" }));
+  const email = await untilAsserted(ui, () => {
+    const field = ui.screen.getByLabelText("Email address") as HTMLInputElement;
+    assert.equal(field.disabled, false);
+    return field;
+  });
+  assert.equal(document.querySelector("[data-vaul-drawer], [role=dialog]") === null, true, "the flow is inline too");
+  ui.fireEvent.change(email, { target: { value: "member@example.com" } });
+  ui.fireEvent.submit(email.closest("form")!);
+  ui.fireEvent.click(await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Send sign-in code" })));
+  await untilAsserted(ui, () => assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code)));
+  assert.deepEqual(visited, [], "nothing leaves before the member is confirmed");
+  ui.fireEvent.change(firstCodeCell(ui.screen), { target: { value: "A1B2C3" } });
+  await untilAsserted(ui, () => assert.deepEqual(visited, ["/me/orders"]));
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  assert.deepEqual(visited, ["/me/orders"], "it leaves once");
+});
+
+test("the sign-in page keeps an account still in setup on its setup step, inline, without leaving", async () => {
+  // A new social member returns to /sign-in signed in but not yet a member: the server opens the login flow, which
+  // shows the explicit setup gate (as the account sheet does after a provider return), and next is kept for later.
+  const c = client();
+  c.setStatus({ ...anonymous, phoneBindingAuth: "ready", authenticated: true, emailVerified: true });
+  const visited: string[] = [];
+  ui.render(<SignIn next="/me" initialFlow="login" client={c.value} navigate={(url) => visited.push(url)} />, { wrapper: MemberAuthProviders });
+  await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Continue registration" }));
+  assert.equal(document.querySelector("[data-vaul-drawer], [role=dialog]") === null, true);
+  assert.deepEqual(visited, []);
 });
 
 test("Switch account clears the confirmed sign-in identity and retains only the same-address resend cooldown", async () => {

@@ -53,7 +53,7 @@ test("address and notification settings guard entry and render only supported ac
   ] as const) {
     setSettingsFixtureIdentity(false);
     await assert.rejects(page, (error: unknown) => error instanceof Error && "digest" in error
-      && typeof error.digest === "string" && error.digest.split(";")[2] === "/account?next=/me/settings");
+      && typeof error.digest === "string" && /^\/sign-in\?next=\/me\/settings\/(?:addresses|notifications)$/.test(error.digest.split(";")[2]));
 
     setSettingsFixtureIdentity(true);
     const html = renderToStaticMarkup(

@@ -10,7 +10,7 @@ import type { Pool } from "pg";
 import type { MemberAuthConfig } from "./config";
 import type { MemberMailer } from "./mail";
 import { identifierCookieToken, IDENTIFIER_COOKIE } from "./identifier";
-import { MEMBER_ACCOUNT_PATH, MEMBER_ACCOUNT_CONTINUATION_PATH, memberPurchaseReturnPath } from "./paths";
+import { MEMBER_ACCOUNT_PATH, MEMBER_ACCOUNT_CONTINUATION_PATH, memberSocialReturn } from "./paths";
 
 const paths = new Set([
   "/member-email-entry/check", "/get-session", "/sign-out", "/sign-in/social", "/callback/google", "/link-social", "/list-accounts",
@@ -65,9 +65,9 @@ export function assertMemberAuthRequest(config: MemberAuthConfig, path: string,
   if (body && ["scopes", "additionalParams", "additionalData", "serverContext", "metadata", "idToken", "emailVerified", "phoneNumber", "phoneVerified", "member", "role", "userId", "image"]
     .some((key) => Object.hasOwn(body, key))) throw forbidden();
   if (body?.name !== undefined && (typeof body.name !== "string" || body.name.length > 80 || /[\x00-\x1f\x7f]/.test(body.name))) throw forbidden();
-  const purchaseReturn = path === "/sign-in/social" && body?.provider === "google" ? memberPurchaseReturnPath(config.origin, body.callbackURL) : undefined;
+  const socialReturn = path === "/sign-in/social" && body?.provider === "google" ? memberSocialReturn(config.origin, body.callbackURL) : undefined;
   for (const key of ["callbackURL", "errorCallbackURL", "newUserCallbackURL"]) {
-    const destinations = purchaseReturn ? [purchaseReturn] : key === "errorCallbackURL" ? [MEMBER_ACCOUNT_PATH]
+    const destinations = socialReturn ? [socialReturn] : key === "errorCallbackURL" ? [MEMBER_ACCOUNT_PATH]
       : [MEMBER_ACCOUNT_PATH, MEMBER_ACCOUNT_CONTINUATION_PATH];
     if ((query?.getAll(key).length ?? 0) > 1) throw forbidden();
     for (const value of [body?.[key], query?.get(key) ?? undefined]) {
@@ -121,7 +121,7 @@ function beforeMemberAuth(config: MemberAuthConfig, active: (id: string) => Prom
       if (typeof value === "string") query.set(key, value);
     }
     assertMemberAuthRequest(config, path, context.body, query);
-    const purchaseReturn = path === "/sign-in/social" ? memberPurchaseReturnPath(config.origin, context.body?.callbackURL) : undefined;
+    const socialReturn = path === "/sign-in/social" ? memberSocialReturn(config.origin, context.body?.callbackURL) : undefined;
     if (path === "/sign-in/social" || path === "/link-social") {
       const token = identifierCookieToken(new Headers(context.headers));
       if (token) await addOAuthServerContext({ memberPhoneIdentifier: token });
@@ -140,9 +140,9 @@ function beforeMemberAuth(config: MemberAuthConfig, active: (id: string) => Prom
       return { context: { body: { ...context.body, otp: context.body.otp.toUpperCase() } } };
     if (["/sign-in/social", "/link-social", "/sign-in/magic-link"].includes(path))
       return { context: { body: { ...context.body,
-        callbackURL: purchaseReturn ?? MEMBER_ACCOUNT_CONTINUATION_PATH,
-        errorCallbackURL: purchaseReturn ?? MEMBER_ACCOUNT_PATH,
-        newUserCallbackURL: purchaseReturn ?? MEMBER_ACCOUNT_CONTINUATION_PATH } } };
+        callbackURL: socialReturn ?? MEMBER_ACCOUNT_CONTINUATION_PATH,
+        errorCallbackURL: socialReturn ?? MEMBER_ACCOUNT_PATH,
+        newUserCallbackURL: socialReturn ?? MEMBER_ACCOUNT_CONTINUATION_PATH } } };
   });
 }
 

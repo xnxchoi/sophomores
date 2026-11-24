@@ -51,6 +51,9 @@ before(async () => {
       if (/\/app\/\(site\)\/(?:account(?:\/continue)?|tickets)\/page\.tsx$/.test(parent)) {
         if (parent.endsWith("/tickets/page.tsx") && specifier === "../shop/page") return { url: moduleUrl("export default function ShopPage(){return null;}"), shortCircuit: true };
         if (specifier === "next/server") return { url: moduleUrl(`export async function connection(){${state}.events.push("connection"); await ${state}.connect();}`), shortCircuit: true };
+        // A signed-out /account redirects to /sign-in (owner, 24 Nov); these tests render the signed-in account.
+        if (parent.endsWith("/account/page.tsx") && specifier === "@/lib/auth/server") return { url: moduleUrl("export async function currentUser(){return {id:\"member\"};}"), shortCircuit: true };
+        if (parent.endsWith("/account/page.tsx") && specifier === "next/navigation") return { url: moduleUrl("export function redirect(){throw new Error(\"Unexpected redirect\");}"), shortCircuit: true };
         // Importing the request API is safe; disabled checkout must not call it.
         if (parent.endsWith("/tickets/page.tsx") && specifier === "next/headers") return { url: moduleUrl(`export async function headers(){${state}.events.push("headers"); return new Headers();}`), shortCircuit: true };
         if (specifier.endsWith("public-capabilities.server")) return { url: moduleUrl(`export const loadPublicMemberCapabilities=()=>${state}.loadFlags();`), shortCircuit: true };

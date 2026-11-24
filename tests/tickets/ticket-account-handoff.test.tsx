@@ -291,7 +291,9 @@ test("both account pages use ticket-aware composition and provider callback poli
   for (const path of ["../../src/app/(site)/account/page.tsx", "../../src/app/(site)/account/continue/page.tsx"]) {
     const source = await readFile(new URL(path, import.meta.url), "utf8");
     assert.match(source, /TicketAccountEntry/);
-    assert.doesNotMatch(source, /returnTo|redirect\(/);
+    assert.doesNotMatch(source, /returnTo/);
+    // The only redirect is a signed-out /account to the sign-in page, through the allowlisted link (owner, 24 Nov).
+    assert.equal((source.match(/redirect\(/g) ?? []).length, (source.match(/redirect\(memberSignInHref\(/g) ?? []).length, path);
   }
   const continuation = await readFile(new URL("../../src/app/(site)/account/continue/page.tsx", import.meta.url), "utf8");
   assert.match(continuation, /initialFlow="login"/);

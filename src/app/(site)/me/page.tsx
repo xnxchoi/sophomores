@@ -7,6 +7,7 @@ import { PageFrame } from "@/components/commerce/page-frame";
 import { Link } from "@/components/core/Link/Link";
 import { AccountCartEntry } from "./_cart/cart-entry";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
+import { memberSignInHref } from "@/lib/member-auth/paths";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("PageMetadata");
@@ -17,7 +18,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function AccountHomePage() {
-  if (!(await currentUser())) redirect("/account?next=/me");
+  if (!(await currentUser())) redirect(memberSignInHref("/me"));
   const t = await getTranslations("Customer.app_site_me_page");
   const settings = await getTranslations("Customer.app_site_me_settings_page_client");
   return <PageFrame title={t("title")} displayTitle>

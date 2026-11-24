@@ -4,6 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { currentUser } from "@/lib/auth/server";
 import { PageFrame } from "@/components/commerce/page-frame";
 import { CommerceOrders } from "@/components/commerce/orders";
+import { memberSignInHref } from "@/lib/member-auth/paths";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("PageMetadata");
@@ -15,7 +16,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function OrderListPage() {
   const user = await currentUser();
-  if (!user) redirect("/account?next=/me/orders");
+  if (!user) redirect(memberSignInHref("/me/orders"));
   const t = await getTranslations("Customer.app_site_me_orders_page");
   return <PageFrame title={t("title")} introduction={t("introduction")} displayTitle>
     <CommerceOrders key={String(user.id)} customerID={String(user.id)} />

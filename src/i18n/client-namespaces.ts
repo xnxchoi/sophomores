@@ -56,6 +56,8 @@ export const segmentNamespaces = {
     "Customer.app_site_me_settings_page_client",
     "Customer.components_tickets_ticket_account_entry"
   ],
+  // The standalone sign-in page: the account flow inline (owner, 24 Nov).
+  "sign-in": [...purchase],
   essays: [
     "Interface",
     "Customer.components_reading_article_hero",

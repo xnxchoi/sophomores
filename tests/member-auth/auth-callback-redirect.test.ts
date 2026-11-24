@@ -10,6 +10,7 @@ const diagnostic = "Upstream said member@example.invalid at db.internal";
 const secret = "t".repeat(64);
 // A synthetic Apple first-time profile (Apple sends it once, as JSON, with the first authorization).
 const profile = JSON.stringify({ name: { firstName: "Synthetic", lastName: "Member" }, email: "synthetic.member@example.invalid" });
+const names = JSON.stringify({ name: { firstName: "Synthetic", lastName: "Member" } });
 const key = "__authCallbackRedirectTest";
 const state = globalThis as unknown as Record<string, { handler: (request: Request) => Promise<Response> } | undefined>;
 const moduleUrl = (source: string) => `data:text/javascript,${encodeURIComponent(source)}`;
@@ -27,13 +28,16 @@ const failure = (base: string, error: string) =>
   `${base}${base.includes("?") ? "&" : "?"}${new URLSearchParams({ error, error_description: diagnostic })}`;
 const callback = () => new Request(`${origin}/api/auth/callback/google?code=provider-code&state=s`, { headers: { host: "localhost:3240" } });
 
+const options = { baseURL: origin, secret: secret as string | undefined };
+
 before(async () => {
+  (globalThis as unknown as Record<string, unknown>)[`${key}Options`] = options;
   hooks = registerHooks({
     resolve(specifier, context, nextResolve) {
       if (specifier === "server-only") return { url: moduleUrl("export {};"), shortCircuit: true };
       if ((context.parentURL ?? "").includes("/app/api/auth/")) {
         if (specifier === "@/payload") return { url: moduleUrl(`export async function getPayload(){ return { betterAuth: globalThis.${key} }; }`), shortCircuit: true };
-        if (specifier === "@/lib/auth/options") return { url: moduleUrl(`export const betterAuthOptions = { baseURL: "${origin}", secret: "${secret}" };`), shortCircuit: true };
+        if (specifier === "@/lib/auth/options") return { url: moduleUrl(`export const betterAuthOptions = globalThis.${key}Options;`), shortCircuit: true };
       }
       return nextResolve(specifier, context);
     },
@@ -45,7 +49,7 @@ before(async () => {
   route = await import("@/app/api/auth/[...all]/route");
   local = await import("@/lib/member-auth/server");
 });
-after(() => { hooks?.deregister(); delete state[key]; });
+after(() => { hooks?.deregister(); delete state[key]; delete (globalThis as unknown as Record<string, unknown>)[`${key}Options`]; });
 
 const config: MemberAuthConfig = { mode: "local", origin, databaseUrl: "postgres://localhost/sophomores_verification_test_auth",
   secret: "b".repeat(64), verificationSecret: "a".repeat(64), rpId: "localhost", google: null, mail: null };
@@ -149,6 +153,7 @@ test("payload handler: a successful Apple form_post moves the profile into a sea
   const stash = posted.headers.getSetCookie().find((cookie) => cookie.startsWith("sphmrs-apple-profile="));
   assert.ok(stash, "the profile is stashed");
   assert.match(stash, /; Path=\/api\/auth\/callback\/apple; Max-Age=600; HttpOnly; SameSite=Lax/);
+  assert.equal(posted.headers.get("cache-control"), "private, no-store");
   assert.equal(/Synthetic|example\.invalid|firstName/.test(stash), false, "sealed, not readable");
   const sealed = stash.split(";")[0];
 
@@ -156,10 +161,11 @@ test("payload handler: a successful Apple form_post moves the profile into a sea
   let seen: URL | undefined;
   state[key] = { handler: async (request) => { seen = new URL(request.url); return new Response(null, { status: 302, headers: { location: "/sign-in?next=/me" } }); } };
   const got = await route.GET(new Request(hop, { headers: { cookie: sealed } }));
-  assert.equal(seen?.searchParams.get("user"), profile, "Apple sign-up names are not lost");
+  assert.equal(seen?.searchParams.get("user"), names, "Apple sign-up names are not lost, and only the names are kept");
   assert.equal(seen?.searchParams.get("state"), "opaque-state");
   assert.equal(got.headers.get("location"), "/sign-in?next=/me");
   assert.ok(got.headers.getSetCookie().some((cookie) => cookie.startsWith("sphmrs-apple-profile=;") && cookie.includes("Max-Age=0")), "the stash is cleared");
+  assert.equal(got.headers.get("cache-control"), "private, no-store");
 
   // Bound to its state and sealed: another state, a tampered value, or an error hop restores nothing (and clears it).
   for (const [url, cookie] of [[`${origin}/api/auth/callback/apple?code=c&state=another-state`, sealed],
@@ -169,4 +175,64 @@ test("payload handler: a successful Apple form_post moves the profile into a sea
     assert.equal((seen as URL | undefined)?.searchParams.has("user"), false, url);
     assert.ok(response.headers.getSetCookie().some((value) => value.startsWith("sphmrs-apple-profile=;")), "cleared");
   }
+});
+
+// Review-A r7: only the bounded name is sealed, the cookie is capped, and the stash is cleared on every path.
+async function postApple(user: string): Promise<Response> {
+  state[key] = { handler: async () => new Response(null, { status: 302,
+    headers: { location: `/api/auth/callback/apple?${new URLSearchParams({ code: "authorization-code", state: "opaque-state", user })}` } }) };
+  return route.POST(new Request(`${origin}/api/auth/callback/apple`, { method: "POST" }));
+}
+async function restoredUser(response: Response): Promise<string | null | undefined> {
+  const sealed = response.headers.getSetCookie().find((cookie) => cookie.startsWith("sphmrs-apple-profile="))?.split(";")[0];
+  if (!sealed) return undefined;
+  let seen: string | null = null;
+  state[key] = { handler: async (request) => { seen = new URL(request.url).searchParams.get("user"); return new Response(null, { status: 302, headers: { location: "/shop" } }); } };
+  await route.GET(new Request(`${origin}/api/auth/callback/apple?code=authorization-code&state=opaque-state`, { headers: { cookie: sealed } }));
+  return seen;
+}
+
+test("payload handler: the stash keeps only the first and last name, each capped at 64 characters", async () => {
+  const long = JSON.stringify({ name: { firstName: "A".repeat(200), lastName: 7 }, email: "synthetic.member@example.invalid", extra: "x".repeat(4000) });
+  const response = await postApple(long);
+  const stash = response.headers.getSetCookie().find((cookie) => cookie.startsWith("sphmrs-apple-profile="));
+  assert.ok(stash && stash.length <= 1024, "a small cookie, however large Apple's JSON");
+  assert.equal(await restoredUser(response), JSON.stringify({ name: { firstName: "A".repeat(64), lastName: "" } }));
+});
+
+test("payload handler: no usable name, or a cookie over 1 KB, stashes nothing and sign-in goes on without the name", async () => {
+  const control = "\u0001".repeat(64);
+  for (const user of ["{", JSON.stringify({ email: "synthetic.member@example.invalid" }), JSON.stringify({ name: { firstName: " " } }),
+    JSON.stringify({ name: { firstName: control, lastName: control } })]) {
+    const response = await postApple(user);
+    const location = new URL(response.headers.get("location") ?? "", origin);
+    assert.equal(response.status, 302, user);
+    assert.deepEqual([...location.searchParams.keys()].sort(), ["code", "state"], "the hop goes on, without the profile");
+    assert.equal(response.headers.getSetCookie().some((cookie) => cookie.startsWith("sphmrs-apple-profile=")), false, user.slice(0, 40));
+  }
+});
+
+test("payload handler: a GET carrying the stash clears it, private and no-store, on failure, without a handler and without a secret", async () => {
+  const get = () => route.GET(new Request(`${origin}/api/auth/callback/apple?code=c&state=opaque-state`, { headers: { cookie: "sphmrs-apple-profile=x.y" } }));
+  const cleared = (response: Response) => {
+    assert.ok(response.headers.getSetCookie().some((cookie) => cookie.startsWith("sphmrs-apple-profile=;") && cookie.includes("Max-Age=0")), "cleared");
+    assert.equal(response.headers.get("cache-control"), "private, no-store");
+  };
+  state[key] = { handler: async () => { throw new Error("init failed for member@example.invalid"); } };
+  cleared(await get());
+  delete state[key];
+  cleared(await get());
+  options.secret = undefined;
+  try {
+    let seen: string | null = "unset";
+    state[key] = { handler: async (request) => { seen = new URL(request.url).searchParams.get("user"); return new Response(null, { status: 302, headers: { location: "/shop" } }); } };
+    cleared(await get());
+    assert.equal(seen, null, "nothing is restored without a secret");
+  } finally {
+    options.secret = secret;
+  }
+  // A request without the stash is left alone.
+  state[key] = { handler: async () => new Response(null, { status: 302, headers: { location: "/shop" } }) };
+  const plain = await route.GET(new Request(`${origin}/api/auth/callback/apple?code=c&state=opaque-state`));
+  assert.equal(plain.headers.getSetCookie().length, 0);
 });

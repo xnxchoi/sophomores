@@ -58,7 +58,7 @@ export function memberSafeAuthRedirect(response: Response, origin: string): Resp
 }
 /**
  * What Better Auth's provider callback reads (callback.mjs schema), less Apple's `user` profile: a name and an email
- * never ride in a URL (Review-A, 24 Nov). On success the Payload route has already moved it into a sealed cookie
+ * never ride in a URL (Review-A, 24 Nov). On success the Payload route has already moved its capped name into a sealed cookie
  * (apple-profile.server.ts); on an error it is simply dropped. The error is kept only as a recognised code.
  */
 const providerCallbackKeys = new Set(["code", "state", "iss", "device_id"]);

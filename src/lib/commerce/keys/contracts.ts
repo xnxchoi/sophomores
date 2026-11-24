@@ -98,6 +98,12 @@ export type ReplaceOutcome =
  * already holds it; `nonceConsumed` when the node says the nonce is used.
  */
 /** `refused`: the recorded bytes failed a check (chain, sender, lock, operation or fee budget) and were not sent. */
+/**
+ * A re-send names the dispatch record it belongs to: the bytes must hash to that record's transaction, carry its
+ * nonce, and be its own operation (Review-A, 24 Nov). `tokenID` is the cancelled key's, for a cancel.
+ */
+export type RebroadcastInput = { raw: string; txHash: string; nonce: number; target: KeyGrantTarget; tokenID?: string };
+
 export type RebroadcastOutcome = { kind: "accepted" } | { kind: "nonceConsumed" } | { kind: "unknown" } | { kind: "refused"; code: string };
 
 export type BroadcastOutcome =
@@ -146,8 +152,8 @@ export interface KeyGrantAdapter {
   broadcast(input: { intentID: string; txHash: string }): Promise<BroadcastOutcome>;
   /** Abandons a prepared grant that will never be broadcast, freeing its signer. */
   release(input: { txHash: string }): void;
-  /** Re-sends recorded signed bytes unchanged (same hash, same nonce). */
-  rebroadcast(input: { raw: string }): Promise<RebroadcastOutcome>;
+  /** Re-sends recorded signed bytes unchanged (same hash, same nonce), only if they match their dispatch record. */
+  rebroadcast(input: RebroadcastInput): Promise<RebroadcastOutcome>;
   reconcile(input: { intentID: string; txHash: string; target: KeyGrantTarget }): Promise<ReconcileOutcome>;
 }
 
@@ -180,7 +186,7 @@ export interface KeyCancelAdapter {
   prepareCancelReplacement(input: { intentID: string; target: KeyGrantTarget; tokenID: string; nonce: number; previous: TransactionFee }): Promise<ReplaceOutcome>;
   broadcast(input: { intentID: string; txHash: string }): Promise<BroadcastOutcome>;
   release(input: { txHash: string }): void;
-  rebroadcast(input: { raw: string }): Promise<RebroadcastOutcome>;
+  rebroadcast(input: RebroadcastInput): Promise<RebroadcastOutcome>;
   reconcileCancel(input: { txHash: string; target: KeyGrantTarget; tokenID: string }): Promise<CancelReconcileOutcome>;
 }
 

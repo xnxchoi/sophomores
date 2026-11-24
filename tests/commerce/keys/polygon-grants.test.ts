@@ -8,7 +8,7 @@ import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { createUnlockKeyGrantAdapter } from "@/lib/commerce/keys/unlock/adapter";
 import { createUnlockKeyCancelAdapter } from "@/lib/commerce/keys/unlock/cancel";
 import {
-  loadPolygonKeyGranterAccount, POLYGON_KEY_GRANTER, POLYGON_SIGNET_LOCK, polygonKeyGrantsLive,
+  loadPolygonKeyGranterAccount, POLYGON_KEY_GRANTER, POLYGON_SIGNET_LOCK, polygonEventLocks, polygonKeyGrantsLive,
 } from "@/lib/commerce/keys/unlock/polygon";
 import { chainEnabled, confirmationDepth, maxCostWei, maxFeeCeiling } from "@/lib/commerce/keys/unlock/transactions";
 import { dispatchKeyGrants } from "@/lib/commerce/keys/worker";
@@ -176,7 +176,53 @@ test("recorded bytes are re-sent only for our signer, on 137, to the pinned lock
     ["over budget", await sign(account, { gas: 2_000_000n, maxFeePerGas: 2_000_000_000_000n }), "fee_above_cap"],
     ["unreadable", "0x02deadbeef" as Hex, "rebroadcast_unreadable"],
   ];
-  for (const [label, raw, code] of cases) assert.deepEqual(await adapter.rebroadcast({ raw }), { kind: "refused", code }, label);
+  // Each case is re-sent as its own record (its own hash and nonce), so only the content check can refuse it.
+  const record = (raw: Hex) => ({ raw, txHash: keccak256(raw), nonce: 0, target: polygonTarget });
+  for (const [label, raw, code] of cases) assert.deepEqual(await adapter.rebroadcast(record(raw)), { kind: "refused", code }, label);
+  // Bound to the dispatch record (Review-A r2 HIGH 1): a different valid signed grant never counts as this intent's re-send.
+  const own = await sign(account);
+  const otherRecipient = await sign(account, { data: encodeFunctionData({ abi: lockAbi, functionName: "grantKeys", args: [[`0x${"e".repeat(40)}`], [1n], ["0x0000000000000000000000000000000000000000"]] }) });
+  const otherNonce = await sign(account, { nonce: 1 });
+  assert.deepEqual(await adapter.rebroadcast({ ...record(own), txHash: keccak256(otherNonce) }), { kind: "refused", code: "rebroadcast_mismatch" }, "bytes that do not hash to the recorded transaction");
+  assert.deepEqual(await adapter.rebroadcast({ ...record(otherNonce) }), { kind: "refused", code: "rebroadcast_mismatch" }, "the record's nonce, not the bytes'");
+  assert.deepEqual(await adapter.rebroadcast(record(otherRecipient)), { kind: "refused", code: "rebroadcast_mismatch" }, "a grant to another recipient");
+  assert.deepEqual(await adapter.rebroadcast({ ...record(own), target: { ...polygonTarget, lock: `0x${"c".repeat(40)}` } }), { kind: "refused", code: "rebroadcast_mismatch" }, "a record on an unpinned lock");
   assert.equal(requests.length, 0, "nothing refused reached the chain");
-  assert.deepEqual(await adapter.rebroadcast({ raw: await sign(account) }), { kind: "accepted" }, "our own recorded grant is re-sent");
+  assert.deepEqual(await adapter.rebroadcast(record(own)), { kind: "accepted" }, "our own recorded grant is re-sent");
+});
+
+test("event locks are pinned by config only: a listed lock is granted, an unlisted one parks, a bad list refuses the build", async () => {
+  const eventLock = `0x${"f".repeat(40)}`;
+  const account = privateKeyToAccount(generatePrivateKey());
+  const raws: Hex[] = [];
+  const chain = mockChain(polygonChain({ eth_sendRawTransaction: (params) => { raws.push(params[0] as Hex); return keccak256(params[0] as Hex); } }));
+  const env = { ...live, KEY_GRANT_POLYGON_EVENT_LOCKS: ` ${eventLock} ,` };
+  const adapter = createUnlockKeyGrantAdapter({ chainID: 137, account, transport: chain.transport, now, env, polygon: { lock: lockAddress, granter: account.address } });
+  const prepared = await adapter.prepare({ intentID: "i", attemptID: "a", target: { ...polygonTarget, lock: eventLock }, nonceFloor: 0 });
+  assert.equal(prepared.kind, "prepared", "the configured event lock");
+  adapter.release({ txHash: (prepared as { txHash: string }).txHash });
+  assert.deepEqual(await adapter.prepare({ intentID: "i", attemptID: "a", target: { ...polygonTarget, lock: `0x${"c".repeat(40)}` }, nonceFloor: 0 }),
+    { kind: "definitelyNotSent", code: "lock_not_enabled" }, "a lock only a CMS record names");
+  assert.deepEqual(polygonEventLocks({}), []);
+  assert.deepEqual(polygonEventLocks({ KEY_GRANT_POLYGON_EVENT_LOCKS: "0xef6414927acb08f4d5a35cc9e5de07b9f3255060" }).map((lock) => lock.toLowerCase()), ["0xef6414927acb08f4d5a35cc9e5de07b9f3255060"]);
+  for (const bad of ["not-a-lock", "0x1234", `${eventLock},0x${"0".repeat(40)}`]) {
+    assert.throws(() => createUnlockKeyGrantAdapter({ chainID: 137, account, transport: chain.transport, now, env: { ...live, KEY_GRANT_POLYGON_EVENT_LOCKS: bad }, polygon: { lock: lockAddress, granter: account.address } }),
+      /KEY_GRANT_POLYGON_EVENT_LOCKS/, bad);
+  }
+});
+
+test("a grant parked for a person is never silent: one fixed-format line with the intent and code only", async () => {
+  const lines: string[] = [];
+  const original = console.error;
+  console.error = (line: unknown) => { lines.push(String(line)); };
+  try {
+    const { adapter } = pinnedAdapter(polygonChain());
+    const { payload, rows } = fakePayload([{ id: "i9", operationKey: "unlock-grant:v1:order-9:1", entitlement: "adm", state: "pending", attempts: 0,
+      target: { ...polygonTarget, lock: `0x${"c".repeat(40)}` } }]);
+    await dispatchKeyGrants({ payload, adapter });
+    assert.deepEqual([rows["commerce-key-grant-intents"][0].state, rows["commerce-key-grant-intents"][0].lastErrorCode, rows["commerce-key-grant-intents"][0].nextAttemptAt], ["failed_retryable", "lock_not_enabled", null]);
+  } finally {
+    console.error = original;
+  }
+  assert.deepEqual(lines.map((line) => JSON.parse(line)), [{ event: "key_grant_parked", intent: "i9", code: "lock_not_enabled" }]);
 });

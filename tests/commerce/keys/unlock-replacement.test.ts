@@ -130,6 +130,6 @@ test("a re-send is classified from the node's answer: accepted, already known, n
   ];
   for (const [label, send, kind] of cases) {
     const { adapter } = adapterOn(healthyChain({ eth_sendRawTransaction: send }), signer);
-    assert.deepEqual(await adapter.rebroadcast({ raw }), { kind }, label);
+    assert.deepEqual(await adapter.rebroadcast({ raw, txHash: keccak256(raw), nonce: parseTransaction(raw).nonce!, target }), { kind }, label);
   }
 });

@@ -4,7 +4,7 @@ import {
   type Abi, type Address, type Hex, type LocalAccount, type Transport,
 } from "viem";
 import { isTxHash, parseKeyGrantTarget, type KeyGrantAdapter, type KeyGrantTarget, type PrepareOutcome, type ReconcileOutcome, type ReplaceOutcome } from "../contracts";
-import { POLYGON_CHAIN_ID, polygonPins, type PolygonPins } from "./polygon";
+import { POLYGON_CHAIN_ID, polygonEventLocks, polygonLockPinned, polygonPins, type PolygonPins } from "./polygon";
 import type { KeyStateReader } from "../worker";
 import { createSignerTransactions, replacementFee, type Inspection } from "./transactions";
 
@@ -14,8 +14,8 @@ import { createSignerTransactions, replacementFee, type Inspection } from "./tra
  * worker has recorded its hash, `prepareReplacement` re-signs a stuck grant at
  * its own nonce with a higher fee, and `reconcile` reads the receipt. Base
  * Sepolia (84532) is enabled; Polygon (137) only behind the owner's go-live
- * switch, and then only for the pinned Signet lock, signed by the pinned grant
- * signer (./polygon; see ./transactions for nonces, fees and depth).
+ * switch, and then only for the pinned Signet lock and the configured event
+ * locks, signed by the pinned grant signer (./polygon; see ./transactions).
  *
  * Honest outcomes: everything in `prepare` happens before broadcast, so a failure
  * there is `definitelyNotSent`. Any failure from the broadcast call itself is
@@ -56,6 +56,8 @@ export function createUnlockKeyGrantAdapter({ chainID, account, transport, now =
   if (chainID === POLYGON_CHAIN_ID && !isAddressEqual(account.address, polygon.granter)) {
     throw new Error("Unlock grants on Polygon (137) are refused: the signer is not the pinned key granter");
   }
+  // The pinned event locks come from config (validated here, at start-up), unless the caller pinned them itself.
+  const pins: PolygonPins = chainID === POLYGON_CHAIN_ID ? { ...polygon, eventLocks: polygon.eventLocks ?? polygonEventLocks(env) } : polygon;
   const chain = createSignerTransactions({ chainID, account, transport, holdMs, env });
   const { client } = chain;
 
@@ -65,7 +67,7 @@ export function createUnlockKeyGrantAdapter({ chainID, account, transport, now =
     if (value?.chainID !== chainID) return "elsewhere";
     let target: KeyGrantTarget;
     try { target = parseKeyGrantTarget(value); } catch { return "invalid"; }
-    if (chainID === POLYGON_CHAIN_ID && !isAddressEqual(target.lock as Address, polygon.lock)) return "unpinned";
+    if (chainID === POLYGON_CHAIN_ID && !polygonLockPinned(target.lock, pins)) return "unpinned";
     return { lock: getAddress(target.lock), recipient: getAddress(target.recipient) };
   };
 
@@ -126,10 +128,15 @@ export function createUnlockKeyGrantAdapter({ chainID, account, transport, now =
 
     broadcast: ({ txHash }) => chain.broadcast({ txHash }),
     release: ({ txHash }) => chain.release({ txHash }),
-    // Only a grantKeys call is re-sent, and on Polygon only to the pinned lock.
-    rebroadcast: ({ raw }) => chain.rebroadcast({ raw }, ({ to, data }) => {
-      if (chainID === POLYGON_CHAIN_ID && !isAddressEqual(to, polygon.lock)) return false;
-      try { return decodeFunctionData({ abi: lockAbi, data }).functionName === "grantKeys"; } catch { return false; }
+    // Only the record's own grantKeys call is re-sent: to its lock (the pinned one on Polygon), for its recipient alone.
+    rebroadcast: (record) => chain.rebroadcast(record, ({ to, data }, { target: value }) => {
+      const target = targetHere(value);
+      if (typeof target === "string" || !isAddressEqual(to, target.lock)) return false;
+      try {
+        const call = decodeFunctionData({ abi: lockAbi, data });
+        const recipients = call.functionName === "grantKeys" ? (call.args?.[0] as readonly Address[] | undefined) : undefined;
+        return recipients?.length === 1 && isAddressEqual(recipients[0], target.recipient);
+      } catch { return false; }
     }),
 
     /** Reads only: whether the key is no longer valid (cancelled or expired) at a canonical block at the chain's depth. */

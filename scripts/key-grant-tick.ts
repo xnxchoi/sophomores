@@ -7,18 +7,29 @@ import type { Config, SanitizedConfig } from "payload";
  * refunded keys cancelled once the owner's wallet has cancelled them on chain (no cancel key on this host). Run it on
  * a schedule on the signer host (deployment/KEY-GRANTS.md). With KEY_GRANT_POLYGON_LIVE off it
  * prints {"outcome":"off"} and exits before loading Payload, a signer or an RPC. It prints one JSON line and never a
- * key, an address book or an error's details; a failure prints {"outcome":"failure"} and exits 1.
+ * key, an address book or an error's details. A failure prints {"outcome":"failure","reason":<fixed code>} and exits 1:
+ * no_rpc, no_budget, bad_event_locks, signer_refused, or unexpected (anything else, including the database).
  */
 const RUN_LOCK = "sphmrs:key-grant-tick:v1";
+
+/** A known, fixed precondition failure: its code is printed, never a message. */
+class TickRefusal extends Error {
+  constructor(readonly reason: "no_rpc" | "no_budget" | "bad_event_locks" | "signer_refused") { super(reason); }
+}
 
 async function tick() {
   const polygon = await import("../src/lib/commerce/keys/unlock/polygon");
   if (!polygon.polygonKeyGrantsLive(process.env)) return { outcome: "off" };
   if (process.env.PAYLOAD_DROP_DATABASE || process.env.PAYLOAD_MIGRATING) throw new Error("Unexpected database mode");
   const rpc = process.env.KEY_GRANT_POLYGON_RPC_URL;
-  if (!rpc || !rpc.startsWith("https://")) throw new Error("KEY_GRANT_POLYGON_RPC_URL must be an https URL");
-  // The signer first: a missing or wrong key stops the tick before any database work.
-  const granter = await polygon.loadPolygonKeyGranterAccount();
+  if (!rpc || !rpc.startsWith("https://")) throw new TickRefusal("no_rpc");
+  // Every precondition is checked before Payload or the site config is loaded.
+  const { maxCostWei } = await import("../src/lib/commerce/keys/unlock/transactions");
+  if (maxCostWei(polygon.POLYGON_CHAIN_ID, process.env) === null) throw new TickRefusal("no_budget");
+  try { polygon.polygonEventLocks(process.env); } catch { throw new TickRefusal("bad_event_locks"); }
+  // The signer next: a missing or wrong key stops the tick before any database work.
+  let granter: Awaited<ReturnType<typeof polygon.loadPolygonKeyGranterAccount>>;
+  try { granter = await polygon.loadPolygonKeyGranterAccount(); } catch { throw new TickRefusal("signer_refused"); }
   const [{ http }, { default: canonical }, { getPayload }, { createUnlockKeyGrantAdapter }, { runKeyGrantTick }] = await Promise.all([
     import("viem"), import("../src/payload.config"), import("payload"),
     import("../src/lib/commerce/keys/unlock/adapter"), import("../src/lib/commerce/keys/grant-catch-up"),
@@ -53,4 +64,7 @@ async function tick() {
 }
 
 void tick().then(result => { writeSync(1, JSON.stringify(result) + "\n"); process.exit(0); },
-  () => { writeSync(1, '{"outcome":"failure"}\n'); process.exit(1); });
+  (error: unknown) => {
+    writeSync(1, JSON.stringify({ outcome: "failure", reason: error instanceof TickRefusal ? error.reason : "unexpected" }) + "\n");
+    process.exit(1);
+  });

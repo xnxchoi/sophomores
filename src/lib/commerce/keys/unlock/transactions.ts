@@ -3,7 +3,7 @@ import {
   type Address, type Hex, type LocalAccount, type TransactionReceipt, type Transport,
 } from "viem";
 import { baseSepolia, polygon } from "viem/chains";
-import { signerAccountID, type BroadcastOutcome, type RebroadcastOutcome, type TransactionFee } from "../contracts";
+import { signerAccountID, type BroadcastOutcome, type RebroadcastInput, type RebroadcastOutcome, type TransactionFee } from "../contracts";
 import { POLYGON_CHAIN_ID, polygonKeyGrantsLive } from "./polygon";
 
 /*
@@ -122,8 +122,8 @@ export function replacementFee(previous: TransactionFee, estimate: Fees, ceiling
   return raised(maxFeePerGas, before.maxFeePerGas) && raised(maxPriorityFeePerGas, before.maxPriorityFeePerGas) ? { maxFeePerGas, maxPriorityFeePerGas } : null;
 }
 
-/** The adapter's check that recorded bytes are its own operation (target lock and function). */
-export type RecordedOperation = (transaction: { to: Address; data: Hex }) => boolean;
+/** The adapter's check that recorded bytes are the record's own operation (its lock, function and arguments). */
+export type RecordedOperation = (transaction: { to: Address; data: Hex }, record: RebroadcastInput) => boolean;
 
 export type SignerTransactionsOptions = {
   chainID: number; account: LocalAccount; transport?: Transport; holdMs?: number;
@@ -235,7 +235,8 @@ export function createSignerTransactions({ chainID, account, transport, holdMs =
      * so it can never become a second transaction. A node that already holds it
      * answers "already known"; one that has mined the nonce answers "nonce too low".
      */
-    async rebroadcast({ raw }: { raw: string }, recorded: RecordedOperation): Promise<RebroadcastOutcome> {
+    async rebroadcast(record: RebroadcastInput, recorded: RecordedOperation): Promise<RebroadcastOutcome> {
+      const { raw } = record;
       // Fail closed before any RPC (Review-A, 24 Nov): only our own signer's transaction, on this chain, of the
       // adapter's own operation, within the fee budget, is ever re-sent.
       let sent: ReturnType<typeof parseTransaction>;
@@ -244,8 +245,10 @@ export function createSignerTransactions({ chainID, account, transport, holdMs =
         sent = parseTransaction(raw as Hex);
         from = await recoverTransactionAddress({ serializedTransaction: raw as Parameters<typeof recoverTransactionAddress>[0]["serializedTransaction"] });
       } catch { return { kind: "refused", code: "rebroadcast_unreadable" }; }
+      // Bound to its dispatch record: the bytes hash to the record's transaction and carry its nonce.
+      if (keccak256(raw as Hex).toLowerCase() !== record.txHash.toLowerCase() || sent.nonce !== record.nonce) return { kind: "refused", code: "rebroadcast_mismatch" };
       if (sent.type !== "eip1559" || sent.chainId !== chainID || !isAddressEqual(from, account.address) || !sent.to || (sent.value ?? 0n) !== 0n
-        || !recorded({ to: sent.to, data: sent.data ?? "0x" })) return { kind: "refused", code: "rebroadcast_mismatch" };
+        || !recorded({ to: sent.to, data: sent.data ?? "0x" }, record)) return { kind: "refused", code: "rebroadcast_mismatch" };
       if (overBudget(sent.gas, sent.maxFeePerGas)) return { kind: "refused", code: "fee_above_cap" };
       const hash = keccak256(raw as Hex);
       try {

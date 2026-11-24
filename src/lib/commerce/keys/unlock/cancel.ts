@@ -2,7 +2,7 @@ import PublicLockV14 from "@unlock-protocol/contracts/dist/abis/PublicLock/Publi
 import { decodeFunctionData, encodeFunctionData, getAddress, isAddressEqual, parseEventLogs, type Abi, type Address, type Hex, type LocalAccount, type Transport } from "viem";
 import { isTxHash, parseKeyGrantTarget, type CancelPrepareOutcome, type CancelReconcileOutcome, type KeyCancelAdapter, type KeyGrantTarget, type ReplaceOutcome } from "../contracts";
 import { reverted } from "./adapter";
-import { POLYGON_CHAIN_ID, POLYGON_SIGNET_LOCK } from "./polygon";
+import { POLYGON_CHAIN_ID, polygonEventLocks, polygonLockPinned, POLYGON_SIGNET_LOCK } from "./polygon";
 import { createSignerTransactions, replacementFee } from "./transactions";
 
 /*
@@ -40,7 +40,7 @@ export type UnlockKeyCancelAdapterOptions = {
   chainID: number; account: LocalAccount; transport?: Transport; holdMs?: number;
   /** Where the go-live switch is read (default: process.env). */
   env?: Readonly<Record<string, string | undefined>>;
-  /** On Polygon, the only lock a key may be cancelled on (default: the pinned Signet lock). */
+  /** On Polygon, the Signet lock (default: the pinned one); the configured event locks are also accepted. */
   polygonLock?: Address;
 };
 
@@ -48,6 +48,7 @@ const notSent = (code: string): CancelPrepareOutcome => ({ kind: "definitelyNotS
 const unknown: CancelReconcileOutcome = { kind: "unknown" };
 
 export function createUnlockKeyCancelAdapter({ chainID, account, transport, holdMs = 60_000, env, polygonLock = POLYGON_SIGNET_LOCK }: UnlockKeyCancelAdapterOptions): KeyCancelAdapter {
+  const pins = { lock: polygonLock, eventLocks: chainID === POLYGON_CHAIN_ID ? polygonEventLocks(env) : [], granter: polygonLock };
   const chain = createSignerTransactions({ chainID, account, transport, holdMs, env });
   const { client } = chain;
   const read = (lock: Address, functionName: string, args: unknown[], blockHash?: Hex) => client.readContract({
@@ -58,7 +59,7 @@ export function createUnlockKeyCancelAdapter({ chainID, account, transport, hold
     if (value?.chainID !== chainID) return "elsewhere";
     let target: KeyGrantTarget;
     try { target = parseKeyGrantTarget(value); } catch { return "invalid"; }
-    if (chainID === POLYGON_CHAIN_ID && !isAddressEqual(target.lock as Address, polygonLock)) return "unpinned";
+    if (chainID === POLYGON_CHAIN_ID && !polygonLockPinned(target.lock, pins)) return "unpinned";
     return { lock: getAddress(target.lock), recipient: getAddress(target.recipient) };
   };
 
@@ -127,10 +128,14 @@ export function createUnlockKeyCancelAdapter({ chainID, account, transport, hold
 
     broadcast: ({ txHash }) => chain.broadcast({ txHash }),
     release: ({ txHash }) => chain.release({ txHash }),
-    // Only an expireAndRefundFor call is re-sent, and on Polygon only to the pinned lock.
-    rebroadcast: ({ raw }) => chain.rebroadcast({ raw }, ({ to, data }) => {
-      if (chainID === POLYGON_CHAIN_ID && !isAddressEqual(to, polygonLock)) return false;
-      try { return decodeFunctionData({ abi: lockAbi, data }).functionName === "expireAndRefundFor"; } catch { return false; }
+    // Only the record's own expireAndRefundFor call is re-sent: to its lock (the pinned one on Polygon), for its token.
+    rebroadcast: (record) => chain.rebroadcast(record, ({ to, data }, { target: value, tokenID }) => {
+      const target = targetHere(value);
+      if (typeof target === "string" || !tokenID || !tokenPattern.test(tokenID) || !isAddressEqual(to, target.lock)) return false;
+      try {
+        const call = decodeFunctionData({ abi: lockAbi, data });
+        return call.functionName === "expireAndRefundFor" && call.args?.[0] === BigInt(tokenID);
+      } catch { return false; }
     }),
 
     /** `confirmed` only for exactly one `CancelKey` of this token, from this lock, with no refund, at the chain's depth. */

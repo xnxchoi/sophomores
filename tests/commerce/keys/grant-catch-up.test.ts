@@ -116,3 +116,27 @@ test("a refunded key still valid on chain, or one whose state cannot be read, st
     assert.equal(raws.length, 0);
   }
 });
+
+test("unresolved owner cancels rotate: a full first page of still-valid keys does not starve the row behind it", async () => {
+  // isValidKey answers per token: tokens 1..25 still valid, token 26 cancelled by the owner.
+  const raws: Hex[] = [];
+  const account = privateKeyToAccount(generatePrivateKey());
+  const chain = mockChain(healthyChain({
+    eth_chainId: () => numberToHex(137),
+    eth_blockNumber: () => buriedHead,
+    eth_sendRawTransaction: (params) => { raws.push(params[0] as Hex); return keccak256(params[0] as Hex); },
+    eth_call: lockCalls({ isValidKey: (params) => {
+      const data = (params[0] as { data: Hex }).data;
+      return bool(BigInt(`0x${data.slice(-64)}`) !== 26n);
+    } }),
+  }));
+  const adapter = createUnlockKeyGrantAdapter({ chainID: 137, account, transport: chain.transport, now, env: live, polygon: { lock: lockAddress, granter: account.address } });
+  const rows: Row[] = Array.from({ length: 26 }, (_, index) => ({ ...refunded(adapter.signer), id: `k${index + 1}`, operationKey: `unlock-grant:v1:order-k${index + 1}:1`, tokenID: String(index + 1) }));
+  const { payload, rows: stored } = fakePayload(rows);
+  const result = await runKeyGrantTick({ payload, grant: adapter, acquire: runLock().acquire, env: live, now, limit: 30 });
+  assert.equal(result.outcome === "ran" && result.cancelled, 1, "row 26 is reached in the same pass");
+  const intents = stored["commerce-key-grant-intents"];
+  assert.equal(intents.find((row) => row.id === "k26")?.state, "cancelled");
+  assert.equal(intents.filter((row) => row.state === "granted" && typeof row.nextAttemptAt === "string").length, 25, "the still-valid ones are rechecked later");
+  assert.equal(raws.length, 0);
+});

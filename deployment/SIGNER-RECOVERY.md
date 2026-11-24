@@ -34,13 +34,15 @@ The tick keeps printing `{"outcome":"ran",...}` with `dispatched: 0` while owed 
 ## 3. Triage (owner, read-only)
 - **Check every recorded hash** for the stuck nonce at the chain's depth: Polygon 256 blocks, Base Sepolia 10.
   - **If a grant mined:** turn the switch back on. The tick's reconcile settles it (`granted`) and the queue moves.
-  - **If it reverted:** reconcile records it, and the intent goes back for a person, never automatically.
+  - **If it reverted** (a confirmed revert at depth, which proves the grant did not execute): reconcile records it as `failed_retryable`. After a backoff the worker requeues it as a fresh attempt at a new nonce, automatically, unless its order was refunded since (then it is cancelled instead) or its code is one that parks. This is the policy in code (`worker.ts`, reconcile and `requeueRetryable`).
 - **`grant_recovery_held` is sticky.** A hold placed because the order's money or benefits are in question (a refund in progress, say) stays until the owner, or the designated commerce authority, settles that order's outcome. An ambiguous or permanent refund is not a cleared hold. A held grant must never be sent: it may belong to a refunded order.
 - **`grant_broadcast_suppressed`** has no stored transaction bytes. It cannot be resumed by rebuilding or editing the row. It is the owner's decision.
 - **Prefer reconciling first.** If the node accepted a send before the hold, wait for reconcile before choosing recovery.
 
-## 4. Same-nonce recovery self-send (owner-approved; tooling not built yet)
-Use this only for a nonce that is permanently held and provably unused. It consumes the nonce without granting a key.
+## 4. Future design, not instructions: same-nonce recovery self-send
+Nothing in this section can be carried out today: the command, the recovery record and the approval roles do not exist. It records the decided design (ADR-0028) for when they are built and reviewed. Until then, step 2 (stop and hold) and step 3 (triage) are the whole procedure.
+
+When built, it applies only to a nonce that is permanently held and provably unused. It consumes the nonce without granting a key.
 - **Approval:** the owner alone, in override mode (ADR-0027), until a second approver exists. Record the approval:
   - who approved, and when;
   - chain, signer and nonce;
@@ -66,7 +68,7 @@ Use this only for a nonce that is permanently held and provably unused. It consu
   - An unknown competing transaction, or missing proof, keeps the signer parked.
 - **Resume:** turn the switch back on. The tick resumes behind the cleared nonce.
 
-## 5. Still to build before live recovery (not part of tonight's slices)
+## 5. Still to build before section 4 can be used (not part of tonight's slices)
 - An audited operator entrypoint for the self-send, with the recovery write-ahead record.
 - The reviewed "resume" operation for a cleared hold: it re-checks payment, admission and intent under the existing lock order, and keeps the original attempt and nonce.
 - Approvers and alerts in Payload: owner-only designee; alerts deduplicated by chain, signer and nonce, with no raw bytes or personal data; override-mode toggles audited.

@@ -9,7 +9,7 @@ import {
   type BroadcastOutcome, type CancelReconcileOutcome, type KeyCancelAdapter, type KeyGrantAdapter, type RebroadcastOutcome, type ReconcileOutcome, type RecordedSend,
   type ReplaceOutcome, type TransactionFee,
 } from "./contracts";
-import type { KeyGrantTarget } from "./contracts";
+import type { KeyGrantTarget, RebroadcastInput } from "./contracts";
 
 /*
  * ADR-0004 worker. Explicitly invoked (no scheduler yet) with a chain adapter.
@@ -192,6 +192,14 @@ async function claim(payload: Payload, intentID: string, now: Date): Promise<{ a
 
 const parked = (errorCode: string): boolean => (parkedGrantCodes as readonly string[]).includes(errorCode);
 
+/**
+ * A parked grant waits for a person, so it is never silent (coordinator, 24 Nov): one fixed-format line on stderr
+ * per park, with the intent's ID and the code only (no address, order or customer data).
+ */
+export function logParked(intentID: string, errorCode: string, log: (line: string) => void = (line) => console.error(line)): void {
+  log(JSON.stringify({ event: "key_grant_parked", intent: String(intentID), code: code(errorCode) }));
+}
+
 /** Proven non-execution: retryable after a backoff, unless retrying cannot help. */
 const notSentData = (errorCode: string, attempts: unknown, now: Date) => ({
   state: "failed_retryable", lastErrorCode: code(errorCode),
@@ -361,6 +369,7 @@ async function recordUnsentGrant(payload: Payload, intentID: string, attemptID: 
   await inIntent(payload, intentID, async (req, intent) => {
     if (intent.attemptID !== attemptID || intent.state !== "submitted" || intent.txHash) return;
     await updateCommerce(req, INTENTS, intentID, notSentData(outcome.code, intent.attempts, now));
+    if (parked(outcome.code)) logParked(intentID, outcome.code);
   });
 }
 
@@ -573,7 +582,7 @@ async function grantRecoveryAllowed(req: PayloadRequest, intent: CommerceDocumen
 type Replacer = {
   signer: string;
   replace(row: CommerceDocument, nonce: number, previous: TransactionFee): Promise<ReplaceOutcome>;
-  rebroadcast(input: { raw: string }): Promise<RebroadcastOutcome>;
+  rebroadcast(input: RebroadcastInput): Promise<RebroadcastOutcome>;
   broadcast(input: { intentID: string; txHash: string }): Promise<BroadcastOutcome>;
   release(input: { txHash: string }): void;
 };
@@ -607,7 +616,10 @@ async function replaceStuck(payload: Payload, operation: Operation, chain: Repla
       const tries = last.rebroadcasts ?? 0;
       if (tries >= MAX_REBROADCASTS) { await markAttempt(payload, operation, row, operation.stop(`${prefix}rebroadcast_failed`)); continue; }
       const send = async (): Promise<RebroadcastOutcome> => {
-        try { return await chain.rebroadcast({ raw: String(last.raw) }); } catch { return { kind: "unknown" }; }
+        try {
+          return await chain.rebroadcast({ raw: String(last.raw), txHash: last.txHash, nonce, target: parseKeyGrantTarget(row.target),
+            ...(row.tokenID != null ? { tokenID: String(row.tokenID) } : {}) });
+        } catch { return { kind: "unknown" }; }
       };
       const answer = operation === grantOperation
         ? await withSignerLock(payload, chain.signer, () => inGrant(payload, row.id, async (req, intent, held) =>
@@ -822,7 +834,7 @@ export type KeyStateReader = { keyInvalidAtDepth(input: { target: KeyGrantTarget
  * ADR-0008 and ADR-0011: refunded keys are cancelled by the owner's own wallet, the lock manager, never by a key on our
  * host, so nothing here signs. Each granted intent with cancelRequested is marked cancelled once the chain shows its
  * key no longer valid at confirmation depth (cancelled or expired), with the existing evidence code `key_not_valid`.
- * Unknown answers leave the intent as it is, for the next pass.
+ * A key still valid, or unreadable, is rechecked after RECONCILE_RECHECK_MS (nextAttemptAt), so every row is reached.
  */
 export async function reconcileOwnerCancels({ payload, reader, limit = 10, now = () => new Date() }: { payload: Payload; reader: KeyStateReader; limit?: number; now?: () => Date }): Promise<number> {
   let settled = 0;
@@ -830,9 +842,10 @@ export async function reconcileOwnerCancels({ payload, reader, limit = 10, now =
     if (settled >= limit) break;
     let invalid: boolean | null;
     try { invalid = await reader.keyInvalidAtDepth({ target: parseKeyGrantTarget(row.target), tokenID: String(row.tokenID) }); } catch { invalid = null; }
-    if (invalid !== true) continue;
     const moved = await inIntent(payload, row.id, async (req, intent) => {
       if (intent.state !== "granted" || intent.cancelRequested !== true || String(intent.tokenID) !== String(row.tokenID)) return false;
+      // Still valid, or unreadable: rechecked later, so the rows behind it are read too (no starvation; Review-A).
+      if (invalid !== true) { await updateCommerce(req, INTENTS, row.id, { nextAttemptAt: later(now(), RECONCILE_RECHECK_MS) }); return false; }
       await updateCommerce(req, INTENTS, row.id, { state: "cancelled", cancelledAt: now().toISOString(), lastErrorCode: "key_not_valid", nextAttemptAt: null });
       return true;
     });

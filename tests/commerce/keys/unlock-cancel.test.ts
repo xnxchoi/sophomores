@@ -156,5 +156,7 @@ test("a cancel replacement re-signs expireAndRefundFor(token, 0) at the same non
   assert.deepEqual(decodeFunctionData({ abi: lockAbi, data: sent.data! }).args, [5n, 0n]);
   counts.latest = 3;
   assert.deepEqual(await adapter.prepareCancelReplacement({ intentID: "intent-1", target, tokenID: "5", nonce: 2, previous }), { kind: "nonceConsumed" });
-  assert.deepEqual(await adapter.rebroadcast({ raw }), { kind: "accepted" });
+  // Bound to its record: the same hash, nonce, lock and token (Review-A, 24 Nov).
+  assert.deepEqual(await adapter.rebroadcast({ raw, txHash, nonce: 2, target, tokenID: "5" }), { kind: "accepted" });
+  assert.deepEqual(await adapter.rebroadcast({ raw, txHash, nonce: 2, target, tokenID: "6" }), { kind: "refused", code: "rebroadcast_mismatch" }, "another token");
 });

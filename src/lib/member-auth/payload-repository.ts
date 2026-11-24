@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { Pool, PoolClient } from "pg";
 import { MemberError, type BindRecord, type BoundMember, type MemberBinding, type MemberBindingRepository } from "./contracts";
-import { memberPhonePolicies } from "./phone-policies";
+import { bindablePhonePolicies, recognisedPhonePolicies } from "./phone-policies";
 
 const canonicalIdentity = z.uuid();
 type BindingRow = { user_id: string; phone_hash: string; challenge_id: string; policy_version: string; verified_at: Date };
@@ -66,7 +66,7 @@ export class PgPayloadMemberRepository implements MemberBindingRepository {
     if (!result.rows.length) return null;
     const row = result.rows[0];
     if (result.rows.length !== 1 || row.user_id !== input.userId || row.phone_hash !== input.phoneHash
-      || row.challenge_id !== input.challengeId || !memberPhonePolicies().includes(row.policy_version)) throw new MemberError("PHONE_CONFLICT");
+      || row.challenge_id !== input.challengeId || !recognisedPhonePolicies().includes(row.policy_version)) throw new MemberError("PHONE_CONFLICT");
     const proof = await client.query<{ state: string }>(`SELECT state FROM phone_verification.challenges
       WHERE id=$1 AND session_hash=$2 AND phone_hash=$3 FOR UPDATE`, [input.challengeId, input.sessionHash, input.phoneHash]);
     if (proof.rows[0]?.state !== "consumed") throw new MemberError("INVALID_PHONE_PROOF");
@@ -89,7 +89,7 @@ export class PgPayloadMemberRepository implements MemberBindingRepository {
       const current = now();
       this.assertSession(input, session, current);
       const row = proof.rows[0];
-      if (!row || row.state !== "verified" || row.policy_version === null || !memberPhonePolicies().includes(row.policy_version)
+      if (!row || row.state !== "verified" || row.policy_version === null || !bindablePhonePolicies().includes(row.policy_version)
         || row.created_at < session.session_created_at || row.created_at > current || row.expires_at <= current) {
         throw new MemberError("INVALID_PHONE_PROOF");
       }
@@ -115,13 +115,13 @@ export class PgPayloadMemberRepository implements MemberBindingRepository {
   async isActiveMember(userId: string): Promise<boolean> {
     if (!canonicalIdentity.safeParse(userId).success) return false;
     const result = await this.pool.query(`SELECT b.user_id FROM canonical_member.phone_bindings b
-      JOIN public.users u ON u.id=b.user_id WHERE b.user_id=$1 AND u.email_verified=true AND b.policy_version=ANY($2::text[])`, [userId, [...memberPhonePolicies()]]);
+      JOIN public.users u ON u.id=b.user_id WHERE b.user_id=$1 AND u.email_verified=true AND b.policy_version=ANY($2::text[])`, [userId, [...recognisedPhonePolicies()]]);
     return result.rows.length === 1;
   }
 
   async findBoundUserByPhoneHash(phoneHash: string): Promise<BoundMember | null> {
     const result = await this.pool.query<BoundMember>(`SELECT u.id AS "userId",u.email,u.name FROM canonical_member.phone_bindings b
-      JOIN public.users u ON u.id=b.user_id WHERE b.phone_hash=$1 AND u.email_verified=true AND b.policy_version=ANY($2::text[])`, [phoneHash, [...memberPhonePolicies()]]);
+      JOIN public.users u ON u.id=b.user_id WHERE b.phone_hash=$1 AND u.email_verified=true AND b.policy_version=ANY($2::text[])`, [phoneHash, [...recognisedPhonePolicies()]]);
     return result.rows[0] ?? null;
   }
 }

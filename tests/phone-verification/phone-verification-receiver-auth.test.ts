@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { loadZohoReceiverConfig } from '@/lib/phone-verification/server/receiver-config';
+import { loadZohoReceiverConfig, previewSandboxAttestation } from '@/lib/phone-verification/server/receiver-config';
+import { receiverProcessEnvironment } from '../../scripts/member-auth-receiver';
 import { receiverCarrierAuthentication, carrierTrialLine, receiverSecretsPath } from '../../scripts/phone-verification-receive';
 
 const environment = {
@@ -60,16 +61,33 @@ test('the disabled policy never invokes a verifier even when supplied by a test 
   assert.deepEqual(authentication, {});
 });
 
-const sandbox = { ...environment, PHONE_VERIFICATION_MODE: 'production', PHONE_VERIFICATION_ORIGIN: 'https://preview.sophomores.co',
+const preview = { ...environment, PHONE_VERIFICATION_MODE: 'production', PHONE_VERIFICATION_ORIGIN: 'https://preview.sophomores.co',
   PREVIEW_RUNTIME: 'sandbox', PHONE_VERIFICATION_CARRIER_POLICY: 'preview-trial-zoho-arc-v1' };
+const attestation = previewSandboxAttestation({ secret: environment.PHONE_VERIFICATION_STATE_SECRET,
+  origin: 'https://preview.sophomores.co', mailboxId: environment.PHONE_VERIFICATION_ZOHO_ACCOUNT_ID });
+const sandbox = { ...preview, PHONE_VERIFICATION_PREVIEW_ATTESTATION: attestation };
 
-test('the preview trial policy loads only in the preview sandbox runtime on the preview origin', () => {
+test('the SKT pilot issues only in local mode, never with a production origin, with or without the legacy key', () => {
+  for (const env of [
+    { ...preview, PHONE_VERIFICATION_CARRIER_POLICY: 'local-skt-zoho-arc-v1' },
+    { ...preview, PHONE_VERIFICATION_CARRIER_POLICY: 'local-skt-zoho-arc-v1', PHONE_VERIFICATION_ALLOW_LEGACY_ZOHO_ARC: '1' },
+    { ...preview, PREVIEW_RUNTIME: undefined, PHONE_VERIFICATION_CARRIER_POLICY: 'local-skt-zoho-arc-v1' },
+  ]) assert.throws(() => loadZohoReceiverConfig(env, secrets));
+  assert.equal(loadZohoReceiverConfig({ ...environment, PHONE_VERIFICATION_CARRIER_POLICY: 'local-skt-zoho-arc-v1' }, secrets).carrierPolicy,
+    'local-skt-zoho-arc-v1');
+});
+
+test('the preview trial issues only with the supervisor attestation on the preview sandbox origin', () => {
   assert.equal(loadZohoReceiverConfig(sandbox, secrets).carrierPolicy, 'preview-trial-zoho-arc-v1');
   const { PREVIEW_RUNTIME: _runtime, ...noRuntime } = sandbox;
   for (const env of [
+    preview,
+    { ...sandbox, PHONE_VERIFICATION_PREVIEW_ATTESTATION: 'f'.repeat(64) },
+    { ...sandbox, PHONE_VERIFICATION_PREVIEW_ATTESTATION: attestation.slice(1) },
     noRuntime,
     { ...sandbox, PREVIEW_RUNTIME: 'review-editor' },
     { ...sandbox, PHONE_VERIFICATION_ORIGIN: 'https://sophomores.co' },
+    { ...sandbox, PHONE_VERIFICATION_ZOHO_ACCOUNT_ID: '987654321' },
     { ...sandbox, PHONE_VERIFICATION_MODE: 'local', PHONE_VERIFICATION_ORIGIN: 'http://127.0.0.1:3217' },
     { ...sandbox, PHONE_VERIFICATION_CARRIER_POLICY: 'production-zoho-arc-v1' },
   ]) assert.throws(() => loadZohoReceiverConfig(env, secrets));
@@ -114,28 +132,56 @@ test('the receiver secrets file moves only in the preview sandbox runtime, to an
   assert.throws(() => receiverSecretsPath({ PREVIEW_RUNTIME: 'sandbox', PHONE_VERIFICATION_RECEIVER_SECRETS_FILE: 'zoho.env' }, '/app'));
 });
 
-test('member bindings accept the trial proof only in the preview sandbox runtime', async () => {
-  const { memberPhonePolicies } = await import('@/lib/member-auth/phone-policies');
-  const portone = { PORTONE_PAYMENT_MODE: 'test', PORTONE_ORIGIN: 'https://preview.sophomores.co',
-    PORTONE_STORE_ID: 'store-sandbox-fixture', PORTONE_CHANNEL_KEY: 'channel-sandbox-fixture',
-    PORTONE_API_SECRET: 'api-secret-fixture-value', PORTONE_WEBHOOK_SECRET: 'whsec_' + Buffer.alloc(32, 7).toString('base64'),
-    PORTONE_SANDBOX_TEST_STORE_ID: 'store-sandbox-fixture', PORTONE_SANDBOX_TEST_CHANNEL_KEY: 'channel-sandbox-fixture' };
-  const runtime = { NEXT_PUBLIC_SERVER_URL: 'https://preview.sophomores.co', PREVIEW_RUNTIME: 'sandbox', ...portone };
-  assert.deepEqual(memberPhonePolicies({}), ['local-skt-zoho-arc-v1']);
-  assert.deepEqual(memberPhonePolicies(runtime), ['local-skt-zoho-arc-v1', 'preview-trial-zoho-arc-v1']);
-  // The flag alone, a review owner, or a non-test PortOne setup leaves the trial proof unaccepted.
-  assert.deepEqual(memberPhonePolicies({ PREVIEW_RUNTIME: 'sandbox' }), ['local-skt-zoho-arc-v1']);
-  assert.deepEqual(memberPhonePolicies({ ...runtime, REVIEW_OWNER_EMAIL: 'x@sophomores.co' }), ['local-skt-zoho-arc-v1']);
-  assert.deepEqual(memberPhonePolicies({ ...runtime, PORTONE_PAYMENT_MODE: 'live' }), ['local-skt-zoho-arc-v1']);
+const portone = { PORTONE_PAYMENT_MODE: 'test', PORTONE_ORIGIN: 'https://preview.sophomores.co',
+  PORTONE_STORE_ID: 'store-sandbox-fixture', PORTONE_CHANNEL_KEY: 'channel-sandbox-fixture',
+  PORTONE_API_SECRET: 'api-secret-fixture-value', PORTONE_WEBHOOK_SECRET: 'whsec_' + Buffer.alloc(32, 7).toString('base64'),
+  PORTONE_SANDBOX_TEST_STORE_ID: 'store-sandbox-fixture', PORTONE_SANDBOX_TEST_CHANNEL_KEY: 'channel-sandbox-fixture' };
+const runtime = { NEXT_PUBLIC_SERVER_URL: 'https://preview.sophomores.co', PREVIEW_RUNTIME: 'sandbox', ...portone,
+  PHONE_VERIFICATION_MODE: 'production', PHONE_VERIFICATION_ORIGIN: 'https://preview.sophomores.co',
+  MEMBER_AUTH_MODE: 'production', MEMBER_AUTH_ORIGIN: 'https://preview.sophomores.co' };
+
+test('new bindings consume the pilot proof only in local mode and the trial proof only under the preview authority', async () => {
+  const { bindablePhonePolicies } = await import('@/lib/member-auth/phone-policies');
+  assert.deepEqual(bindablePhonePolicies({ PHONE_VERIFICATION_MODE: 'local', MEMBER_AUTH_MODE: 'local' }), ['local-skt-zoho-arc-v1']);
+  assert.deepEqual(bindablePhonePolicies(runtime), ['preview-trial-zoho-arc-v1']);
+  for (const env of [
+    {},
+    { PHONE_VERIFICATION_MODE: 'production', MEMBER_AUTH_MODE: 'production' },
+    { PREVIEW_RUNTIME: 'sandbox', PHONE_VERIFICATION_MODE: 'production', PHONE_VERIFICATION_ORIGIN: 'https://preview.sophomores.co' },
+    { ...runtime, REVIEW_OWNER_EMAIL: 'x@sophomores.co' },
+    { ...runtime, PORTONE_PAYMENT_MODE: 'live' },
+    { ...runtime, PORTONE_SANDBOX_TEST_CHANNEL_KEY: 'another-channel' },
+    { ...runtime, PHONE_VERIFICATION_ORIGIN: 'https://sophomores.co', MEMBER_AUTH_ORIGIN: 'https://sophomores.co' },
+  ]) assert.deepEqual(bindablePhonePolicies(env), [], JSON.stringify(Object.keys(env)));
 });
 
-test('the preview receiver service starts only with the sandbox trial configuration', async () => {
-  const { previewReceiverServiceReady } = await import('../../scripts/phone-verification-receiver-service');
-  const service = { ...sandbox, PHONE_VERIFICATION_RECEIVER_HEALTH_DIRECTORY: '/run/phone-receiver-health' };
-  assert.equal(previewReceiverServiceReady(service), true);
-  assert.equal(previewReceiverServiceReady({ ...service, PREVIEW_RUNTIME: undefined }), false);
-  assert.equal(previewReceiverServiceReady({ ...service, PHONE_VERIFICATION_CARRIER_POLICY: 'local-skt-zoho-arc-v1' }), false);
-  assert.equal(previewReceiverServiceReady({ ...service, PHONE_VERIFICATION_RECEIVER_HEALTH_DIRECTORY: undefined }), false);
-  assert.equal(previewReceiverServiceReady({ ...service, PHONE_VERIFICATION_RECEIVER_HEALTH_DIRECTORY: 'relative' }), false);
-  assert.equal(previewReceiverServiceReady({ ...service, PHONE_VERIFICATION_TRANSPORT: 'fixture' }), false);
+test('existing pilot bindings stay recognised; trial bindings count only under the preview authority', async () => {
+  const { recognisedPhonePolicies } = await import('@/lib/member-auth/phone-policies');
+  assert.deepEqual(recognisedPhonePolicies({}), ['local-skt-zoho-arc-v1']);
+  assert.deepEqual(recognisedPhonePolicies({ ...runtime, REVIEW_OWNER_EMAIL: 'x@sophomores.co' }), ['local-skt-zoho-arc-v1']);
+  assert.deepEqual(recognisedPhonePolicies(runtime), ['local-skt-zoho-arc-v1', 'preview-trial-zoho-arc-v1']);
+});
+
+test('the preview receiver service starts only on the full sandbox profile and passes an attestation, not PortOne settings', async () => {
+  const { previewReceiverServiceEnvironment } = await import('../../scripts/phone-verification-receiver-service');
+  const service = { ...preview, ...portone, PHONE_VERIFICATION_RECEIVER_HEALTH_DIRECTORY: '/run/phone-receiver-health' };
+  const child = previewReceiverServiceEnvironment(service);
+  assert.ok(child);
+  assert.equal(child.PHONE_VERIFICATION_PREVIEW_ATTESTATION, attestation);
+  const passed = receiverProcessEnvironment(child);
+  assert.equal(passed.PHONE_VERIFICATION_PREVIEW_ATTESTATION, attestation);
+  assert.equal(Object.keys(passed).some((key) => key.startsWith('PORTONE_') || key === 'REVIEW_OWNER_EMAIL'), false);
+  // A forged attestation in the service's own environment is replaced, never trusted.
+  assert.equal(previewReceiverServiceEnvironment({ ...service, PHONE_VERIFICATION_PREVIEW_ATTESTATION: 'f'.repeat(64) })?.PHONE_VERIFICATION_PREVIEW_ATTESTATION, attestation);
+  for (const env of [
+    { ...service, REVIEW_OWNER_EMAIL: 'x@sophomores.co' },
+    { ...service, PORTONE_PAYMENT_MODE: 'live' },
+    { ...service, PORTONE_SANDBOX_TEST_STORE_ID: undefined },
+    { ...service, PREVIEW_RUNTIME: undefined },
+    { ...service, PHONE_VERIFICATION_ORIGIN: 'https://sophomores.co' },
+    { ...service, PHONE_VERIFICATION_CARRIER_POLICY: 'local-skt-zoho-arc-v1' },
+    { ...service, PHONE_VERIFICATION_RECEIVER_HEALTH_DIRECTORY: undefined },
+    { ...service, PHONE_VERIFICATION_RECEIVER_HEALTH_DIRECTORY: 'relative' },
+    { ...service, PHONE_VERIFICATION_TRANSPORT: 'fixture' },
+  ]) assert.equal(previewReceiverServiceEnvironment(env), null);
 });

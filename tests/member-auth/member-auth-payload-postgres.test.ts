@@ -8,6 +8,10 @@ import { PgPhoneIdentifier } from "@/lib/member-auth/identifier";
 import { digest } from "@/lib/phone-verification/server/crypto";
 import type { BindRecord } from "@/lib/member-auth/contracts";
 
+// The SKT pilot's proofs bind only in local mode (src/lib/member-auth/phone-policies.ts); this suite runs as local.
+process.env.PHONE_VERIFICATION_MODE ??= "local";
+process.env.MEMBER_AUTH_MODE ??= "local";
+
 // Explicit opt-in, using the existing local database after normal migrations.
 // No table/schema creation, migration, reset, or provider calls occur in this suite.
 const url = process.env.CANONICAL_MEMBER_TEST_DATABASE_URL;

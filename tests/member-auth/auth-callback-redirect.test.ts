@@ -166,7 +166,7 @@ test("payload handler: a successful Apple form_post moves the profile into a sea
     [hop.href, `${sealed.slice(0, -4)}AAAA`], [`${hop.href}&error=access_denied`, sealed]] as const) {
     seen = undefined;
     const response = await route.GET(new Request(url, { headers: { cookie } }));
-    assert.equal(seen?.searchParams.has("user"), false, url);
+    assert.equal((seen as URL | undefined)?.searchParams.has("user"), false, url);
     assert.ok(response.headers.getSetCookie().some((value) => value.startsWith("sphmrs-apple-profile=;")), "cleared");
   }
 });

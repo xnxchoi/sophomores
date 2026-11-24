@@ -203,6 +203,27 @@ class ResourceGuardTests(unittest.TestCase):
         self.assertEqual(self.guard.accounted_bytes(100, 200), 200)
         self.assertEqual(self.guard.parse_vm_stat('Mach Virtual Memory Statistics: (page size of 16384 bytes)\nPages free: 2.\nPages inactive: 3.\nPages speculative: 1.'), 6*16384)
 
+    def test_pressure_levels_owner_rule_20261124(self):
+        gib = 1024**3
+
+        def stub(level, available):
+            vm_stat = f'Mach Virtual Memory Statistics: (page size of 16384 bytes)\nPages free: {available // 16384}.\nPages inactive: 0.\nPages speculative: 0.'
+            return lambda label, _cmd: f'{level}\n' if label == 'memory_pressure' else vm_stat
+
+        with mock.patch.object(sys, 'platform', 'darwin'):
+            read = self.guard.available_memory
+            # NORMAL: as before, light or not.
+            self.assertEqual(read(stub(1, 11 * gib)), 11 * gib)
+            self.assertEqual(read(stub(1, 11 * gib), light=True), 11 * gib)
+            # WARNING: light runs only, and only with at least 12 GiB available.
+            self.assertEqual(read(stub(2, 12 * gib), light=True), 12 * gib)
+            self.assertEqual(read(stub(2, 12 * gib - 16384), light=True), 0)
+            self.assertEqual(read(stub(2, 20 * gib)), 0)
+            # CRITICAL: always refused.
+            self.assertEqual(read(stub(4, 20 * gib), light=True), 0)
+            self.assertEqual(read(stub(4, 20 * gib)), 0)
+        self.assertEqual(self.guard.LIGHT_MAX_BYTES, 4 * gib)
+
     def test_node_cap(self):
         self.assertEqual(self.guard.node_options('--trace-warnings --max-old-space-size=512'), '--trace-warnings --max-old-space-size=512')
         self.assertIn('--max-old-space-size=1536', self.guard.node_options('--max-old-space-size 8192 --trace-warnings'))

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { loadWalletConfig } from "@/lib/member-auth/wallet/safe";
 import { keyGrantChains } from "./keys/contracts";
 import type { CommerceDocument } from "./_shared/transaction";
 
@@ -30,7 +31,13 @@ export function sharedTicketMode(target: EventTicketTarget | undefined) {
 /** An exact event opt-in; absent by default. Refuse the configured Signet lock. */
 export function sharedEventTicketsEnabled(eventID: string, target: EventTicketTarget, env: Readonly<Record<string, string | undefined>> = process.env) {
   const signet = lock.safeParse(env.MEMBER_WALLET_LOCK_ADDRESS);
-  return env.UNLOCK_SHARED_TICKET_EVENT_ID === eventID && signet.success && target.lock !== signet.data;
+  if (sharedTicketMode(target) !== "shared" || env.UNLOCK_SHARED_TICKET_EVENT_ID !== eventID ||
+    !signet.success || target.lock.toLowerCase() === signet.data) return false;
+  try {
+    return loadWalletConfig(env)?.chainID === target.chainID;
+  } catch {
+    return false; // Partial or invalid wallet settings must not admit a sale.
+  }
 }
 
 export const usesUnlockEvents = (event: CommerceDocument) => event.checkInAuthority != null || event.unlockTicketConfiguration != null;

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { guestTicketTarget, resolveEventTicketTarget, sameTicketTarget } from "@/lib/commerce/event-tickets";
+import { guestTicketTarget, sharedEventTicketsEnabled, resolveEventTicketTarget, sameTicketTarget } from "@/lib/commerce/event-tickets";
 import { ticketTokenIdentity } from "@/lib/commerce/keys/contracts";
 
 const lock = "0x" + "a".repeat(40);
@@ -28,4 +28,14 @@ test("the token lookup key is canonical and scoped to chain and lock", () => {
   assert.equal(ticketTokenIdentity(137, lock, "0"), null);
   assert.equal(ticketTokenIdentity(137, lock, String(1n << 256n)), null);
   assert.notEqual(ticketTokenIdentity(137, lock, "42"), ticketTokenIdentity(84532, lock, "42"));
+});
+
+test("shared sale requires a complete matching Safe configuration and a distinct Signet lock", () => {
+  const optIn = { UNLOCK_SHARED_TICKET_EVENT_ID: "e", MEMBER_WALLET_LOCK_ADDRESS: "0x" + "b".repeat(40) };
+  const wallet = { MEMBER_WALLET_CHAIN_ID: "137", MEMBER_WALLET_OWNER_ADDRESS: "0x" + "c".repeat(40) };
+  assert.equal(sharedEventTicketsEnabled("e", target, optIn), false);
+  assert.equal(sharedEventTicketsEnabled("e", target, { ...optIn, MEMBER_WALLET_CHAIN_ID: "137" }), false);
+  assert.equal(sharedEventTicketsEnabled("e", target, { ...optIn, ...wallet, MEMBER_WALLET_CHAIN_ID: "84532" }), false);
+  assert.equal(sharedEventTicketsEnabled("e", target, { ...optIn, ...wallet, MEMBER_WALLET_LOCK_ADDRESS: lock }), false);
+  assert.equal(sharedEventTicketsEnabled("e", target, { ...optIn, ...wallet }), true);
 });

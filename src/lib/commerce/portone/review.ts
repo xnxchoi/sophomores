@@ -91,9 +91,10 @@ export async function hasUnresolvedPaidReview(req: PayloadRequest, row: Awaited<
 
 /** Call under the customer lock through the final decision/commit. */
 export async function assertPurchaseWithoutPaidReview(req: PayloadRequest,
-  snapshot: Pick<PurchaseSnapshot, 'customerID' | 'productID' | 'cartID' | 'eventID'>, transactionsSlug?: string) {
+  snapshot: Pick<PurchaseSnapshot, 'customerID' | 'productID' | 'cartID' | 'eventID' | 'version'>, transactionsSlug?: string) {
+  const allowance = purchaseAllowance(snapshot)
   const related = (prior: PurchaseSnapshot) =>
-    prior.cartID === snapshot.cartID || purchaseAllowance(prior) === purchaseAllowance(snapshot) || prior.productID === snapshot.productID
+    prior.cartID === snapshot.cartID || purchaseAllowance(prior) === allowance
   const attempts = await loadPaidReviewAttempts(req, snapshot.customerID, transactionsSlug)
   for (const row of attempts) {
     // All Signet-bearing releases share one account allowance.

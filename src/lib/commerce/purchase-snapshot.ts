@@ -13,7 +13,7 @@ export const guestPurchaseSnapshotSchema = z.strictObject({
 export const purchaseSnapshotSchema = z.union([commerceSnapshotSchema, nativePurchaseSnapshotSchema, guestPurchaseSnapshotSchema]);
 export type PurchaseSnapshot = Readonly<z.infer<typeof purchaseSnapshotSchema>>;
 
-export function purchaseAllowance(snapshot: Pick<PurchaseSnapshot, "productID" | "eventID"> & { version?: number }) {
+export function purchaseAllowance(snapshot: Pick<PurchaseSnapshot, "productID" | "eventID" | "version">) {
   return reservationAllowance(snapshot.productID, snapshot.eventID, snapshot.version === 3);
 }
 

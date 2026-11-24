@@ -63,7 +63,7 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
     const { z } = await import("zod");
     const { seedCheckoutCart, initiateThroughEndpoint } = await import("../core/payment-postgres-fixture");
     const { up: upBinding, down: downBinding } = await import("../../../src/payload/migrations/20261124_120000_shared_event_ticket_binding");
-    const { reservePurchase } = await import("../../../src/lib/commerce/reservations");
+    const { accountAllowanceAdmits, reservePurchase } = await import("../../../src/lib/commerce/reservations");
     const { withCommerceWrite } = await import("../../../src/lib/commerce/access");
     const { doorTicketLabelEndpoint } = await import("../../../src/lib/commerce/keys/door-ticket-label");
     await migrate(downBinding);
@@ -75,16 +75,33 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
     const ticketTarget = { chainID: 137, lock, mode: "shared" as const };
     const priorEvent = process.env.UNLOCK_SHARED_TICKET_EVENT_ID;
     const priorSignet = process.env.MEMBER_WALLET_LOCK_ADDRESS;
+    const priorChain = process.env.MEMBER_WALLET_CHAIN_ID;
+    const priorOwner = process.env.MEMBER_WALLET_OWNER_ADDRESS;
     const priorOrigin = process.env.NEXT_PUBLIC_SERVER_URL;
     try {
       process.env.UNLOCK_SHARED_TICKET_EVENT_ID = eventID;
       process.env.MEMBER_WALLET_LOCK_ADDRESS = "0x" + "a".repeat(40);
+      process.env.MEMBER_WALLET_CHAIN_ID = "84532";
+      process.env.MEMBER_WALLET_OWNER_ADDRESS = "0x" + "c".repeat(40);
       process.env.NEXT_PUBLIC_SERVER_URL = "http://localhost:3000";
       await payload.update({ collection: "commerce-events" as never, id: eventID, overrideAccess: true, data: {
         checkInAuthority: "unlock-events", capacity: 4, transportCapacity: 4,
         unlockTicketConfiguration: { version: 1, mode: "shared", chainID: 137, eventLock: lock, guestProductID: guest.productID },
       } as never });
-      const m = await prepare(payload, await seedNativeCart(payload, member, editions[1], eventID));
+      const memberCart = await seedNativeCart(payload, member, editions[1], eventID);
+      for (const chain of ["84532", "137"]) {
+        process.env.MEMBER_WALLET_CHAIN_ID = chain;
+        if (chain === "137") delete process.env.MEMBER_WALLET_OWNER_ADDRESS;
+        await assert.rejects(prepare(payload, memberCart));
+        await assert.rejects(initiateThroughEndpoint(payload, member, { cartID: guest.cartID, shippingAddress: guest.shippingAddress }));
+        assert.deepEqual((await control.query(
+          "SELECT id FROM transactions WHERE cart_id IN ($1,$2)", [memberCart.cartID, guest.cartID])).rows, []);
+        assert.deepEqual((await control.query(
+          "SELECT reserved_quantity::int, committed_quantity::int FROM commerce_events WHERE id=$1", [eventID])).rows,
+        [{ reserved_quantity: 0, committed_quantity: 0 }]);
+      }
+      process.env.MEMBER_WALLET_OWNER_ADDRESS = "0x" + "c".repeat(40);
+      const m = await prepare(payload, memberCart);
       await settleOne(payload, m);
       const g = await initiateThroughEndpoint(payload, member, { cartID: guest.cartID, shippingAddress: guest.shippingAddress }) as { transactionID: ReturnType<typeof randomUUID>; paymentID: string };
       await settleOne(payload, { ...guest, ...g, total: 10_000 });
@@ -173,10 +190,25 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
       assert.deepEqual(await (await read(staff, "8")).json(), { tier: null });
       await control.query("UPDATE commerce_key_grant_intents SET cancel_requested=true WHERE id=$1", [grants.rows[0].id]);
       assert.deepEqual(await (await read(staff)).json(), { tier: null });
+      // Fixture: the Signet cancellation and allowance release are already
+      // verified; the Member Event entitlement independently remains live.
+      await control.query("UPDATE commerce_allowances SET paid_quantity=0 WHERE customer_id=$1 AND release_i_d='membership'", [member.id]);
+      const repurchase = await seedCheckoutCart(payload, { user: member, customerID: guest.customerID });
+      const readAllowance = async () => accountAllowanceAdmits(await createLocalReq({ user: member }, payload), {
+        customerID: guest.customerID, productID: repurchase.productID, eventID: repurchase.eventID, quantity: 1, accountLimit: 1,
+      });
+      assert.equal(await readAllowance(), false, "the live Signet itself still blocks repurchase");
+      await control.query("UPDATE commerce_key_grant_intents SET state='cancelled' WHERE id=$1", [grants.rows[1].id]);
+      assert.equal(await readAllowance(), true, "a live Member Event intent and a Guest intent are not Signet holds");
+      await initiateThroughEndpoint(payload, member, { cartID: repurchase.cartID, shippingAddress: repurchase.shippingAddress });
+      await control.query("UPDATE commerce_allowances SET reserved_quantity=0 WHERE customer_id=$1 AND release_i_d='membership'", [member.id]);
+      await control.query("UPDATE commerce_key_grant_intents SET target=jsonb_set(target, '{ticketTier}', to_jsonb($2::text)) WHERE id=$1", [grants.rows[2].id, "guest"]);
+      await assert.rejects(readAllowance, /Member Event grant identity is inconsistent/);
       await assert.rejects(migrate(downBinding), /Cannot drop shared event ticket evidence|Failed query/);
     } finally {
       for (const [key, value] of Object.entries({
         UNLOCK_SHARED_TICKET_EVENT_ID: priorEvent, MEMBER_WALLET_LOCK_ADDRESS: priorSignet, NEXT_PUBLIC_SERVER_URL: priorOrigin,
+        MEMBER_WALLET_CHAIN_ID: priorChain, MEMBER_WALLET_OWNER_ADDRESS: priorOwner,
       })) {
         if (value === undefined) delete process.env[key]; else process.env[key] = value;
       }

@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import type { PayloadRequest } from "payload";
 import { MAX_ORDER_UNITS, MEMBERSHIP_RELEASE } from "./contracts";
-import { keyGrantStates } from "./keys/contracts";
+import { keyGrantStates, MEMBER_EVENT_GRANT, memberEventGrantOperationKey, parseKeyGrantTarget } from "./keys/contracts";
 import { optionalRelationshipID, purchaseSnapshotSchema, reservationAllowance } from "./purchase-snapshot";
 import { resolveEventTicketTarget, guestTicketTarget, sameTicketTarget, usesUnlockEvents, unlockEventTicketConfiguration, sharedTicketMode, sharedTicketTarget, sharedEventTicketsEnabled, SHARED_GUEST_LIMIT } from "./event-tickets";
 import { counter, createCommerce, findCommerce, lockCommerce, readCommerce, relationshipID, updateCommerce, type CommerceDocument } from "./_shared/transaction";
@@ -74,6 +74,31 @@ export async function lockOrderReservation({ req, orderID }: { req: PayloadReque
  */
 const LIVE_MEMBERSHIP_KEY = "An earlier membership key is not yet cancelled";
 
+/** Ignore a Member Event intent only when it proves a distinct, pinned entitlement. */
+async function assertMemberEventIdentity(req: PayloadRequest, customer: string, intent: CommerceDocument, order: CommerceDocument) {
+  const snapshot = purchaseSnapshotSchema.safeParse(order.commerceSnapshot);
+  const admission = await readCommerce(req, "commerce-admissions", relationshipID(intent.entitlement));
+  const pinned = snapshot.success && snapshot.data.version === 2 ? snapshot.data.memberTicketTarget : undefined;
+  const paymentID = relationshipID(intent.payment);
+  if (order.commerceVersion !== "commerce-v1" || !snapshot.success || !pinned || !snapshot.data.eventID ||
+    snapshot.data.customerID !== customer || relationshipID(order.customer) !== customer ||
+    relationshipID(admission.buyer) !== customer || relationshipID(intent.beneficiaryUser) !== customer ||
+    relationshipID(admission.order) !== order.id || relationshipID(admission.event) !== snapshot.data.eventID ||
+    relationshipID(admission.transaction) !== paymentID || !Array.isArray(order.transactions) ||
+    order.transactions.length !== 1 || relationshipID(order.transactions[0]) !== paymentID ||
+    intent.recipientMode !== "member_safe" || admission.unit !== 1 || admission.orderUnitKey !== `${order.id}:1` ||
+    admission.ticketTier !== "member" || !sameTicketTarget(admission.ticketTarget, pinned) ||
+    intent.operationKey !== memberEventGrantOperationKey(order.id, admission.unit)) throw new Error("Member Event grant identity is inconsistent");
+  if (intent.target == null) {
+    if (intent.state !== "awaiting_wallet") throw new Error("Member Event grant identity is inconsistent");
+    return;
+  }
+  const target = parseKeyGrantTarget(intent.target);
+  if (target.ticketTier !== "member" || !sameTicketTarget(pinned, { chainID: target.chainID, lock: target.lock, mode: target.ticketMode })) {
+    throw new Error("Member Event grant identity is inconsistent");
+  }
+}
+
 async function assertNoLiveMembershipKey(req: PayloadRequest, customerID: string): Promise<void> {
   const live = keyGrantStates.filter((state) => state !== "cancelled");
   const pageSize = 50;
@@ -85,6 +110,11 @@ async function assertNoLiveMembershipKey(req: PayloadRequest, customerID: string
       if (intent.order == null) throw new Error(LIVE_MEMBERSHIP_KEY);
       // A missing or unreadable order throws here, so the purchase fails closed.
       const order = await readCommerce(req, "orders", relationshipID(intent.order));
+      if (intent.purpose === MEMBER_EVENT_GRANT) {
+        await assertMemberEventIdentity(req, customerID, intent, order);
+        continue;
+      }
+      if (intent.purpose != null && intent.purpose !== "primary") throw new Error("Key grant purpose is inconsistent");
       if (order.commerceVersion === "commerce-v1") {
         const snapshot = purchaseSnapshotSchema.safeParse(order.commerceSnapshot);
         if (snapshot.success && snapshot.data.version === 3) continue;

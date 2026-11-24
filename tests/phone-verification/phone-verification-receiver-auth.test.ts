@@ -155,11 +155,12 @@ test('new bindings consume the pilot proof only in local mode and the trial proo
   ]) assert.deepEqual(bindablePhonePolicies(env), [], JSON.stringify(Object.keys(env)));
 });
 
-test('existing pilot bindings stay recognised; trial bindings count only under the preview authority', async () => {
+test('pilot bindings count in local mode, trial bindings under the preview authority, neither in production', async () => {
   const { recognisedPhonePolicies } = await import('@/lib/member-auth/phone-policies');
-  assert.deepEqual(recognisedPhonePolicies({}), ['local-skt-zoho-arc-v1']);
-  assert.deepEqual(recognisedPhonePolicies({ ...runtime, REVIEW_OWNER_EMAIL: 'x@sophomores.co' }), ['local-skt-zoho-arc-v1']);
-  assert.deepEqual(recognisedPhonePolicies(runtime), ['local-skt-zoho-arc-v1', 'preview-trial-zoho-arc-v1']);
+  assert.deepEqual(recognisedPhonePolicies({ PHONE_VERIFICATION_MODE: 'local', MEMBER_AUTH_MODE: 'local' }), ['local-skt-zoho-arc-v1']);
+  assert.deepEqual(recognisedPhonePolicies(runtime), ['preview-trial-zoho-arc-v1']);
+  assert.deepEqual(recognisedPhonePolicies({ PHONE_VERIFICATION_MODE: 'production', MEMBER_AUTH_MODE: 'production' }), []);
+  assert.deepEqual(recognisedPhonePolicies({ ...runtime, REVIEW_OWNER_EMAIL: 'x@sophomores.co' }), []);
 });
 
 test('the preview receiver service starts only on the full sandbox profile and passes an attestation, not PortOne settings', async () => {

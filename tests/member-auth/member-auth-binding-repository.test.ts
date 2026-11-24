@@ -127,3 +127,18 @@ test("a preview-trial proof never binds outside the preview authority, and a pil
     assert.equal(pilot.calls.some(c => c.sql.includes("INSERT INTO member_auth.phone_bindings")), false);
   } finally { process.env.PHONE_VERIFICATION_MODE = saved.phone; process.env.MEMBER_AUTH_MODE = saved.member; }
 });
+
+test("in production a pilot binding is neither membership nor a phone lookup", async () => {
+  const saved = { phone: process.env.PHONE_VERIFICATION_MODE, member: process.env.MEMBER_AUTH_MODE };
+  process.env.PHONE_VERIFICATION_MODE = "production"; process.env.MEMBER_AUTH_MODE = "production";
+  try {
+    const db = database({ bindings: [binding] });
+    const repository = new PgMemberRepository(db.pool);
+    await repository.isActiveMember(input.userId);
+    await repository.findBoundUserByPhoneHash(input.phoneHash);
+    const lookups = db.calls.filter(c => /policy_version=ANY/.test(c.sql));
+    assert.equal(lookups.length, 2);
+    for (const call of lookups) assert.deepEqual(call.values?.[1], []);
+    await assert.rejects(repository.bind(input), { code: "PHONE_CONFLICT" });
+  } finally { process.env.PHONE_VERIFICATION_MODE = saved.phone; process.env.MEMBER_AUTH_MODE = saved.member; }
+});

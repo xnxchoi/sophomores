@@ -336,9 +336,9 @@ production phone mode, and origin exactly `https://preview.sophomores.co`.
   authority (`src/lib/member-auth/phone-policies.ts`).
 - **The SKT pilot** (`local-skt-zoho-arc-v1`) issues only with
   `PHONE_VERIFICATION_MODE=local`, and new bindings consume it only with local phone
-  and member modes. Existing pilot bindings stay recognised as a historical record,
-  including the owner's 9 Nov binding.
-- **Production** issues and consumes neither policy.
+  and member modes. Pilot bindings count as membership in local mode only; the
+  owner's 9 Nov binding lives in the local database and stays a historical record there.
+- **Production** issues, consumes and recognises neither policy.
 
 The gate is the SKT pilot's gate (single-hop Zoho ARC `i=1`, SPF pass, exact
 envelope = From number, protected headers and body, strict MMS parser), widened

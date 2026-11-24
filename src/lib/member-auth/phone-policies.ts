@@ -23,9 +23,10 @@ export function bindablePhonePolicies(env: Environment = process.env): readonly 
 }
 
 /**
- * Bindings that count as membership. Existing SKT pilot bindings stay a historical record everywhere (the owner's
- * 9 Nov binding); trial bindings count only under the preview trial authority.
+ * Bindings that count as membership, by the same authority: SKT pilot bindings in local mode (the owner's 9 Nov
+ * binding lives in the local database and stays a historical record there); trial bindings under the preview trial
+ * authority. Production recognises neither.
  */
 export function recognisedPhonePolicies(env: Environment = process.env): readonly string[] {
-  return [LOCAL_PILOT, ...(previewTrialAuthority(env) ? [PREVIEW_TRIAL] : [])];
+  return bindablePhonePolicies(env);
 }

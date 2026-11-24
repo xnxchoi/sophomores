@@ -411,11 +411,13 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
     // lu·28°·(2 − 2n) a bone (about 188° shut to open), and as reading moves on (n) the back cover rolls 2n·28° a bone,
     // so with the body's turn both lie flat at any page. The peek and the spin flap ride on top.
     const coverStep = MathUtils.degToRad(28);
-    // The boards stay rigid (stripe.press renders a stiff cover on a fixed spine): the whole roll goes to the hinge.
-    const BONES = 3.3616; // Σ 0.8^k over its five bones
-    front.current.forEach((g, k) => { if (g) g.rotation.y = -Math.max(s.frontA, 0) * SHARE[k] - (k === 0 ? lu * coverStep * (2 - 2 * n) * BONES : 0) - s.peek * 0.8 ** k; });
-    if (frontHinge.current) frontHinge.current.position.z = MathUtils.lerp(T / 2, -T / 2, lu);
-    back.current.forEach((g, k) => { if (g) g.rotation.y = Math.max(s.backA, 0) * SHARE[k] + (k === 0 ? 2 * n * coverStep * BONES : 0); });
+    // The board swings stiff on a fixed spine (the whole roll at the hinge), then, as the pages fan in, takes stripe.press's
+    // bone curve (each of its five bones 0.8× the last) so it bends with the pages it carries. The front board stays
+    // hinged at the front, where the left stack's base lies (look-inside.tsx centres the stack on the spine).
+    const BONES = 3.3616; // Σ 0.8^k over five bones
+    const bone = (k: number) => MathUtils.lerp(k === 0 ? BONES : 0, 0.8 ** k, l.ld);
+    front.current.forEach((g, k) => { if (g) g.rotation.y = -Math.max(s.frontA, 0) * SHARE[k] - lu * coverStep * (2 - 2 * n) * bone(k) - s.peek * 0.8 ** k; });
+    back.current.forEach((g, k) => { if (g) g.rotation.y = Math.max(s.backA, 0) * SHARE[k] + 2 * n * coverStep * bone(k); });
     // The body turns π·n about the spine (stripe.press's facing counter-yaw): the gutter rises toward you mid-book while
     // the covers and pages, bent back by the same amount, stay flat.
     if (body.current) {
@@ -468,7 +470,9 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
     // distance), so it leaves at 2–3× the scroll; it tips back and rolls toward spine-on as it goes, following the same
     // eased weight with a lag (04ud:19817-19873, 20175-20215).
     const tan9 = Math.tan(MathUtils.degToRad(9)), halfHeight = tan9 * (54 - CLOSED_Z), exitEase = easeInOutQuad(s.exit);
-    const exitY = exitEase * (halfHeight - CLOSED_Y + 2.808 * halfHeight);
+    // Measured live against stripe.press (24 Nov): its book is gone by ~1000 px of scroll after a ~500 px hold, so the
+    // rise runs 1.5× the 40-unit clearance's equivalent.
+    const exitY = exitEase * (halfHeight - CLOSED_Y + 2.808 * halfHeight) * 1.5;
     s.exitRot += (exitEase - s.exitRot) * (1 - 0.8 ** f);
     // The closed tilt and pose blend out with the cover (× 1 − lu): the open book faces you, pitched back.
     const b = lu, closedYaw = REST_YAW + s.yaw + s.tiltYaw + spinYaw + s.scroll * 0.9;
@@ -476,9 +480,9 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
     const faced = easeInOutQuad(l.face);
     if (root.current) {
       root.current.rotation.set(
-        MathUtils.lerp(MathUtils.lerp(REST_PITCH + s.pitch + s.tiltPitch - 0.9 * s.exitRot, 0, faced), -(small ? OPEN_TILT_TOUCH : OPEN_TILT) + s.openTilt, b),
+        MathUtils.lerp(MathUtils.lerp(REST_PITCH + s.pitch + s.tiltPitch - 1.2 * s.exitRot, 0, faced), -(small ? OPEN_TILT_TOUCH : OPEN_TILT) + s.openTilt, b),
         MathUtils.lerp(MathUtils.lerp(closedYaw + 0.3 * s.exitRot, 0, faced), 0, b),
-        MathUtils.lerp(MathUtils.lerp(REST_ROLL - 0.8 * s.exitRot, 0, faced), 0, b));
+        MathUtils.lerp(MathUtils.lerp(REST_ROLL - 0.3 * s.exitRot, 0, faced), 0, b));
       // Open: the spine on the frame's centre and the spread about 60% of the window wide (stripe.press's ~870 px at
       // 1440), free to spill past the stage; on a phone one page fills the width.
       const fr = sig.frame ?? { left: 0, top: 0, width: sw, height: sh };

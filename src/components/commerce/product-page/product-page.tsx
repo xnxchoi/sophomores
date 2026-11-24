@@ -135,13 +135,14 @@ export function ProductPage({ product, offer, content, shelf }: { product: Editi
 /** stripe.press's title ribbon: every edition's title across the top of the stage, this one full strength. */
 function ShelfStrip({ shelf, label }: { shelf: readonly ShelfEntry[]; label: string }) {
   if (shelf.length < 2) return <div aria-hidden="true" className="hidden h-14 shrink-0 lg:block" />;
-  return <nav aria-label={label} className="flex h-14 shrink-0 items-center overflow-x-auto [scrollbar-width:none]">
-    <ul className="flex items-baseline gap-x-8 whitespace-nowrap">
+  // On a phone the names wrap at a smaller size, so every edition shows (none runs off the edge).
+  return <nav aria-label={label} className="flex shrink-0 items-center py-2 lg:h-14 lg:overflow-x-auto lg:py-0 lg:[scrollbar-width:none]">
+    <ul className="flex flex-wrap items-baseline gap-x-5 gap-y-1 lg:flex-nowrap lg:gap-x-8 lg:whitespace-nowrap">
       {shelf.map((entry) => <li key={entry.productID}>
         {entry.current
-          ? <span aria-current="page" className="font-display text-[2rem] leading-none tracking-[-0.02em] lg:text-[2.5rem]">{entry.title}</span>
+          ? <span aria-current="page" className="font-display text-[1.5rem] leading-none tracking-[-0.02em] lg:text-[2.5rem]">{entry.title}</span>
           : <Link href={"/shop/products/" + encodeURIComponent(entry.productID)}
-              className="font-display text-[2rem] leading-none tracking-[-0.02em] text-foreground/25 outline-offset-4 transition-colors duration-200 hover:text-foreground/60 focus-visible:outline-2 lg:text-[2.5rem]">{entry.title}</Link>}
+              className="font-display text-[1.5rem] leading-none tracking-[-0.02em] text-foreground/25 outline-offset-4 transition-colors duration-200 hover:text-foreground/60 focus-visible:outline-2 lg:text-[2.5rem]">{entry.title}</Link>}
       </li>)}
     </ul>
   </nav>;

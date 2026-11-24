@@ -4,9 +4,8 @@ import { Environment, Lightformer, PerspectiveCamera, useFBO, View } from "@reac
 import { useFrame } from "@react-three/fiber";
 import { Suspense, useEffect, useMemo, useRef, useState, type ComponentProps, type ReactNode, type RefObject } from "react";
 import { MathUtils, Mesh, PlaneGeometry, ShaderMaterial, Vector2, type Group, type SpotLight } from "three";
-import { Book, type BookSignals, type BookTextures } from "./book";
+import { Book, easeInOutQuad, type BookSignals, type BookTextures } from "./book";
 
-const easeInOutQuad = (x: number) => x < 0.5 ? 2 * x * x : 1 - (-2 * x + 2) ** 2 / 2;
 
 /** Intro dolly (map §C1 #10): the camera starts 120 units further back and eases in over 2 s; the book rises into place. */
 function Intro({ children }: { children: ReactNode }) {

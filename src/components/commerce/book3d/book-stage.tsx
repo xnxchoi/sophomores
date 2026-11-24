@@ -21,10 +21,12 @@ const BookCanvas = dynamic(() => import("./book-canvas"), { ssr: false });
 /**
  * The product page's stage: the art (children) with the 3D book over it. The book draws in the site's shared canvas
  * through a drei View (book-canvas.tsx); only its clipped hit area takes the pointer, so the art's own controls keep
- * working. The book's View draws while the stage is in view and not covered by a
- * section marked `data-covers-stage`: the canvas sits above the page, so the book hides from the first pixel a covering
- * section overlaps it, and while the site menu is open. Its controls live in a layer above the canvas (a body portal
- * that mirrors the stage's rect), as stripe.press keeps its pills above its fixed canvas.
+ * working. The book's View draws while the stage is in view; it leaves ahead of the first full-width
+ * section marked `data-covers-stage`, stripe.press's detail-scroll rule (TEARDOWN §7): on wide screens the book holds
+ * while you read and leaves through the top as the first such section arrives (it starts 220 px before the section
+ * reaches the viewport's bottom and is gone about 1.15 viewport heights later). Below lg the stage scrolls with the page,
+ * so nothing slides over it. The book hides while the site menu is open. Its controls live in a layer above the canvas
+ * (a body portal that mirrors the stage's rect), as stripe.press keeps its pills above its fixed canvas.
  *
  * The page talks to the book through window events, so a row or the cart can drive it without importing three:
  * `book3d:spin` ({ direction: 1 | -1 }, add or remove) and `book3d:effect` ({ hologram?, radio? }, row hovers).
@@ -65,21 +67,20 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
   const stage = useRef<HTMLDivElement>(null);
   const signals = useRef<BookSignals>({ scroll: 0, hologram: false, radio: false, spins: [], look: false, peek: false, commands: [],
     view: { zoom: 1, x: 0, y: 0, panning: false, unitsPerPx: 0.02 }, marker: null, hitRect: null, invalidate: null,
-    pointer: { x: 0, y: 0 }, overlay: null });
+    exit: 0, pointer: { x: 0, y: 0 }, overlay: null });
   const overlay = useRef<HTMLDivElement>(null), sync = useRef<(() => void) | null>(null);
   const [mounted, setMounted] = useState(false);
   useEffect(() => { const id = requestAnimationFrame(() => setMounted(true)); return () => cancelAnimationFrame(id); }, []);
   const menuOpen = useRPStore((state) => state.navIsOpen);
   useEffect(() => { signals.current.marker = ink; }, [ink]);
   const { ref: inViewRef, inView } = useInView({ initialInView: true });
-  const [covered, setCovered] = useState(false);
   const dark = useTheme((store) => store.theme) === "dark";
   // The loop runs ('always') only while the book is engaged: the pointer on its hit-rect or controls, or Look inside open.
   // Otherwise it renders on demand: a scroll, a row's effect or the theme asks for a frame, and the book keeps asking only
   // while something it shows still moves (book.tsx), so an idle page draws nothing (Review-B r2: demand on release).
   const [hovering, setHovering] = useState(false);
   // The shared canvas runs 'always' while any View holds a claim (gl/canvas-frameloop.tsx), otherwise on demand.
-  const shown = inView && !covered && !menuOpen;
+  const shown = inView && !menuOpen;
   useCanvasClaim(shown && (hovering || open));
   const engage = () => setHovering(true), release = () => setHovering(false);
   const poke = () => signals.current.invalidate?.();
@@ -118,12 +119,12 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
       const scroll = range > 0 ? Math.min(Math.max(window.scrollY / range, 0), 1) : 0;
       if (scroll !== signals.current.scroll) poke();
       signals.current.scroll = scroll;
-      // Covered from the first pixel a marked section overlaps the stage (the canvas paints above the page DOM).
-      const rect = stage.current?.getBoundingClientRect();
-      setCovered(Boolean(rect) && [...(main?.querySelectorAll("[data-covers-stage]") ?? [])].some((cover) => {
-        const c = cover.getBoundingClientRect();
-        return rect !== undefined && c.top < rect.bottom && c.bottom > rect.top && c.left < rect.right && c.right > rect.left;
-      }));
+      // The scroll exit (TEARDOWN §7, desktop branch): exit = (vh − (sectionTop − 220)) / ((0.5 / 1.3) × 3 × vh), clamped.
+      const rect = stage.current?.getBoundingClientRect(), vh = window.innerHeight;
+      const section = main?.querySelector("[data-covers-stage]")?.getBoundingClientRect();
+      const exit = section && window.matchMedia("(min-width: 64rem)").matches
+        ? Math.min(Math.max((vh - (section.top - 220)) / ((0.5 / 1.3) * 3 * vh), 0), 1) : 0;
+      if (exit !== signals.current.exit) { signals.current.exit = exit; poke(); }
       // The control layer mirrors the stage's rect.
       const layer = overlay.current;
       if (layer && rect) { layer.style.left = rect.left + "px"; layer.style.top = rect.top + "px"; layer.style.width = rect.width + "px"; layer.style.height = rect.height + "px"; }

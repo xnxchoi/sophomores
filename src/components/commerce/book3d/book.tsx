@@ -54,6 +54,9 @@ export type BookSignals = {
   hitRect: HTMLElement | null;
   /** Asks the canvas for a frame (on-demand rendering); the book writes it, the stage calls it on scroll, effects, theme. */
   invalidate: (() => void) | null;
+  /** How far the closed book has left through the top as the page's full-width sections arrive (0 at rest, 1 gone):
+   *  stripe.press's detail-scroll rule (TEARDOWN §7), measured by the stage. */
+  exit: number;
   /** The pointer over the whole viewport in device coordinates (mouse and pen only), for the closed book's tilt. */
   pointer: { x: number; y: number };
   /** The stage's DOM layer above the shared canvas; the book writes its on-screen centre there (--book-x, --book-y). */
@@ -228,6 +231,7 @@ function Board({ geometries, segments, material, k = 0 }: { geometries: BoxGeome
 const smoothstep = (x: number) => x * x * (3 - 2 * x);
 const smootherstep = (x: number) => x * x * x * (x * (6 * x - 15) + 10);
 const easeInOutQuint = (x: number) => x < 0.5 ? 16 * x ** 5 : 1 - (-2 * x + 2) ** 5 / 2;
+export const easeInOutQuad = (x: number) => x < 0.5 ? 2 * x * x : 1 - (-2 * x + 2) ** 2 / 2;
 
 /**
  * The closed book and everything you can do to it (map §C1): drag to turn and fling, pitch easing home, covers that
@@ -269,7 +273,7 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
     yaw: 0, pitch: 0, velYaw: 0, velPitch: 0, lastYaw: 0, spinSpeed: 0, dragging: false, hovered: false,
     released: -Infinity, pitchFrom: 0, returning: false, touch: false, armed: false, totalX: 0, lastX: 0, lastY: 0,
     downX: 0, downY: 0, downAt: 0, frontA: 0, frontV: 0, backA: 0, backV: 0, peek: 0, lift: 0, liftT: 0,
-    spin: null as null | { dir: number; t: number }, scroll: 0, holo: 0, holoSince: -1, radio: 0, clock: 0, openTilt: 0, tiltYaw: 0, tiltPitch: 0,
+    spin: null as null | { dir: number; t: number }, scroll: 0, holo: 0, holoSince: -1, radio: 0, clock: 0, openTilt: 0, tiltYaw: 0, tiltPitch: 0, exit: 0,
     lastPointer: new Vector2()
   });
   // Audio starts on the first press anywhere on the stage.
@@ -409,13 +413,19 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
     // the whole viewport, eased at rate 4; opening blends it out.
     const follow = 1 - Math.exp(-4 * dt);
     s.tiltYaw += (0.16 * sig.pointer.x - s.tiltYaw) * follow; s.tiltPitch += (-0.1 * sig.pointer.y - s.tiltPitch) * follow;
+    // Scroll exit (TEARDOWN §7): the stage's value, smoothed at rate 12, eased in and out; the book rises from its rest
+    // height through the top of its view, plus 40 units of clearance. Opening blends it out.
+    s.exit += (sig.exit - s.exit) * (1 - Math.exp(-12 * dt));
+    if (Math.abs(sig.exit - s.exit) < 1e-4) s.exit = sig.exit;
+    const halfHeight = Math.tan(MathUtils.degToRad(9)) * state.camera.position.z;
+    const exitY = easeInOutQuad(s.exit) * (halfHeight - CLOSED_Y + 40);
     const b = open.book, closedYaw = REST_YAW + s.yaw + s.tiltYaw + spinYaw + s.scroll * 0.9, progress = l.spread / LEAVES;
     if (root.current) {
       root.current.rotation.set(
         MathUtils.lerp(REST_PITCH + s.pitch + s.tiltPitch, -(small ? OPEN_TILT_TOUCH : OPEN_TILT) + s.openTilt, b),
         MathUtils.lerp(closedYaw, -0.1 * (progress * 2 - 1), b),
         MathUtils.lerp(REST_ROLL, 0, b));
-      root.current.position.set(MathUtils.lerp(CLOSED_X, W / 2, b), MathUtils.lerp(CLOSED_Y, 0, b),
+      root.current.position.set(MathUtils.lerp(CLOSED_X, W / 2, b), MathUtils.lerp(CLOSED_Y + exitY, 0, b),
         MathUtils.lerp(CLOSED_Z + s.lift - dip - s.scroll * 6, 4, b));
     }
     // The open spread is twice as wide: on a narrow stage the camera backs off until it fits (after the intro dolly).
@@ -438,7 +448,7 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
   useFrame((state) => {
     const s = physics.current, l = look.current, sig = signals.current, r = root.current;
     const pose = (r ? r.rotation.x + r.rotation.y * 3 + r.rotation.z * 5 + r.position.x * 7 + r.position.y * 11 + r.position.z * 13 : 0)
-      + s.frontA * 17 + s.backA * 19 + s.peek * 23 + s.yaw * 29 + s.pitch * 31 + s.tiltYaw * 43 + s.tiltPitch * 47 + s.holo * 37 + s.radio * 41
+      + s.frontA * 17 + s.backA * 19 + s.peek * 23 + s.yaw * 29 + s.pitch * 31 + s.tiltYaw * 43 + s.tiltPitch * 47 + s.exit * 53 + s.holo * 37 + s.radio * 41
       + (l ? l.t * 43 + l.angle.reduce((sum, a, i) => sum + a * (i + 47), 0) : 0) + state.camera.position.z * 53;
     const settling = s.dragging || (Number.isFinite(s.released) && s.clock - s.released < (s.touch ? 3.2 : 7.1))
       || sig.hologram || sig.radio || sig.spins.length > 0 || sig.commands.length > 0;

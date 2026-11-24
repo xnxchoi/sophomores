@@ -28,7 +28,12 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
   const { up, down } = await import("../../../src/payload/migrations/20261122_160100_native_edition_settlement");
   const { down: downTicketTargets } = await import("../../../src/payload/migrations/20261123_040000_event_ticket_targets");
   isolateTransport(t, target.port);
-  const { payload, pool, control, close, version } = await openProofDatabase(true, new Set(), target);
+  const { payload, pool, control, close, version } = await openProofDatabase(true, new Set(), target, {
+    cartAuthorizer: async req => {
+      assert.equal(req.user?.collection, "users");
+      return String(req.user.id);
+    },
+  });
   t.after(close);
   t.diagnostic(`PostgreSQL ${version}; hosted payment, Unlock and NFC are stubs per ADR-0033; no issuance`);
   const migrate = async (apply: typeof up) => {
@@ -108,6 +113,7 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
     const priorOrigin = process.env.NEXT_PUBLIC_SERVER_URL;
     try {
       process.env.UNLOCK_SHARED_TICKET_EVENT_ID = eventID;
+      process.env.UNLOCK_SHARED_TICKET_GUEST_PRODUCT_ID = guest.productID;
       process.env.MEMBER_WALLET_LOCK_ADDRESS = "0x" + "a".repeat(40);
       process.env.MEMBER_WALLET_CHAIN_ID = "84532";
       process.env.MEMBER_WALLET_OWNER_ADDRESS = "0x" + "c".repeat(40);
@@ -129,6 +135,11 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
         [{ reserved_quantity: 0, committed_quantity: 0 }]);
       }
       process.env.MEMBER_WALLET_OWNER_ADDRESS = "0x" + "c".repeat(40);
+      await assert.rejects(initiateThroughEndpoint(payload, member, { cartID: guest.cartID, shippingAddress: guest.shippingAddress }), /initiate answered (403|500)/);
+      assert.deepEqual((await control.query("SELECT id FROM transactions WHERE cart_id=$1", [guest.cartID])).rows, []);
+      assert.deepEqual((await control.query(
+        "SELECT reserved_quantity::int, committed_quantity::int FROM commerce_events WHERE id=$1", [eventID])).rows,
+      [{ reserved_quantity: 0, committed_quantity: 0 }]);
       const m = await prepare(payload, memberCart);
       await settleOne(payload, m);
       const g = await initiateThroughEndpoint(payload, member, { cartID: guest.cartID, shippingAddress: guest.shippingAddress }) as { transactionID: ReturnType<typeof randomUUID>; paymentID: string };
@@ -178,6 +189,7 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
       await payload.update({ collection: "commerce-events" as never, id: eventID, overrideAccess: true,
         data: { capacity: 3, transportCapacity: 3 } as never });
       const other = await seedMember(payload);
+      await payload.update({ collection: "users", id: other.id, overrideAccess: true, data: { membershipStatus: "approved" } });
       const otherReq = await createLocalReq({ user: other }, payload);
       await assert.rejects(inCommerceTransaction(otherReq, () => withCommerceWrite(otherReq, () => reservePurchase({
         req: otherReq, attemptID: randomUUID(), customerID: String(other.id), productID: guest.productID, releaseID: guest.productID,
@@ -241,9 +253,9 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
         const sponsor = await seedMember(payload);
         const sponsorReq = await createLocalReq({ user: sponsor }, payload);
         const line = { product: guest.productID, quantity: 2, ticketKind: "shared-event-guest" };
-        const save = () => withCommerceWrite(sponsorReq, () => payload.create({
-          collection: "carts", req: sponsorReq, overrideAccess: true, depth: 0, data: { items: [line], currency: "KRW" },
-        }));
+        const save = () => payload.create({
+          collection: "carts", req: sponsorReq, overrideAccess: false, depth: 0, data: { items: [line], currency: "KRW" },
+        });
         process.env.UNLOCK_SHARED_TICKET_GUEST_PRODUCT_ID = guest.productID;
         delete process.env.UNLOCK_SHARED_TICKET_EVENT_ID;
         await assert.rejects(save(), /one unit/i);
@@ -251,10 +263,16 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
         process.env.UNLOCK_SHARED_TICKET_GUEST_PRODUCT_ID = randomUUID();
         await assert.rejects(save(), /one unit/i);
         process.env.UNLOCK_SHARED_TICKET_GUEST_PRODUCT_ID = guest.productID;
+        await assert.rejects(save(), /Guest Tickets require approved membership/);
+        await payload.update({ collection: "users", id: sponsor.id, overrideAccess: true, data: { membershipStatus: "approved" } });
         const saved = await save();
         const reloaded = await payload.findByID({ collection: "carts", id: saved.id, depth: 0, overrideAccess: true });
         assert.equal(reloaded.items?.[0]?.ticketKind, line.ticketKind);
         assert.equal(reloaded.items?.[0]?.quantity, 2);
+        await assert.rejects(payload.update({
+          collection: "carts", id: saved.id, req: await createLocalReq({ user: sponsor }, payload), overrideAccess: false, depth: 0,
+          data: { items: [{ ...line, quantity: 3 }] },
+        }), /Only two Guest Tickets per purchase/);
         const attempt = await initiateThroughEndpoint(payload, sponsor, { cartID: reloaded.id, shippingAddress: guest.shippingAddress }) as { transactionID: string };
         const charge = await control.query("SELECT amount::int FROM transactions WHERE id=$1", [attempt.transactionID]);
         assert.deepEqual(charge.rows, [{ amount: 20_000 }]);

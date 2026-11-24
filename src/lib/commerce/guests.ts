@@ -8,7 +8,7 @@ import { lockAdmissionBenefits } from "./_shared/benefits";
 import { createCommerce, findCommerce, lockCommerce, readCommerce, relationshipID, updateCommerce, type CommerceDocument } from "./_shared/transaction";
 import { eventAccountKey } from "./event-account";
 import { resolveEventTicketTarget, sameTicketTarget, usesUnlockEvents } from "./event-tickets";
-import { readEventApplePass } from "./keys/event-pass";
+import { readEventPassLinks } from "./keys/event-pass";
 
 function digest(token: string): string {
   return createHash("sha256").update(token).digest("hex");
@@ -126,7 +126,7 @@ export async function buyerAdmissions({ req, orderID }: { req: PayloadRequest; o
     admissionID: admission.id, unit: Number(admission.unit), name: String(admission.guestName ?? ""),
     status: String(admission.status), reviewRequired: admission.benefitReview === true, claimed: !!admission.claimedAccount,
     ...(admission.ticketTier === "guest" || admission.ticketTier === "member" ? {
-      ticketTier: admission.ticketTier, applePassURL: await readEventApplePass(req, admission, order, customerID),
+      ticketTier: admission.ticketTier, ...(await readEventPassLinks(req, admission, order, customerID) ?? { applePassURL: null, androidPassURL: null }),
     } : {}),
   })));
 }

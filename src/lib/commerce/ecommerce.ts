@@ -14,13 +14,14 @@ import { commerceProductSchema, commercePublicationSchema, loadCommerceCatalogue
 import { shippingAddressSchema } from "./contracts";
 import { CART_EXPECTED_MEMBER_HEADER, cartRefusalData, cartRefusalMessage } from "./cart-refusal";
 import { cartQuantityError, SHARED_GUEST_CART_KIND } from "./cart-quantity";
+import { sharedTicketMode } from "./event-tickets";
 import { purchaseSnapshotSchema } from "./purchase-snapshot";
 import { preserveNativeCheckoutHold } from "./_shared/native-checkout-hold";
 import { readCommerceJSON } from "./_shared/request-body";
 import { inPaymentEndpoint, lockCommerce, readCommerce, relationshipID } from "./_shared/transaction";
 import { accountAllowanceAdmits, settleReservation } from "./reservations";
 import { grantOrderAdmissions } from "./guests";
-import { grantMembershipOnPayment } from "./membership";
+import { assertGuestSponsorMembership, grantMembershipOnPayment } from "./membership";
 import { recordSettlementWalletGrants } from "./keys/wallet-attachment";
 import { assertPrincipalUnchanged, attemptReadStop, portonePaymentAdapter } from "./portone/adapter";
 import { isVerifiedCommerceWebhook } from "./portone/endpoints";
@@ -98,9 +99,15 @@ export const createSecureCart = (authorizeMutation: (req: PayloadRequest) => Pro
       item.quantity > offer.availableQuantity || item.quantity > offer.maximumQuantity) throw new APIError(cartRefusalMessage("offer-unavailable"), 409, cartRefusalData("offer-unavailable"));
     // A browser line that is new or larger is refused early at the account limit. Removing or clearing is never blocked.
     const previous = (current?.items ?? []).find((line: { product?: unknown }) => relationshipID(line.product) === offer.productID);
-    if (!internal && item.quantity > (previous?.quantity ?? 0) && !await accountAllowanceAdmits(req, { customerID: String(owner),
-      productID: offer.productID, eventID: offer.event.id, quantity: item.quantity, accountLimit: offer.maximumQuantity, guest: Boolean(offer.ticketTarget) })) {
-      throw new APIError(cartRefusalMessage("limit-reached"), 409, cartRefusalData("limit-reached"));
+    if (!internal && sharedTicketMode(offer.ticketTarget) && current?.items?.length && !previous) {
+      throw new APIError(cartRefusalMessage("cart-locked"), 409, cartRefusalData("cart-locked"));
+    }
+    if (item.quantity > (previous?.quantity ?? 0)) {
+      if (sharedTicketMode(offer.ticketTarget)) await assertGuestSponsorMembership(req, String(owner));
+      if (!internal && !await accountAllowanceAdmits(req, { customerID: String(owner), productID: offer.productID,
+        eventID: offer.event.id, quantity: item.quantity, accountLimit: offer.maximumQuantity, guest: Boolean(offer.ticketTarget) })) {
+        throw new APIError(cartRefusalMessage("limit-reached"), 409, cartRefusalData("limit-reached"));
+      }
     }
     subtotal += offer.priceKRW * item.quantity;
   }

@@ -13,7 +13,7 @@ import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 
 const admissionSchema = z.object({ admissionID: z.uuid(), unit: z.int().min(1).max(3), name: z.string().max(100).nullable(),
   status: z.enum(["available", "claimed", "checked-in", "revoked"]), claimed: z.boolean(), reviewRequired: z.boolean(),
-  ticketTier: z.enum(["member", "guest"]).optional(), applePassURL: z.url({ protocol: /^https$/ }).nullish() });
+  ticketTier: z.enum(["member", "guest"]).optional(), applePassURL: z.url({ protocol: /^https$/ }).nullish(), androidPassURL: z.url({ protocol: /^https$/ }).nullish() });
 const admissionsSchema = z.array(admissionSchema).max(3);
 const issuedClaimSchema = z.object({ token: z.string().regex(/^[A-Za-z0-9_-]{43}$/), expiresAt: z.iso.datetime({ offset: true }) });
 
@@ -82,8 +82,15 @@ function AdmissionCard({ admission }: { admission: z.infer<typeof admissionSchem
     <div className="mb-5 flex flex-wrap items-center justify-between gap-3"><h3 className="text-base font-medium tracking-tight">{t('admissionNumber', { unit: admission.unit })}</h3><span className="rounded-full border border-border bg-muted px-3 py-1 text-xs leading-5 text-muted-foreground">{admission.reviewRequired ? t('reviewRequired') : admission.status === "checked-in" ? t('checkedIn') : admission.claimed || admission.status === "claimed" ? t('claimed') : admission.status === "revoked" ? t('revoked') : t('available')}</span></div>
     {admission.ticketTier && <div className="mb-4 space-y-2 text-sm">
       {admission.ticketTier === "guest" && <p>{t('guestTicketShare')}</p>}
-      {admission.applePassURL ? <a className="group/focus inline-flex min-h-12 items-center underline" href={admission.applePassURL} referrerPolicy="no-referrer"><FocusShape className="group-focus-visible/focus:outline-current">{t('appleWalletPass')}</FocusShape></a> : <p>{t('walletPassUnavailable')}</p>}
+      <div className="flex flex-wrap items-center gap-3">
+        {admission.applePassURL && <a className="group/focus inline-flex min-h-12 items-center underline" href={admission.applePassURL} referrerPolicy="no-referrer"><FocusShape className="group-focus-visible/focus:outline-current">{t('appleWalletPass')}</FocusShape></a>}
+        {admission.androidPassURL && <a className="group/focus inline-flex min-h-12 items-center underline" href={admission.androidPassURL} referrerPolicy="no-referrer"><FocusShape className="group-focus-visible/focus:outline-current">{t('googleWalletPass')}</FocusShape></a>}
+        {admission.ticketTier === "guest" && admission.androidPassURL && <CopyButton value={admission.androidPassURL} label={t('copyGoogleWalletPass')} className="min-h-12!" />}
+      </div>
+      {!admission.applePassURL && !admission.androidPassURL && <p>{t('walletPassUnavailable')}</p>}
+      {admission.ticketTier === "guest" && (admission.applePassURL || admission.androidPassURL) && <p>{t('forwardGuestQR')}</p>}
     </div>}
+    {!admission.ticketTier && <>
     <label htmlFor={nameID} className="mb-2 block text-sm font-medium">{t('guestNameForAdmission', { unit: admission.unit })}</label>
     <Input id={nameID} value={name} onChange={(event) => setName(event.target.value)} disabled={busy || nameLocked} maxLength={100} autoComplete="off"
       className="min-h-12 rounded-xl border border-border bg-background px-4 text-base text-foreground shadow-none selection:bg-foreground selection:text-background focus-visible:border-foreground md:text-base dark:bg-background" />
@@ -103,5 +110,6 @@ function AdmissionCard({ admission }: { admission: z.infer<typeof admissionSchem
       <p id={nameID + "-claim-copy"} className="text-xs leading-5 text-muted-foreground">{t('selectAndCopyThePrivateLinkAbove')}</p>
       <p className="text-xs leading-5 text-muted-foreground">{t('privateLinkExpiry', { date: new Date(claim.expiresAt).toLocaleString("en-GB", { timeZone: "Asia/Seoul" }) })}</p>
     </div></motion.div>}
+    </>}
   </motion.article>;
 }

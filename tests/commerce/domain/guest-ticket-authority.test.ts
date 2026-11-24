@@ -2,6 +2,9 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import test from "node:test";
 import { checkInGuest, claimGuestAdmission, grantOrderAdmissions, issueGuestClaim } from "@/lib/commerce/guests";
+import { loadWalletConfig, predictMemberSafe } from "@/lib/member-auth/wallet/safe";
+import { readEventPassLinks } from "@/lib/commerce/keys/event-pass";
+import { keyGrantOperationKey, ticketTokenIdentity } from "@/lib/commerce/keys/contracts";
 import { recordKeyGrantIntents } from "@/lib/commerce/keys/intents";
 import { guestPurchaseSnapshotSchema } from "@/lib/commerce/purchase-snapshot";
 import { commerceSnapshotHash } from "@/lib/commerce/snapshot-hash";
@@ -101,4 +104,54 @@ test("absent Guest offer, wrong product, same lock, and changed lock fail before
     await assert.rejects(fake.transaction(buyer, (req) => grantOrderAdmissions({ req, orderID: "order", transactionID: "transaction" })), /ticket.*(configuration|mismatch)/i);
     assert.deepEqual(fake.rows, before);
   }
+});
+
+test("a verified buyer gets distinct Apple and Google URLs for each matching granted shared Guest ticket", async t => {
+  const buyerID = "123e4567-e89b-42d3-a456-426614174001";
+  const safeOwner = "0x" + "c".repeat(40);
+  const passOrigin = "https://passes.example.invalid";
+  for (const [key, value] of Object.entries({ UNLOCK_HOSTED_PASSES_ENABLED: "1", UNLOCK_PASS_ORIGIN: passOrigin,
+    UNLOCK_SHARED_TICKET_EVENT_ID: "e", MEMBER_WALLET_CHAIN_ID: "137",
+    MEMBER_WALLET_LOCK_ADDRESS: memberLock, MEMBER_WALLET_OWNER_ADDRESS: safeOwner })) {
+    const previous = process.env[key];
+    t.after(() => { if (previous === undefined) delete process.env[key]; else process.env[key] = previous; });
+    process.env[key] = value;
+  }
+  const safe = await predictMemberSafe(loadWalletConfig()!, buyerID);
+  const sharedTarget = { ...target, mode: "shared" as const };
+  const { rows } = paidGuestTicket({ version: 1, mode: "shared", chainID: 137, eventLock: guestLock, guestProductID: "g" });
+  const original = rows.orders[0];
+  const order = { ...original, commerceSnapshot: { ...(original.commerceSnapshot as Record<string, unknown>),
+    customerID: buyerID, ticketTarget: sharedTarget } };
+  const admissions = [1, 2].map(unit => ({
+    id: `admission-${unit}`, unit, buyer: buyerID, transaction: "transaction", order: order.id, event: "e",
+    ticketTier: "guest", ticketTarget: sharedTarget, status: "available",
+  }));
+  const intents = admissions.map(admission => {
+    const tokenID = String(41 + admission.unit);
+    return { id: `intent-${admission.unit}`, state: "granted", tokenID, entitlement: admission.id, beneficiaryUser: buyerID,
+      order: order.id, payment: "transaction", operationKey: keyGrantOperationKey(order.id, admission.unit), recipientMode: "member_safe",
+      grantedAt: new Date().toISOString(), settledTxHash: "0x" + "a".repeat(64), ticketTokenKey: ticketTokenIdentity(137, guestLock, tokenID),
+      target: { chainID: 137, lock: guestLock, recipient: safe.safeAddress, ticketMode: "shared", ticketTier: "guest" } };
+  });
+  const fake = commerceStorageFake({
+    ...rows, orders: [order],
+    transactions: [{ ...rows.transactions[0], customer: buyerID }],
+    "commerce-key-grant-intents": intents,
+    "member-wallets": [{ id: "wallet", ...safe, member: buyerID, activeSlot: buyerID, status: "active", walletKey: `137:${safe.safeAddress}` }],
+  });
+  const sponsor = { collection: "users", id: buyerID };
+  await fake.transaction(sponsor, async req => {
+    for (const admission of admissions) {
+      const base = `${passOrigin}/v2/pass/137/${guestLock}/${41 + admission.unit}`;
+      assert.deepEqual(await readEventPassLinks(req, admission, order, buyerID),
+        { applePassURL: base + "/ios", androidPassURL: base + "/android" });
+      assert.equal(await readEventPassLinks(req, admission, order, "other"), null);
+      assert.equal(await readEventPassLinks(req, { ...admission, benefitReview: true }, order, buyerID), null);
+    }
+  });
+  fake.rows["commerce-key-grant-intents"] = intents.map(row => ({ ...row, cancelRequested: true }));
+  await fake.transaction(sponsor, async req => {
+    assert.equal(await readEventPassLinks(req, admissions[0], order, buyerID), null);
+  });
 });

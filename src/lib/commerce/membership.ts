@@ -1,4 +1,4 @@
-import type { PayloadRequest } from "payload";
+import { APIError, type Payload, type PayloadRequest } from "payload";
 
 // Owner decision 2026-11-14: a settled payment grants the buyer's membership.
 // staff, suspended and approved accounts are never changed.
@@ -13,4 +13,19 @@ export async function grantMembershipOnPayment(req: PayloadRequest, customerID: 
   if (!grantable.has(String(user.membershipStatus ?? "applicant"))) return;
   await req.payload.update({ collection: "users", id: customerID, req, overrideAccess: true, depth: 0,
     data: { membershipStatus: "approved" } });
+}
+
+/** Checkout's verified-account proof is not evidence of paid membership. */
+export async function hasGuestSponsorMembership(payload: Payload, customerID: string, req?: PayloadRequest): Promise<boolean> {
+  // System read of the canonical membership status for the already authenticated buyer only.
+  const member = await payload.findByID({ collection: "users", id: customerID, req,
+    overrideAccess: true, disableErrors: true, depth: 0, select: { membershipStatus: true } });
+  return member?.membershipStatus === "approved";
+}
+
+export async function assertGuestSponsorMembership(req: PayloadRequest, customerID: string): Promise<void> {
+  if (req.user?.collection !== "users" || String(req.user.id) !== customerID ||
+    !await hasGuestSponsorMembership(req.payload, customerID, req)) {
+    throw new APIError("Guest Tickets require approved membership", 403, undefined, true);
+  }
 }

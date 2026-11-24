@@ -7,7 +7,7 @@ import { commerceAdmin } from "./access";
 import { guestPurchaseSnapshotSchema, type PurchaseSnapshot } from "./purchase-snapshot";
 import { rejectHeldNativeCheckout } from "./_shared/native-checkout-hold";
 import { cartQuantityError, SHARED_GUEST_CART_KIND } from "./cart-quantity";
-import { resolveEventTicketTarget, sharedEventTicketsEnabled, SHARED_GUEST_LIMIT, unlockEventTicketConfiguration, type EventTicketTarget } from "./event-tickets";
+import { resolveEventTicketTarget, sharedEventTicketsEnabled, sharedGuestSalePin, SHARED_GUEST_LIMIT, unlockEventTicketConfiguration, type EventTicketTarget } from "./event-tickets";
 
 const relation = z.union([z.string().min(1), z.object({ id: z.string().min(1) })]).transform((value) => typeof value === "string" ? value : value.id);
 export const commerceProductSchema = z.object({
@@ -118,7 +118,9 @@ export async function loadCommerceOffer(payload: Payload, req?: PayloadRequest, 
   const guest = tickets.success && tickets.data.guestProductID === product.id;
   let ticketTarget: EventTicketTarget | undefined;
   if (guest) {
-    if (productID !== product.id || !("mode" in tickets.data) || event.data.checkInAuthority !== "unlock-events") return null;
+    const sale = sharedGuestSalePin();
+    if (productID !== product.id || sale?.productID !== product.id || sale.eventID !== event.data.id ||
+      !("mode" in tickets.data) || event.data.checkInAuthority !== "unlock-events") return null;
     const target = resolveEventTicketTarget(event.data, "guest", productID);
     if (!sharedEventTicketsEnabled(event.data.id, target)) return null;
     ticketTarget = target;

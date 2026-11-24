@@ -2,8 +2,9 @@ import { createHash } from "node:crypto";
 import type { PayloadRequest } from "payload";
 import { MAX_ORDER_UNITS, MEMBERSHIP_RELEASE } from "./contracts";
 import { keyGrantStates, MEMBER_EVENT_GRANT, memberEventGrantOperationKey, parseKeyGrantTarget } from "./keys/contracts";
+import { assertGuestSponsorMembership } from "./membership";
 import { optionalRelationshipID, purchaseSnapshotSchema, reservationAllowance } from "./purchase-snapshot";
-import { resolveEventTicketTarget, guestTicketTarget, sameTicketTarget, usesUnlockEvents, unlockEventTicketConfiguration, sharedTicketMode, sharedTicketTarget, sharedEventTicketsEnabled, SHARED_GUEST_LIMIT } from "./event-tickets";
+import { resolveEventTicketTarget, guestTicketTarget, sameTicketTarget, usesUnlockEvents, unlockEventTicketConfiguration, sharedTicketMode, sharedTicketTarget, sharedEventTicketsEnabled, sharedGuestSalePin, SHARED_GUEST_LIMIT } from "./event-tickets";
 import { counter, createCommerce, findCommerce, lockCommerce, readCommerce, relationshipID, updateCommerce, type CommerceDocument } from "./_shared/transaction";
 
 type ReservationInput = { req: PayloadRequest; attemptID: string; customerID: string; releaseID: string; productID: string; eventID: string | null; variantID?: string; quantity: number; accountLimit: number; snapshotHash: string; productVersion?: string; variantVersion?: string; ticketTarget?: unknown; memberTicketTarget?: unknown };
@@ -175,8 +176,13 @@ export async function reservePurchase(input: ReservationInput): Promise<Commerce
   if (!product) throw new Error("Canonical product is missing");
   const event = eventID === null ? null : await readCommerce(req, "commerce-events", eventID);
   if (ticket && (!event || !sameTicketTarget(resolveEventTicketTarget(event, "guest", productID), ticket))) throw new Error("Guest ticket lock configuration changed");
-  if (ticket && sharedTicketMode(ticket) && (accountLimit !== SHARED_GUEST_LIMIT || !event || !sharedEventTicketsEnabled(event.id, ticket))) {
-    throw new Error("Shared Guest Ticket reservation unavailable");
+  if (ticket && sharedTicketMode(ticket)) {
+    const sale = sharedGuestSalePin();
+    if (accountLimit !== SHARED_GUEST_LIMIT || !event || sale?.eventID !== event.id ||
+      sale.productID !== productID || !sharedEventTicketsEnabled(event.id, ticket)) {
+      throw new Error("Shared Guest Ticket reservation unavailable");
+    }
+    await assertGuestSponsorMembership(req, customerID);
   }
   if (event?.unlockTicketConfiguration != null && !ticket) {
     const config = unlockEventTicketConfiguration.safeParse(event.unlockTicketConfiguration);

@@ -24,6 +24,14 @@ export const guestTicketTarget = z.union([sharedTicketTarget, z.strictObject({ c
 export type EventTicketTarget = z.infer<typeof guestTicketTarget>;
 export const SHARED_GUEST_LIMIT = 2;
 
+/** Server-side sale selection. Slugs are display/operations metadata, never authority. */
+export function sharedGuestSalePin(env: Readonly<Record<string, string | undefined>> = process.env) {
+  const eventID = env.UNLOCK_SHARED_TICKET_EVENT_ID;
+  const productID = env.UNLOCK_SHARED_TICKET_GUEST_PRODUCT_ID;
+  return eventID?.trim() && productID?.trim() ? { eventID, productID } : null;
+}
+
+
 export function sharedTicketMode(target: EventTicketTarget | undefined) {
   return target && "mode" in target ? target.mode : undefined;
 }

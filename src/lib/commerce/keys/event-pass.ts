@@ -6,7 +6,7 @@ import { isTxHash, keyGrantOperationKey, memberEventGrantOperationKey, MEMBER_EV
 import { loadWalletConfig, predictMemberSafe } from "../../member-auth/wallet/safe";
 
 /** Called only after the order and admission have been scoped to the verified buyer. No provider requests. */
-export async function readEventApplePass(req: PayloadRequest, admission: CommerceDocument, order: CommerceDocument, buyer: string) {
+export async function readEventPassLinks(req: PayloadRequest, admission: CommerceDocument, order: CommerceDocument, buyer: string) {
   const host = process.env.UNLOCK_PASS_ORIGIN;
   if (!host || process.env.UNLOCK_HOSTED_PASSES_ENABLED !== "1" || admission.benefitReview ||
     relationshipID(admission.buyer) !== buyer || relationshipID(admission.order) !== order.id ||
@@ -59,6 +59,10 @@ export async function readEventApplePass(req: PayloadRequest, admission: Commerc
       target.recipient !== safe.safeAddress || wallet.walletKey !== `137:${safe.safeAddress}` ||
       !Object.entries(safe).every(([key, value]) => Reflect.get(wallet, key) === value)) return null;
   } catch { return null; }
-  // Google's hosted pass identity has not been verified as lock-scoped.
-  return new URL(`/v2/pass/137/${pinned.data.lock}/${intent.tokenID}/ios`, origin).href;
+  const route = `/v2/pass/137/${pinned.data.lock}/${intent.tokenID}`;
+  return {
+    applePassURL: new URL(route + "/ios", origin).href,
+    // Keep the newly approved Android handoff limited to shared Guest tickets.
+    androidPassURL: shared && tier === "guest" ? new URL(route + "/android", origin).href : null,
+  };
 }

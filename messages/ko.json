@@ -922,6 +922,9 @@
     "components_commerce_order_admissions": {
       "guestAdmissions": "게스트 입장권",
       "guestTicketShare": "",
+      "forwardGuestQR": "",
+      "googleWalletPass": "",
+      "copyGoogleWalletPass": "",
       "appleWalletPass": "",
       "walletPassUnavailable": "",
       "purchaseIncludesOneAdmissionAddTheGuest": "",
@@ -1316,6 +1319,21 @@
       "yourPayment": "결제 내역",
       "aReturnFromThePaymentWindowIsNotA": "결제창에서 돌아왔다고 결제가 완료된 것은 아니에요. 아래에서 저장된 결제 시도를 확인해 주세요.",
       "backToShop": "상품 안내로 돌아가기"
+    },
+    "app_site_shop_invitations_page": {
+      "title": "",
+      "unavailable": "",
+      "membersOnly": "",
+      "memberLimit": "",
+      "selectQuantity": "",
+      "saveSelection": "",
+      "cartSaved": "",
+      "cartNotSaved": "",
+      "differentCart": "",
+      "viewCart": "",
+      "priceEach": "",
+      "total": "",
+      "checkoutAddress": ""
     },
     "app_site_shop_invitations_claim_page": {
       "yourGuestInvitation": "게스트 초대장"

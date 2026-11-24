@@ -13,6 +13,7 @@ const previous = new Map<string, PropertyDescriptor | undefined>()
 let actions: Record<string, unknown>[] = []
 let claimed = false
 let admissionsUnavailable = false
+let sharedTickets = false
 let claimResponse: Promise<Response> | undefined
 let requests: { path: string; method: string; credentials?: RequestCredentials; cache?: RequestCache; headers: Headers }[] = []
 const capabilities = { emailOtp: true, magicLink: false, google: false, passkey: false }
@@ -36,6 +37,12 @@ before(async () => {
     if (path === '/api/member/status') return Response.json({ success: true, data: { authenticated: true, phoneBindingAuth: 'ready', emailVerified: true, phoneBound: true, member: true, capabilities } })
     if (path === '/api/users/me') return Response.json({ user: { id: 'guest-member', collection: 'users', cart: { docs: [] } } })
     if (path === '/api/addresses') return Response.json({ docs: [] })
+    if (path.endsWith('/admissions') && sharedTickets) return Response.json([5, 6].map((tokenID, i) => ({
+      admissionID: i === 0 ? admissionID : admissionID.slice(0, -1) + "3", unit: i + 1, name: "", status: "available",
+      claimed: false, reviewRequired: false, ticketTier: "guest",
+      applePassURL: `https://passes.example.invalid/v2/pass/137/lock/${tokenID}/ios`,
+      androidPassURL: `https://passes.example.invalid/v2/pass/137/lock/${tokenID}/android`,
+    })))
     if (path.endsWith('/admissions')) return admissionsUnavailable ? Response.json({}, { status: 503 }) : Response.json([{ admissionID, unit: 1, name: 'Guest', status: claimed ? 'claimed' : 'available', claimed, reviewRequired: false }])
     if (path === '/api/commerce/guest-operations') {
       const action = JSON.parse(String(options?.body)); actions.push(action)
@@ -55,7 +62,7 @@ before(async () => {
   MemberAuthProviders = (await import('../../member-auth/fixtures/providers')).MemberAuthProviders
 })
 afterEach(() => {
-  ui.cleanup(); actions = []; requests = []; claimed = false; admissionsUnavailable = false; claimResponse = undefined
+  ui.cleanup(); actions = []; requests = []; claimed = false; admissionsUnavailable = false; sharedTickets = false; claimResponse = undefined
   dom.window.sessionStorage.clear(); dom.window.localStorage.clear()
   dom.window.history.replaceState(null, '', '/shop/orders/' + orderID)
 })
@@ -198,3 +205,17 @@ for (const fragment of ['', '#token=invalid', '#token=' + token + '&extra=value'
     assert.equal(dom.window.location.hash, '')
   })
 }
+
+test("each shared Guest ticket exposes its own Apple and Google pass, not a legacy claim", async () => {
+  sharedTickets = true
+  ui.render(<EnglishMessages><Admissions orderID={orderID} /></EnglishMessages>)
+  const apple = await ui.screen.findAllByRole("link", { name: "Add to Apple Wallet" })
+  const google = ui.screen.getAllByRole("link", { name: "Google Wallet pass" })
+  assert.deepEqual(apple.map(link => link.getAttribute("href")?.split("/").slice(-2)), [["5", "ios"], ["6", "ios"]])
+  assert.deepEqual(google.map(link => link.getAttribute("href")?.split("/").slice(-2)), [["5", "android"], ["6", "android"]])
+  assert.ok([...apple, ...google].every(link => link.getAttribute("referrerpolicy") === "no-referrer"))
+  assert.equal(ui.screen.getAllByRole("button", { name: "Copy Google Wallet link" }).length, 2)
+  assert.equal(ui.screen.queryByRole("button", { name: "Create private claim link" }) === null, true)
+  assert.equal(ui.screen.queryByRole("textbox", { name: "Guest name for admission 1" }) === null, true)
+  assert.equal(actions.length, 0)
+})

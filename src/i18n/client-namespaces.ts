@@ -96,6 +96,7 @@ export const segmentNamespaces = {
     ...purchase,
     // A failed shop or checkout read retries in place (CommerceLoadRetry).
     "InlineRetry",
+    "Customer.app_site_shop_invitations_page",
     "Customer.components_commerce_book_offer",
     "Customer.components_commerce_cart",
     "Customer.components_commerce_invitation_claim",

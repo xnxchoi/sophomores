@@ -69,7 +69,7 @@ function AuthEntryFixture({ children }: { children: ReactNode }) {
 test("the reading header's account pill says what the main header says: Sign in to the account chooser, or Account", () => {
   assert.equal(existsSync(new URL("../../src/app/(site)/account/page.tsx", import.meta.url)), true);
   // setup: signed in, registration not finished. Account goes to /account, where Continue registration is.
-  for (const [signedIn, setup, label, href] of [[false, false, "Sign in", "/account"], [true, false, "Account", "/me"], [true, true, "Account", "/account"]] as const) {
+  for (const [signedIn, setup, label, href] of [[false, false, "Sign in", "/sign-in?next=/shop"], [true, false, "Account", "/me"], [true, true, "Account", "/account"]] as const) {
     const dom = new JSDOM(renderToStaticMarkup(<EnglishMessages><AuthEntryFixture><ReadingAccountButton signedIn={signedIn} setup={setup} /></AuthEntryFixture></EnglishMessages>));
     try {
       const anchors = dom.window.document.querySelectorAll("a");
@@ -98,7 +98,8 @@ test("the reading header follows the member state: Account while it loads, /acco
       .filter(([label]) => label === "Sign in" || label === "Account");
   assert.deepEqual(header(pending()), [["Account", "/me"]], "while the state loads: Account, as the main header");
   assert.deepEqual(header(settled({ state: "unavailable" })), [["Account", "/me"]]);
-  assert.deepEqual(header(settled({ state: "signed-out" })), [["Sign in", "/account"]]);
+  // Signed out, Sign in opens the in-place sheet; its href is the sign-in page (owner, 24 Nov).
+  assert.deepEqual(header(settled({ state: "signed-out" })), [["Sign in", "/sign-in?next=/shop"]]);
   assert.deepEqual(header(settled({ state: "signed-in", member: true })), [["Account", "/me"]]);
   assert.deepEqual(header(settled({ state: "signed-in", member: false })), [["Account", "/account"]]);
 });
@@ -134,7 +135,8 @@ test("search Sign in and Create account anchors share the standalone account cho
       const anchors = [...dom.window.document.querySelectorAll("a")]
         .filter((anchor) => anchor.textContent?.startsWith(label));
       assert.equal(anchors.length, 1, `${label} must remain a visible navigation choice`);
-      assert.equal(anchors[0].getAttribute("href"), "/account", label);
+      // A real href to the sign-in page for no-JS and modifier-click; a plain click opens the sheet (owner, 24 Nov).
+      assert.equal(anchors[0].getAttribute("href"), "/sign-in?next=/shop", label);
     }
   } finally {
     dom.window.close();

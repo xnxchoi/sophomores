@@ -1,15 +1,12 @@
 "use client";
 
-import { createContext, type MouseEvent, type ReactNode, type SyntheticEvent, useCallback, useContext, useMemo, useRef, useState } from "react";
+import { type ReactNode, useCallback, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { MemberAccountDialog } from "@/components/Authentication/member-auth/account-study";
 import type { MemberSnapshot } from "@/components/Authentication/member-auth/_shared/session";
 import { createMemberClient, type MemberClient } from "@/lib/member-auth/client";
-import { memberSignInHref, memberSignInNext } from "@/lib/member-auth/paths";
-
-type Flow = "login" | "signup";
-type Open = (flow: Flow | undefined, trigger: HTMLElement | null) => void;
-const AccountSheet = createContext<Open | null>(null);
+import { memberSignInNext } from "@/lib/member-auth/paths";
+import { AccountSheet, type AccountSheetFlow as Flow, type AccountSheetOpen as Open } from "./use-account-sheet";
 
 /**
  * The in-place sign-in sheet (owner, 24 Nov: "Sign-in buttons should in general be modal-togglers"). One sheet per
@@ -51,30 +48,4 @@ export function AccountSheetProvider({ children, client: clientOverride }: { chi
       />
     </AccountSheet.Provider>
   );
-}
-
-/**
- * A sign-in button's props: the sign-in page's href (the no-JS and modifier-click path) and a click handler that opens
- * the sheet in place. Outside a provider, the click falls through to the link.
- */
-export function useAccountSheetTrigger(flow?: Flow): { href: string; onClick: (event: MouseEvent<HTMLElement>) => void } {
-  const open = useContext(AccountSheet);
-  const pathname = usePathname();
-  const onClick = useCallback((event: MouseEvent<HTMLElement>) => {
-    if (!open || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-    event.preventDefault();
-    open(flow, event.currentTarget);
-  }, [open, flow]);
-  return { href: memberSignInHref(memberSignInNext(pathname)), onClick };
-}
-
-/** For a sign-in form (the NFC tap's GET form): submitting opens the sheet; without JavaScript the form goes to /sign-in. */
-export function useAccountSheetSubmit(): (event: SyntheticEvent<HTMLFormElement>) => void {
-  const open = useContext(AccountSheet);
-  return useCallback((event: SyntheticEvent<HTMLFormElement>) => {
-    if (!open) return;
-    event.preventDefault();
-    const submitter = (event.nativeEvent as SubmitEvent).submitter;
-    open(undefined, submitter instanceof HTMLElement ? submitter : event.currentTarget);
-  }, [open]);
 }

@@ -13,7 +13,7 @@ import { useTranslations } from "next-intl";
 import { PageInset } from "@/components/core/PageInset/PageInset";
 import { Button } from "@/components/core/ArcFocus/ArcFocus";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
-import { useAccountSheetSubmit } from "@/components/auth/account-sheet";
+import { useAccountSheetSubmit } from "@/components/auth/use-account-sheet";
 
 /**
  * The page a member sees after tapping their card (owner, 22 Nov: "we should probably confirm ... just one step ...

@@ -14,6 +14,7 @@ let ui: typeof import("@testing-library/react/pure");
 let Study: typeof import("@/components/Authentication/member-auth/account-study").MemberAccountStudy;
 let SignIn: typeof import("@/components/Authentication/member-auth/account-study").MemberAccountPage;
 let Sheet: typeof import("@/components/auth/account-sheet");
+let SheetHooks: typeof import("@/components/auth/use-account-sheet");
 let View: typeof import("@/components/Authentication/member-auth/account-view").MemberAccountView;
 let Phone: typeof import("@/components/Authentication/member-auth/phone-step").MemberPhoneStep;
 const previous = new Map<string, PropertyDescriptor | undefined>();
@@ -106,6 +107,7 @@ before(async () => {
     .MemberAccountStudy;
   SignIn = (await import("@/components/Authentication/member-auth/account-study")).MemberAccountPage;
   Sheet = await import("@/components/auth/account-sheet");
+  SheetHooks = await import("@/components/auth/use-account-sheet");
   View = (await import("@/components/Authentication/member-auth/account-view")).MemberAccountView;
   Phone = (await import("@/components/Authentication/member-auth/phone-step"))
     .MemberPhoneStep;
@@ -395,8 +397,9 @@ test("a signed-in /account is a normal page: the member's account inline, no she
 
 test("a sign-in button opens the in-place sheet on a plain click and keeps its sign-in page href", async () => {
   // Owner, 24 Nov: "Sign-in buttons should in general be modal-togglers"; only a typed or navigated URL gets the page.
-  const { AccountSheetProvider, useAccountSheetTrigger, useAccountSheetSubmit } = Sheet;
-  function Trigger() { const signIn = useAccountSheetTrigger("signup"); return <a href={signIn.href} onClick={signIn.onClick}>Log in</a>; }
+  const { AccountSheetProvider } = Sheet;
+  const { useAccountSheetTrigger, useAccountSheetSubmit } = SheetHooks;
+  function Trigger() { const signIn = useAccountSheetTrigger(); return <a href={signIn.href} onClick={signIn.onClick}>Log in</a>; }
   function TapForm() { const open = useAccountSheetSubmit(); return <form method="get" action="/sign-in" onSubmit={open}><button type="submit">Sign in here</button></form>; }
   ui.render(<AccountSheetProvider><Trigger /><TapForm /></AccountSheetProvider>, { wrapper: MemberAuthProviders });
   const link = ui.screen.getByRole("link", { name: "Log in" });
@@ -409,7 +412,8 @@ test("a sign-in button opens the in-place sheet on a plain click and keeps its s
   ui.act(() => { link.dispatchEvent(plain); });
   assert.equal(plain.defaultPrevented, true, "a plain click stays on the page");
   await untilAsserted(ui, () => assert.ok(document.querySelector("[data-vaul-drawer]")));
-  ui.fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });
+  // The chooser is dismissible; closing it returns to the page without leaving it.
+  ui.fireEvent.click(await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Close account options" })));
   await untilAsserted(ui, () => assert.equal(document.querySelector("[data-vaul-drawer][data-state=open]") === null, true));
   const submitted = new dom.window.Event("submit", { bubbles: true, cancelable: true });
   ui.act(() => { ui.screen.getByRole("button", { name: "Sign in here" }).closest("form")!.dispatchEvent(submitted); });
@@ -418,7 +422,8 @@ test("a sign-in button opens the in-place sheet on a plain click and keeps its s
 });
 
 test("the in-place sheet closes and refreshes the page once the member is confirmed", async () => {
-  const { AccountSheetProvider, useAccountSheetTrigger } = Sheet;
+  const { AccountSheetProvider } = Sheet;
+  const { useAccountSheetTrigger } = SheetHooks;
   const { AppRouterContext } = await import("next/dist/shared/lib/app-router-context.shared-runtime");
   let refreshes = 0;
   const router = { back() {}, forward() {}, refresh() { refreshes += 1; }, push() {}, replace() {}, prefetch() {}, bfcacheId: "sheet-test" };

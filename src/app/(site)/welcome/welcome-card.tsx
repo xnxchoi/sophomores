@@ -9,7 +9,7 @@ import { PageInset } from "@/components/core/PageInset/PageInset";
 import { Button } from "@/components/ui/button";
 import type { MemberWelcomeView } from "@/lib/member-auth/welcome/read";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
-import { useAccountSheetTrigger } from "@/components/auth/account-sheet";
+import { useAccountSheetTrigger } from "@/components/auth/use-account-sheet";
 
 const arrival: Variants = {
   initial: {},

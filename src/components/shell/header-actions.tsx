@@ -13,7 +13,7 @@ import { useIsMobile } from "@/providers/MiddleMan";
 import { cn } from "@/lib/utils";
 import { AnimatePresence } from "motion/react";
 import { Link } from "@/components/core/Link/Link";
-import { useAccountSheetTrigger } from "@/components/auth/account-sheet";
+import { useAccountSheetTrigger } from "@/components/auth/use-account-sheet";
 import { usePathname } from "next/navigation";
 import { ShoppingBagIcon, UserIcon } from "@phosphor-icons/react";
 import { Suspense, use, type MouseEvent, type ReactNode } from "react";

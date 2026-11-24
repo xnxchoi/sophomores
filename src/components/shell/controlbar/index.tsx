@@ -7,7 +7,7 @@ import * as m from "motion/react-m";
 import { Bell, Moon, Search, Sun, UserRound } from "lucide-react";
 import { Suspense, use, useEffect, useRef, type ComponentProps, type MouseEvent, type ReactNode, type RefObject } from "react";
 import { Link } from "@/components/core/Link/Link";
-import { useAccountSheetTrigger } from "@/components/auth/account-sheet";
+import { useAccountSheetTrigger } from "@/components/auth/use-account-sheet";
 import { useNotificationInbox } from "@/components/notifications/notification-inbox";
 import { siteLayer } from "@/constants/site-layers";
 import type { Notification } from "@/lib/content/slots";

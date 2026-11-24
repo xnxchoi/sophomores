@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import type { MemberCapabilities } from "@/lib/member-auth/contracts";
 import { motionTokens } from "@/lib/motion-tokens";
 import { CommerceAccountGate } from "./checkout";
-import { useAccountSheetTrigger } from "@/components/auth/account-sheet";
+import { useAccountSheetTrigger } from "@/components/auth/use-account-sheet";
 
 /** Fragment-only bearer: strip it before any account interaction; retain only mounted memory. */
 export function InvitationClaim({ initialCapabilities, signInOffInReview }: { initialCapabilities: Readonly<MemberCapabilities>; signInOffInReview?: boolean }) {

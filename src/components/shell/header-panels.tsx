@@ -8,7 +8,7 @@ import { useTheme, useThemeLocked } from "@/providers/Theme";
 import { AnimatePresence, useIsPresent } from "motion/react";
 import * as m from "motion/react-m";
 import { Link } from "@/components/core/Link/Link";
-import { useAccountSheetTrigger } from "@/components/auth/account-sheet";
+import { useAccountSheetTrigger } from "@/components/auth/use-account-sheet";
 import { type MouseEvent, useEffect, useMemo, useRef, useState } from "react";
 import { FloatingFocusManager, useFloating } from "@floating-ui/react";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";

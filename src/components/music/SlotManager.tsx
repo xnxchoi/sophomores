@@ -17,7 +17,7 @@ import {
 } from "@phosphor-icons/react";
 import type { AudioPreviewState } from "./use-audio-preview";
 import type { SlotStateItem, UserSlotState } from "@/lib/music/types";
-import { useAccountSheetTrigger } from "@/components/auth/account-sheet";
+import { useAccountSheetTrigger } from "@/components/auth/use-account-sheet";
 
 interface SlotManagerProps {
   userSlotState: UserSlotState | null;

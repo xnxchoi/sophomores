@@ -9,7 +9,7 @@ import { Link } from "@/components/core/Link/Link";
 import { siteLayer } from "@/constants/site-layers";
 import { useRPStore } from "@/providers/RP_Pro";
 import { DISCOVER, START } from "../header-panels";
-import { useAccountSheetTrigger } from "@/components/auth/account-sheet";
+import { useAccountSheetTrigger } from "@/components/auth/use-account-sheet";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { reachableHref } from "@/lib/content/essays";
 

@@ -61,11 +61,13 @@ export type BookSignals = {
   pointer: { x: number; y: number };
   /** The stage's DOM layer above the shared canvas; the book writes its on-screen centre there (--book-x, --book-y). */
   overlay: HTMLElement | null;
+  /** Told when the closed book has fully left its view (the scroll exit) or comes back, so its controls follow it. */
+  onGone: ((gone: boolean) => void) | null;
 };
 
 const hitBox = new Box3(), hitPart = new Box3(), hitCorner = new Vector3();
 /** Clip the hit area to the book's on-screen bounds (padded 6%), writing to the DOM only when it moved a pixel. */
-function fitHitRect(element: HTMLElement, overlay: HTMLElement | null, root: Group, camera: PerspectiveCamera, width: number, height: number, full: boolean) {
+function fitHitRect(element: HTMLElement, overlay: HTMLElement | null, root: Group, camera: PerspectiveCamera, width: number, height: number, full: boolean, onGone: ((gone: boolean) => void) | null) {
   let box = "0,0," + width + "," + height;
   if (!full) {
     // Visible meshes only: the closed book's hidden parts (Look inside's leaves and its double-width hit plane) don't count.
@@ -93,6 +95,9 @@ function fitHitRect(element: HTMLElement, overlay: HTMLElement | null, root: Gro
     overlay.style.setProperty("--book-x", x + w / 2 + "px"); overlay.style.setProperty("--book-y", y + h / 2 + "px");
   }
   const [left, top, w, h] = box.split(",").map(Number);
+  // Gone: the whole book is outside its view (it has left through the top on the scroll exit).
+  const gone = !full && (top + h <= 0 || top >= height);
+  if (element.dataset.gone !== String(gone)) { element.dataset.gone = String(gone); onGone?.(gone); }
   element.style.clipPath = full ? "none" : `inset(${top}px ${width - left - w}px ${height - top - h}px ${left}px)`;
 }
 
@@ -329,7 +334,7 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
     const dt = Math.min(delta, 0.05), f = dt * 60, sig = signals.current, s = physics.current;
     s.clock += dt; uniforms.uTime.value = s.clock;
     const l = (look.current ??= createLookState(readSavedSpread(storageKey)));
-    if (sig.hitRect && root.current) fitHitRect(sig.hitRect, sig.overlay, root.current, state.camera as PerspectiveCamera, sw, sh, l.t > 0);
+    if (sig.hitRect && root.current) fitHitRect(sig.hitRect, sig.overlay, root.current, state.camera as PerspectiveCamera, sw, sh, l.t > 0, sig.onGone);
 
     // Look inside timeline (#15): opens over OPEN_SECONDS, closes over 1.88 s.
     const want = sig.look ? 1 : -1;

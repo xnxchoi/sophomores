@@ -67,7 +67,7 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
   const stage = useRef<HTMLDivElement>(null);
   const signals = useRef<BookSignals>({ scroll: 0, hologram: false, radio: false, spins: [], look: false, peek: false, commands: [],
     view: { zoom: 1, x: 0, y: 0, panning: false, unitsPerPx: 0.02 }, marker: null, hitRect: null, invalidate: null,
-    exit: 0, pointer: { x: 0, y: 0 }, overlay: null });
+    exit: 0, pointer: { x: 0, y: 0 }, overlay: null, onGone: null });
   const overlay = useRef<HTMLDivElement>(null), sync = useRef<(() => void) | null>(null);
   const [mounted, setMounted] = useState(false);
   useEffect(() => { const id = requestAnimationFrame(() => setMounted(true)); return () => cancelAnimationFrame(id); }, []);
@@ -81,10 +81,15 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
   const [hovering, setHovering] = useState(false);
   // The shared canvas runs 'always' while any View holds a claim (gl/canvas-frameloop.tsx), otherwise on demand.
   const shown = inView && !menuOpen;
+  // The book's own presence: once the scroll exit has carried it out of view, its label and hit area go too, though the
+  // sticky stage is still on screen (Review-B r1, step 2). The View stays on, so the exit plays to its end.
+  const [gone, setGone] = useState(false);
+  useEffect(() => { const sig = signals.current; sig.onGone = setGone; return () => { sig.onGone = null; }; }, []);
+  const usable = shown && !gone;
   useCanvasClaim(shown && (hovering || open));
   const engage = () => setHovering(true), release = () => setHovering(false);
   const poke = () => signals.current.invalidate?.();
-  // Pointers pressed on the book; when it hides mid-gesture each is cancelled, so a held drag, page turn, stroke, pinch or
+  // Pointers pressed on the book; when it hides or leaves mid-gesture each is cancelled, so a held drag, page turn, stroke, pinch or
   // pan ends the way a cancelled touch does (Review-B r2).
   const pressed = useRef(new Set<number>());
   useEffect(() => {
@@ -99,7 +104,7 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
   }, []);
   useEffect(() => {
     const hit = signals.current.hitRect;
-    if (shown || !hit) return;
+    if (usable || !hit) return;
     for (const pointerId of pressed.current) {
       try { hit.releasePointerCapture(pointerId); } catch { /* not captured */ }
       hit.dispatchEvent(new PointerEvent("pointercancel", { pointerId, bubbles: true }));
@@ -107,7 +112,7 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
     pressed.current.clear();
     const id = requestAnimationFrame(() => setHovering(false));
     return () => cancelAnimationFrame(id);
-  }, [shown]);
+  }, [usable]);
   // The theme's change re-lights the book.
   useEffect(() => { signals.current.invalidate?.(); }, [dark]);
 
@@ -249,12 +254,12 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
       onPointerEnter={engage} onPointerDown={engage} onPointerMove={hovering ? undefined : engage} onPointerLeave={release}
       // Hidden (menu, out of view) means no input target either: drei's View passes `visible` to the canvas, not to this
       // DOM tracker (Review-B r2).
-      inert={!shown} className={cn("pointer-events-auto absolute inset-0 touch-pan-y in-data-[open=true]:touch-none", !shown && "pointer-events-none")} />
+      inert={!usable} className={cn("pointer-events-auto absolute inset-0 touch-pan-y in-data-[open=true]:touch-none", !usable && "pointer-events-none")} />
     {/* Controls above the shared canvas: a fixed layer in a body portal, after the canvas in paint order, mirroring the
         stage's rect (scroll, resize, the phone's full-screen open state). */}
     {mounted && createPortal(<div ref={(element) => { overlay.current = element; signals.current.overlay = element; }}
       // The same gate as the book's View (menu, out of view): hidden controls fade out and take no pointer or focus.
-      data-open={open} data-hidden={!shown} inert={!shown} className="group/layer pointer-events-none fixed z-1">
+      data-open={open} data-hidden={!usable} inert={!usable} className="group/layer pointer-events-none fixed z-1">
       {open
         ? <ArcRoles><div data-book-ui role="group" aria-label={t("lookInside")}
             className="pointer-events-auto absolute bottom-4 left-1/2 z-1 flex -translate-x-1/2 items-center gap-2 transition-opacity duration-300 ease-out group-data-[hidden=true]/layer:pointer-events-none group-data-[hidden=true]/layer:opacity-0 max-lg:bottom-[calc(max(var(--bar-target),var(--frame-bottom))+1rem+env(safe-area-inset-bottom))]">
@@ -270,7 +275,7 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
               <span aria-hidden="true" className={cn("size-4 rounded-full bg-[#f4e400]", ink === "yellow" && "ring-2 ring-current ring-offset-2 ring-offset-transparent")} />
             </Button>
           </div></ArcRoles>
-        : <button type="button" data-book-ui data-shown={hovering && shown} onClick={() => { setOpen(true); setHovering(false); }}
+        : <button type="button" data-book-ui data-shown={hovering && usable} onClick={() => { setOpen(true); setHovering(false); }}
             onPointerEnter={() => { signals.current.peek = true; engage(); }} onPointerLeave={() => { signals.current.peek = false; release(); }}
             onFocus={() => { signals.current.peek = true; poke(); }} onBlur={() => { signals.current.peek = false; poke(); }}
             className="pointer-events-none absolute top-(--book-y) left-(--book-x) inline-flex h-10 -translate-1/2 scale-110 items-center rounded-full border border-foreground bg-background px-4 text-[13px] tracking-[0.04em] uppercase opacity-0 outline-offset-2 transition-[opacity,scale] duration-300 ease-out pointer-coarse:hidden focus-visible:pointer-events-auto focus-visible:scale-100 focus-visible:opacity-100 focus-visible:outline-2 data-[shown=true]:pointer-events-auto data-[shown=true]:scale-100 data-[shown=true]:opacity-100">

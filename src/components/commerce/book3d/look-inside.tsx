@@ -48,6 +48,8 @@ const noPick = () => {};
  *  are two page blocks, and a riffled run of leaves is a third. */
 export const LEAVES = 170;
 const SLOTS = 8;
+/** Leaves that peel off the left stack's cover side as thin sheets while the book opens or closes. */
+const PEEL = 5;
 const PI = Math.PI;
 // stripe.press (12s2, 3fe6): sweep min(205.35°, 6·stiffness), damping, corner curl tuning; its page is 15.05 wide.
 const SWEEP = MathUtils.degToRad(205.349254), DAMPING = 0.32839134, CURL_RAD = 7.02, CURL_POWER = 0.86, FOLD_TILT = MathUtils.degToRad(31.5);
@@ -100,7 +102,7 @@ export function stepLookTimeline(l: LookState, want: 1 | -1, dt: number) {
 function createSheetMaterial(width: number, height: number, front?: Texture, back?: Texture, color = 0xf3f3f1) {
   const uniforms = {
     uW: { value: width }, uH: { value: height }, uCurl: { value: 0 }, uSweep: { value: SWEEP }, uThin: { value: 0 }, uFlop: { value: 0 },
-    uTipFlop: { value: 0 }, uOffset: { value: 0 }, uDepth: { value: 0 }, uStack: { value: 0 },
+    uTipFlop: { value: 0 }, uOffset: { value: 0 }, uDepth: { value: 0 }, uStack: { value: 0 }, uEdgeLift: { value: 0 },
     uCurlAmount: { value: 0 }, uCurlPower: { value: CURL_POWER }, uCurlAngle: { value: 0 }, uPivotU: { value: 0.74 }, uPivotV: { value: 0.5 },
     uSpan: { value: SPAN * width / STRIPE_PAGE_W }, uLiftSign: { value: 1 },
     uFront: { value: front ?? null }, uBack: { value: back ?? null }, uHasFront: { value: front ? 1 : 0 }, uHasBack: { value: back ? 1 : 0 },
@@ -114,6 +116,7 @@ function createSheetMaterial(width: number, height: number, front?: Texture, bac
     shader.vertexShader = shader.vertexShader
       .replace("#include <common>", `#include <common>
         uniform float uW, uH, uCurl, uSweep, uThin, uFlop, uTipFlop, uOffset, uDepth, uStack;
+        varying float vEdge;
         uniform float uCurlAmount, uCurlPower, uCurlAngle, uPivotU, uPivotV, uSpan, uLiftSign;
         varying vec2 vLeafUv;
         float sheetA(float u) {
@@ -157,9 +160,11 @@ function createSheetMaterial(width: number, height: number, front?: Texture, bac
         vec3 sheetPos = vec3(land.x + nor2.x * depth, position.y + dAlong * curlDir.y, land.y + nor2.y * depth + uStack) + dOut * liftN;
         vec3 curledN = normalize(cos(curlEnd) * liftN - sin(curlEnd) * (curlDir.x * sheetT + curlDir.y * sheetB)) * uLiftSign;
         vec3 objectNormal = normalize(sheetT * normal.x + sheetB * normal.y + curledN * normal.z);`)
-      .replace("#include <begin_vertex>", "vec3 transformed = sheetPos;\nvLeafUv = uv;");
+      .replace("#include <begin_vertex>", "vec3 transformed = sheetPos;\nvLeafUv = uv;\nvEdge = 1.0 - abs(normal.z);");
     shader.fragmentShader = shader.fragmentShader
-      .replace("#include <common>", "#include <common>\nuniform sampler2D uFront, uBack, uInkFront, uInkBack;\nuniform float uHasFront, uHasBack, uHasInkFront, uHasInkBack;\nvarying vec2 vLeafUv;")
+      .replace("#include <common>", "#include <common>\nuniform sampler2D uFront, uBack, uInkFront, uInkBack;\nuniform float uHasFront, uHasBack, uHasInkFront, uHasInkBack, uEdgeLift;\nvarying vec2 vLeafUv;\nvarying float vEdge;")
+      // A block's page edges read as paper, not shadow: they take back some of their own colour (stripe.press's light fore edge).
+      .replace("#include <emissivemap_fragment>", "#include <emissivemap_fragment>\ntotalEmissiveRadiance += diffuseColor.rgb * uEdgeLift * vEdge;")
       .replace("#include <map_fragment>", `#include <map_fragment>
         if (gl_FrontFacing && uHasFront > 0.5) diffuseColor.rgb *= texture2D(uFront, vLeafUv).rgb;
         if (!gl_FrontFacing && uHasBack > 0.5) diffuseColor.rgb *= texture2D(uBack, vec2(1.0 - vLeafUv.x, vLeafUv.y)).rgb;
@@ -258,16 +263,17 @@ export function LookInside({ source, look, signals, sound, width, height, thickn
     return { ...sheet, faces, leaf: -1 };
   }), [width, height]);
   const blocks = useMemo(() => [0, 1, 2].map(() => createSheetMaterial(width, height, undefined, undefined, 0xe9e9e6)), [width, height]);
+  const peels = useMemo(() => Array.from({ length: PEEL }, () => createSheetMaterial(width, height)), [width, height]);
   // stripe.press's page plane: 48 across and in proportion down. The blocks bend across their width only.
   const geometry = useMemo(() => { const g = new PlaneGeometry(width, height, 48, Math.floor(48 * height / width)); g.translate(width / 2, 0, 0); return g; }, [width, height]);
   const block = useMemo(() => { const g = new BoxGeometry(width, height, 1, 48, 1, 1); g.translate(width / 2, 0, -0.5); return g; }, [width, height]);
   useEffect(() => () => {
-    geometry.dispose(); block.dispose(); blocks.forEach((b) => b.material.dispose());
+    geometry.dispose(); block.dispose(); blocks.forEach((b) => b.material.dispose()); peels.forEach((p) => p.material.dispose());
     slots.forEach((slot) => { slot.material.dispose(); slot.faces.forEach((face) => face.texture.dispose()); });
-  }, [geometry, block, slots, blocks]);
+  }, [geometry, block, slots, blocks, peels]);
 
   const per = thickness / LEAVES;
-  const group = useRef<Group>(null), slotMeshes = useRef<(Group | null)[]>([]), blockMeshes = useRef<(Group | null)[]>([]);
+  const group = useRef<Group>(null), slotMeshes = useRef<(Group | null)[]>([]), blockMeshes = useRef<(Group | null)[]>([]), peelMeshes = useRef<(Group | null)[]>([]);
   const gesture = useRef<Gesture | null>(null);
   const chunk = useRef<Chunk>({ phase: "idle", left: false, count: 0, lift: 0, p: 0, commit: false, missAt: 0, checkedAt: 0 });
   /** Per leaf drawing state: corner curl (target, tilt, shown amount and its smoothing velocity), where it was held or
@@ -775,14 +781,34 @@ export function LookInside({ source, look, signals, sound, width, height, thickn
       if (!dragging && target !== null && Math.abs(a - target) < 0.005) e.dragged = false;
     });
 
+    // The fan (stripe.press's open, 1260–1432 ms: a block rises with thin sheets fanning off it): the left stack's
+    // cover-side leaves peel off ahead of it one by one, following the cover, and land under it; the rest of the stack
+    // follows as the block. Driven by ld, so closing mirrors opening and every sheet meets the block's pose at ld = 1.
+    const peeled: number[] = [];
+    if (l.ld > 0.03 && l.ld < 0.999) {
+      const peelCount = Math.max(0, Math.min(PEEL, leftCount - 2));
+      for (let i = 0; i < LEAVES && peeled.length < peelCount; i++) if (!live.includes(i) && !inChunk(i) && l.render[i] >= PI / 2) peeled.push(i);
+    }
+    peelMeshes.current.forEach((mesh, j) => {
+      if (!mesh) return;
+      const i = peeled[j];
+      mesh.visible = i !== undefined;
+      if (i === undefined) return;
+      // The cover-side sheet leads most (done by ld 0.6), the fifth by ld 0.92; the block arrives at ld 1.
+      const uni = peels[j].uniforms, lead = clamp01(l.ld / (1 - 0.4 * (PEEL - j) / PEEL));
+      uni.uCurl.value = (1 - tE) * lead * lead; uni.uThin.value = smooth(0.6, 1, 1 - tE);
+      uni.uFlop.value = 0; uni.uTipFlop.value = 0; uni.uCurlAmount.value = 0;
+      uni.uOffset.value = offsetOf(i); uni.uDepth.value = 0; uni.uStack.value = stack; uni.uLiftSign.value = -1;
+    });
+
     // The page blocks (3fe6:5187-5233): the resting leaves of each side under its top leaf, bent with that side's curl,
-    // and a riffled run of leaves as one block turning over.
+    // and a riffled run of leaves as one block turning over. Their page edges are lifted toward paper white.
     blockMeshes.current.forEach((mesh, k) => {
       if (!mesh) return;
       const uni = blocks[k].uniforms;
-      uni.uFlop.value = 0; uni.uTipFlop.value = 0; uni.uCurlAmount.value = 0; uni.uStack.value = stack;
+      uni.uFlop.value = 0; uni.uTipFlop.value = 0; uni.uCurlAmount.value = 0; uni.uStack.value = stack; uni.uEdgeLift.value = 0.45;
       if (k < 2) {
-        const isLeft = k === 1, count = isLeft ? leftCount : rightCount;
+        const isLeft = k === 1, count = isLeft ? leftCount - peeled.length : rightCount;
         mesh.visible = count > 0;
         if (!count) return;
         uni.uCurl.value = (isLeft ? 1 - tE : -tE) * ld2; uni.uThin.value = smooth(0.6, 1, isLeft ? 1 - tE : tE);
@@ -845,6 +871,9 @@ export function LookInside({ source, look, signals, sound, width, height, thickn
     <group ref={marker} visible={false}><mesh geometry={markerGeometry} material={markerMaterial} castShadow raycast={noPick} /></group>
     {blocks.map(({ material }, k) => <group key={"block" + k} ref={(g) => { blockMeshes.current[k] = g; }}>
       <mesh geometry={block} material={material} receiveShadow raycast={noPick} />
+    </group>)}
+    {peels.map(({ material }, k) => <group key={"peel" + k} ref={(g) => { peelMeshes.current[k] = g; }} visible={false}>
+      <mesh geometry={geometry} material={material} receiveShadow raycast={noPick} />
     </group>)}
     {slots.map(({ material }, k) => <group key={k} ref={(g) => { slotMeshes.current[k] = g; }}>
       <mesh geometry={geometry} material={material} receiveShadow raycast={noPick} />

@@ -13838,6 +13838,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "seat_released_at": {
+          "name": "seat_released_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
         "benefit_review": {
           "name": "benefit_review",
           "type": "boolean",

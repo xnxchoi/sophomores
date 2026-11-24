@@ -3,6 +3,7 @@ import type { Payload, PayloadRequest, Where } from "payload";
 import { withCommerceWrite } from "../access";
 import { matchesFrozenEventTicket, sameTicketTarget, sharedEventTicketsEnabled, sharedTicketTarget } from "../event-tickets";
 import { purchaseSnapshotSchema } from "../purchase-snapshot";
+import { releaseInvalidatedSeats } from "../seat-release";
 import { findCommerce, inCommerceTransaction, lockCommerce, readCommerce, relationshipID, updateCommerce, type CommerceDocument } from "../_shared/transaction";
 import {
   cancelReplacementStopCodes, grantBroadcastPending, grantBroadcastStops, grantBroadcastSuppressed, grantRecoveryHeld, parkedCancelCodes, parkedGrantCodes, parseKeyGrantTarget, replacementStopCodes, ticketTokenConflict, ticketTokenIdentity, MEMBER_EVENT_GRANT,
@@ -125,6 +126,19 @@ async function inIntent<T>(payload: Payload, intentID: string, work: (req: Paylo
     await lockCommerce(req, [`key-grant:${String(preliminary.operationKey)}`]);
     return withCommerceWrite(req, async () => work(req, await readCommerce(req, "commerce-key-grant-intents", intentID)));
   });
+}
+
+/**
+ * After a key is authoritatively cancelled, its refunded Unlock seat may be released (seat-release.ts). A separate
+ * transaction after the intent's commit, taking the reservation locks first like settlement; a failure is logged and
+ * never undoes the cancel. The release is idempotent, so the next cancel or refund for the order catches up.
+ */
+async function releaseSeatsAfterCancel(payload: Payload, intent: CommerceDocument): Promise<void> {
+  if (intent.order == null) return;
+  const orderID = relationshipID(intent.order);
+  const req = requestFor(payload);
+  try { await inCommerceTransaction(req, () => withCommerceWrite(req, () => releaseInvalidatedSeats({ req, orderID }))); }
+  catch { payload.logger?.error({ msg: "Seat release after key cancellation failed", orderID }); }
 }
 
 /** The benefit writers take order/admission locks before the intent; match that order. */
@@ -401,7 +415,8 @@ async function requeueRetryable(payload: Payload, now: () => Date): Promise<void
       const data = intent.cancelRequested === true ? { state: "cancelled", cancelledAt: now().toISOString() }
         : { state: "pending", txHash: null, tokenID: null, submittedAt: null, attemptID: null, nextAttemptAt: null, signer: null, nonce: null, sends: null, lastSentAt: null, settledTxHash: null };
       await updateCommerce(req, "commerce-key-grant-intents", row.id, data);
-    });
+      return data.state === "cancelled" ? intent : null;
+    }).then((cancelled) => cancelled && releaseSeatsAfterCancel(payload, cancelled));
   }
 }
 
@@ -737,8 +752,8 @@ const sameCancelClaim = (cancelAttemptID: string) => (intent: CommerceDocument) 
 async function recordCancel(payload: Payload, intentID: string, cancelAttemptID: string, now: Date, outcome: Sent<"confirmedKeyInvalid">): Promise<void> {
   if (outcome.kind === "moved" || outcome.kind === "suppressed") return;
   if (outcome.kind === "sent" && outcome.answer.kind === "submitted") return acceptFirstSend(payload, intentID, sameCancelClaim(cancelAttemptID), "cancelSends", outcome.txHash);
-  await inIntent(payload, intentID, async (req, intent) => {
-    if (intent.cancelAttemptID !== cancelAttemptID || intent.state !== "granted") return;
+  const cancelled = await inIntent(payload, intentID, async (req, intent) => {
+    if (intent.cancelAttemptID !== cancelAttemptID || intent.state !== "granted") return null;
     let data: Record<string, unknown>;
     if (outcome.kind === "skipped") data = { state: "cancelled", cancelledAt: now.toISOString(), lastErrorCode: "key_not_valid", nextAttemptAt: null };
     else if (outcome.kind === "notSent") {
@@ -750,7 +765,9 @@ async function recordCancel(payload: Payload, intentID: string, cancelAttemptID:
       data = { ...cancelNotSentData(outcome.answer.code, now), cancelTxHash: null, cancelNonce: null, cancelSigner: null, cancelSubmittedAt: null, cancelSends: null, cancelLastSentAt: null };
     } else data = { lastErrorCode: "cancel_outcome_unknown" };
     await updateCommerce(req, INTENTS, intentID, data);
+    return data.state === "cancelled" ? intent : null;
   });
+  if (cancelled) await releaseSeatsAfterCancel(payload, cancelled);
 }
 
 async function reconcileCancels(payload: Payload, adapter: KeyCancelAdapter, now: () => Date): Promise<void> {
@@ -763,8 +780,8 @@ async function reconcileCancels(payload: Payload, adapter: KeyCancelAdapter, now
       catch { outcomes.push({ kind: "unknown" }); }
     }
     const outcome = outcomes.find((entry) => entry.kind === "confirmed") ?? outcomes.find((entry) => entry.kind === "definitelyReverted") ?? { kind: "unknown" };
-    await inIntent(payload, row.id, async (req, intent) => {
-      if (intent.state !== "granted" || intent.cancelTxHash !== row.cancelTxHash) return;
+    const cancelled = await inIntent(payload, row.id, async (req, intent) => {
+      if (intent.state !== "granted" || intent.cancelTxHash !== row.cancelTxHash) return null;
       // A stopped replacement keeps its own code for the person who looks.
       const stopped = (cancelReplacementStopCodes as readonly string[]).includes(String(intent.lastErrorCode ?? ""));
       const overdue = !stopped && typeof intent.cancelSubmittedAt === "string" && now().getTime() - Date.parse(intent.cancelSubmittedAt) > GRANT_OVERDUE_MS;
@@ -772,7 +789,9 @@ async function reconcileCancels(payload: Payload, adapter: KeyCancelAdapter, now
         : outcome.kind === "definitelyReverted" ? { lastErrorCode: "cancel_reverted", nextAttemptAt: null }
           : { nextAttemptAt: later(now(), RECONCILE_RECHECK_MS), ...(overdue ? { lastErrorCode: "cancel_overdue" } : {}) };
       await updateCommerce(req, INTENTS, row.id, data);
+      return "state" in data && data.state === "cancelled" ? intent : null;
     });
+    if (cancelled) await releaseSeatsAfterCancel(payload, cancelled);
   }
 }
 

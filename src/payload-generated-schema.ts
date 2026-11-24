@@ -3765,6 +3765,11 @@ export const commerce_admissions = pgTable(
       withTimezone: true,
       precision: 3
     }),
+    seatReleasedAt: timestamp("seat_released_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }),
     benefitReview: boolean("benefit_review").default(false),
     benefitHoldEvidence: varchar("benefit_hold_evidence"),
     benefitHoldReason: varchar("benefit_hold_reason"),

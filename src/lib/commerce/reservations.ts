@@ -262,10 +262,8 @@ export async function releaseReservation({ req, attemptID, verifiedReason, provi
       await lockCommerce(req, [`admission:${admission.id}`]);
       const current = await readCommerce(req, "commerce-admissions", admission.id);
       const redemptions = await req.payload.find({ collection: "commerce-redemptions" as never, where: { admission: { equals: admission.id } }, limit: 1, depth: 0, overrideAccess: true, req });
-      // Unknown external attendance must not release capacity or be recorded as unused. Before Part I starts nobody can
-      // have attended, so a verified full cancellation then releases the seat (owner, 24 Nov: "yes, cancel. release seat.").
-      const beforeEvent = verifiedReason === "confirmed-cancel" && Date.now() < new Date(String(event.partIStartsAt)).getTime();
-      const used = (usesUnlockEvents(event) && !beforeEvent) || current.status === "checked-in" || !!current.checkedInAt || redemptions.totalDocs > 0;
+      // Unknown external attendance must not release capacity or be recorded as unused.
+      const used = usesUnlockEvents(event) || current.status === "checked-in" || !!current.checkedInAt || redemptions.totalDocs > 0;
       if (!used && !returnedUnits.includes(unit)) releasedCapacity++;
       await updateCommerce(req, "commerce-admissions", admission.id, { ...(used ? {} : { status: "revoked", eventAccountKey: null }), benefitReview: true, benefitHoldEvidence: providerEventID });
     }

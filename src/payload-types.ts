@@ -1626,6 +1626,7 @@ export interface CommerceAdmission {
   eventAccountKey?: string | null;
   status: 'available' | 'claimed' | 'checked-in' | 'revoked';
   checkedInAt?: string | null;
+  seatReleasedAt?: string | null;
   benefitReview?: boolean | null;
   benefitHoldEvidence?: string | null;
   benefitHoldReason?: string | null;
@@ -2995,6 +2996,7 @@ export interface CommerceAdmissionsSelect<T extends boolean = true> {
   eventAccountKey?: T;
   status?: T;
   checkedInAt?: T;
+  seatReleasedAt?: T;
   benefitReview?: T;
   benefitHoldEvidence?: T;
   benefitHoldReason?: T;

@@ -13,6 +13,8 @@ export const CommerceAdmissions = ledgerCollection("commerce-admissions", [
   { name: "eventAccountKey", type: "text", unique: true },
   { name: "status", type: "select", required: true, options: [{ label: english.Staff.schema.available, value: "available" }, { label: english.Staff.schema.claimed, value: "claimed" }, { label: english.Staff.schema.checkedIn, value: "checked-in" }, { label: english.Staff.schema.revoked, value: "revoked" }] },
   { name: "checkedInAt", type: "date" },
+  // Unlock events: set once, when a refunded seat is released after its keys are invalid (commerce/seat-release.ts).
+  { name: "seatReleasedAt", type: "date" },
   { name: "benefitReview", type: "checkbox", defaultValue: false },
   { name: "benefitHoldEvidence", type: "text" },
   { name: "benefitHoldReason", type: "text" },

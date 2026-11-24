@@ -53,3 +53,13 @@ export interface MemberBindingRepository {
 }
 
 export type MemberEmailEntry = { account: "existing" | "new" };
+
+/**
+ * Phone proofs a member binding accepts. The local SKT pilot as before; the preview carrier trial (owner, 24 Nov:
+ * staff on SKT, an SKT MVNO, KT and LG U+ test on preview) only in the preview sandbox runtime. Production stays as it was.
+ */
+export function memberPhonePolicies(env: Readonly<Record<string, string | undefined>> = process.env): readonly string[] {
+  return env.PREVIEW_RUNTIME === "sandbox"
+    ? ["local-skt-zoho-arc-v1", "preview-trial-zoho-arc-v1"]
+    : ["local-skt-zoho-arc-v1"];
+}

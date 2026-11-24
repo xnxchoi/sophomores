@@ -1,9 +1,8 @@
 import type { Pool, PoolClient } from "pg";
-import { MemberError, type BindRecord, type BoundMember, type MemberBinding, type MemberBindingRepository } from "./contracts";
+import { MemberError, memberPhonePolicies, type BindRecord, type BoundMember, type MemberBinding, type MemberBindingRepository } from "./contracts";
 
 type BindingRow = { user_id: string; phone_hash: string; challenge_id: string; policy_version: string; verified_at: Date };
 type ChallengeRow = { id: string; state: string; created_at: Date; expires_at: Date; policy_version: string | null };
-const POLICY = "local-skt-zoho-arc-v1";
 const binding = (row: BindingRow): MemberBinding => ({ userId: row.user_id, challengeId: row.challenge_id, policyVersion: row.policy_version, verifiedAt: row.verified_at });
 
 function advancingClock(base: Date) {
@@ -70,18 +69,19 @@ export class PgMemberRepository implements MemberBindingRepository {
       WHERE user_id=$1 OR phone_hash=$2 OR challenge_id=$3 ORDER BY user_id FOR UPDATE`, [input.userId, input.phoneHash, input.challengeId]);
     if (!result.rows.length) return null;
     const row = result.rows[0];
-    if (result.rows.length !== 1 || row.user_id !== input.userId || row.phone_hash !== input.phoneHash || row.challenge_id !== input.challengeId || row.policy_version !== POLICY) throw new MemberError("PHONE_CONFLICT");
-    const challenge = await client.query<ChallengeRow>("SELECT id,state FROM phone_verification.challenges WHERE id=$1 AND session_hash=$2 AND phone_hash=$3 AND state='consumed' AND policy_version=$4 FOR UPDATE", [input.challengeId, input.sessionHash, input.phoneHash, POLICY]);
+    if (result.rows.length !== 1 || row.user_id !== input.userId || row.phone_hash !== input.phoneHash || row.challenge_id !== input.challengeId || !memberPhonePolicies().includes(row.policy_version)) throw new MemberError("PHONE_CONFLICT");
+    const challenge = await client.query<ChallengeRow>("SELECT id,state FROM phone_verification.challenges WHERE id=$1 AND session_hash=$2 AND phone_hash=$3 AND state='consumed' AND policy_version=$4 FOR UPDATE", [input.challengeId, input.sessionHash, input.phoneHash, row.policy_version]);
     if (challenge.rows[0]?.state !== "consumed") throw new MemberError("INVALID_PHONE_PROOF");
     return binding(row);
   }
-  private async lockChallenge(client: PoolClient, input: BindRecord, currentTime: () => Date): Promise<void> {
+  private async lockChallenge(client: PoolClient, input: BindRecord, currentTime: () => Date): Promise<string> {
     const result = await client.query<ChallengeRow>(`SELECT id,state,created_at,expires_at,policy_version FROM phone_verification.challenges
       WHERE id=$1 AND session_hash=$2 AND phone_hash=$3 FOR UPDATE`, [input.challengeId, input.sessionHash, input.phoneHash]);
     const now = currentTime();
     freshSession(input, now);
     const row = result.rows[0];
-    if (!row || row.state !== "verified" || row.policy_version !== POLICY || row.created_at < input.sessionCreatedAt || row.created_at > now || row.expires_at <= now) throw new MemberError("INVALID_PHONE_PROOF");
+    if (!row || row.state !== "verified" || row.policy_version === null || !memberPhonePolicies().includes(row.policy_version) || row.created_at < input.sessionCreatedAt || row.created_at > now || row.expires_at <= now) throw new MemberError("INVALID_PHONE_PROOF");
+    return row.policy_version;
   }
   async bind(input: BindRecord): Promise<MemberBinding> {
     const currentTime = advancingClock(input.now);
@@ -90,9 +90,9 @@ export class PgMemberRepository implements MemberBindingRepository {
       freshSession(input, currentTime());
       const existing = await this.existingBinding(client, input);
       if (existing) { freshSession(input, currentTime()); return existing; }
-      await this.lockChallenge(client, input, currentTime);
+      const policyVersion = await this.lockChallenge(client, input, currentTime);
       const inserted = await client.query<BindingRow>(`INSERT INTO member_auth.phone_bindings (user_id,phone_hash,challenge_id,policy_version,verified_at)
-        VALUES ($1,$2,$3,$4,$5) RETURNING user_id,phone_hash,challenge_id,policy_version,verified_at`, [input.userId, input.phoneHash, input.challengeId, POLICY, currentTime()]);
+        VALUES ($1,$2,$3,$4,$5) RETURNING user_id,phone_hash,challenge_id,policy_version,verified_at`, [input.userId, input.phoneHash, input.challengeId, policyVersion, currentTime()]);
       const result = await client.query("UPDATE phone_verification.challenges SET state='consumed' WHERE id=$1 AND state='verified' AND expires_at>$2 RETURNING id", [input.challengeId, currentTime()]);
       if (result.rowCount !== 1) throw new MemberError("INVALID_PHONE_PROOF");
       return binding(inserted.rows[0]);
@@ -104,12 +104,12 @@ export class PgMemberRepository implements MemberBindingRepository {
   }
   async isActiveMember(userId: string): Promise<boolean> {
     const result = await this.pool.query(`SELECT b.user_id FROM member_auth.phone_bindings b JOIN member_auth."user" u ON u.id=b.user_id
-      WHERE b.user_id=$1 AND u."emailVerified"=true AND b.policy_version=$2`, [userId, POLICY]);
+      WHERE b.user_id=$1 AND u."emailVerified"=true AND b.policy_version=ANY($2::text[])`, [userId, [...memberPhonePolicies()]]);
     return result.rows.length === 1;
   }
   async findBoundUserByPhoneHash(phoneHash: string): Promise<BoundMember | null> {
     const result = await this.pool.query<BoundMember>(`SELECT u.id AS "userId",u.email,u.name FROM member_auth.phone_bindings b JOIN member_auth."user" u ON u.id=b.user_id
-      WHERE b.phone_hash=$1 AND u."emailVerified"=true AND b.policy_version=$2`, [phoneHash, POLICY]);
+      WHERE b.phone_hash=$1 AND u."emailVerified"=true AND b.policy_version=ANY($2::text[])`, [phoneHash, [...memberPhonePolicies()]]);
     const row = result.rows[0];
     return row ? { userId: row.userId, email: row.email, name: row.name } : null;
   }

@@ -1,4 +1,4 @@
-import { basename, join } from 'node:path';
+import { basename, isAbsolute, join } from 'node:path';
 import { mkdir } from 'node:fs/promises';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { loadZohoReceiverConfig, readReceiverSecrets, receiverOAuthConfig, writeReceiverSecrets } from '@/lib/phone-verification/server/receiver-config';
@@ -6,7 +6,7 @@ import { createLocalVerificationRuntime } from '@/lib/phone-verification/server/
 import { exchangeZohoAuthorizationCode, fetchZohoOriginal, fetchZohoVerificationPage, refreshZohoAccessToken } from '@/lib/phone-verification/server/zoho';
 import { pollZohoOnce } from '@/lib/phone-verification/server/poller';
 import { processNextZohoDelivery } from '@/lib/phone-verification/server/worker';
-import { verifySktZohoArc } from '@/lib/phone-verification/server/skt-arc';
+import { verifyPreviewTrialZohoArc, verifySktZohoArc, type CarrierEvidence } from '@/lib/phone-verification/server/skt-arc';
 import { createReceiverHealthLease, receiverHealthDirectory } from '@/lib/phone-verification/server/receiver-health';
 import { acquireReceiverLock, ReceiverOwnershipError } from '@/lib/phone-verification/server/receiver-lock';
 import { createRotatingReceiverHealth, createSupervisedReceiverFetch, serveReceiver } from './phone-receiver-service';
@@ -21,18 +21,46 @@ export function requireReceiverSupervisor(parent: { connected?: boolean; send?: 
   if (parent.connected !== true || typeof parent.send !== 'function') throw new ReceiverConfigurationError();
 }
 
-/** Only the guarded local receiver may opt into this reviewed verifier. */
+/**
+ * The trial log (owner, 24 Nov): one line per carrier decision, with the policy, carrier, outcome and the ARC, SPF and
+ * DMARC results. No phone number, token, address or message content.
+ */
+export function carrierTrialLine(policyVersion: string, decision: { approved: boolean; evidence?: CarrierEvidence }): string {
+  const evidence = decision.evidence ?? { carrier: 'unknown', arc: 'unchecked', spf: 'unchecked', dmarc: 'unchecked' };
+  return JSON.stringify({ event: 'phone_carrier_trial', policy: policyVersion, carrier: evidence.carrier, approved: decision.approved === true,
+    arc: evidence.arc, spf: evidence.spf, dmarc: evidence.dmarc, at: new Date().toISOString() });
+}
+
+/** Only a guarded receiver may opt into a reviewed verifier: the local SKT pilot, or the preview trial (sandbox only). */
 export function receiverCarrierAuthentication(
   config: ReturnType<typeof loadZohoReceiverConfig>,
-  verifier: typeof verifySktZohoArc = verifySktZohoArc,
+  verifiers: { local: typeof verifySktZohoArc; preview: typeof verifyPreviewTrialZohoArc } = { local: verifySktZohoArc, preview: verifyPreviewTrialZohoArc },
+  log: (line: string) => void = (line) => console.log(line),
 ) {
-  if (config.carrierPolicy !== 'local-skt-zoho-arc-v1') return {};
+  const policy = config.carrierPolicy;
+  if (policy !== 'local-skt-zoho-arc-v1' && policy !== 'preview-trial-zoho-arc-v1') return {};
+  const verifier = policy === 'preview-trial-zoho-arc-v1' ? verifiers.preview : verifiers.local;
   return {
-    expectedCarrierPolicy: config.carrierPolicy,
-    authenticateCarrier: config.allowLegacyZohoArc
-      ? (raw: Parameters<typeof verifier>[0], message: Parameters<typeof verifier>[1]) => verifier(raw, message, { allowLegacyZohoKey: true })
-      : verifier,
+    expectedCarrierPolicy: policy,
+    authenticateCarrier: async (raw: Parameters<typeof verifier>[0], message: Parameters<typeof verifier>[1]) => {
+      const decision = await verifier(raw, message, config.allowLegacyZohoArc ? { allowLegacyZohoKey: true } : {});
+      try { log(carrierTrialLine(policy, decision)); } catch { /* The log never changes the decision. */ }
+      return decision;
+    },
   };
+}
+
+/**
+ * The receiver's private OAuth file. In the preview sandbox runtime it may live outside the read-only app tree:
+ * PHONE_VERIFICATION_RECEIVER_SECRETS_FILE, an absolute path (still mode 0600, owned by the receiver's user).
+ */
+export function receiverSecretsPath(env: Readonly<Record<string, string | undefined>> = process.env, root = process.cwd()): string {
+  const override = env.PHONE_VERIFICATION_RECEIVER_SECRETS_FILE;
+  if (override !== undefined) {
+    if (env.PREVIEW_RUNTIME !== 'sandbox' || !isAbsolute(override)) throw new ReceiverConfigurationError();
+    return override;
+  }
+  return join(root, '.deployment', 'phone-verification-local', 'zoho-receiver.env');
 }
 
 export function parseReceiverCommand(args: readonly string[]) {
@@ -184,7 +212,7 @@ async function receive(path: string, args: ReturnType<typeof parseReceiverComman
 async function main() {
   const args = parseReceiverCommand(process.argv.slice(2));
   if (args.command === 'serve') requireReceiverSupervisor();
-  const path = join(process.cwd(), '.deployment', 'phone-verification-local', 'zoho-receiver.env');
+  const path = receiverSecretsPath();
   if (args.command === 'prepare') return prepare(path);
   const controller = new AbortController();
   const deadline = Date.now() + args.seconds * 1000;

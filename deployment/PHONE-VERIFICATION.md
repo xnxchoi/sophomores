@@ -317,6 +317,91 @@ own-phone test. Record cryptographic acceptance separately from an actual
 pending-to-verified transition. Synthetic spoof/tamper/replay tests are not
 physical wrong-SIM or multi-carrier evidence.
 
+## Preview carrier trial (preview sandbox runtime only)
+
+Owner, 24 Nov 2026: "We have staff with uplus and kt, we'll test on preview" and
+"we'll test Uplus, SKT's budget carrier (I have one), and KT on top of SKT".
+
+Policy `preview-trial-zoho-arc-v1` loads only when **all** hold: `PREVIEW_RUNTIME=sandbox`,
+`PHONE_VERIFICATION_MODE=production` and origin exactly `https://preview.sophomores.co`.
+Anywhere else the receiver refuses to start. Production policy stays non-granting.
+Member bindings accept a trial proof only under `PREVIEW_RUNTIME=sandbox`
+(`memberPhonePolicies`); without it a trial-verified challenge cannot bind.
+
+The gate is the SKT pilot's gate (single-hop Zoho ARC `i=1`, SPF pass, exact
+envelope = From number, protected headers and body, strict MMS parser), widened
+to three carriers:
+
+| Carrier | Sender domain | DMARC required |
+|---|---|---|
+| SKT and SKT MVNOs (MVNOs use SKT's gateway, no separate allowance) | `vmms.nate.com`, `emms.nate.com`, `sktmms.nate.com` | pass |
+| KT | `ktfmms.magicn.com` (no DMARC record published) | `none` (KT only, trial only) |
+| LG U+ | `mmsmail.uplus.co.kr` | pass |
+
+Zoho's ARC key is 1024-bit: the receiver also needs
+`PHONE_VERIFICATION_ALLOW_LEGACY_ZOHO_ARC=1` (pinned selector `zohoarc` and key
+fingerprint only; a rotated key fails closed). Unverified until a real message
+arrives: whether Zoho's sealed results for KT carry `dmarc=none header.from=…`
+in the shape the strict parser accepts. If not, KT messages stay in `review` and
+the trial log shows it.
+
+**Trial log.** The receiver writes one JSON line to stdout per decision:
+`{"event":"phone_carrier_trial","policy","carrier","approved","arc","spf","dmarc","at"}`.
+No number, token, address or message content. Read it with
+`docker logs <receiver> | grep phone_carrier_trial`.
+
+### Receiver service
+
+`scripts/phone-verification-receiver-service.ts` runs the same supervised
+receive-only child as the local launcher, without the localhost-only launcher.
+The runtime image has no `scripts/` or `tsx`, so the service runs from the
+`builder` stage of `deployment/Dockerfile` (same snapshot as the app image).
+
+```sh
+# Same allowlisted snapshot as the preview app; cached layers are reused.
+docker build -f deployment/Dockerfile --target builder -t sphmrs-phone-receiver:<release> <snapshot>
+# Health directory shared with the app: uid 1000 (node in both images), mode 0700.
+docker volume create sphmrs-phone-receiver-health
+docker run --rm -v sphmrs-phone-receiver-health:/health node:24-bookworm-slim \
+  sh -c 'chown 1000:1000 /health && chmod 0700 /health'
+docker run -d --name sphmrs-preview-phone-receiver --restart on-failure:5 \
+  --user node --read-only --tmpfs /tmp:rw,size=64m,mode=1777 \
+  --memory 512m --cpus 0.5 \
+  --network <preview-network> \
+  --env-file <receiver.env> -e HOME=/tmp -e TMPDIR=/tmp \
+  -v sphmrs-phone-receiver-health:/run/phone-receiver-health \
+  -v <zoho-receiver.env>:/run/phone-receiver/zoho-receiver.env:ro \
+  -w /app sphmrs-phone-receiver:<release> \
+  node --import tsx scripts/phone-verification-receiver-service.ts
+```
+
+- `<zoho-receiver.env>`: the receiver's Zoho OAuth file, owned by uid 1000, mode 0600
+  (keys as `phone-verification.zoho-receiver.env.example`). Never put it in the env file.
+- The receiver needs the preview database and outbound HTTPS to Zoho
+  (`mail.zoho.com`, `accounts.zoho.com`). If `<preview-network>` is internal-only,
+  also attach a network with egress.
+- The app container mounts the same volume at the same path, with the same
+  `PHONE_VERIFICATION_RECEIVER_HEALTH_DIRECTORY`. Without a fresh lease the app
+  answers `503 RECEIVER_UNAVAILABLE`.
+
+`<receiver.env>` (names; values from the sandbox profile):
+
+| Key | Receiver | App | Value |
+|---|---|---|---|
+| `PREVIEW_RUNTIME` | yes | yes | `sandbox` |
+| `PHONE_VERIFICATION_MODE` | yes | yes | `production` |
+| `PHONE_VERIFICATION_TRANSPORT` | yes | yes | `zoho-poll` |
+| `PHONE_VERIFICATION_ORIGIN` | yes | yes | `https://preview.sophomores.co` |
+| `PHONE_VERIFICATION_DATABASE_URL`, `PHONE_VERIFICATION_STATE_SECRET`, `PHONE_VERIFICATION_ZOHO_ACCOUNT_ID` | yes | yes | identical in both (the health lease is scoped to them) |
+| `PHONE_VERIFICATION_RECIPIENT` | yes | yes | `verify@sophomores.co` |
+| `PHONE_VERIFICATION_RECEIVER_HEALTH_DIRECTORY` | yes | yes | `/run/phone-receiver-health` |
+| `PHONE_VERIFICATION_CARRIER_POLICY` | yes | no | `preview-trial-zoho-arc-v1` |
+| `PHONE_VERIFICATION_ALLOW_LEGACY_ZOHO_ARC` | yes | no | `1` |
+| `PHONE_VERIFICATION_RECEIVER_SECRETS_FILE` | yes | no | `/run/phone-receiver/zoho-receiver.env` |
+
+None of these is set in production. `PHONE_VERIFICATION_RECEIVER_SECRETS_FILE` is
+refused unless `PREVIEW_RUNTIME=sandbox` and the path is absolute.
+
 ## HTTP and Zoho boundaries
 
 - `POST /api/phone-verification/challenges`: same-origin JSON, bounded body,

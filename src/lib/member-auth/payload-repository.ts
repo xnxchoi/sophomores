@@ -1,8 +1,7 @@
 import { z } from "zod";
 import type { Pool, PoolClient } from "pg";
-import { MemberError, type BindRecord, type BoundMember, type MemberBinding, type MemberBindingRepository } from "./contracts";
+import { MemberError, memberPhonePolicies, type BindRecord, type BoundMember, type MemberBinding, type MemberBindingRepository } from "./contracts";
 
-const POLICY = "local-skt-zoho-arc-v1";
 const canonicalIdentity = z.uuid();
 type BindingRow = { user_id: string; phone_hash: string; challenge_id: string; policy_version: string; verified_at: Date };
 type SessionRow = { email_verified: boolean; session_created_at: Date; expires_at: Date };
@@ -66,7 +65,7 @@ export class PgPayloadMemberRepository implements MemberBindingRepository {
     if (!result.rows.length) return null;
     const row = result.rows[0];
     if (result.rows.length !== 1 || row.user_id !== input.userId || row.phone_hash !== input.phoneHash
-      || row.challenge_id !== input.challengeId || row.policy_version !== POLICY) throw new MemberError("PHONE_CONFLICT");
+      || row.challenge_id !== input.challengeId || !memberPhonePolicies().includes(row.policy_version)) throw new MemberError("PHONE_CONFLICT");
     const proof = await client.query<{ state: string }>(`SELECT state FROM phone_verification.challenges
       WHERE id=$1 AND session_hash=$2 AND phone_hash=$3 FOR UPDATE`, [input.challengeId, input.sessionHash, input.phoneHash]);
     if (proof.rows[0]?.state !== "consumed") throw new MemberError("INVALID_PHONE_PROOF");
@@ -89,14 +88,14 @@ export class PgPayloadMemberRepository implements MemberBindingRepository {
       const current = now();
       this.assertSession(input, session, current);
       const row = proof.rows[0];
-      if (!row || row.state !== "verified" || row.policy_version !== POLICY
+      if (!row || row.state !== "verified" || row.policy_version === null || !memberPhonePolicies().includes(row.policy_version)
         || row.created_at < session.session_created_at || row.created_at > current || row.expires_at <= current) {
         throw new MemberError("INVALID_PHONE_PROOF");
       }
       const inserted = await client.query<BindingRow>(`INSERT INTO canonical_member.phone_bindings
         (user_id,phone_hash,challenge_id,policy_version,verified_at) VALUES ($1,$2,$3,$4,$5)
         RETURNING user_id,phone_hash,challenge_id,policy_version,verified_at`,
-      [input.userId, input.phoneHash, input.challengeId, POLICY, current]);
+      [input.userId, input.phoneHash, input.challengeId, row.policy_version, current]);
       const consumed = await client.query(`UPDATE phone_verification.challenges SET state='consumed'
         WHERE id=$1 AND state='verified' AND expires_at>$2 RETURNING id`, [input.challengeId, now()]);
       if (consumed.rowCount !== 1) throw new MemberError("INVALID_PHONE_PROOF");
@@ -115,13 +114,13 @@ export class PgPayloadMemberRepository implements MemberBindingRepository {
   async isActiveMember(userId: string): Promise<boolean> {
     if (!canonicalIdentity.safeParse(userId).success) return false;
     const result = await this.pool.query(`SELECT b.user_id FROM canonical_member.phone_bindings b
-      JOIN public.users u ON u.id=b.user_id WHERE b.user_id=$1 AND u.email_verified=true AND b.policy_version=$2`, [userId, POLICY]);
+      JOIN public.users u ON u.id=b.user_id WHERE b.user_id=$1 AND u.email_verified=true AND b.policy_version=ANY($2::text[])`, [userId, [...memberPhonePolicies()]]);
     return result.rows.length === 1;
   }
 
   async findBoundUserByPhoneHash(phoneHash: string): Promise<BoundMember | null> {
     const result = await this.pool.query<BoundMember>(`SELECT u.id AS "userId",u.email,u.name FROM canonical_member.phone_bindings b
-      JOIN public.users u ON u.id=b.user_id WHERE b.phone_hash=$1 AND u.email_verified=true AND b.policy_version=$2`, [phoneHash, POLICY]);
+      JOIN public.users u ON u.id=b.user_id WHERE b.phone_hash=$1 AND u.email_verified=true AND b.policy_version=ANY($2::text[])`, [phoneHash, [...memberPhonePolicies()]]);
     return result.rows[0] ?? null;
   }
 }

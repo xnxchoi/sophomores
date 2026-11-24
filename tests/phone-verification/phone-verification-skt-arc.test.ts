@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { generateKeyPairSync } from "node:crypto";
 import test from "node:test";
 import { sealMessage } from "mailauth/lib/arc";
-import { verifySktZohoArc } from "@/lib/phone-verification/server/skt-arc";
+import { verifyPreviewTrialZohoArc, verifySktZohoArc } from "@/lib/phone-verification/server/skt-arc";
 
 const token = "A".repeat(43);
 const sender = "01012345678@emms.nate.com";
@@ -332,4 +332,41 @@ test("weak keys, DNS failures, oversized keys and deadlines fail closed", async 
     false
   );
   assert.equal(cancelled, true);
+});
+
+const kt = "01012345678@ktfmms.magicn.com";
+const lgu = "01012345678@mmsmail.uplus.co.kr";
+const ktAuth = `mx.zohomail.com; spf=pass smtp.mailfrom=${kt}; dmarc=none header.from=ktfmms.magicn.com`;
+
+test("preview trial approves SKT, KT (DMARC none) and LG U+ under the same ARC gate, with evidence", async () => {
+  const skt = await verifyPreviewTrialZohoArc(await signed(), message, options());
+  assert.equal(skt.approved, true);
+  assert.equal(skt.policyVersion, "preview-trial-zoho-arc-v1");
+  assert.deepEqual(skt.evidence, { carrier: "skt", arc: "pass", spf: "pass", dmarc: "pass" });
+  const ktResult = await verifyPreviewTrialZohoArc(await signed({ from: kt, auth: ktAuth }), { ...message, carrier: "kt" }, options());
+  assert.equal(ktResult.approved, true);
+  assert.deepEqual(ktResult.evidence, { carrier: "kt", arc: "pass", spf: "pass", dmarc: "none" });
+  const lguResult = await verifyPreviewTrialZohoArc(await signed({ from: lgu }), { ...message, carrier: "lgu" }, options());
+  assert.equal(lguResult.approved, true);
+  assert.equal(lguResult.evidence?.carrier, "lgu");
+});
+
+test("preview trial keeps every other check: DMARC none only for KT, SPF pass, carrier match", async () => {
+  const sktNone = `mx.zohomail.com; spf=pass smtp.mailfrom=${sender}; dmarc=none header.from=emms.nate.com`;
+  assert.equal((await verifyPreviewTrialZohoArc(await signed({ auth: sktNone }), message, options())).approved, false);
+  const lguNone = `mx.zohomail.com; spf=pass smtp.mailfrom=${lgu}; dmarc=none header.from=mmsmail.uplus.co.kr`;
+  assert.equal((await verifyPreviewTrialZohoArc(await signed({ from: lgu, auth: lguNone }), { ...message, carrier: "lgu" }, options())).approved, false);
+  const ktFail = `mx.zohomail.com; spf=fail smtp.mailfrom=${kt}; dmarc=none header.from=ktfmms.magicn.com`;
+  const failed = await verifyPreviewTrialZohoArc(await signed({ from: kt, auth: ktFail }), { ...message, carrier: "kt" }, options());
+  assert.equal(failed.approved, false);
+  assert.equal(failed.evidence?.spf, "fail");
+  const otherEnvelope = `mx.zohomail.com; spf=pass smtp.mailfrom=01099999999@ktfmms.magicn.com; dmarc=none header.from=ktfmms.magicn.com`;
+  assert.equal((await verifyPreviewTrialZohoArc(await signed({ from: kt, auth: otherEnvelope }), { ...message, carrier: "kt" }, options())).approved, false);
+  // A KT message claimed as SKT (or the reverse) never passes.
+  assert.equal((await verifyPreviewTrialZohoArc(await signed({ from: kt, auth: ktAuth }), message, options())).approved, false);
+});
+
+test("the local SKT pilot still refuses KT and LG U+, including KT with DMARC none", async () => {
+  assert.equal((await verifySktZohoArc(await signed({ from: kt, auth: ktAuth }), { ...message, carrier: "kt" }, options())).approved, false);
+  assert.equal((await verifySktZohoArc(await signed({ from: lgu }), { ...message, carrier: "lgu" }, options())).approved, false);
 });

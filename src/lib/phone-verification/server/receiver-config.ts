@@ -22,13 +22,23 @@ export function receiverOAuthConfig(secrets: Environment) {
   return { mailOrigin, accountsOrigin, clientId: value('CLIENT_ID'), clientSecret: value('CLIENT_SECRET') };
 }
 
+/** The preview host's sandbox runtime (owner, 24 Nov: staff carrier trials run there). */
+export const PREVIEW_SANDBOX_ORIGIN = 'https://preview.sophomores.co';
+export function previewSandboxReceiver(env: Environment, origin: string): boolean {
+  return env.PREVIEW_RUNTIME === 'sandbox' && env.PHONE_VERIFICATION_MODE === 'production' && origin === PREVIEW_SANDBOX_ORIGIN;
+}
+
+const carrierPolicies = ['local-skt-zoho-arc-v1', 'preview-trial-zoho-arc-v1'];
+
 export function loadZohoReceiverConfig(env: Environment, secrets: Environment) {
   const local = loadPhoneVerificationConfig(env);
   if (!local || local.transport !== 'zoho-poll' || local.recipient !== 'verify@sophomores.co') throw failure();
   const carrierPolicy = env.PHONE_VERIFICATION_CARRIER_POLICY;
-  if (carrierPolicy !== undefined && carrierPolicy !== 'local-skt-zoho-arc-v1') throw failure();
+  if (carrierPolicy !== undefined && !carrierPolicies.includes(carrierPolicy)) throw failure();
+  // The preview trial is allowed only in the preview sandbox runtime; production policy stays non-granting.
+  if (carrierPolicy === 'preview-trial-zoho-arc-v1' && !previewSandboxReceiver(env, local.origin)) throw failure();
   const legacyOption = env.PHONE_VERIFICATION_ALLOW_LEGACY_ZOHO_ARC;
-  if (legacyOption !== undefined && (legacyOption !== '1' || carrierPolicy !== 'local-skt-zoho-arc-v1')) throw failure();
+  if (legacyOption !== undefined && (legacyOption !== '1' || carrierPolicy === undefined)) throw failure();
   const allowLegacyZohoArc = legacyOption === '1';
   const oauth = receiverOAuthConfig(secrets);
   const refreshToken = secrets.PHONE_VERIFICATION_ZOHO_REFRESH_TOKEN ?? '';

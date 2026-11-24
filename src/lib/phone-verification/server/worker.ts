@@ -48,7 +48,7 @@ class InvalidCarrierMessage extends Error {}
 
 async function carrierTrust(ports: WorkerPorts, raw: string, message: CarrierMessage): Promise<CarrierTrustDecision> {
   const denied = productionCarrierTrust(message);
-  if (ports.expectedCarrierPolicy !== "local-skt-zoho-arc-v1" || !ports.authenticateCarrier) return denied;
+  if (!["local-skt-zoho-arc-v1", "preview-trial-zoho-arc-v1"].includes(ports.expectedCarrierPolicy ?? "") || !ports.authenticateCarrier) return denied;
   try {
     const decision = await ports.authenticateCarrier(raw, message);
     return decision?.approved === true && decision.policyVersion === ports.expectedCarrierPolicy ? decision : denied;

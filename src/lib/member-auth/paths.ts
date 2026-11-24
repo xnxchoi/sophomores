@@ -13,11 +13,14 @@ export function memberPurchaseReturnPath(origin: string, value: unknown): Member
 /** The standalone sign-in page (owner, 24 Nov: a signed-out /account redirects here, no modal). */
 export const MEMBER_SIGN_IN_PATH = "/sign-in";
 /**
- * Where sign-in may return: a CLOSED list of the real account pages (Review-A, 24 Nov: syntax is not meaning; an
+ * Where sign-in may return: a CLOSED list of shop home and the real account pages (Review-A, 24 Nov: syntax is not meaning; an
  * identifier-shaped segment could carry an order reference or other personal data through the URL and OAuth state).
- * tests/member-auth/sign-in-redirect.test.ts keeps it equal to the /me pages on disk.
+ * tests/member-auth/sign-in-redirect.test.ts keeps its /me entries equal to the /me pages on disk.
  */
+/** Where a completed sign-in goes without a listed next (owner, 24 Nov: "send them to shop home"). */
+export const MEMBER_SIGN_IN_DEFAULT_RETURN = "/shop";
 export const MEMBER_SIGN_IN_RETURNS = [
+  MEMBER_SIGN_IN_DEFAULT_RETURN,
   MEMBER_ACCOUNT_PATH,
   "/me",
   "/me/orders",
@@ -28,11 +31,11 @@ export const MEMBER_SIGN_IN_RETURNS = [
   "/me/settings/notifications",
   "/me/settings/security"
 ] as const;
-/** A listed return as given; an order's own page collapses to the orders list (its ID never rides along); else /account. */
+/** A listed return as given; an order's own page collapses to the orders list (its ID never rides along); else shop home. */
 export function memberSignInNext(value: unknown): string {
-  if (typeof value !== "string") return MEMBER_ACCOUNT_PATH;
+  if (typeof value !== "string") return MEMBER_SIGN_IN_DEFAULT_RETURN;
   if ((MEMBER_SIGN_IN_RETURNS as readonly string[]).includes(value)) return value;
-  return value.startsWith("/me/orders/") ? "/me/orders" : MEMBER_ACCOUNT_PATH;
+  return value.startsWith("/me/orders/") ? "/me/orders" : MEMBER_SIGN_IN_DEFAULT_RETURN;
 }
 /**
  * Provider error codes the sign-in flow recognises (_shared/session.ts, and Better Auth 1.7.12's callback codes). Any

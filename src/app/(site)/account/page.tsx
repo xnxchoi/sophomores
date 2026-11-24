@@ -22,9 +22,9 @@ export default async function MemberAccountStudyPage({
   if (isReviewCopyRequest()) return <ReviewCustomerNoticePage kind="account" />;
   // A failed provider sign-in returns here with ?error=…; log in shows why.
   const query = await searchParams;
-  // Owner, 24 Nov: a signed-out visitor is redirected to the sign-in page, never shown the sign-in modal. Where they
-  // were heading (next, allowlisted) and a provider error code (bounded) carry over.
-  if (!(await currentUser())) redirect(memberSignInHref(query?.next ?? "/account", query?.error));
+  // Owner, 24 Nov: a signed-out visitor is redirected to the sign-in page, never shown the sign-in modal. A listed
+  // next and a recognised provider error code carry over; without a next, sign-in ends at shop home (owner, 24 Nov).
+  if (!(await currentUser())) redirect(memberSignInHref(query?.next, query?.error));
   const providerReturn = query?.error !== undefined;
   const accountReturn = query?.next === "/me" || query?.next === "/me/settings/account" || query?.next === "/me/orders" || query?.next === "/me/settings";
   return (

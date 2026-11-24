@@ -15,8 +15,8 @@ export const metadata = {
 };
 
 /**
- * The sign-in page (owner, 24 Nov: a signed-out /account redirects here; no modal). `next` comes from an explicit
- * allowlist (/account, /me and its subpaths); anything else is /account. A complete member goes straight on; an
+ * The sign-in page (owner, 24 Nov: a signed-out /account redirects here; no modal). `next` comes from a closed list
+ * (MEMBER_SIGN_IN_RETURNS); without a listed one, sign-in ends at shop home. A complete member goes straight on; an
  * account still in setup stays here and finishes it inline.
  */
 export default async function SignInPage({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {

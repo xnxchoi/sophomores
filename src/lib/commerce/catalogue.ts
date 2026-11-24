@@ -4,9 +4,9 @@ import type { CollectionSlug, GlobalConfig, GlobalSlug, Payload, PayloadRequest 
 import { publishedCommerceDisclosureSchema } from "./disclosures";
 import { MEMBERSHIP_ACCOUNT_LIMIT, MEMBERSHIP_RELEASE, commerceSnapshotSchema, type ShippingAddress } from "./contracts";
 import { commerceAdmin } from "./access";
-import type { PurchaseSnapshot } from "./purchase-snapshot";
+import { guestPurchaseSnapshotSchema, type PurchaseSnapshot } from "./purchase-snapshot";
 import { rejectHeldNativeCheckout } from "./_shared/native-checkout-hold";
-import { unlockEventTicketConfiguration } from "./event-tickets";
+import { resolveEventTicketTarget, sharedEventTicketsEnabled, SHARED_GUEST_LIMIT, unlockEventTicketConfiguration, type EventTicketTarget } from "./event-tickets";
 
 const relation = z.union([z.string().min(1), z.object({ id: z.string().min(1) })]).transform((value) => typeof value === "string" ? value : value.id);
 export const commerceProductSchema = z.object({
@@ -49,11 +49,13 @@ export const CommercePublication: GlobalConfig = {
 const eventSchema = z.object({ id: z.string(), name: z.string().min(1), publicationApproved: z.literal(true),
   partIStartsAt: z.string().min(1), updatedAt: z.string().min(1),
   capacity: z.int().min(0), committedQuantity: z.int().min(0), reservedQuantity: z.int().min(0),
+  checkInAuthority: z.string().nullish(), transportCapacity: z.int().min(0).optional(),
   unlockTicketConfiguration: z.unknown().optional() });
 
 export type CommerceOffer = Readonly<{
   productID: string; title: string; description: string;
   images: readonly Readonly<{ image: string | Readonly<{ id: string; url?: string; alt?: string | null }> }>[];
+  ticketTarget?: EventTicketTarget;
   priceKRW: number; maximumQuantity: number; saleStartsAt: string; saleEndsAt: string;
   dispatchSchedule: string; shippingFeeKRW: number; availableQuantity: number;
   productVersion: string; eventVersion: string;
@@ -109,15 +111,23 @@ export async function loadCommerceOffer(payload: Payload, req?: PayloadRequest, 
   const event = eventSchema.safeParse(await payload.findByID({ collection: "commerce-events" as CollectionSlug,
     id: product.event, depth: 0, overrideAccess: true, req }));
   if (!event.success) return null;
-  // Guest checkout is deliberately closed until a Guest sale is approved.
-  // A configured Guest offer must never fall through to membership checkout.
+  // Only the explicitly requested Guest offer can use the dormant shared-mode path.
   const tickets = unlockEventTicketConfiguration.safeParse(event.data.unlockTicketConfiguration);
-  if (event.data.unlockTicketConfiguration != null && (!tickets.success || tickets.data.guestProductID === product.id)) return null;
+  if (event.data.unlockTicketConfiguration != null && !tickets.success) return null;
+  const guest = tickets.success && tickets.data.guestProductID === product.id;
+  let ticketTarget: EventTicketTarget | undefined;
+  if (guest) {
+    if (productID !== product.id || !("mode" in tickets.data) || event.data.checkInAuthority !== "unlock-events") return null;
+    const target = resolveEventTicketTarget(event.data, "guest", productID);
+    if (!sharedEventTicketsEnabled(event.data.id, target)) return null;
+    ticketTarget = target;
+  } else if (tickets.success && "mode" in tickets.data) return null; // Shared Member seats are native-edition only.
   return { productID: product.id, title: product.title, description: product.description, images: product.images,
-    priceKRW: product.priceInKRW, maximumQuantity: MEMBERSHIP_ACCOUNT_LIMIT, saleStartsAt: product.saleStartsAt, saleEndsAt: product.saleEndsAt,
-    dispatchSchedule: product.dispatchSchedule, shippingFeeKRW: product.shippingFeeKRW,
+    priceKRW: product.priceInKRW, maximumQuantity: ticketTarget ? SHARED_GUEST_LIMIT : MEMBERSHIP_ACCOUNT_LIMIT,
+    ...(ticketTarget ? { ticketTarget } : {}), saleStartsAt: product.saleStartsAt, saleEndsAt: product.saleEndsAt,
+    dispatchSchedule: product.dispatchSchedule, shippingFeeKRW: ticketTarget ? 0 : product.shippingFeeKRW,
     availableQuantity: Math.max(0, Math.min(product.inventory - product.reservedQuantity,
-      event.data.capacity - event.data.committedQuantity - event.data.reservedQuantity)),
+      Math.min(event.data.capacity, event.data.transportCapacity ?? event.data.capacity) - event.data.committedQuantity - event.data.reservedQuantity)),
     productVersion: product.updatedAt, eventVersion: event.data.updatedAt,
     event: { id: event.data.id, title: event.data.name, eventStartsAt: event.data.partIStartsAt }, publication: publication.data };
 }
@@ -132,15 +142,21 @@ export async function buildCommerceSnapshot({ req, cart, shippingAddress, allowN
   const parsed = z.object({ id: z.string(), customer: relation, currency: z.literal("KRW"), purchasedAt: z.nullish(z.string()),
     items: z.array(z.object({ product: relation, quantity: z.int().min(1), variant: relation.nullish() })).length(1) }).parse(cart);
   const item = parsed.items[0];
-  if (!item || item.quantity > MEMBERSHIP_ACCOUNT_LIMIT) throw new Error("Only one unit per purchase");
   if (!item || parsed.purchasedAt || req.user?.collection !== "users" || String(req.user.id) !== parsed.customer) throw new Error("Cart is not available");
   if (item.variant != null) {
+    if (item.quantity !== MEMBERSHIP_ACCOUNT_LIMIT) throw new Error("Only one unit per purchase");
     if (!allowNativeEditions) rejectHeldNativeCheckout(req);
     const { buildNativePurchaseSnapshot } = await import("./native-edition-purchase");
     return buildNativePurchaseSnapshot(req, { cartID: parsed.id, productID: item.product, variantID: item.variant, shippingAddress });
   }
   const offer = await loadCommerceCatalogue({ req, productID: item.product });
-  if (!offer || item.quantity > offer.availableQuantity) throw new Error("Offer is not available");
+  if (!offer || item.quantity > offer.availableQuantity || item.quantity > offer.maximumQuantity) throw new Error("Offer is not available");
+  if (offer.ticketTarget) return guestPurchaseSnapshotSchema.parse({
+    version: 3, kind: "guest-ticket-v1", customerID: parsed.customer, cartID: parsed.id, productID: offer.productID,
+    eventID: offer.event.id, releaseID: offer.productID, quantity: item.quantity, accountLimit: SHARED_GUEST_LIMIT, currency: "KRW",
+    unitAmount: offer.priceKRW, shippingAmount: 0, totalAmount: offer.priceKRW * item.quantity, orderName: offer.title,
+    shippingAddress, productVersion: offer.productVersion, eventVersion: offer.eventVersion, ticketTarget: offer.ticketTarget,
+  });
   return commerceSnapshotSchema.parse({ version: 1, customerID: parsed.customer, cartID: parsed.id,
     productID: offer.productID, eventID: offer.event.id, releaseID: MEMBERSHIP_RELEASE, quantity: item.quantity, accountLimit: MEMBERSHIP_ACCOUNT_LIMIT,
     currency: "KRW", unitAmount: offer.priceKRW, shippingAmount: offer.shippingFeeKRW,

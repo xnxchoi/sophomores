@@ -43,6 +43,11 @@ export async function grantOrderAdmissions({ req, orderID, transactionID }: { re
   const reservation = await findCommerce(req, "commerce-reservations", "attemptID", String(order.commerceAttemptID));
   if (!reservation || reservation.state !== "settled" || relationshipID(reservation.order) !== orderID || reservation.snapshotHash !== commerceSnapshotHash(snapshot) || reservation.quantity !== snapshot.quantity || relationshipID(reservation.customer) !== snapshot.customerID) throw new Error("Order is not backed by its settled immutable reservation");
   const guest = snapshot.version === 3;
+  const memberTicket = snapshot.version === 2 ? snapshot.memberTicketTarget : undefined;
+  if (memberTicket) {
+    const event = await readCommerce(req, "commerce-events", snapshot.eventID);
+    if (!sameTicketTarget(memberTicket, resolveEventTicketTarget(event, "member", snapshot.productID))) throw new Error("Member Ticket settlement target mismatch");
+  }
   if (!guest && reservation.ticketTarget != null) throw new Error("Unexpected Guest ticket reservation target");
   if (guest) {
     const event = await readCommerce(req, "commerce-events", snapshot.eventID);
@@ -62,6 +67,9 @@ export async function grantOrderAdmissions({ req, orderID, transactionID }: { re
     if (admission.orderUnitKey !== `${orderID}:${index + 1}` || admission.unit !== index + 1 || relationshipID(admission.order) !== orderID || relationshipID(admission.transaction) !== transactionID || relationshipID(admission.event) !== snapshot.eventID || relationshipID(admission.buyer) !== snapshot.customerID) throw new Error("Admission grant identity mismatch");
     if (guest && (admission.ticketTier !== "guest" || admission.claimedAccount != null || admission.eventAccountKey != null ||
       !sameTicketTarget(admission.ticketTarget, snapshot.ticketTarget))) throw new Error("Guest admission identity mismatch");
+    if (memberTicket && (admission.ticketTier !== "member" || admission.claimedAccount != null ||
+      admission.eventAccountKey !== eventAccountKey(snapshot.eventID, snapshot.customerID) ||
+      !sameTicketTarget(admission.ticketTarget, memberTicket))) throw new Error("Member Ticket admission identity mismatch");
     admissionOccupancy(admission);
   }
   const existing = previous.filter((admission) => admission !== undefined);
@@ -85,10 +93,11 @@ export async function grantOrderAdmissions({ req, orderID, transactionID }: { re
     const occupancy = admissionOccupancy(occupied);
     if (!occupancy || occupancy.eventID !== snapshot.eventID || occupancy.accountID !== snapshot.customerID) throw new Error("Admission occupancy is inconsistent");
   }
+  if (memberTicket && occupied) throw new Error("Member Ticket seat already occupied");
   const result: CommerceDocument[] = [];
   for (let unit = 1; unit <= snapshot.quantity; unit++) {
     result.push(await createCommerce(req, "commerce-admissions", { orderUnitKey: `${orderID}:${unit}`, order: orderID, transaction: transactionID, event: snapshot.eventID, buyer: snapshot.customerID, unit, status: "available",
-      ...(guest ? { ticketTier: "guest", ticketTarget: snapshot.ticketTarget } : {}),
+      ...(guest ? { ticketTier: "guest", ticketTarget: snapshot.ticketTarget } : memberTicket ? { ticketTier: "member", ticketTarget: memberTicket } : {}),
       ...(!guest && unit === 1 && !occupied ? { eventAccountKey: occupancyKey } : {}) }));
   }
   return result;

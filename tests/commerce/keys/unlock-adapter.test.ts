@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { decodeFunctionData, keccak256, maxUint256, numberToHex, parseTransaction, type Hex } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
-import type { KeyGrantAdapter } from "@/lib/commerce/keys/contracts";
+import type { KeyGrantAdapter, KeyGrantTarget } from "@/lib/commerce/keys/contracts";
 import { createUnlockKeyGrantAdapter } from "@/lib/commerce/keys/unlock/adapter";
 import { confirmationDepth, maxFeeCeiling } from "@/lib/commerce/keys/unlock/transactions";
 import { dispatchKeyGrants } from "@/lib/commerce/keys/worker";
@@ -21,7 +21,7 @@ const adapterOn = (handlers: ReturnType<typeof healthyChain>, options: { holdMs?
   return { ...chain, adapter: createUnlockKeyGrantAdapter({ chainID: 84532, account: privateKeyToAccount(generatePrivateKey()), transport: chain.transport, now, ...options }) };
 };
 /** One dispatch as the worker runs it: prepare, (hash made durable), broadcast. */
-async function submit(adapter: KeyGrantAdapter, grant: typeof input = input) {
+async function submit(adapter: KeyGrantAdapter, grant: Omit<typeof input, "target"> & { target: KeyGrantTarget } = input) {
   const prepared = await adapter.prepare(grant);
   if (prepared.kind !== "prepared") return prepared;
   return { ...(await adapter.broadcast({ intentID: grant.intentID, txHash: prepared.txHash })), txHash: prepared.txHash };
@@ -294,3 +294,18 @@ test("a hanging send times out as unknown, not definitely not sent", async (t) =
     t.mock.timers.reset();
   }
 });
+
+for (const tiers of [["member", "guest"], ["guest", "member"]] as const) {
+  test(`shared event issuance permits ${tiers.join(" then ")} on the same holder`, async () => {
+    let held = 0n;
+    const { adapter } = adapterOn(healthyChain({
+      eth_call: lockCalls({ totalKeys: () => uint(held), expirationDuration: () => uint(1n), grantKeys: () => uintArray([held + 1n]) }),
+      eth_sendRawTransaction: ([raw]) => { held++; return keccak256(raw as Hex); },
+    }));
+    for (const ticketTier of tiers) {
+      assert.equal((await submit(adapter, { ...input, target: { ...target, ticketTier, ticketMode: "shared" } })).kind, "submitted");
+    }
+    assert.equal(held, 2n);
+    assert.deepEqual(await submit(adapter), { kind: "definitelyNotSent", code: "recipient_has_key" });
+  });
+}

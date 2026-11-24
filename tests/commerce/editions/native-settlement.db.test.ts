@@ -58,6 +58,130 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
     assert.equal((await orders(control, donor.transactionID)).length, 1);
   });
 
+  await t.test("shared event: one Member and two Guest seats, two Guest slots per sponsor, and one final token mapping", async () => {
+    const { randomUUID } = await import("node:crypto");
+    const { seedCheckoutCart, initiateThroughEndpoint } = await import("../core/payment-postgres-fixture");
+    const { up: upBinding, down: downBinding } = await import("../../../src/payload/migrations/20261124_120000_shared_event_ticket_binding");
+    const { reservePurchase } = await import("../../../src/lib/commerce/reservations");
+    const { withCommerceWrite } = await import("../../../src/lib/commerce/access");
+    const { doorTicketLabelEndpoint } = await import("../../../src/lib/commerce/keys/door-ticket-label");
+    await migrate(downBinding);
+    await migrate(upBinding);
+    const member = await seedMember(payload);
+    const guest = await seedCheckoutCart(payload, { user: member, customerID: String(member.id) });
+    const eventID = guest.eventID;
+    const lock = "0x" + "b".repeat(40);
+    const ticketTarget = { chainID: 137, lock, mode: "shared" as const };
+    const priorEvent = process.env.UNLOCK_SHARED_TICKET_EVENT_ID;
+    const priorSignet = process.env.MEMBER_WALLET_LOCK_ADDRESS;
+    const priorOrigin = process.env.NEXT_PUBLIC_SERVER_URL;
+    try {
+      process.env.UNLOCK_SHARED_TICKET_EVENT_ID = eventID;
+      process.env.MEMBER_WALLET_LOCK_ADDRESS = "0x" + "a".repeat(40);
+      process.env.NEXT_PUBLIC_SERVER_URL = "http://localhost:3000";
+      await payload.update({ collection: "commerce-events" as never, id: eventID, overrideAccess: true, data: {
+        checkInAuthority: "unlock-events", capacity: 4, transportCapacity: 4,
+        unlockTicketConfiguration: { version: 1, mode: "shared", chainID: 137, eventLock: lock, guestProductID: guest.productID },
+      } as never });
+      const m = await prepare(payload, await seedNativeCart(payload, member, editions[1], eventID));
+      await settleOne(payload, m);
+      const g = await initiateThroughEndpoint(payload, member, { cartID: guest.cartID, shippingAddress: guest.shippingAddress }) as { transactionID: ReturnType<typeof randomUUID>; paymentID: string };
+      await settleOne(payload, { ...guest, ...g, total: 10_000 });
+
+      const req = await createLocalReq({ user: member }, payload);
+      const reservation = (attemptID: string, req: import("payload").PayloadRequest) => withCommerceWrite(req, () => reservePurchase({
+        req, attemptID, customerID: String(member.id), productID: guest.productID, releaseID: guest.productID,
+        eventID, quantity: 1, accountLimit: 2, ticketTarget, snapshotHash: "a".repeat(64),
+      }));
+      const holder = deferred<number>(), waiter = deferred<number>(), release = deferred<void>();
+      const second = randomUUID(), third = randomUUID();
+      const winning = inCommerceTransaction(req, async () => {
+        const session = await nativeSession(req);
+        const { rows } = await session.execute(sql`SELECT pg_backend_pid() AS pid`);
+        await reservation(second, req);
+        holder.resolve(Number(rows[0].pid));
+        await release.promise;
+      });
+      let losing: Promise<PromiseSettledResult<unknown>[]> | undefined;
+      try {
+        const holderPID = await Promise.race([holder.promise, winning.then(() => { throw new Error("winner missed barrier"); })]);
+        const nextReq = await createLocalReq({ user: member }, payload);
+        losing = Promise.allSettled([inCommerceTransaction(nextReq, async () => {
+          const session = await nativeSession(nextReq);
+          const { rows } = await session.execute(sql`SELECT pg_backend_pid() AS pid`);
+          waiter.resolve(Number(rows[0].pid));
+          return reservation(third, nextReq);
+        })]);
+        const waiterPID = await Promise.race([waiter.promise, losing.then(() => { throw new Error("loser missed barrier"); })]);
+        let waiting = false;
+        for (let i = 0; i < 60; i++) {
+          const { rowCount } = await control.query("SELECT 1 FROM pg_locks WHERE pid=$1 AND locktype='advisory' AND NOT granted AND $2 = ANY(pg_blocking_pids(pid))", [waiterPID, holderPID]);
+          if (rowCount) { waiting = true; break; }
+          await delay(25);
+        }
+        assert.equal(waiting, true);
+      } finally {
+        release.resolve();
+        await Promise.allSettled(losing ? [winning, losing] : [winning]);
+      }
+      await winning;
+      assert.ok(losing);
+      const [result] = await losing;
+      assert.equal(result.status, "rejected");
+      if (result.status === "rejected") assert.match(String(result.reason), /allowance exceeded/);
+      await payload.update({ collection: "commerce-events" as never, id: eventID, overrideAccess: true,
+        data: { capacity: 3, transportCapacity: 3 } as never });
+      const other = await seedMember(payload);
+      const otherReq = await createLocalReq({ user: other }, payload);
+      await assert.rejects(inCommerceTransaction(otherReq, () => withCommerceWrite(otherReq, () => reservePurchase({
+        req: otherReq, attemptID: randomUUID(), customerID: String(other.id), productID: guest.productID, releaseID: guest.productID,
+        eventID, quantity: 1, accountLimit: 2, ticketTarget, snapshotHash: "b".repeat(64),
+      }))), /Insufficient product or guaranteed admission capacity/);
+      const state = await control.query(`SELECT e.reserved_quantity::int AS reserved, e.committed_quantity::int AS paid,
+        a.reserved_quantity::int AS guest_reserved, a.paid_quantity::int AS guest_paid FROM commerce_events e
+        JOIN commerce_allowances a ON a.release_i_d=$2 AND a.customer_id=$3 WHERE e.id=$1`,
+      [eventID, `guest:${eventID}`, member.id]);
+      assert.deepEqual(state.rows, [{ reserved: 1, paid: 2, guest_reserved: 1, guest_paid: 1 }]);
+      const grants = await control.query(`SELECT k.id, k.purpose, a.ticket_tier FROM commerce_key_grant_intents k
+        JOIN commerce_admissions a ON a.id=k.entitlement_id WHERE a.event_id=$1 ORDER BY a.ticket_tier, k.purpose`, [eventID]);
+      assert.deepEqual(grants.rows.map(({ purpose, ticket_tier }) => [purpose, ticket_tier]),
+        [["primary", "guest"], ["primary", "member"], ["member-event", "member"]]);
+      const hash = "0x" + "c".repeat(64);
+      const target = { chainID: 137, lock, recipient: "0x" + "e".repeat(40), ticketMode: "shared", ticketTier: "guest" };
+      const tokenKey = `137:${lock}:7`;
+      // Stand in for a settled chain receipt; use the actual database index and read endpoint.
+      await control.query(`UPDATE commerce_key_grant_intents SET state='granted', token_i_d='7', ticket_token_key=$2,
+        settled_tx_hash=$3, granted_at=now(), target=$4 WHERE id=$1`, [grants.rows[0].id, tokenKey, hash, target]);
+      await assert.rejects(control.query("UPDATE commerce_key_grant_intents SET ticket_token_key=$1 WHERE id=$2",
+        [tokenKey, grants.rows[2].id]), { code: "23505" });
+      const read = async (user: unknown, tokenID = "7") => doorTicketLabelEndpoint.handler({
+        method: "GET", url: "http://localhost:3000/api/commerce/events/lookup",
+        headers: new Headers({ "sec-fetch-site": "same-origin" }),
+        routeParams: { eventID, lock, tokenID }, payload, context: {}, user,
+      } as unknown as import("payload").PayloadRequest);
+      const staff = { collection: "admins", _strategy: "staff-better-auth", role: "staff", id: randomUUID() };
+      const response = await read(staff);
+      assert.equal(response.status, 200);
+      assert.match(response.headers.get("cache-control") ?? "", /private, no-store/);
+      const label = await response.json();
+      assert.deepEqual(Object.keys(label).sort(), ["sponsorRef", "tier"]);
+      assert.equal(label.tier, "guest");
+      assert.match(label.sponsorRef, /^[a-f0-9]{24}$/);
+      assert.equal((await read(member)).status, 404);
+      assert.equal((await read(null)).status, 404);
+      assert.deepEqual(await (await read(staff, "8")).json(), { tier: null });
+      await control.query("UPDATE commerce_key_grant_intents SET cancel_requested=true WHERE id=$1", [grants.rows[0].id]);
+      assert.deepEqual(await (await read(staff)).json(), { tier: null });
+      await assert.rejects(migrate(downBinding), /Cannot drop shared event ticket evidence|Failed query/);
+    } finally {
+      for (const [key, value] of Object.entries({
+        UNLOCK_SHARED_TICKET_EVENT_ID: priorEvent, MEMBER_WALLET_LOCK_ADDRESS: priorSignet, NEXT_PUBLIC_SERVER_URL: priorOrigin,
+      })) {
+        if (value === undefined) delete process.env[key]; else process.env[key] = value;
+      }
+    }
+  });
+
   const conf = { chainID: 137 as const, lock: "0x" + "b".repeat(40), memberLock: "0x" + "a".repeat(40) };
   async function guestAttempt() {
     const guest = await seedConfiguredAttempt(payload, undefined, conf);

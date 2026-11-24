@@ -76,6 +76,8 @@ async function settlementEvidence(req: PayloadRequest, row: PortOneTransaction, 
   for (const admission of admissions) {
     if (snapshot.version === 3 && (admission.ticketTier !== 'guest' || admission.claimedAccount != null ||
       !sameTicketTarget(admission.ticketTarget, snapshot.ticketTarget))) throw new Error('Guest grant integrity')
+    if (snapshot.version === 2 && snapshot.memberTicketTarget && (admission.ticketTier !== 'member' ||
+      !sameTicketTarget(admission.ticketTarget, snapshot.memberTicketTarget))) throw new Error('Member Ticket grant integrity')
     const unit = counter(admission.unit)
     if (unit < 1 || unit > snapshot.quantity || admission.orderUnitKey !== `${orderID}:${unit}`
       || relationshipID(admission.order) !== orderID || relationshipID(admission.transaction) !== row.id

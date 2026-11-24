@@ -16,6 +16,7 @@ import { inClaimTransaction, inCommerceTransaction } from "./_shared/transaction
 import { guestClaimRejectionSchema } from "./contracts";
 import { readCommerceJSON } from "./_shared/request-body";
 import { assignGuestName, buyerAdmissions, checkInGuest, claimGuestAdmission, guestManifest, issueGuestClaim, redeemGuestBenefit } from "./guests";
+import { doorTicketLabelEndpoint } from "./keys/door-ticket-label";
 import { updateOrderFulfillment } from "./fulfillment";
 import { acceptUnitReturns, disposeReturnedUnits } from "./returns";
 
@@ -154,5 +155,5 @@ const buyerAdmissionsEndpoint: Endpoint = {
 export const commerceDomainPlugin: Plugin = (config) => ({
   ...config,
   collections: [...(config.collections ?? []), CommerceEvents, CommerceReservations, CommerceAllowances, CommerceAdmissions, CommerceClaims, CommerceRedemptions, CommerceReconciliations, CommerceKeyGrantIntents],
-  endpoints: [...(config.endpoints ?? []), operationEndpoint, manifestEndpoint, buyerAdmissionsEndpoint],
+  endpoints: [...(config.endpoints ?? []), operationEndpoint, manifestEndpoint, buyerAdmissionsEndpoint, doorTicketLabelEndpoint],
 });

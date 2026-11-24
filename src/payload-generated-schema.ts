@@ -275,6 +275,10 @@ export const enum_commerce_key_grant_intents_recipient_mode = pgEnum(
   "enum_commerce_key_grant_intents_recipient_mode",
   ["member_safe", "guest_email"]
 );
+export const enum_commerce_key_grant_intents_purpose = pgEnum(
+  "enum_commerce_key_grant_intents_purpose",
+  ["primary", "member-event"]
+);
 export const enum_commerce_key_grant_intents_state = pgEnum(
   "enum_commerce_key_grant_intents_state",
   [
@@ -3955,6 +3959,8 @@ export const commerce_key_grant_intents = pgTable(
       enum_commerce_key_grant_intents_recipient_mode(
         "recipient_mode"
       ).notNull(),
+    purpose: enum_commerce_key_grant_intents_purpose("purpose").notNull().default("primary"),
+    ticketTokenKey: varchar("ticket_token_key"),
     state: enum_commerce_key_grant_intents_state("state")
       .notNull()
       .default("awaiting_wallet"),
@@ -4040,12 +4046,14 @@ export const commerce_key_grant_intents = pgTable(
     ),
     index("commerce_key_grant_intents_order_idx").on(columns.order),
     index("commerce_key_grant_intents_payment_idx").on(columns.payment),
-    uniqueIndex("commerce_key_grant_intents_entitlement_idx").on(
+    index("commerce_key_grant_intents_entitlement_idx").on(
       columns.entitlement
     ),
     index("commerce_key_grant_intents_beneficiary_user_idx").on(
       columns.beneficiaryUser
     ),
+    uniqueIndex("entitlement_purpose_idx").on(columns.entitlement, columns.purpose),
+    uniqueIndex("commerce_key_grant_intents_ticket_token_key_idx").on(columns.ticketTokenKey),
     index("commerce_key_grant_intents_state_idx").on(columns.state),
     index("commerce_key_grant_intents_next_attempt_at_idx").on(
       columns.nextAttemptAt
@@ -6561,6 +6569,7 @@ type DatabaseSchema = {
   enum_commerce_admissions_stock_disposition: typeof enum_commerce_admissions_stock_disposition;
   enum_commerce_redemptions_kind: typeof enum_commerce_redemptions_kind;
   enum_commerce_key_grant_intents_recipient_mode: typeof enum_commerce_key_grant_intents_recipient_mode;
+  enum_commerce_key_grant_intents_purpose: typeof enum_commerce_key_grant_intents_purpose;
   enum_commerce_key_grant_intents_state: typeof enum_commerce_key_grant_intents_state;
   enum_payload_jobs_log_task_slug: typeof enum_payload_jobs_log_task_slug;
   enum_payload_jobs_log_state: typeof enum_payload_jobs_log_state;

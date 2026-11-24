@@ -3,10 +3,10 @@ import { loadWalletConfig, predictMemberSafe } from "../../member-auth/wallet/sa
 import { withCommerceWrite } from "../access";
 import { MAX_ORDER_UNITS } from "../contracts";
 import { lockCommerce, readCommerce, relationshipID, requirePaymentTransaction, updateCommerce, type CommerceDocument } from "../_shared/transaction";
-import { keyGrantOperationKey, parseKeyGrantTarget, type KeyGrantTarget } from "./contracts";
+import { keyGrantOperationKey, memberEventGrantOperationKey, MEMBER_EVENT_GRANT, parseKeyGrantTarget, type KeyGrantTarget } from "./contracts";
 import { recordKeyGrantIntents } from "./intents";
 import { readMemberWalletBinding, lockMemberWallet, recordMemberWallet } from "./member-wallet";
-import { guestTicketTarget, resolveEventTicketTarget, sameTicketTarget } from "../event-tickets";
+import { guestTicketTarget, resolveEventTicketTarget, sameTicketTarget, sharedTicketMode, sharedEventTicketsEnabled } from "../event-tickets";
 import { purchaseSnapshotSchema } from "../purchase-snapshot";
 
 const intents = "commerce-key-grant-intents";
@@ -49,7 +49,7 @@ function validateIntent(intent: CommerceDocument, previous: CommerceDocument, bi
     relationshipID(admission.buyer) !== binding.member || relationshipID(payment.order) !== order ||
     relationshipID(payment.customer) !== binding.member ||
     intent.operationKey !== previous.operationKey || typeof admission.unit !== "number" ||
-    intent.operationKey !== keyGrantOperationKey(order, admission.unit)) throw new WalletEntitlementMismatch("Wallet attachment entitlement identity mismatch");
+    intent.operationKey !== (intent.purpose === MEMBER_EVENT_GRANT ? memberEventGrantOperationKey(order, admission.unit) : keyGrantOperationKey(order, admission.unit))) throw new WalletEntitlementMismatch("Wallet attachment entitlement identity mismatch");
 }
 
 function attachmentDecision(intent: CommerceDocument, admission: CommerceDocument, payment: CommerceDocument, target: KeyGrantTarget) {
@@ -59,7 +59,7 @@ function attachmentDecision(intent: CommerceDocument, admission: CommerceDocumen
   if (intent.target != null) {
     if (!["pending", "submitted", "granted", "failed_retryable", "ambiguous"].includes(String(intent.state))) return "conflict";
     const stored = parseKeyGrantTarget(intent.target);
-    return stored.chainID === target.chainID && stored.lock === target.lock && stored.recipient === target.recipient && stored.ticketTier === target.ticketTier
+    return stored.chainID === target.chainID && stored.lock === target.lock && stored.recipient === target.recipient && stored.ticketTier === target.ticketTier && stored.ticketMode === target.ticketMode
       ? "already-attached" : "conflict";
   }
   if (intent.state !== "awaiting_wallet" || intent.attempts !== 0 ||
@@ -79,29 +79,37 @@ async function attachLocked(req: PayloadRequest, previous: CommerceDocument, bin
   const payment = await readCommerce(req, "transactions", relationshipID(previous.payment));
   validateIntent(intent, previous, binding, admission, payment);
   let lock: string;
-  if (admission.ticketTier === "guest" || admission.ticketTier === "member") {
+  const memberEvent = intent.purpose === MEMBER_EVENT_GRANT;
+  const admissionTarget = guestTicketTarget.safeParse(admission.ticketTarget);
+  const sharedPrimary = !memberEvent && admission.ticketTier === "member" && admissionTarget.success && sharedTicketMode(admissionTarget.data);
+  let ticketMode: "shared" | undefined;
+  if (!sharedPrimary && (admission.ticketTier === "guest" || admission.ticketTier === "member")) {
     const pinned = guestTicketTarget.safeParse(admission.ticketTarget);
     if (!pinned.success || pinned.data.chainID !== binding.chainID) return "conflict";
+    ticketMode = sharedTicketMode(pinned.data);
+    if (memberEvent && (admission.ticketTier !== "member" || !ticketMode)) return "conflict";
+    if (ticketMode && !sharedEventTicketsEnabled(relationshipID(admission.event), pinned.data, env)) return "disabled";
     const order = await readCommerce(req, "orders", relationshipID(admission.order));
     const snapshot = purchaseSnapshotSchema.safeParse(order.commerceSnapshot);
     if (!snapshot.success || snapshot.data.eventID !== relationshipID(admission.event) ||
       snapshot.data.customerID !== binding.member ||
       (admission.ticketTier === "guest"
         ? snapshot.data.version !== 3 || !sameTicketTarget(snapshot.data.ticketTarget, pinned.data)
-        : snapshot.data.version !== 2 || !snapshot.data.editionEntitlements.freeLaunchTicket)) return "conflict";
+        : snapshot.data.version !== 2 || !snapshot.data.editionEntitlements.freeLaunchTicket ||
+          (ticketMode && !sameTicketTarget(snapshot.data.memberTicketTarget, pinned.data)))) return "conflict";
     const event = await readCommerce(req, "commerce-events", relationshipID(admission.event));
     try {
       if (!sameTicketTarget(resolveEventTicketTarget(event, admission.ticketTier, snapshot.data.productID), pinned.data)) return "conflict";
     } catch { return "conflict"; }
     lock = pinned.data.lock;
   } else {
-    if (admission.ticketTier != null || admission.ticketTarget != null) return "conflict";
+    if (!sharedPrimary && (memberEvent || admission.ticketTier != null || admission.ticketTarget != null)) return "conflict";
     const config = walletGrantConfiguration(env);
     if (!config) return "disabled";
     lock = config.lock;
   }
   const target = parseKeyGrantTarget({ chainID: binding.chainID, lock, recipient: binding.recipient,
-    ...(admission.ticketTier === "guest" ? { ticketTier: "guest" } : {}) });
+    ...(ticketMode ? { ticketMode, ticketTier: admission.ticketTier } : admission.ticketTier === "guest" ? { ticketTier: "guest" } : {}) });
   const decision = attachmentDecision(intent, admission, payment, target);
   if (decision !== "attach") return decision;
   await withCommerceWrite(req, () => updateCommerce(req, intents, intent.id, { state: "pending", target }));

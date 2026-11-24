@@ -23,8 +23,9 @@ export const CommerceEvents: CollectionConfig = {
       const config = unlockEventTicketConfiguration.parse(event.unlockTicketConfiguration);
       if (current?.checkInAuthority === "unlock-events") {
         const before = unlockEventTicketConfiguration.parse(current.unlockTicketConfiguration);
-        if (before.chainID !== config.chainID || before.memberLock !== config.memberLock ||
-          before.guestLock !== config.guestLock || (before.guestProductID && before.guestProductID !== config.guestProductID)) {
+        const { guestProductID: previousOffer, ...previousTarget } = before;
+        const { guestProductID: nextOffer, ...nextTarget } = config;
+        if (JSON.stringify(previousTarget) !== JSON.stringify(nextTarget) || (previousOffer && previousOffer !== nextOffer)) {
           throw new Error("Configured event ticket targets are immutable");
         }
       }

@@ -1685,6 +1685,8 @@ export interface CommerceKeyGrantIntent {
   order: string | Order;
   payment: string | Transaction;
   entitlement: string | CommerceAdmission;
+  purpose: 'primary' | 'member-event';
+  ticketTokenKey?: string | null;
   beneficiaryUser?: (string | null) | User;
   recipientMode: 'member_safe' | 'guest_email';
   state: 'awaiting_wallet' | 'pending' | 'submitted' | 'granted' | 'failed_retryable' | 'ambiguous' | 'cancelled';
@@ -3031,6 +3033,8 @@ export interface CommerceKeyGrantIntentsSelect<T extends boolean = true> {
   order?: T;
   payment?: T;
   entitlement?: T;
+  purpose?: T;
+  ticketTokenKey?: T;
   beneficiaryUser?: T;
   recipientMode?: T;
   state?: T;

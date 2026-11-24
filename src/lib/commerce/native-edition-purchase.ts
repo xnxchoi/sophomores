@@ -1,3 +1,5 @@
+import { readCommerce } from "./_shared/transaction";
+import { resolveEventTicketTarget, unlockEventTicketConfiguration, sharedEventTicketsEnabled } from "./event-tickets";
 import type { PayloadRequest } from "payload";
 import { z } from "zod";
 import { type ShippingAddress } from "./contracts";
@@ -33,6 +35,11 @@ export async function buildNativePurchaseSnapshot(req: PayloadRequest, input: {
   }));
   if (!quote || quote.productVersion !== product.updatedAt) throw new Error("Native edition is not available");
   const eventID = quote.editionEntitlements.freeLaunchTicket ? z.uuid().parse(relationshipID(product.event)) : null;
+  const event = eventID === null ? null : await readCommerce(req, "commerce-events", eventID);
+  const config = unlockEventTicketConfiguration.safeParse(event?.unlockTicketConfiguration);
+  if (event?.unlockTicketConfiguration != null && !config.success) throw new Error("Event ticket configuration unavailable");
+  const memberTicketTarget = event && config.success && "mode" in config.data ? resolveEventTicketTarget(event, "member", productID) : undefined;
+  if (event && memberTicketTarget && !sharedEventTicketsEnabled(event.id, memberTicketTarget)) throw new Error("Shared event tickets are disabled");
   return nativePurchaseSnapshotSchema.parse({
     version: 2, kind: "native-edition-v1", customerID: quote.customerID, cartID, productID, releaseID: quote.releaseID,
     eventID, productVersion: quote.productVersion, variantID, variantVersion: quote.edition.variantVersion,
@@ -41,6 +48,6 @@ export async function buildNativePurchaseSnapshot(req: PayloadRequest, input: {
     maximumQuantity: quote.maximumQuantity, termsRevision: quote.termsRevision, disclosureRevision: quote.publicationVersion,
     fulfillmentRevision: quote.fulfillmentRevision, benefitRevision: quote.benefitRevision,
     quantity: quote.quantity, currency: quote.currency, unitAmount: quote.unitAmount,
-    shippingAmount: quote.shippingAmount, totalAmount: quote.totalAmount, orderName: quote.productName, shippingAddress,
+    shippingAmount: quote.shippingAmount, totalAmount: quote.totalAmount, orderName: quote.productName, shippingAddress, ...(memberTicketTarget ? { memberTicketTarget } : {}),
   });
 }

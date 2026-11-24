@@ -469,3 +469,18 @@ test("an unresolved send without a hold can recover at the same nonce before nor
   assert.deepEqual(b.floors, [1]);
   assert.equal(competing.state, "submitted");
 });
+
+test("the same final shared event token cannot bind to a second entitlement", async () => {
+  const shared = { ...target, ticketTier: "guest", ticketMode: "shared" };
+  const { payload, rows } = fakePayload([
+    pending({ state: "submitted", attemptID: "a", txHash: hash, target: shared }),
+    pending({ id: "k2", operationKey: "unlock-grant:v1:order:2", entitlement: "adm2", state: "submitted", attemptID: "b", txHash: hash, target: shared }),
+  ]);
+  const a = adapter(async () => ({ kind: "unknown" }), async () => ({ kind: "confirmed", tokenID: "7" }));
+  assert.equal(await reconcileKeyGrants({ payload, adapter: a }), 1);
+  const [first, second] = rows["commerce-key-grant-intents"];
+  assert.equal(first.ticketTokenKey, `84532:${target.lock}:7`);
+  assert.equal(second.state, "ambiguous");
+  assert.equal(second.lastErrorCode, "ticket_token_conflict");
+  assert.equal(second.ticketTokenKey, undefined);
+});

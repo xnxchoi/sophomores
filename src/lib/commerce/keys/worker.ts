@@ -1,10 +1,10 @@
 import { randomUUID } from "node:crypto";
 import type { Payload, PayloadRequest, Where } from "payload";
 import { withCommerceWrite } from "../access";
-import { sameTicketTarget } from "../event-tickets";
-import { inCommerceTransaction, lockCommerce, readCommerce, relationshipID, updateCommerce, type CommerceDocument } from "../_shared/transaction";
+import { sameTicketTarget, sharedEventTicketsEnabled, sharedTicketTarget } from "../event-tickets";
+import { findCommerce, inCommerceTransaction, lockCommerce, readCommerce, relationshipID, updateCommerce, type CommerceDocument } from "../_shared/transaction";
 import {
-  cancelReplacementStopCodes, grantBroadcastPending, grantBroadcastStops, grantBroadcastSuppressed, grantRecoveryHeld, parkedCancelCodes, parkedGrantCodes, parseKeyGrantTarget, replacementStopCodes,
+  cancelReplacementStopCodes, grantBroadcastPending, grantBroadcastStops, grantBroadcastSuppressed, grantRecoveryHeld, parkedCancelCodes, parkedGrantCodes, parseKeyGrantTarget, replacementStopCodes, ticketTokenConflict, ticketTokenIdentity, MEMBER_EVENT_GRANT,
   type BroadcastOutcome, type CancelReconcileOutcome, type KeyCancelAdapter, type KeyGrantAdapter, type RebroadcastOutcome, type ReconcileOutcome, type RecordedSend,
   type ReplaceOutcome, type TransactionFee,
 } from "./contracts";
@@ -139,16 +139,24 @@ async function inGrant<T>(payload: Payload, intentID: string,
     const intent = await readCommerce(req, INTENTS, intentID);
     const admission = await readCommerce(req, "commerce-admissions", admissionID);
     const payment = await readCommerce(req, "transactions", relationshipID(intent.payment));
-    const ticketTarget = typeof intent.target === "object" && intent.target ? intent.target as { chainID?: unknown; lock?: unknown; ticketTier?: unknown } : null;
-    const pinnedTicket = admission.ticketTier != null || admission.ticketTarget != null || ticketTarget?.ticketTier != null;
+    const ticketTarget = typeof intent.target === "object" && intent.target ? intent.target as { chainID?: unknown; lock?: unknown; ticketTier?: unknown; ticketMode?: unknown } : null;
+    const shared = sharedTicketTarget.safeParse(admission.ticketTarget);
+    const memberEvent = intent.purpose === MEMBER_EVENT_GRANT;
+    const sharedSignet = shared.success && admission.ticketTier === "member" && !memberEvent;
+    const pinnedTicket = !sharedSignet && (admission.ticketTier != null || admission.ticketTarget != null || ticketTarget?.ticketTier != null);
+    const sharedMismatch = shared.success && !sharedSignet && (ticketTarget?.ticketMode !== "shared" ||
+      ticketTarget?.ticketTier !== admission.ticketTier || !sharedEventTicketsEnabled(relationshipID(admission.event), shared.data));
+    const modeMismatch = (!shared.success && ticketTarget?.ticketMode != null) || (memberEvent && (!shared.success || admission.ticketTier !== "member"));
+    const signetMismatch = sharedSignet && (!ticketTarget || ticketTarget.ticketTier != null || ticketTarget.ticketMode != null ||
+      typeof ticketTarget.lock !== "string" || ticketTarget.lock.toLowerCase() === shared.data.lock);
     const ticketMismatch = pinnedTicket && (!ticketTarget || typeof ticketTarget.chainID !== "number" || typeof ticketTarget.lock !== "string"
       || (admission.ticketTier !== "guest" && admission.ticketTier !== "member")
       || (ticketTarget.ticketTier === "guest") !== (admission.ticketTier === "guest")
-      || !sameTicketTarget(admission.ticketTarget, { chainID: ticketTarget.chainID, lock: ticketTarget.lock }));
-    const held = ticketMismatch || relationshipID(intent.order) !== orderID || relationshipID(intent.entitlement) !== admissionID
+      || !sameTicketTarget(admission.ticketTarget, { chainID: ticketTarget.chainID, lock: ticketTarget.lock, ...(ticketTarget.ticketMode === "shared" ? { mode: "shared" as const } : {}) }));
+    const held = sharedMismatch || modeMismatch || signetMismatch || ticketMismatch || relationshipID(intent.order) !== orderID || relationshipID(intent.entitlement) !== admissionID
       || relationshipID(admission.order) !== orderID || relationshipID(admission.transaction) !== payment.id
       || relationshipID(payment.order) !== orderID || payment.status !== "succeeded"
-      || payment.commerceReviewHold === true || intent.cancelRequested === true
+      || payment.commerceReviewHold === true || payment.commerceResolutionConflict === true || intent.cancelRequested === true
       || admission.benefitReview === true || admission.status === "revoked" || Boolean(admission.returnAcceptedAt);
     return withCommerceWrite(req, () => work(req, intent, held));
   });
@@ -434,7 +442,22 @@ export async function reconcileKeyGrants({ payload, adapter, limit = 10, now = (
       // Fenced by attempt and hash: a result for an older attempt never lands on a newer one.
       if (!["submitted", "ambiguous"].includes(String(intent.state)) || intent.txHash !== row.txHash || intent.attemptID !== row.attemptID) return;
       const { outcome, txHash } = result;
-      const data = outcome.kind === "confirmed" ? { state: "granted", tokenID: outcome.tokenID, grantedAt: now().toISOString(), nextAttemptAt: null, settledTxHash: txHash }
+      if (intent.lastErrorCode === ticketTokenConflict && outcome.kind !== "confirmed") return;
+      let ticketTokenKey: string | undefined;
+      if (outcome.kind === "confirmed") {
+        const target = parseKeyGrantTarget(intent.target);
+        if (target.ticketMode === "shared") {
+          const key = ticketTokenIdentity(target.chainID, target.lock, outcome.tokenID);
+          if (key) await lockCommerce(req, [`event-token:${key}`]);
+          const previous = key && await findCommerce(req, INTENTS, "ticketTokenKey", key);
+          if (!key || (previous && previous.id !== intent.id)) {
+            await updateCommerce(req, INTENTS, row.id, { state: "ambiguous", lastErrorCode: ticketTokenConflict, nextAttemptAt: later(now(), HOLD_RECHECK_MS) });
+            return;
+          }
+          ticketTokenKey = key;
+        }
+      }
+      const data = outcome.kind === "confirmed" ? { state: "granted", tokenID: outcome.tokenID, ...(ticketTokenKey ? { ticketTokenKey } : {}), grantedAt: now().toISOString(), nextAttemptAt: null, settledTxHash: txHash }
         : { state: "failed_retryable", lastErrorCode: code(outcome.kind === "definitelyReverted" ? outcome.code : "tx_reverted"), settledTxHash: txHash, nextAttemptAt: later(now(), RETRY_BACKOFF_MS * Math.max(1, Number(intent.attempts))) };
       await updateCommerce(req, INTENTS, row.id, data);
       settled++;

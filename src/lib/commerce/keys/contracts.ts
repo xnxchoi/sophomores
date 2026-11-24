@@ -32,14 +32,27 @@ export function canTransition(from: KeyGrantState, to: KeyGrantState): boolean {
 }
 
 /** Identity fields fixed at creation; never rewritten by replay or workers. */
-export const keyGrantIdentityFields = ["operationKey", "order", "payment", "entitlement", "beneficiaryUser", "recipientMode"] as const;
+export const keyGrantIdentityFields = ["operationKey", "order", "payment", "entitlement", "beneficiaryUser", "recipientMode", "purpose"] as const;
 
 export function keyGrantOperationKey(orderID: string, unit: number): string {
   if (!orderID || !Number.isSafeInteger(unit) || unit < 1) throw new Error("Invalid key-grant entitlement");
   return `unlock-grant:v1:${orderID}:${unit}`;
 }
 
-export type KeyGrantTarget = { chainID: number; lock: string; recipient: string; ticketTier?: "guest" };
+export type KeyGrantTarget = {
+  chainID: number; lock: string; recipient: string; ticketTier?: "member" | "guest"; ticketMode?: "shared";
+};
+export const MEMBER_EVENT_GRANT = "member-event" as const;
+
+export function memberEventGrantOperationKey(orderID: string, unit: number): string {
+  return `${keyGrantOperationKey(orderID, unit)}:member-event`;
+}
+
+export function ticketTokenIdentity(chainID: number, lock: string, tokenID: unknown): string | null {
+  if (!keyGrantChains.some((chain) => chain === chainID) || !addressPattern.test(lock) || BigInt(lock) <= 1n ||
+    typeof tokenID !== "string" || !/^[1-9][0-9]{0,77}$/.test(tokenID) || BigInt(tokenID) >= 1n << 256n) return null;
+  return `${chainID}:${lock.toLowerCase()}:${tokenID}`;
+}
 
 /** A signer on one chain, as a CAIP-10 account ID: `eip155:<chainID>:<lowercase address>`. Nonces and the signer lock are per account. */
 export function signerAccountID(chainID: number, address: string): string {
@@ -112,7 +125,8 @@ export const grantBroadcastSuppressed = "grant_broadcast_suppressed";
 export const grantRecoveryHeld = "grant_recovery_held";
 export const grantBroadcastStops = [grantBroadcastPending, grantBroadcastSuppressed, grantRecoveryHeld] as const;
 
-export const replacementStopCodes = ["replacement_exhausted", "replacement_fee_ceiling", "replacement_write_ahead_failed", "replacement_rebroadcast_failed", ...grantBroadcastStops] as const;
+export const ticketTokenConflict = "ticket_token_conflict";
+export const replacementStopCodes = [ticketTokenConflict, "replacement_exhausted", "replacement_fee_ceiling", "replacement_write_ahead_failed", "replacement_rebroadcast_failed", ...grantBroadcastStops] as const;
 /** The same stop codes for a cancel; its key stays granted (and reconciled), and the manager's new cancels are held. */
 export const cancelReplacementStopCodes = ["cancel_replacement_exhausted", "cancel_replacement_fee_ceiling", "cancel_replacement_write_ahead_failed", "cancel_replacement_rebroadcast_failed"] as const;
 
@@ -181,9 +195,12 @@ export function parseKeyGrantTarget(value: unknown): KeyGrantTarget {
   if (!target || typeof target !== "object" || !keyGrantChains.includes(target.chainID as never)
     || typeof target.lock !== "string" || !addressPattern.test(target.lock)
     || typeof target.recipient !== "string" || !addressPattern.test(target.recipient)
-    || (target.ticketTier !== undefined && target.ticketTier !== "guest")) throw new Error("Invalid key-grant target");
+    || (target.ticketMode !== undefined && target.ticketMode !== "shared") ||
+    (target.ticketMode === "shared" ? target.ticketTier !== "guest" && target.ticketTier !== "member"
+      : target.ticketTier !== undefined && target.ticketTier !== "guest")) throw new Error("Invalid key-grant target");
   return { chainID: target.chainID as number, lock: target.lock, recipient: target.recipient,
-    ...(target.ticketTier === "guest" ? { ticketTier: target.ticketTier } : {}) };
+    ...(target.ticketTier ? { ticketTier: target.ticketTier } : {}),
+    ...(target.ticketMode ? { ticketMode: target.ticketMode } : {}) };
 }
 
 /** Page-facing key states; internals (targets, hashes, errors) never leave the server. */

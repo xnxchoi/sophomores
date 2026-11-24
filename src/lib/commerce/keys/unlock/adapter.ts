@@ -77,7 +77,7 @@ export function createUnlockKeyGrantAdapter({ chainID, account, transport, now =
       try {
         if (!(await chain.onChain())) { release(); return notSent("chain_mismatch"); }
         const held = await client.readContract({ address: target.lock, abi: lockAbi, functionName: "totalKeys", args: [target.recipient] }) as bigint;
-        if (held > 0n && value.ticketTier !== "guest") { release(); return notSent("recipient_has_key"); }
+        if (held > 0n && value.ticketTier !== "guest" && value.ticketMode !== "shared") { release(); return notSent("recipient_has_key"); }
         const call = await grantCall(target);
         const signed = await chain.sign(release, { ...call, nonce: await chain.nextNonce(nonceFloor) });
         if (signed === "fee_above_ceiling") { release(); return notSent(signed); }

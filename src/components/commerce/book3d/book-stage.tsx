@@ -69,7 +69,7 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
   const pickInk = (next: "pink" | "yellow") => setInk((current) => current === next ? null : next);
   const stage = useRef<HTMLDivElement>(null);
   const signals = useRef<BookSignals>({ scroll: 0, hologram: false, radio: false, spins: [], look: false, peek: false, commands: [],
-    view: { zoom: 1, x: 0, y: 0, panning: false, unitsPerPx: 0.02 }, marker: null, hitRect: null, invalidate: null,
+    view: { zoom: 1, x: 0, y: 0, panning: false, unitsPerPx: 0.02, reachX: 0 }, marker: null, hitRect: null, invalidate: null,
     exit: 0, pointer: { x: 0, y: 0 }, overlay: null, onGone: null, onReading: null, frame: null, spreadRect: null });
   // The open spread while reading (null until the book has opened): the control bar shows then and reads its pages.
   const [reading, setReading] = useState<{ spread: number; leaves: number; shown: boolean } | null>(null);
@@ -206,7 +206,7 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
     // The phone's open state moves the stage to a fixed full screen: the control layer follows on the next frame.
     const frame = requestAnimationFrame(() => sync.current?.());
     if (open) signals.current.peek = false;
-    if (!open) { Object.assign(signals.current.view, { zoom: 1, x: 0, y: 0, panning: false }); return () => cancelAnimationFrame(frame); }
+    if (!open) { Object.assign(signals.current.view, { zoom: 1, x: 0, y: 0, panning: false, reachX: 0 }); return () => cancelAnimationFrame(frame); }
     // stripe.press's keys while open: ← → turn a page and repeat while held (every 300 ms, quickening to 50 ms over 3 s);
     // < > turn too; x closes; m toggles the magnifier; h the highlighter (last ink); Escape steps back one thing at a time.
     let repeat = 0;
@@ -247,7 +247,7 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
     let start: null | { dist: number; x: number; y: number; zoom: number; viewX: number; viewY: number } = null;
     let hold = 0, settle = 0, downAt = { x: 0, y: 0 };
     const rubber = (value: number, min: number, max: number, k: number) => value < min ? min - (min - value) * k : value > max ? max + (value - max) * k : value;
-    const bounds = (zoom: number) => ({ x: 7.2 * 0.75 * Math.max(zoom - 0.5, 0), y: 5.2 * 0.75 * Math.max(zoom - 0.5, 0) });
+    const bounds = (zoom: number) => ({ x: Math.max(7.2 * 0.75 * Math.max(zoom - 0.5, 0), view.reachX * zoom), y: 5.2 * 0.75 * Math.max(zoom - 0.5, 0) });
     const centre = () => { const all = [...points.values()]; return { x: all.reduce((a, p) => a + p.x, 0) / all.length, y: all.reduce((a, p) => a + p.y, 0) / all.length }; };
     const spread = () => { const [a, b] = [...points.values()]; return a && b ? Math.hypot(a.x - b.x, a.y - b.y) : 1; };
     const begin = () => { const c = centre(); start = { dist: spread(), x: c.x, y: c.y, zoom: view.zoom, viewX: view.x, viewY: view.y }; view.panning = true; cancelAnimationFrame(settle); };

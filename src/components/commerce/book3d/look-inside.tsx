@@ -269,7 +269,8 @@ export function LookInside({ source, look, signals, sound, width, height, thickn
    *  hovered, the tip flop, the hover nudge, and whether its flight was dragged. */
   const leafFx = useRef(Array.from({ length: LEAVES }, () => ({ curl: 0, tilt: 0, amount: 0, amountV: 0, grabU: 1, grabV: 0.5, flop: 0, nudge: 0, dragged: false })));
   const hover = useRef({ inside: false, left: false, grabU: 0, grabV: 0.5, x: 0, y: 0, lastSide: 0, sideSince: 0, pushFrom: 0 });
-  const timing = useRef({ lockoutUntil: 0, fanAt: -1, shownAt: -1, fine: true });
+  const timing = useRef({ lockoutUntil: 0, fanAt: -1, shownAt: -1, fine: true, panTo: null as number | null });
+  const state = useRef<{ invalidate: () => void } | null>(null);
   useEffect(() => { timing.current.fine = window.matchMedia("(pointer: fine)").matches; }, []);
   /** The spread's screen rect in the View's pixels and the spine's x (stripe.press's book rect and spineScreenX). */
   const rect = useRef({ left: 0, top: 0, right: 0, bottom: 0, spine: 0, ready: false });
@@ -332,6 +333,13 @@ export function LookInside({ source, look, signals, sound, width, height, thickn
    *  nothing and says so. */
   const step = (dir: 1 | -1) => {
     const l = look.current; if (!l?.active) return false;
+    // Reading one page at a time (a phone): forward from the left page shows the right one, back from the right page
+    // shows the left one; otherwise the leaf turns and the view comes to the near page of the new spread.
+    const view = signals.current.view;
+    if (view.reachX > 0 && !view.panning) {
+      if (dir > 0 ? view.x < 0 : view.x > 0) { timing.current.panTo = dir * view.reachX; state.current?.invalidate(); return true; }
+      timing.current.panTo = -dir * view.reachX;
+    }
     const leaf = dir > 0 ? l.spread : l.spread - 1;
     if (leaf < 0 || leaf >= LEAVES) return false;
     l.target[leaf] = dir > 0 ? PI : 0; l.brake[leaf] = null; l.vel[leaf] = 0.08 * dir; leafFx.current[leaf].dragged = false;
@@ -382,7 +390,9 @@ export function LookInside({ source, look, signals, sound, width, height, thickn
   function mapPointer(clientX: number, clientY: number) {
     const box = source?.getBoundingClientRect(), r = rect.current;
     const x = clientX - (box?.left ?? 0), y = clientY - (box?.top ?? 0);
-    const left = x < r.spine, half = left ? Math.max(r.spine - r.left, 1) : Math.max(r.right - r.spine, 1);
+    // One page at a time (a phone): the side is the screen's half, not the spine's.
+    const frame = signals.current.frame, single = signals.current.view.reachX > 0;
+    const left = single && frame ? x < frame.left + frame.width / 2 : x < r.spine, half = left ? Math.max(r.spine - r.left, 1) : Math.max(r.right - r.spine, 1);
     const inside = r.ready && x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
     const grabU = clamp01(Math.abs(x - r.spine) / half), grabV = clamp01(1 - (y - r.top) / Math.max(r.bottom - r.top, 1));
     return { left, inside, grabU, grabV, x: (left ? -1 : 1) * grabU * width, y: (grabV - 0.5) * height };
@@ -546,9 +556,16 @@ export function LookInside({ source, look, signals, sound, width, height, thickn
   }
 
   const point = useMemo(() => new Vector3(), []);
-  useFrame((state, delta) => {
+  useFrame((frameState, delta) => {
     const l = look.current, dt = Math.min(delta, 0.05), f = dt * 60, now = performance.now();
+    state.current = frameState;
     if (!l) return;
+    // The phone's page-to-page pan (step above).
+    const pan = timing.current.panTo, view = signals.current.view;
+    if (pan !== null) {
+      if (view.panning || view.reachX === 0) timing.current.panTo = null;
+      else { view.x += (pan - view.x) * (1 - Math.exp(-10 * dt)); if (Math.abs(pan - view.x) < 1e-3) { view.x = pan; timing.current.panTo = null; } frameState.invalidate(); }
+    }
     // Control bar and keys: one page each; at either end they do nothing (06w9:16335-16353).
     while (signals.current.commands.length) { const command = signals.current.commands.shift(); if (l.active) step(command === "back" ? -1 : 1); }
     const shown = l.lu > 0;
@@ -786,7 +803,7 @@ export function LookInside({ source, look, signals, sound, width, height, thickn
       const w = source.clientWidth, hgt = source.clientHeight, matrix = group.current.matrixWorld;
       let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
       const toScreen = (x: number, y: number) => {
-        toBody(point.set(x, y, 0), l.n).applyMatrix4(matrix).project(state.camera);
+        toBody(point.set(x, y, 0), l.n).applyMatrix4(matrix).project(frameState.camera);
         return [(point.x + 1) / 2 * w, (1 - point.y) / 2 * hgt];
       };
       for (const x of [-width, 0, width]) for (const y of [-height / 2, height / 2]) {
@@ -814,7 +831,7 @@ export function LookInside({ source, look, signals, sound, width, height, thickn
     // Anything still moving keeps the frames coming (the canvas renders on demand).
     if (g || chunkOn || Math.abs(l.push - pushTarget) > 1e-4 || Math.abs(l.tx - progress) > 1e-4 || fx.some((e) => e.curl > 0 || e.nudge > 0 || e.flop !== 0)
       || l.angle.some((a, i) => Math.abs(a - l.render[i]) > 1e-4 || l.vel[i] !== 0 || (l.target[i] !== null && Math.abs(a - (l.target[i] as number)) > 1e-4))
-      || l.fan.some((v) => v > 0 && v < 1)) state.invalidate();
+      || l.fan.some((v) => v > 0 && v < 1)) frameState.invalidate();
   });
 
   // Sheets don't take the pointer (noPick): input is mapped on the spread's screen rect. Leaves cast no shadow yet: three's

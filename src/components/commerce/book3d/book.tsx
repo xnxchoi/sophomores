@@ -43,7 +43,9 @@ export type BookSignals = {
   /** Look inside control bar: page turns waiting to run. */
   commands: ("back" | "forward")[];
   /** Touch zoom and pan of the open book (#27); unitsPerPx is written by the book for the gesture's maths. */
-  view: { zoom: number; x: number; y: number; panning: boolean; unitsPerPx: number };
+  view: { zoom: number; x: number; y: number; panning: boolean; unitsPerPx: number;
+    /** A phone reads one page at a time: how far the view pans either way to centre a page (0 when it shows the spread). */
+    reachX: number };
   /** Highlighter ink while it's on (#28). */
   marker: null | Ink;
   /**
@@ -355,6 +357,8 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
     // Look inside (stripe.press, 06w9:16057-16166): the cover opens over 980 ms (t²) and, from half open, the pages fan
     // in over 900 ms; closing runs both back together (easeOutCubic). The pages own the leaves (look-inside.tsx).
     const want = sig.look ? 1 : -1;
+    // A phone opens on the left page, one page filling the width (stripe.press's read view).
+    if (want !== l.dir && want > 0 && small) { sig.view.x = -W / 2; sig.view.reachX = W / 2; }
     if (want !== l.dir && want > 0) {
       sound.play("crackle");
       // Turn the shortest way to the reading pose, and stop any fling.

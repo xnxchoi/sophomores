@@ -600,7 +600,9 @@ export function LookInside({ source, look, signals, sound, width, height, thickn
     if (fade < 1) pushTarget = h.pushFrom + (pushTarget - h.pushFrom) * fade * fade * (3 - 2 * fade);
     if (!(g && g.mode === "drag")) l.push += (pushTarget - l.push) * (1 - Math.exp(-7 * dt));
     const tE = clamp01(l.tx + l.push);
-    l.n = tE * l.ld;
+    // The body turns with ld², the same ease as the stacks' curl, so the two cancel all the way in: the right stack stays
+    // flat while the pages fan instead of tipping up toward the camera (and past the stage). Unchanged at rest (ld = 1).
+    l.n = tE * l.ld * l.ld;
 
     // Opening: the live leaves around the page (stripe.press's window, 04ud:1787-1864) stand at π/2 until the fan is a
     // fifth in, then fall to their sides; the curl comes in with ld² and a stagger of 90 ms a leaf (420 ms each) from the

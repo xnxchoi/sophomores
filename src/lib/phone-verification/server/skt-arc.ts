@@ -24,6 +24,12 @@ const legacyZohoKey = Object.freeze({
   selector: "zohoarc",
   sha256: "b06478a771d93ff36cd26463c7e0ed0cd5c7e5d344c7b840f602e5b452fe0397"
 });
+/** Exact MMS gateway domains per carrier in the preview trial (carrier guide); SKT MVNOs use SKT's. */
+const trialSenderDomains: Readonly<Record<Carrier, readonly string[]>> = Object.freeze({
+  skt: ["vmms.nate.com", "emms.nate.com", "sktmms.nate.com"],
+  kt: ["ktfmms.magicn.com"],
+  lgu: ["mmsmail.uplus.co.kr"]
+});
 /** What the trial log records for one decision: no phone number, token or address. */
 export type CarrierEvidence = Readonly<{
   carrier: Carrier | "unknown";
@@ -188,6 +194,8 @@ async function verifyCarrierZohoArc(
     });
     const from = mail.from?.value[0]?.address?.toLowerCase();
     if (!from || carrierSender(from)?.carrier !== parsed.carrier) return reject();
+    // The trial accepts only each carrier's exact MMS gateway domain (runbook table), not informal aliases.
+    if (policyVersion === PREVIEW_TRIAL_POLICY && !trialSenderDomains[parsed.carrier].includes(from.split("@")[1] ?? "")) return reject();
     context = createArcDns(options.dns, options);
     const boundedResolver = context.resolver;
     const legacy = options.allowLegacyZohoKey === true;
@@ -260,7 +268,7 @@ async function verifyCarrierZohoArc(
         auth.spf?.result !== "pass" ||
         !dmarcAccepted ||
         auth.spf?.smtp?.mailfrom !== from ||
-        (auth.dmarc?.result === "pass" && !dmarcIdentities.includes(auth.dmarc?.header?.from))
+        !dmarcIdentities.includes(auth.dmarc?.header?.from)
       )
         return reject();
       return {

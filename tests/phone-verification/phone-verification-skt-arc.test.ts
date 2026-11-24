@@ -370,3 +370,13 @@ test("the local SKT pilot still refuses KT and LG U+, including KT with DMARC no
   assert.equal((await verifySktZohoArc(await signed({ from: kt, auth: ktAuth }), { ...message, carrier: "kt" }, options())).approved, false);
   assert.equal((await verifySktZohoArc(await signed({ from: lgu }), { ...message, carrier: "lgu" }, options())).approved, false);
 });
+
+test("preview trial keeps the DMARC header.from identity for KT and pins exact gateway domains", async () => {
+  const otherFrom = `mx.zohomail.com; spf=pass smtp.mailfrom=${kt}; dmarc=none header.from=example.com`;
+  assert.equal((await verifyPreviewTrialZohoArc(await signed({ from: kt, auth: otherFrom }), { ...message, carrier: "kt" }, options())).approved, false);
+  const bareKt = "01012345678@magicn.com";
+  const bareKtAuth = `mx.zohomail.com; spf=pass smtp.mailfrom=${bareKt}; dmarc=none header.from=magicn.com`;
+  assert.equal((await verifyPreviewTrialZohoArc(await signed({ from: bareKt, auth: bareKtAuth }), { ...message, carrier: "kt" }, options())).approved, false);
+  const informalLgu = "01012345678@lguplus.com";
+  assert.equal((await verifyPreviewTrialZohoArc(await signed({ from: informalLgu }), { ...message, carrier: "lgu" }, options())).approved, false);
+});

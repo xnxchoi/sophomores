@@ -339,12 +339,19 @@ to three carriers:
 | KT | `ktfmms.magicn.com` (no DMARC record published) | `none` (KT only, trial only) |
 | LG U+ | `mmsmail.uplus.co.kr` | pass |
 
-Zoho's ARC key is 1024-bit: the receiver also needs
+Zoho's ARC key is 1024-bit: the setting is
 `PHONE_VERIFICATION_ALLOW_LEGACY_ZOHO_ARC=1` (pinned selector `zohoarc` and key
-fingerprint only; a rotated key fails closed). Unverified until a real message
+fingerprint only; a rotated key fails closed). Turning it on is the operator's
+call, as for the SKT pilot; without it no message approves. Only these exact
+sender domains are accepted in the trial; `magicn.com` and `lguplus.com` are refused. Unverified until a real message
 arrives: whether Zoho's sealed results for KT carry `dmarc=none header.from=…`
 in the shape the strict parser accepts. If not, KT messages stay in `review` and
 the trial log shows it.
+
+**Trial evidence comes in two parts.** The trial log records cryptographic
+acceptance only. The actual pending-to-verified transition is in
+`phone_verification.challenges` (`policy_version='preview-trial-zoho-arc-v1'`,
+state `verified`, then `consumed` once bound). Read both.
 
 **Trial log.** The receiver writes one JSON line to stdout per decision:
 `{"event":"phone_carrier_trial","policy","carrier","approved","arc","spf","dmarc","at"}`.
@@ -357,6 +364,10 @@ No number, token, address or message content. Read it with
 receive-only child as the local launcher, without the localhost-only launcher.
 The runtime image has no `scripts/` or `tsx`, so the service runs from the
 `builder` stage of `deployment/Dockerfile` (same snapshot as the app image).
+
+Build on the host that built the preview app image, so the `builder` layers come
+from cache; elsewhere `--target builder` reruns the functional tests, typecheck and
+`next build`.
 
 ```sh
 # Same allowlisted snapshot as the preview app; cached layers are reused.
@@ -381,9 +392,9 @@ docker run -d --name sphmrs-preview-phone-receiver --restart on-failure:5 \
 - The receiver needs the preview database and outbound HTTPS to Zoho
   (`mail.zoho.com`, `accounts.zoho.com`). If `<preview-network>` is internal-only,
   also attach a network with egress.
-- The app container mounts the same volume at the same path, with the same
-  `PHONE_VERIFICATION_RECEIVER_HEALTH_DIRECTORY`. Without a fresh lease the app
-  answers `503 RECEIVER_UNAVAILABLE`.
+- **Recreate the app container** with the same volume at the same path, the same
+  `PHONE_VERIFICATION_RECEIVER_HEALTH_DIRECTORY` and the matching phone keys below.
+  Without a fresh lease the app answers `503 RECEIVER_UNAVAILABLE`.
 
 `<receiver.env>` (names; values from the sandbox profile):
 

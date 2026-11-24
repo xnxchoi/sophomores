@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { test } from "node:test";
+import { test, type TestContext } from "node:test";
 import { postgresAdapter } from "@payloadcms/db-postgres";
 import type { PayloadRequest } from "payload";
 import { buildCommerceSnapshot } from "@/lib/commerce/catalogue";
@@ -36,6 +36,49 @@ test("cart writes accept quantity 1 only", async () => {
   });
   assert.equal(reads, 0);
 });
+
+test("a multi-unit marker cannot send a variant or more than two guests to the catalogue", async t => {
+  configureSharedGuest(t, true);
+  let reads = 0;
+  const req = { user, payload: { findGlobal: async () => { reads++; throw new Error("catalogue read"); } } } as unknown as PayloadRequest;
+  const cart = { id: "cart", customer: "owner", currency: "KRW" };
+  for (const [item, error] of [
+    [{ product: "guest", quantity: 2, ticketKind: "guest" }, /one unit/i],
+    [{ product: "guest", quantity: 2, ticketKind: "shared-event-guest", variant: "sku" }, /one unit/i],
+    [{ product: "guest", quantity: 3, ticketKind: "shared-event-guest" }, /two guest/i],
+  ] as const) {
+    await assert.rejects(buildCommerceSnapshot({ req, cart: { ...cart, items: [item] }, shippingAddress }), error);
+  }
+  assert.equal(reads, 0);
+});
+
+function configureSharedGuest(t: TestContext, enabled: boolean) {
+  const settings = { UNLOCK_SHARED_TICKET_EVENT_ID: enabled ? "event" : undefined, UNLOCK_SHARED_TICKET_GUEST_PRODUCT_ID: "guest" };
+  for (const [key, value] of Object.entries(settings)) {
+    const previous = process.env[key];
+    t.after(() => { if (previous === undefined) delete process.env[key]; else process.env[key] = previous; });
+    if (value === undefined) delete process.env[key]; else process.env[key] = value;
+  }
+}
+
+for (const enabled of [false, true]) {
+  test(`an exact Guest marker cannot read catalogue state for ${enabled ? "a different product" : "a dormant event"}`, async t => {
+    configureSharedGuest(t, enabled);
+    const config = await commercePlugin({ collections: [], endpoints: [], secret: randomUUID(),
+      db: postgresAdapter({ pool: { connectionString: "postgres://localhost/commerce_test" } }) });
+    const hook = config.collections!.find(entry => entry.slug === "carts")!.hooks!.beforeChange![0];
+    let reads = 0;
+    const read = async () => { reads++; throw new Error("catalogue read"); };
+    const req = { user, transactionID: "tx", payload: { findGlobal: read, find: read, findByID: read } } as unknown as PayloadRequest;
+    const items = [{ product: enabled ? "membership" : "guest", quantity: 2, ticketKind: "shared-event-guest" }];
+    await Promise.all([
+      assert.rejects(buildCommerceSnapshot({ req, cart: { id: "cart", customer: "owner", currency: "KRW", items }, shippingAddress }), /one unit/i),
+      withCommerceWrite(req, () =>
+        assert.rejects(hook({ req, operation: "create", data: { customer: "owner", items } } as never), /one unit/i)),
+    ]);
+    assert.equal(reads, 0);
+  });
+}
 
 test("a snapshot is checked against the account limit it recorded", () => {
   const snapshot = { version: 1, customerID: "c", cartID: "cart", productID: "p", eventID: "e", releaseID: "membership" as const, accountLimit: 1,

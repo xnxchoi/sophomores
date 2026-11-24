@@ -51,6 +51,33 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
     await migrate(up);
     assert.deepEqual(await editionColumns(), afterPush);
   });
+  await t.test("the combined migration leaves Home Entry and the nullable cart marker in place", async () => {
+    const { migrations } = await import("../../../src/payload/migrations");
+    const guestCart = migrations.findIndex(({ name }) => name === "20261124_121000_shared_guest_cart_kind");
+    assert.ok(guestCart > 0);
+    const [cart, home] = migrations.slice(guestCart);
+    assert.equal(migrations[guestCart + 1]?.name, "20261124_130000_home_entry");
+    const columns = async () => (await control.query(`SELECT table_name, column_name, is_nullable
+      FROM information_schema.columns WHERE table_schema = 'public' AND (
+        (table_name = 'carts_items' AND column_name = 'ticket_kind') OR
+        (table_name = 'home_entry' AND column_name = 'warp_start') OR
+        (table_name = 'home_entry_entry_links' AND column_name = 'code'))
+      ORDER BY table_name`)).rows;
+    const cartColumn = { table_name: "carts_items", column_name: "ticket_kind", is_nullable: "YES" };
+    const homeColumns = [
+      { table_name: "home_entry", column_name: "warp_start", is_nullable: "YES" },
+      { table_name: "home_entry_entry_links", column_name: "code", is_nullable: "NO" },
+    ];
+    await migrate(cart.down); // The shared fixture pushes the cart schema but has no Home Entry global.
+    assert.deepEqual(await columns(), []);
+    await migrate(cart.up);
+    await migrate(home.up);
+    assert.deepEqual(await columns(), [cartColumn, ...homeColumns]);
+    await migrate(cart.down);
+    assert.deepEqual(await columns(), homeColumns);
+    await migrate(cart.up); // On current main Home Entry has already run.
+    assert.deepEqual(await columns(), [cartColumn, ...homeColumns]);
+  });
   await publishFixtureCatalogue(payload);
   await t.test("legacy payment control settles through the same installed plugin and owned PG fixture", async () => {
     const donor = await initiateAttempt(payload);
@@ -58,7 +85,7 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
     assert.equal((await orders(control, donor.transactionID)).length, 1);
   });
 
-  await t.test("shared event: one Member and two Guest seats, two Guest slots per sponsor, and one final token mapping", async () => {
+  await t.test("shared event: one Member and two Guest seats, two Guest slots per sponsor, and one final token mapping", async (shared) => {
     const { randomUUID } = await import("node:crypto");
     const { z } = await import("zod");
     const { seedCheckoutCart, initiateThroughEndpoint } = await import("../core/payment-postgres-fixture");
@@ -74,6 +101,7 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
     const lock = "0x" + "b".repeat(40);
     const ticketTarget = { chainID: 137, lock, mode: "shared" as const };
     const priorEvent = process.env.UNLOCK_SHARED_TICKET_EVENT_ID;
+    const priorGuestProduct = process.env.UNLOCK_SHARED_TICKET_GUEST_PRODUCT_ID;
     const priorSignet = process.env.MEMBER_WALLET_LOCK_ADDRESS;
     const priorChain = process.env.MEMBER_WALLET_CHAIN_ID;
     const priorOwner = process.env.MEMBER_WALLET_OWNER_ADDRESS;
@@ -205,9 +233,37 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
       await control.query("UPDATE commerce_key_grant_intents SET target=jsonb_set(target, '{ticketTier}', to_jsonb($2::text)) WHERE id=$1", [grants.rows[2].id, "guest"]);
       await assert.rejects(readAllowance, /Member Event grant identity is inconsistent/);
       await assert.rejects(migrate(downBinding), /Cannot drop shared event ticket evidence|Failed query/);
+
+      await shared.test("a typed two-Guest line survives a cart save and reload and initiates at the canonical price", async () => {
+        const { down: downCartKind } = await import("../../../src/payload/migrations/20261124_121000_shared_guest_cart_kind");
+        await payload.update({ collection: "commerce-events" as never, id: eventID, overrideAccess: true,
+          data: { capacity: 5, transportCapacity: 5 } as never });
+        const sponsor = await seedMember(payload);
+        const sponsorReq = await createLocalReq({ user: sponsor }, payload);
+        const line = { product: guest.productID, quantity: 2, ticketKind: "shared-event-guest" };
+        const save = () => withCommerceWrite(sponsorReq, () => payload.create({
+          collection: "carts", req: sponsorReq, overrideAccess: true, depth: 0, data: { items: [line], currency: "KRW" },
+        }));
+        process.env.UNLOCK_SHARED_TICKET_GUEST_PRODUCT_ID = guest.productID;
+        delete process.env.UNLOCK_SHARED_TICKET_EVENT_ID;
+        await assert.rejects(save(), /one unit/i);
+        process.env.UNLOCK_SHARED_TICKET_EVENT_ID = eventID;
+        process.env.UNLOCK_SHARED_TICKET_GUEST_PRODUCT_ID = randomUUID();
+        await assert.rejects(save(), /one unit/i);
+        process.env.UNLOCK_SHARED_TICKET_GUEST_PRODUCT_ID = guest.productID;
+        const saved = await save();
+        const reloaded = await payload.findByID({ collection: "carts", id: saved.id, depth: 0, overrideAccess: true });
+        assert.equal(reloaded.items?.[0]?.ticketKind, line.ticketKind);
+        assert.equal(reloaded.items?.[0]?.quantity, 2);
+        const attempt = await initiateThroughEndpoint(payload, sponsor, { cartID: reloaded.id, shippingAddress: guest.shippingAddress }) as { transactionID: string };
+        const charge = await control.query("SELECT amount::int FROM transactions WHERE id=$1", [attempt.transactionID]);
+        assert.deepEqual(charge.rows, [{ amount: 20_000 }]);
+        await assert.rejects(migrate(downCartKind), /Cannot drop persisted shared Guest cart markers|Failed query/);
+      });
     } finally {
       for (const [key, value] of Object.entries({
-        UNLOCK_SHARED_TICKET_EVENT_ID: priorEvent, MEMBER_WALLET_LOCK_ADDRESS: priorSignet, NEXT_PUBLIC_SERVER_URL: priorOrigin,
+        UNLOCK_SHARED_TICKET_EVENT_ID: priorEvent, UNLOCK_SHARED_TICKET_GUEST_PRODUCT_ID: priorGuestProduct,
+        MEMBER_WALLET_LOCK_ADDRESS: priorSignet, NEXT_PUBLIC_SERVER_URL: priorOrigin,
         MEMBER_WALLET_CHAIN_ID: priorChain, MEMBER_WALLET_OWNER_ADDRESS: priorOwner,
       })) {
         if (value === undefined) delete process.env[key]; else process.env[key] = value;

@@ -10751,6 +10751,12 @@
           "type": "uuid",
           "primaryKey": false,
           "notNull": false
+        },
+        "ticket_kind": {
+          "name": "ticket_kind",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -19197,5 +19203,5 @@
     "columns": {}
   },
   "id": "740256bd-bf0e-46ab-b0a8-8862be8c9812",
-  "prevId": "00000000-0000-0000-0000-000000000000"
+  "prevId": "7cc60ab3-17bb-45db-a5a9-9c5c80c0591a"
 }

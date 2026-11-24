@@ -6,6 +6,7 @@ import { MEMBERSHIP_ACCOUNT_LIMIT, MEMBERSHIP_RELEASE, commerceSnapshotSchema, t
 import { commerceAdmin } from "./access";
 import { guestPurchaseSnapshotSchema, type PurchaseSnapshot } from "./purchase-snapshot";
 import { rejectHeldNativeCheckout } from "./_shared/native-checkout-hold";
+import { cartQuantityError, SHARED_GUEST_CART_KIND } from "./cart-quantity";
 import { resolveEventTicketTarget, sharedEventTicketsEnabled, SHARED_GUEST_LIMIT, unlockEventTicketConfiguration, type EventTicketTarget } from "./event-tickets";
 
 const relation = z.union([z.string().min(1), z.object({ id: z.string().min(1) })]).transform((value) => typeof value === "string" ? value : value.id);
@@ -140,17 +141,20 @@ export async function buildCommerceSnapshot({ req, cart, shippingAddress, allowN
   req: PayloadRequest; cart: unknown; shippingAddress: ShippingAddress; allowNativeEditions?: boolean;
 }): Promise<PurchaseSnapshot> {
   const parsed = z.object({ id: z.string(), customer: relation, currency: z.literal("KRW"), purchasedAt: z.nullish(z.string()),
-    items: z.array(z.object({ product: relation, quantity: z.int().min(1), variant: relation.nullish() })).length(1) }).parse(cart);
+    items: z.array(z.object({ product: relation, quantity: z.int().min(1), variant: relation.nullish(), ticketKind: z.unknown().optional() })).length(1) }).parse(cart);
   const item = parsed.items[0];
   if (!item || parsed.purchasedAt || req.user?.collection !== "users" || String(req.user.id) !== parsed.customer) throw new Error("Cart is not available");
+  const quantityError = cartQuantityError({ ...item, productID: item.product });
+  if (quantityError) throw new Error(quantityError);
   if (item.variant != null) {
-    if (item.quantity !== MEMBERSHIP_ACCOUNT_LIMIT) throw new Error("Only one unit per purchase");
+    if (item.ticketKind != null) throw new Error("Offer is not available");
     if (!allowNativeEditions) rejectHeldNativeCheckout(req);
     const { buildNativePurchaseSnapshot } = await import("./native-edition-purchase");
     return buildNativePurchaseSnapshot(req, { cartID: parsed.id, productID: item.product, variantID: item.variant, shippingAddress });
   }
   const offer = await loadCommerceCatalogue({ req, productID: item.product });
-  if (!offer || item.quantity > offer.availableQuantity || item.quantity > offer.maximumQuantity) throw new Error("Offer is not available");
+  if (!offer || (item.ticketKind != null && (item.ticketKind !== SHARED_GUEST_CART_KIND || !offer.ticketTarget)) ||
+    item.quantity > offer.availableQuantity || item.quantity > offer.maximumQuantity) throw new Error("Offer is not available");
   if (offer.ticketTarget) return guestPurchaseSnapshotSchema.parse({
     version: 3, kind: "guest-ticket-v1", customerID: parsed.customer, cartID: parsed.id, productID: offer.productID,
     eventID: offer.event.id, releaseID: offer.productID, quantity: item.quantity, accountLimit: SHARED_GUEST_LIMIT, currency: "KRW",

@@ -459,6 +459,7 @@ export interface Cart {
         product?: (string | null) | Product;
         quantity: number;
         variant?: (string | null) | Variant;
+        ticketKind?: string | null;
         id?: string | null;
       }[]
     | null;
@@ -2744,6 +2745,7 @@ export interface CartsSelect<T extends boolean = true> {
         product?: T;
         quantity?: T;
         variant?: T;
+        ticketKind?: T;
         id?: T;
       };
   secret?: T;

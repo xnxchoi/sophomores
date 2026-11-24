@@ -13,6 +13,7 @@ import { assertCommerceBrowserMutation, commerceAdmin, commerceAdminField, comme
 import { commerceProductSchema, commercePublicationSchema, loadCommerceCatalogue } from "./catalogue";
 import { shippingAddressSchema } from "./contracts";
 import { CART_EXPECTED_MEMBER_HEADER, cartRefusalData, cartRefusalMessage } from "./cart-refusal";
+import { cartQuantityError, SHARED_GUEST_CART_KIND } from "./cart-quantity";
 import { purchaseSnapshotSchema } from "./purchase-snapshot";
 import { preserveNativeCheckoutHold } from "./_shared/native-checkout-hold";
 import { readCommerceJSON } from "./_shared/request-body";
@@ -85,13 +86,16 @@ export const createSecureCart = (authorizeMutation: (req: PayloadRequest) => Pro
   if (!internal && ((data.purchasedAt != null && data.purchasedAt !== current?.purchasedAt)
     || (data.secret != null && data.secret !== current?.secret))) throw new APIError("Cart field is server owned", 403);
   if (data.currency && data.currency !== "KRW") throw new APIError("Unsupported currency", 400);
-  const items = z.array(z.object({ id: z.string().optional(), product: z.union([z.string().min(1), z.object({ id: z.string().min(1) })]), quantity: z.int().min(1), variant: z.nullish(z.unknown()) })).max(1).parse(data.items ?? current?.items ?? []);
+  const items = z.array(z.object({ id: z.string().optional(), product: z.union([z.string().min(1), z.object({ id: z.string().min(1) })]), quantity: z.int().min(1), variant: z.nullish(z.unknown()), ticketKind: z.unknown().optional() })).max(1).parse(data.items ?? current?.items ?? []);
   let subtotal = 0;
   for (const item of items) {
+    const productID = relationshipID(item.product);
+    const quantityError = cartQuantityError({ ...item, productID });
+    if (quantityError) throw new APIError(quantityError, 400);
     if (item.variant != null) throw new APIError("Variants unavailable", 409);
-    const offer = await loadCommerceCatalogue({ req, productID: relationshipID(item.product) });
-    if (offer && !offer.ticketTarget && item.quantity > offer.maximumQuantity) throw new APIError("Only one unit per purchase", 400);
-    if (!offer || item.quantity > offer.availableQuantity || item.quantity > offer.maximumQuantity) throw new APIError(cartRefusalMessage("offer-unavailable"), 409, cartRefusalData("offer-unavailable"));
+    const offer = await loadCommerceCatalogue({ req, productID });
+    if (!offer || (item.ticketKind != null && (item.ticketKind !== SHARED_GUEST_CART_KIND || !offer.ticketTarget)) ||
+      item.quantity > offer.availableQuantity || item.quantity > offer.maximumQuantity) throw new APIError(cartRefusalMessage("offer-unavailable"), 409, cartRefusalData("offer-unavailable"));
     // A browser line that is new or larger is refused early at the account limit. Removing or clearing is never blocked.
     const previous = (current?.items ?? []).find((line: { product?: unknown }) => relationshipID(line.product) === offer.productID);
     if (!internal && item.quantity > (previous?.quantity ?? 0) && !await accountAllowanceAdmits(req, { customerID: String(owner),
@@ -342,7 +346,9 @@ export const commercePlugin: Plugin = async (config) => {
     inventory: true, products: { variants: false, productsCollectionOverride: ({ defaultCollection }) => productsOverride(defaultCollection) },
     carts: { allowGuestCarts: false, cartsCollectionOverride: ({ defaultCollection }) => ({ ...defaultCollection,
       access: { ...defaultCollection.access, admin: commerceAdmin, delete: deny },
-      fields: withNativeSKU(defaultCollection.fields).map((field): Field => (field.type === "text" || field.type === "date" || field.type === "relationship")
+      fields: withNativeSKU(defaultCollection.fields).map((field): Field => field.type === "array" && field.name === "items"
+        ? { ...field, fields: [...field.fields, { name: "ticketKind", type: "text", admin: { hidden: true } }] }
+        : (field.type === "text" || field.type === "date" || field.type === "relationship")
         && ["secret", "purchasedAt", "customer"].includes(field.name) ? { ...field, access: { ...field.access,
           create: field.name === "secret" ? deny : commerceServerField, update: field.name === "secret" ? deny : commerceServerField } } : field),
       endpoints: (Array.isArray(defaultCollection.endpoints) ? defaultCollection.endpoints : []).filter((endpoint) => !endpoint.path.includes("merge")).map(secureEndpoint),

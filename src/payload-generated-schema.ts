@@ -3021,7 +3021,8 @@ export const carts_items = pgTable(
     quantity: numeric("quantity", { mode: "number" }).notNull().default(1),
     variant: uuid("variant_id").references(() => variants.id, {
       onDelete: "set null"
-    })
+    }),
+    ticketKind: varchar("ticket_kind")
   },
   (columns) => [
     index("carts_items_order_idx").on(columns._order),

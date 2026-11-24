@@ -26,6 +26,7 @@ import {
 import { customerAccess, protectCustomerFields } from "@/lib/auth/access";
 import { isVerifiedStaff, ensureStaffAdminProvisioned, isStaffAddress, onStaffSignIn } from "@/lib/auth/staff";
 import { bootstrapSuperAdminEmail } from "@/payload/seed/super-admin";
+import { logAuthFailure } from "@/lib/auth/failure-log";
 import { assertReviewEditorRecipient, hasReviewOwner, isReviewEditorProfile, staffAuthOrigin } from "@/lib/auth/review-editor-policy";
 
 const appURL = staffAuthOrigin();
@@ -204,8 +205,7 @@ export const betterAuthOptions = {
         const user = await ctx?.context.internalAdapter.findUserById(session.userId);
         if (user) await onStaffSignIn(user);
       } catch (error) {
-        const name = (error as { name?: unknown } | null)?.name;
-        console.error("Staff sign-in bootstrap retry failed.", { errorClass: typeof name === "string" ? name.slice(0, 80) : "Error" });
+        logAuthFailure("Staff sign-in bootstrap retry failed.", error);
       }
     } } },
     user: {

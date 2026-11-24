@@ -1,6 +1,7 @@
 import type { Payload } from "payload";
 import { isConfiguredStaffEmail, isReviewEditorProfile, staffAuthOrigin } from "./review-editor-policy";
 import { isStaffEmail } from "./staff-email";
+import { logAuthFailure } from "./failure-log";
 import { bootstrapSuperAdminEmail, ensureFirstSuperAdmin } from "@/payload/seed/super-admin";
 
 export { isStaffEmail };
@@ -27,7 +28,7 @@ export function isVerifiedStaff(user: { email?: string | null; emailVerified?: b
  * Every sign-in of the configured first super admin, including one whose admins row already exists:
  * provision the row if missing and retry the bootstrap (startup may have run before the row existed,
  * or a first promotion may have failed). Other staff are provisioned by the per-request strategy.
- * A failure here never blocks the sign-in; it is logged by class only, never with the address.
+ * A failure here never blocks the sign-in; it is logged by a fixed label only, never with the address.
  */
 export async function onStaffSignIn(user: { email?: string | null; emailVerified?: boolean | null; name?: string | null; id?: string | null },
   payloadInstance?: Payload): Promise<void> {
@@ -35,8 +36,7 @@ export async function onStaffSignIn(user: { email?: string | null; emailVerified
   if (!bootstrap || !user.email || user.email.trim().toLowerCase() !== bootstrap || !isVerifiedStaff(user)) return;
   try { await ensureStaffAdminProvisioned({ ...user, email: user.email }, payloadInstance); }
   catch (error) {
-    const name = (error as { name?: unknown } | null)?.name;
-    console.error("Staff sign-in provisioning failed.", { errorClass: typeof name === "string" ? name.slice(0, 80) : "Error" });
+    logAuthFailure("Staff sign-in provisioning failed.", error);
   }
 }
 

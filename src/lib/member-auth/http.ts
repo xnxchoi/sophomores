@@ -4,6 +4,7 @@ import { MemberError, type MemberCapabilities, type MemberPrincipal } from "./co
 import type { MemberBindingService } from "./service";
 import { productionOrigin } from "../phone-verification/server/config";
 import { hasConfiguredRequestAuthority } from "../phone-verification/server/local-request";
+import { logAuthFailure } from "../auth/failure-log";
 
 type Dependencies = {
   origin: string;
@@ -15,23 +16,26 @@ type Dependencies = {
   bodyTimeoutMs?: number;
 };
 class HttpError extends Error { constructor(readonly status: number, readonly code: string) { super(code); } }
-/**
- * Logs an unexpected failure by its error class and a fresh correlation ID only. The message and stack can carry
- * user or database data (an address, a DSN fragment), so they never reach the log (standard-security baseline).
- * Returns the correlation ID, for the response, so a report can be matched to its log line.
- */
-export function logMemberFailure(context: string, error: unknown, log: (...values: unknown[]) => void = console.error): string {
-  const name = (error as { name?: unknown } | null)?.name;
-  const correlationId = crypto.randomUUID();
-  log(context, { errorClass: typeof name === "string" && /^[A-Za-z][A-Za-z0-9_]{0,79}$/.test(name) ? name : "Error", correlationId });
-  return correlationId;
-}
-
 export function memberJson(status: number, body: unknown): Response {
   return Response.json(body, { status, headers: { "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff", "X-Robots-Tag": "noindex, nofollow, noarchive", "Referrer-Policy": "no-referrer" } });
 }
 export function memberUnavailable(): Response {
   return memberJson(503, { success: false, error: { code: "UNAVAILABLE", message: "Member authentication is unavailable." } });
+}
+/**
+ * The auth route's answer when its handler throws: the failure is logged by a fixed label and a correlation ID
+ * (never the thrown value), and the 503 carries that ID so a report can be matched to its log line.
+ */
+export function authHandlerFailed(discovery: boolean, error: unknown, log?: (...values: unknown[]) => void): Response {
+  return authUnavailable(discovery, logAuthFailure("Auth handler error.", error, log));
+}
+export function authUnavailable(discovery: boolean, correlationId?: string): Response {
+  const body = { success: false, error: { code: "UNAVAILABLE", message: "Authentication service is unavailable." } };
+  const response = discovery
+    ? memberJson(503, body)
+    : Response.json(body, { status: 503, headers: { "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" } });
+  if (correlationId) response.headers.set("X-Correlation-Id", correlationId);
+  return response;
 }
 export function memberRequestFailure(error: unknown): Response {
   if (error instanceof HttpError) return memberJson(error.status, { success: false, error: { code: error.code, message: "The member request could not be accepted." } });

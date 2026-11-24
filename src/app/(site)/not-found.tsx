@@ -6,7 +6,8 @@ import { holdThemeBoot } from "@/lib/content/theme";
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("System");
   return {
-    title: "404",
+    // The Hideaway's 404 title, as served (hideawayseoul.com, 24 Nov).
+    title: "404...",
     description: t("notFoundDescription")
   };
 }

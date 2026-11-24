@@ -2,6 +2,7 @@ import PublicLockV14 from "@unlock-protocol/contracts/dist/abis/PublicLock/Publi
 import { encodeFunctionData, getAddress, isAddressEqual, parseEventLogs, type Abi, type Address, type Hex, type LocalAccount, type Transport } from "viem";
 import { isTxHash, parseKeyGrantTarget, type CancelPrepareOutcome, type CancelReconcileOutcome, type KeyCancelAdapter, type KeyGrantTarget, type ReplaceOutcome } from "../contracts";
 import { reverted } from "./adapter";
+import { POLYGON_CHAIN_ID, POLYGON_SIGNET_LOCK } from "./polygon";
 import { createSignerTransactions, replacementFee } from "./transactions";
 
 /*
@@ -35,22 +36,29 @@ import { createSignerTransactions, replacementFee } from "./transactions";
 const lockAbi = PublicLockV14.abi as Abi;
 const tokenPattern = /^[1-9]\d{0,76}$/;
 
-export type UnlockKeyCancelAdapterOptions = { chainID: number; account: LocalAccount; transport?: Transport; holdMs?: number };
+export type UnlockKeyCancelAdapterOptions = {
+  chainID: number; account: LocalAccount; transport?: Transport; holdMs?: number;
+  /** Where the go-live switch is read (default: process.env). */
+  env?: Readonly<Record<string, string | undefined>>;
+  /** On Polygon, the only lock a key may be cancelled on (default: the pinned Signet lock). */
+  polygonLock?: Address;
+};
 
 const notSent = (code: string): CancelPrepareOutcome => ({ kind: "definitelyNotSent", code });
 const unknown: CancelReconcileOutcome = { kind: "unknown" };
 
-export function createUnlockKeyCancelAdapter({ chainID, account, transport, holdMs = 60_000 }: UnlockKeyCancelAdapterOptions): KeyCancelAdapter {
-  const chain = createSignerTransactions({ chainID, account, transport, holdMs });
+export function createUnlockKeyCancelAdapter({ chainID, account, transport, holdMs = 60_000, env, polygonLock = POLYGON_SIGNET_LOCK }: UnlockKeyCancelAdapterOptions): KeyCancelAdapter {
+  const chain = createSignerTransactions({ chainID, account, transport, holdMs, env });
   const { client } = chain;
   const read = (lock: Address, functionName: string, args: unknown[], blockHash?: Hex) => client.readContract({
     address: lock, abi: lockAbi, functionName, args, ...(blockHash ? { blockHash, requireCanonical: true } : {}),
   });
 
-  const targetHere = (value: KeyGrantTarget): { lock: Address; recipient: Address } | "invalid" | "elsewhere" => {
+  const targetHere = (value: KeyGrantTarget): { lock: Address; recipient: Address } | "invalid" | "elsewhere" | "unpinned" => {
     if (value?.chainID !== chainID) return "elsewhere";
     let target: KeyGrantTarget;
     try { target = parseKeyGrantTarget(value); } catch { return "invalid"; }
+    if (chainID === POLYGON_CHAIN_ID && !isAddressEqual(target.lock as Address, polygonLock)) return "unpinned";
     return { lock: getAddress(target.lock), recipient: getAddress(target.recipient) };
   };
 
@@ -61,6 +69,7 @@ export function createUnlockKeyCancelAdapter({ chainID, account, transport, hold
       const target = targetHere(value);
       if (target === "invalid") return notSent("invalid_target");
       if (target === "elsewhere") return notSent("chain_not_enabled");
+      if (target === "unpinned") return notSent("lock_not_enabled");
       if (!tokenPattern.test(tokenID)) return notSent("invalid_token");
       const token = BigInt(tokenID);
       const release = await chain.hold();
@@ -95,6 +104,7 @@ export function createUnlockKeyCancelAdapter({ chainID, account, transport, hold
       const target = targetHere(value);
       if (target === "invalid") return { kind: "definitelyNotSent", code: "invalid_target" };
       if (target === "elsewhere") return { kind: "definitelyNotSent", code: "chain_not_enabled" };
+      if (target === "unpinned") return { kind: "definitelyNotSent", code: "lock_not_enabled" };
       if (!tokenPattern.test(tokenID)) return { kind: "definitelyNotSent", code: "invalid_token" };
       const release = await chain.hold();
       try {

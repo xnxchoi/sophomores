@@ -4,14 +4,17 @@ import {
   type Abi, type Address, type Hex, type LocalAccount, type Transport,
 } from "viem";
 import { isTxHash, parseKeyGrantTarget, type KeyGrantAdapter, type KeyGrantTarget, type PrepareOutcome, type ReconcileOutcome, type ReplaceOutcome } from "../contracts";
+import { POLYGON_CHAIN_ID, polygonPins, type PolygonPins } from "./polygon";
 import { createSignerTransactions, replacementFee, type Inspection } from "./transactions";
 
 /*
  * ADR-0004 chain adapter for an Unlock PublicLock v14, signed by the grant-only
  * signer (ADR-0008). `prepare` signs one grant, `broadcast` sends it once the
  * worker has recorded its hash, `prepareReplacement` re-signs a stuck grant at
- * its own nonce with a higher fee, and `reconcile` reads the receipt. Only Base
- * Sepolia (84532) is enabled (see ./transactions for nonces, fees and depth).
+ * its own nonce with a higher fee, and `reconcile` reads the receipt. Base
+ * Sepolia (84532) is enabled; Polygon (137) only behind the owner's go-live
+ * switch, and then only for the pinned Signet lock, signed by the pinned grant
+ * signer (./polygon; see ./transactions for nonces, fees and depth).
  *
  * Honest outcomes: everything in `prepare` happens before broadcast, so a failure
  * there is `definitelyNotSent`. Any failure from the broadcast call itself is
@@ -37,22 +40,31 @@ export type UnlockKeyGrantAdapterOptions = {
   now?: () => Date;
   /** How long a prepared grant may hold its signer's lane before it expires unsent. */
   holdMs?: number;
+  /** Where the go-live switch is read (default: process.env). */
+  env?: Readonly<Record<string, string | undefined>>;
+  /** Polygon's pinned lock and grant signer. Production uses the defaults; tests supply throwaway ones. */
+  polygon?: PolygonPins;
 };
 
 const notSent = (code: string): PrepareOutcome & ReplaceOutcome => ({ kind: "definitelyNotSent", code });
 const unknown: ReconcileOutcome = { kind: "unknown" };
 export const reverted = (error: unknown): boolean => error instanceof BaseError && error.walk((cause) => cause instanceof ContractFunctionRevertedError) instanceof ContractFunctionRevertedError;
 
-export function createUnlockKeyGrantAdapter({ chainID, account, transport, now = () => new Date(), holdMs = 60_000 }: UnlockKeyGrantAdapterOptions): UnlockKeyGrantAdapter {
-  const chain = createSignerTransactions({ chainID, account, transport, holdMs });
+export function createUnlockKeyGrantAdapter({ chainID, account, transport, now = () => new Date(), holdMs = 60_000, env, polygon = polygonPins }: UnlockKeyGrantAdapterOptions): UnlockKeyGrantAdapter {
+  const chain = createSignerTransactions({ chainID, account, transport, holdMs, env });
   const { client } = chain;
+  // Polygon grants come only from the pinned grant signer: any other account is refused before anything is read.
+  if (chainID === POLYGON_CHAIN_ID && !isAddressEqual(account.address, polygon.granter)) {
+    throw new Error("Unlock grants on Polygon (137) are refused: the signer is not the pinned key granter");
+  }
 
-  /** The target, only if it is well formed and on this adapter's chain. */
-  const targetHere = (value: KeyGrantTarget): { lock: Address; recipient: Address } | "invalid" | "elsewhere" => {
+  /** The target, only if it is well formed, on this adapter's chain, and (on Polygon) on the pinned lock. */
+  const targetHere = (value: KeyGrantTarget): { lock: Address; recipient: Address } | "invalid" | "elsewhere" | "unpinned" => {
     // Chain first, so a refused chain is refused the same way whatever the shared contract lists.
     if (value?.chainID !== chainID) return "elsewhere";
     let target: KeyGrantTarget;
     try { target = parseKeyGrantTarget(value); } catch { return "invalid"; }
+    if (chainID === POLYGON_CHAIN_ID && !isAddressEqual(target.lock as Address, polygon.lock)) return "unpinned";
     return { lock: getAddress(target.lock), recipient: getAddress(target.recipient) };
   };
 
@@ -73,6 +85,7 @@ export function createUnlockKeyGrantAdapter({ chainID, account, transport, now =
       const target = targetHere(value);
       if (target === "invalid") return notSent("invalid_target");
       if (target === "elsewhere") return notSent("chain_not_enabled");
+      if (target === "unpinned") return notSent("lock_not_enabled");
       const release = await chain.hold();
       try {
         if (!(await chain.onChain())) { release(); return notSent("chain_mismatch"); }
@@ -92,6 +105,7 @@ export function createUnlockKeyGrantAdapter({ chainID, account, transport, now =
       const target = targetHere(value);
       if (target === "invalid") return notSent("invalid_target");
       if (target === "elsewhere") return notSent("chain_not_enabled");
+      if (target === "unpinned") return notSent("lock_not_enabled");
       const release = await chain.hold();
       try {
         if (!(await chain.onChain())) { release(); return notSent("chain_mismatch"); }

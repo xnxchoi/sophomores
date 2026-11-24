@@ -2,13 +2,15 @@ import {
   BaseError, createPublicClient, createWalletClient, isAddressEqual, keccak256, parseTransaction, TransactionNotFoundError, TransactionReceiptNotFoundError, withTimeout,
   type Address, type Hex, type LocalAccount, type TransactionReceipt, type Transport,
 } from "viem";
-import { baseSepolia } from "viem/chains";
+import { baseSepolia, polygon } from "viem/chains";
 import { signerAccountID, type BroadcastOutcome, type RebroadcastOutcome, type TransactionFee } from "../contracts";
+import { POLYGON_CHAIN_ID, polygonKeyGrantsLive } from "./polygon";
 
 /*
  * What the Unlock grant adapter and the cancel adapter share: one signer's
- * transactions on one chain. Only Base Sepolia (84532) is enabled; every other
- * chain is refused until an owner-approved slice enables it (ADR-0010).
+ * transactions on one chain. Base Sepolia (84532) is enabled; Polygon (137) is
+ * enabled only while the owner's go-live switch is on (KEY_GRANT_POLYGON_LIVE=1,
+ * ./polygon); every other chain is refused (ADR-0010).
  *
  * Nonces: one lane per signer account in this process. A signed transaction
  * holds the lane until it is broadcast or released (or `holdMs` passes, after
@@ -28,7 +30,7 @@ const SEND_RPC_TIMEOUT_MS = 5_000;
  * it is trusted, success or revert. Per chain, because reorg depth differs.
  * - 84532 Base Sepolia: OP-stack sequencer ordering; reorgs are rare and shallow.
  *   10 blocks is about 20 s.
- * - 137 Polygon PoS: set ahead of enablement (refused below). Polygon has
+ * - 137 Polygon PoS: enabled behind the go-live switch. Polygon has
  *   reorged far deeper than Base: the largest publicly reported was 157 blocks
  *   (February 2023). 256 blocks (about 9 min at ~2 s) clears that with margin.
  *   The cost is a longer "key pending" after payment; the payment is unaffected.
@@ -41,13 +43,28 @@ export const confirmationDepth: Readonly<Record<number, number>> = { 84532: 10, 
  * - 84532 Base Sepolia: 0.05 gwei, ten times its floor base fee of 0.005 gwei
  *   (flat at 5,000,000 wei in every block sampled on 2026-11-16). A grant's gas
  *   at the ceiling costs about 0.00001 ETH, within the throwaway signer's means.
- * Polygon (137) gets its own value with its enablement slice.
+ * - 137 Polygon PoS: 3,000 gwei. The USD 0.10 cap per transaction (ADR-0026)
+ *   divided by a grant's gas: the owner's grant used 168,913 gas (Base Sepolia's
+ *   proof the same), so at the ceiling a grant costs at most about 0.51 POL, USD
+ *   0.04 at POL USD 0.076 (24 Nov quote), and stays under USD 0.10 until POL
+ *   passes about USD 0.19. Polygon's usual base fee is tens to a few hundred
+ *   gwei, so this leaves room for spikes without letting one cost run away; a
+ *   grant above the ceiling is refused unsent (`fee_above_ceiling`). Recheck it
+ *   if POL's price moves far.
  */
-export const maxFeeCeiling: Readonly<Record<number, bigint>> = { 84532: 50_000_000n };
+export const maxFeeCeiling: Readonly<Record<number, bigint>> = { 84532: 50_000_000n, 137: 3_000_000_000_000n };
 
+// Typed as Base Sepolia's chain: both are plain EIP-1559 chains, and viem's chain union does not narrow for signing.
 const networks: Readonly<Record<number, { chain: typeof baseSepolia }>> = {
   [baseSepolia.id]: { chain: baseSepolia },
+  [polygon.id]: { chain: polygon as unknown as typeof baseSepolia },
 };
+
+/** Whether this process may transact on `chainID` now: Base Sepolia always; Polygon only while the switch is on. */
+export function chainEnabled(chainID: number, env: Readonly<Record<string, string | undefined>> = process.env): boolean {
+  if (chainID === POLYGON_CHAIN_ID) return polygonKeyGrantsLive(env);
+  return chainID === baseSepolia.id;
+}
 
 export type Inspection =
   | { status: "mined" | "reverted"; receipt: TransactionReceipt }
@@ -87,12 +104,16 @@ export function replacementFee(previous: TransactionFee, estimate: Fees, ceiling
   return raised(maxFeePerGas, before.maxFeePerGas) && raised(maxPriorityFeePerGas, before.maxPriorityFeePerGas) ? { maxFeePerGas, maxPriorityFeePerGas } : null;
 }
 
-export type SignerTransactionsOptions = { chainID: number; account: LocalAccount; transport?: Transport; holdMs?: number };
+export type SignerTransactionsOptions = {
+  chainID: number; account: LocalAccount; transport?: Transport; holdMs?: number;
+  /** Where the go-live switch is read (default: process.env). */
+  env?: Readonly<Record<string, string | undefined>>;
+};
 
-/** One signer's transactions on one enabled chain. Throws for any chain but Base Sepolia. */
-export function createSignerTransactions({ chainID, account, transport, holdMs = 60_000 }: SignerTransactionsOptions) {
-  const network = Object.hasOwn(networks, chainID) ? networks[chainID] : undefined;
-  if (!network) throw new Error(`Unlock transactions are refused on chain ${chainID}: only Base Sepolia (84532) is enabled until an owner-approved slice enables more`);
+/** One signer's transactions on one enabled chain. Throws for a chain that is not enabled (chainEnabled). */
+export function createSignerTransactions({ chainID, account, transport, holdMs = 60_000, env = process.env }: SignerTransactionsOptions) {
+  const network = Object.hasOwn(networks, chainID) && chainEnabled(chainID, env) ? networks[chainID] : undefined;
+  if (!network) throw new Error(`Unlock transactions are refused on chain ${chainID}: Base Sepolia (84532) is enabled, and Polygon (137) only while KEY_GRANT_POLYGON_LIVE=1`);
   const depth = BigInt(confirmationDepth[chainID]);
   const ceiling = maxFeeCeiling[chainID];
   if (!transport) throw new Error("Unlock requires an explicit transport");

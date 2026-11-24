@@ -115,10 +115,18 @@ test('the receiver secrets file moves only in the preview sandbox runtime, to an
 });
 
 test('member bindings accept the trial proof only in the preview sandbox runtime', async () => {
-  const { memberPhonePolicies } = await import('@/lib/member-auth/contracts');
+  const { memberPhonePolicies } = await import('@/lib/member-auth/phone-policies');
+  const portone = { PORTONE_PAYMENT_MODE: 'test', PORTONE_ORIGIN: 'https://preview.sophomores.co',
+    PORTONE_STORE_ID: 'store-sandbox-fixture', PORTONE_CHANNEL_KEY: 'channel-sandbox-fixture',
+    PORTONE_API_SECRET: 'api-secret-fixture-value', PORTONE_WEBHOOK_SECRET: 'whsec_' + Buffer.alloc(32, 7).toString('base64'),
+    PORTONE_SANDBOX_TEST_STORE_ID: 'store-sandbox-fixture', PORTONE_SANDBOX_TEST_CHANNEL_KEY: 'channel-sandbox-fixture' };
+  const runtime = { NEXT_PUBLIC_SERVER_URL: 'https://preview.sophomores.co', PREVIEW_RUNTIME: 'sandbox', ...portone };
   assert.deepEqual(memberPhonePolicies({}), ['local-skt-zoho-arc-v1']);
-  assert.deepEqual(memberPhonePolicies({ PREVIEW_RUNTIME: 'review-editor' }), ['local-skt-zoho-arc-v1']);
-  assert.deepEqual(memberPhonePolicies({ PREVIEW_RUNTIME: 'sandbox' }), ['local-skt-zoho-arc-v1', 'preview-trial-zoho-arc-v1']);
+  assert.deepEqual(memberPhonePolicies(runtime), ['local-skt-zoho-arc-v1', 'preview-trial-zoho-arc-v1']);
+  // The flag alone, a review owner, or a non-test PortOne setup leaves the trial proof unaccepted.
+  assert.deepEqual(memberPhonePolicies({ PREVIEW_RUNTIME: 'sandbox' }), ['local-skt-zoho-arc-v1']);
+  assert.deepEqual(memberPhonePolicies({ ...runtime, REVIEW_OWNER_EMAIL: 'x@sophomores.co' }), ['local-skt-zoho-arc-v1']);
+  assert.deepEqual(memberPhonePolicies({ ...runtime, PORTONE_PAYMENT_MODE: 'live' }), ['local-skt-zoho-arc-v1']);
 });
 
 test('the preview receiver service starts only with the sandbox trial configuration', async () => {

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { Pool, PoolClient } from "pg";
-import { MemberError, memberPhonePolicies, type BindRecord, type BoundMember, type MemberBinding, type MemberBindingRepository } from "./contracts";
+import { MemberError, type BindRecord, type BoundMember, type MemberBinding, type MemberBindingRepository } from "./contracts";
+import { memberPhonePolicies } from "./phone-policies";
 
 const canonicalIdentity = z.uuid();
 type BindingRow = { user_id: string; phone_hash: string; challenge_id: string; policy_version: string; verified_at: Date };

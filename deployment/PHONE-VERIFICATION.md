@@ -325,8 +325,9 @@ Owner, 24 Nov 2026: "We have staff with uplus and kt, we'll test on preview" and
 Policy `preview-trial-zoho-arc-v1` loads only when **all** hold: `PREVIEW_RUNTIME=sandbox`,
 `PHONE_VERIFICATION_MODE=production` and origin exactly `https://preview.sophomores.co`.
 Anywhere else the receiver refuses to start. Production policy stays non-granting.
-Member bindings accept a trial proof only under `PREVIEW_RUNTIME=sandbox`
-(`memberPhonePolicies`); without it a trial-verified challenge cannot bind.
+Member bindings accept a trial proof only in the app's sandbox runtime
+(`isSandboxRuntime`: exact flag, no review owner, PortOne test channel;
+`src/lib/member-auth/phone-policies.ts`); otherwise a trial-verified challenge cannot bind.
 
 The gate is the SKT pilot's gate (single-hop Zoho ARC `i=1`, SPF pass, exact
 envelope = From number, protected headers and body, strict MMS parser), widened

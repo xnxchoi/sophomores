@@ -1,5 +1,6 @@
 import type { Pool, PoolClient } from "pg";
-import { MemberError, memberPhonePolicies, type BindRecord, type BoundMember, type MemberBinding, type MemberBindingRepository } from "./contracts";
+import { MemberError, type BindRecord, type BoundMember, type MemberBinding, type MemberBindingRepository } from "./contracts";
+import { memberPhonePolicies } from "./phone-policies";
 
 type BindingRow = { user_id: string; phone_hash: string; challenge_id: string; policy_version: string; verified_at: Date };
 type ChallengeRow = { id: string; state: string; created_at: Date; expires_at: Date; policy_version: string | null };

@@ -76,17 +76,32 @@ function enabledProviders(capabilities?: Readonly<Partial<Pick<MemberCapabilitie
   return (["apple", "google", "kakao"] as const).filter((provider) => capabilities?.[provider] === true);
 }
 
-/** Purchase rule: an email with no account is pointed to social sign-up; no code is offered. */
-function NoAccountMessage({ capabilities }: { capabilities?: Readonly<Partial<Pick<MemberCapabilities, MemberSocialProvider>>> }) {
+/**
+ * The switched-on sign-up providers as one "Apple or Google" phrase for `key`'s sentence, or null when none is on.
+ * An empty Korean string falls back to English (owner, 13 Nov). The joined list must be in the language the sentence
+ * is actually shown in, or it reads "continue with Apple 또는 Google".
+ */
+function useSignUpProviders(capabilities: Readonly<Partial<Pick<MemberCapabilities, MemberSocialProvider>>> | undefined, key: "noAccountForThisEmail" | "signInPageNewHere") {
   const t = useTranslations("MemberAuth");
   const locale = useLocale();
   const names = enabledProviders(capabilities).map((provider) => t(provider));
-  if (names.length === 0) return t("noAccountForThisEmailNoProviders");
-  // An empty Korean string falls back to English (owner, 13 Nov). The joined list must be in the language the sentence
-  // is actually shown in, or it reads "continue with Apple 또는 Google".
-  const shownInKorean = locale === "ko" && /[\uAC00-\uD7A3]/.test(t.raw("noAccountForThisEmail") as string);
-  const providers = new Intl.ListFormat(locale === "ko" && !shownInKorean ? "en" : locale, { type: "disjunction" }).format(names);
-  return t("noAccountForThisEmail", { providers });
+  if (names.length === 0) return null;
+  const shownInKorean = locale === "ko" && /[가-힣]/.test(t.raw(key) as string);
+  return new Intl.ListFormat(locale === "ko" && !shownInKorean ? "en" : locale, { type: "disjunction" }).format(names);
+}
+
+/** Purchase rule: an email with no account is pointed to social sign-up; no code is offered. */
+function NoAccountMessage({ capabilities }: { capabilities?: Readonly<Partial<Pick<MemberCapabilities, MemberSocialProvider>>> }) {
+  const t = useTranslations("MemberAuth");
+  const providers = useSignUpProviders(capabilities, "noAccountForThisEmail");
+  return providers ? t("noAccountForThisEmail", { providers }) : t("noAccountForThisEmailNoProviders");
+}
+
+/** The sign-in page's note for new visitors: the sign-up providers that are actually on, or that sign-up is off (Review-B, 26 Nov). */
+export function SignUpProvidersNote({ capabilities }: { capabilities?: Readonly<Partial<Pick<MemberCapabilities, MemberSocialProvider>>> }) {
+  const t = useTranslations("MemberAuth");
+  const providers = useSignUpProviders(capabilities, "signInPageNewHere");
+  return providers ? t("signInPageNewHere", { providers }) : t("signUpIsUnavailableTryAgainShortly");
 }
 
 export function MemberAccountView(props: MemberAccountViewProps) {
@@ -695,9 +710,12 @@ function IdentityStep(props: MemberAccountViewProps & { locked: boolean; reserve
         flow={props.presentation === "ticket-checkout" ? "login" : props.flow ?? "login"}
         locale="en"
         headingId={props.headingId ?? "member-account-heading"}
-        renderHeading={(heading) => (
-          // The sign-in page's h1 already names the entry step; its later steps (the code) keep their own heading.
-          props.reauthenticating || (props.presentation === "page" && !snapshot.codeRequested) ? <div className="sr-only">{heading}</div> : props.presentation === "ticket-checkout"
+        renderHeading={(heading, title) => (
+          // The sign-in page's h1 is the page's one heading for the entry step: the step keeps its focus target, but not
+          // as a second heading (Review-B, 26 Nov). Its later steps (the code) keep their own heading.
+          props.presentation === "page" && !snapshot.codeRequested && !props.reauthenticating
+            ? <div id={props.headingId ?? "member-account-heading"} tabIndex={-1} data-phase-focus="" className="sr-only">{title}</div>
+            : props.reauthenticating ? <div className="sr-only">{heading}</div> : props.presentation === "ticket-checkout"
             // The code step keeps the step's one heading.
             ? <Heading id={props.headingId ?? "member-account-heading"} tabIndex={-1} className="m-0 text-[length:var(--step-heading)] leading-tight font-normal tracking-normal sm:text-[length:var(--step-heading)]">{t("signIn")}</Heading>
             : <VerificationTrayTitle>{heading}</VerificationTrayTitle>

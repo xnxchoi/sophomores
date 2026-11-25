@@ -360,7 +360,7 @@
     "closeAccountOptions": "Close account options",
     "welcome": "Welcome",
     "logInOrCreateAnAccount": "Sign in or create an account.",
-    "signInPageNewHere": "New here? Use Apple or Google to create an account.",
+    "signInPageNewHere": "New here? Use {providers} to create an account.",
     "checkThePhoneNumberAndContactEmailThenTryAgain": "Check the phone number and contact email, then try again.",
     "weCouldntConfirmReceiptTheRequestTookTooLongPleaseTryAgain": "We didn’t get a response in time, so we can’t confirm your request was received. Try again.",
     "weCouldntConfirmReceiptPleaseCheckYourConnectionAndTryAgain": "We couldn’t confirm receipt. Please check your connection and try again.",

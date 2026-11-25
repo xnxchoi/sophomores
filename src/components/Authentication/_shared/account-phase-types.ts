@@ -76,7 +76,7 @@ export type AccountPhaseViewProps = {
   googleDisabled?: boolean;
   resendDisabled?: boolean;
   onEditEmail?: () => void;
-  renderHeading?: (heading: ReactElement) => ReactNode;
+  renderHeading?: (heading: ReactElement, title: string) => ReactNode;
   copied: boolean;
   copyFailed: boolean;
   remaining: string;

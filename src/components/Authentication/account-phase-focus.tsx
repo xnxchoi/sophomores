@@ -42,7 +42,7 @@ export function useAccountPhaseFocus(
   useLayoutEffect(() => {
     if (!present || document.visibilityState === "hidden") return;
     const input = props.submitDisabled ? null : body.current?.querySelector<HTMLInputElement>("input:not(:disabled)");
-    const heading = body.current?.querySelector<HTMLElement>("h3");
+    const heading = body.current?.querySelector<HTMLElement>("h3, [data-phase-focus]");
     if (focusedPhase.current !== props.phase) {
       focusedPhase.current = props.phase;
       pendingInitialFocus.current = !input && !props.failure && (props.busy || props.submitDisabled) ? heading ?? null : null;
@@ -65,7 +65,7 @@ export function useAccountPhaseFocus(
       const owner = active === document.body ? focusOwner.current : active;
       if (owner instanceof HTMLButtonElement && owner.hasAttribute("data-account-status-refresh")) {
         const retry = body.current?.querySelector<HTMLButtonElement>("[data-account-status-refresh]");
-        const target = retry && !retry.disabled ? retry : !retry && input && !input.disabled && !props.submitDisabled ? input : body.current?.querySelector<HTMLElement>("h3");
+        const target = retry && !retry.disabled ? retry : !retry && input && !input.disabled && !props.submitDisabled ? input : body.current?.querySelector<HTMLElement>("h3, [data-phase-focus]");
         if (target && active !== target) target.focus({ preventScroll: true });
         return;
       }

@@ -24,7 +24,7 @@ import {
   PrimaryButton,
   SecondaryButton
 } from "../phone-verification/verification-ui";
-import { MemberAccountView, type MemberAccountViewProps } from "./account-view";
+import { MemberAccountView, SignUpProvidersNote, type MemberAccountViewProps } from "./account-view";
 import { AccountRecoveryView } from "./account-recovery-view";
 import { MemberPhoneStep } from "./phone-step";
 import {
@@ -330,9 +330,12 @@ export function MemberSignInPage({
   // Back to a fresh form is the page's "start again" (the sheet's chooser and Cancel have no place here).
   const [generation, setGeneration] = useState(0);
   const [signedIn, setSignedIn] = useState(false);
+  // The providers the flow itself offers: the server's list first, then the live status's (Apple can fail to start).
+  const [capabilities, setCapabilities] = useState(initialCapabilities);
   const left = useRef(false);
   function onSnapshot(snapshot: MemberSnapshot) {
     if (Boolean(snapshot.status?.authenticated) !== signedIn) setSignedIn(Boolean(snapshot.status?.authenticated));
+    if (snapshot.status?.capabilities && snapshot.status.capabilities !== capabilities) setCapabilities(snapshot.status.capabilities);
     if (left.current || !snapshot.status?.member) return;
     left.current = true;
     navigate(next);
@@ -343,7 +346,7 @@ export function MemberSignInPage({
         <header className="lg:pt-2">
           <h1 className="m-0 text-5xl leading-[1.05] font-light tracking-tight text-balance lg:text-7xl 2xl:text-8xl">{t("logIn")}</h1>
           {/* For visitors only: an account finishing setup is past choosing how to get in. */}
-          {!signedIn && <p className="mt-6 mb-0 max-w-[30ch] text-[15px] leading-6 text-pretty text-foreground/55 lg:mt-8 lg:text-base">{t("signInPageNewHere")}</p>}
+          {!signedIn && <p className="mt-6 mb-0 max-w-[30ch] text-[15px] leading-6 text-pretty text-foreground/55 lg:mt-8 lg:text-base"><SignUpProvidersNote capabilities={capabilities} /></p>}
         </header>
         <div className="w-full max-w-[400px]">
           <ArcRoles>

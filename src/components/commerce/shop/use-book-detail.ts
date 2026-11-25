@@ -12,7 +12,7 @@ const inOutQuad = (x: number) => (x < 0.5 ? 2 * x * x : 1 - (-2 * x + 2) ** 2 / 
 export type BookDetailSource = { rawProgress: () => number; hrefOf: (index: number) => string | null; home: string;
   placeOf: (index: number) => number; shelfAt: () => number | null;
   /** Commit the scene's progress to the open book (theirs: `e6(e)` when the detail settles) and release it on close. */
-  pin: (index: number) => void; unpin: () => void };
+  pin: (index: number, arrived: boolean) => void; unpin: (index: number) => void };
 
 /**
  * Their book detail (06w9), desktop: a click on a shelf spine carries that book into its details inside the scene.
@@ -39,8 +39,8 @@ export function useBookDetail(hub: SceneHub, catalogue: SceneCatalogue, router: 
   useEffect(() => { isOpen.current = open != null; }, [open]);
 
   const cancel = () => { clock.current.token += 1; if (clock.current.frame) cancelAnimationFrame(clock.current.frame); clock.current.frame = 0; };
-  const settle = useCallback((index: number) => {
-    source.current.pin(index);
+  const settle = useCallback((index: number, arrived = false) => {
+    source.current.pin(index, arrived);
     setOpen(index); setLeaving(false);
     window.dispatchEvent(new Event("resize"));
   }, []);
@@ -90,6 +90,7 @@ export function useBookDetail(hub: SceneHub, catalogue: SceneCatalogue, router: 
     if (arrived) pushed.current = true;
     else if (href && !pushed.current) { window.history.pushState(null, "", href); pushed.current = true; }
     else if (href) window.history.replaceState(null, "", href);
+    if (arrived) { setPresenting(true); settle(index, true); return true; }
     if (!onShelf) {
       // Their scroll onto a featured book's card before it opens (15151-15172), unless the page is already there.
       const target = Math.min(Math.max(0, document.documentElement.scrollHeight - window.innerHeight), source.current.placeOf(index));
@@ -144,7 +145,9 @@ export function useBookDetail(hub: SceneHub, catalogue: SceneCatalogue, router: 
   }, [hub, catalogue, settle, source]);   // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { openRef.current = openBook; }, [openBook]);
 
-  const closeState = useCallback(() => { setOpen(null); setPresenting(false); setLeaving(false); source.current.unpin(); }, [source]);
+  const closeState = useCallback((index: number) => { source.current.unpin(index); setOpen(null); setPresenting(false); setLeaving(false); }, [source]);
+  /** Reading on into another book's details (the page's reading scroll): it becomes the open book. */
+  const setReading = useCallback((index: number) => { setOpen((current) => (current == null ? current : index)); }, []);
 
   const closeBook = useCallback((fromHistory = false) => {
     if (open == null) return;
@@ -154,7 +157,7 @@ export function useBookDetail(hub: SceneHub, catalogue: SceneCatalogue, router: 
     const index = open, token = ++clock.current.token;
     if (!fromShelf.current) {                                                      // pE: the column slides out
       setLeaving(true); hub.detailExitAnimatingLiveRef.current = true;
-      window.setTimeout(() => { if (token !== clock.current.token) return; hub.detailExitAnimatingLiveRef.current = false; closeState(); },
+      window.setTimeout(() => { if (token !== clock.current.token) return; hub.detailExitAnimatingLiveRef.current = false; closeState(index); },
         constant.DETAIL_EXIT_SLIDE_MS);
       return;
     }
@@ -172,7 +175,7 @@ export function useBookDetail(hub: SceneHub, catalogue: SceneCatalogue, router: 
     window.setTimeout(() => {
       if (token !== clock.current.token) return;
       transition().current = { active: true, index, progress: 1, activeProgress: 1, activeProgressY: 1, returning: true, landingFrac: 0 };
-      setPresenting(true); closeState();
+      setPresenting(true); closeState(index);
       requestAnimationFrame(() => { if (token === clock.current.token) setPresenting(false); });
       const delay = constant.BOOK_OPEN_ACTIVE_DELAY_MS, move = constant.BOOK_OPEN_BOOKS_MOVE_MS;
       const total = Math.max(move, constant.BOOK_OPEN_BG_REVEAL_START_MS + constant.BOOK_OPEN_BG_REVEAL_MS, delay + move);
@@ -212,15 +215,6 @@ export function useBookDetail(hub: SceneHub, catalogue: SceneCatalogue, router: 
     hub.sceneShiftAnimRef.current = { startTime: performance.now(), startValue: hub.sceneShiftXWorldLiveRef.current, duration: 640 };
   }, [shift, hub]);
 
-  // While a book is open the page holds still (slice A: the column scrolls on its own; their per-panel scroll model,
-  // where reading runs on into the next book, is slice C).
-  useEffect(() => {
-    if (open == null) return;
-    const root = document.documentElement, before = root.style.overflow;
-    root.style.overflow = "hidden";
-    return () => { root.style.overflow = before; };
-  }, [open]);
-
   // The router's book-detail scope (16985-16992) and its state flag; Escape and Back close.
   const closeRef = useRef(closeBook);
   useEffect(() => { closeRef.current = closeBook; }, [closeBook]);
@@ -240,5 +234,5 @@ export function useBookDetail(hub: SceneHub, catalogue: SceneCatalogue, router: 
   }, [open, router, source]);
   useEffect(() => () => { cancel(); transition().current = idle(); hub.shelfReturnRevealLiveRef.current = -1; hub.bookOpenRevealLiveRef.current = 1; }, [hub]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  return { open, presenting, leaving, openBook, closeBook };
+  return { open, presenting, leaving, openBook, closeBook, setReading };
 }

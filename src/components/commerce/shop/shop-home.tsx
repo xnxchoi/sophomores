@@ -5,7 +5,8 @@ import { useTransitionRouter } from "next-transition-router";
 import { ArrowLeftIcon } from "@phosphor-icons/react/dist/ssr";
 import { Link } from "@/components/core/Link/Link";
 import { cn } from "@/lib/utils";
-import { lockedProgressFor, StripeScene, useStripeScene, type SceneBook, type Vendored } from "./stripe-scene";
+import { lockedProgressFor, scenePages, StripeScene, useStripeScene, type SceneBook, type Vendored } from "./stripe-scene";
+import { useLookInside, type LookInsideSource } from "./use-look-inside";
 import { useShelfCatch, type ShelfCatchSource } from "./use-shelf-catch";
 import { useBookDetail, type BookDetailSource } from "./use-book-detail";
 import { useReadingScroll, type ReadingSource } from "./use-reading-scroll";
@@ -22,15 +23,18 @@ const FEATURED_MAX = 4, CARD_GAP = 16, CARD_INSET_BOTTOM = 8;
 
 type Item = { id: string; title: string; price: string; href: string; stageArt: { url: string; alt?: string | null } | null;
   /** The book's details column (server-rendered: ProductInfo + ProductExtras), shown when it opens in the scene. */
-  details?: ReactNode };
-type Labels = { featured: string; shelf: string; viewDetails: string; toShelf: string };
+  details?: ReactNode;
+  /** The book's page images for "Open book", in reading order. */
+  pages?: string[] };
+type Labels = { featured: string; shelf: string; viewDetails: string; toShelf: string; openBook: string; closeBook: string;
+  previousPage: string; nextPage: string };
 type Geometry = { lvh: number; mobile: boolean; top: number; height: number; offset: number; extents: number[];
   starts: number[]; lock: number[]; total: number };
 
 export function ShopHome({ items, labels, initialOpen }: { items: Item[]; labels: Labels;
   /** The product whose address the page was loaded on: it opens in place once the scene is ready. */
   initialOpen?: string }) {
-  const books = useMemo<SceneBook[]>(() => items.map(({ id, title, stageArt }) => ({ id, title, stageArt: stageArt?.url ?? null })), [items]);
+  const books = useMemo<SceneBook[]>(() => items.map(({ id, title, stageArt, pages }) => ({ id, title, stageArt: stageArt?.url ?? null, pages })), [items]);
   const vendored = useStripeScene(books, Math.min(FEATURED_MAX, items.length));
   const first = items[0]?.stageArt;
   // Native wheel scrolling here, as on stripe.press: their scroll mapping, holds and shelf catch read the browser's own
@@ -190,9 +194,9 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
 
   // Opening a book into its details inside the scene (use-book-detail.ts); the phone keeps the product page for now.
   const detailSource = useRef<BookDetailSource>({ rawProgress: () => 0, hrefOf: () => null, home: "/shop", placeOf: () => 0, shelfAt: () => null,
-    pin: () => undefined, unpin: () => undefined });
+    pin: () => undefined, unpin: () => undefined, pagesOpen: () => false });
   useEffect(() => { detailSource.current = { rawProgress: () => hub.scrollProgressDirectLiveRef.current as number,
-    hrefOf: (index) => items[index]?.href ?? null, home: "/shop", placeOf: bookY, shelfAt: seatY,
+    hrefOf: (index) => items[index]?.href ?? null, home: "/shop", placeOf: bookY, shelfAt: seatY, pagesOpen: () => lookOpen.current,
     // The scene poses an open book by the progress in its details: at the open book's own index, the top of them. As
     // theirs (06w9:15271-15273), the scene's row smoother snaps to it (snap 6 frames, row seed 3) instead of easing
     // through the stack between the shelf and the book's own place.
@@ -232,6 +236,15 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
   }, []);
   const readingRef = useRef(reading);
   useEffect(() => { readingRef.current = reading; });
+  // "Open book" (use-look-inside.ts): in the details the open book's pages open in place; on the home the book comes
+  // forward first. The home scrolls onto the book (their `ut`, or the shelf's seat) before it comes forward.
+  const lookSource = useRef<LookInsideSource>({ place: () => undefined, book: () => null });
+  useEffect(() => { lookSource.current = {
+    place: (index) => window.scrollTo({ top: Math.max(0, index < catalogue.t ? bookY(index) : (seatY() ?? shelfY())), behavior: "smooth" }),
+    book: (index) => (items[index] ? { pageCount: scenePages(items[index].pages).length, startPage: 1 } : null) }; });
+  const look = useLookInside(hub, detail.open, lookSource);
+  const lookOpen = useRef(false);
+  useEffect(() => { lookOpen.current = look.open; });
   // The scene hears the book being read 200 ms late (their `uK`), the first one at once.
   const [sceneIndex, setSceneIndex] = useState<number | null>(landing);
   useEffect(() => {
@@ -292,8 +305,9 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
     const open = (index: number) => openRef.current(index);
     const featuredScope = router.v("featured", {
       acceptsGesture: false,
-      horizontal: (step: number) => { if (step === 1) open(activeRef.current); },
+      horizontal: (step: number) => { if (step === 1 && !lookOpen.current) open(activeRef.current); },
       vertical: (step: number) => {
+        if (lookOpen.current) return true;
         const move = motion.current, current = activeRef.current, next = current + step;
         if (next >= catalogue.t) move.scrollTo(move.shelfY(), 1833);
         else if (next >= 0) move.scrollTo(move.bookY(next), 1000);
@@ -318,11 +332,14 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
   const skipIntro = useRef(Boolean(initialOpen)).current;
   // Once the detail state itself is open, the landing has done its job (closing must not fall back to it).
   useEffect(() => { if (detail.open != null) setLanding(null); }, [detail.open]);
-  const sceneProps = useMemo(() => ({ skipIntro,
+  const lookProps = look.sceneProps, lookHome = look.home && look.homeIndex != null ? look.homeIndex : null;
+  const sceneProps = useMemo(() => ({ skipIntro, ...lookProps,
     books: (window as unknown as { __SPBOOKS: unknown }).__SPBOOKS, scrollProgress: committed, scrollProgressLiveRef: progressRef,
-    activeBookIndex: detail.open != null ? (sceneIndex ?? detail.open) : active, stackMode: "browse", onBookOpen: (index: number) => openRef.current(index),
-    isDetailOpen: (detail.open ?? landing) != null, detailBookIndex: detail.open != null || landing != null ? (sceneIndex ?? detail.open ?? landing) : -1,
-  }), [skipIntro, committed, active, detail.open, landing, sceneIndex]);
+    activeBookIndex: lookHome ?? (detail.open != null ? (sceneIndex ?? detail.open) : active), stackMode: "browse", onBookOpen: (index: number) => openRef.current(index),
+    // Their `isDetailOpen: tx || iv` and `detailBookIndex: iv ? nI : uK`: the home's open book is posed as a detail book.
+    isDetailOpen: (detail.open ?? landing ?? lookHome) != null,
+    detailBookIndex: lookHome ?? (detail.open != null || landing != null ? (sceneIndex ?? detail.open ?? landing) : -1),
+  }), [skipIntro, lookProps, lookHome, committed, active, detail.open, landing, sceneIndex]);
 
   // The spine row seats against, and lifts out ahead of, the section after the shelf (their #home-section-films, read
   // through homeWebsitesSectionElLiveRef); without one the scene treats the row as already gone. As theirs, the content
@@ -364,7 +381,17 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
     <TitleRail railRef={titles} titles={items.map((entry) => entry.title)} active={detail.open ?? selected ?? active}
       fade={detail.open != null ? 0 : Math.max(0, Math.min(1, (committed - K - 0.2) / 0.3))} detail={detail.open != null && !detail.leaving}
       onPick={(index) => detail.open != null ? openRef.current(index) : index < catalogue.t ? scrollTo(bookY(index), 1000) : scrollTo(shelfY(), 1833)} />
-    {item && <ViewDetails href={item.href} label={labels.viewDetails} hidden={onShelf || detail.open != null} onOpen={() => openRef.current(active)} />}
+    {item && <ViewDetails href={item.href} label={labels.viewDetails} hidden={(onShelf || detail.open != null) && !look.home} onOpen={() => openRef.current(active)}
+      book={{ label: look.open && look.home ? labels.closeBook : labels.openBook, open: look.open && look.home,
+        onToggle: () => (look.open ? look.close() : look.openOnHome(active)) }} />}
+    {/* The peek pill (their "+ Open book +", left 30 %): while the open book in the details is hovered, or the pill is. */}
+    <OpenBookPill label={labels.openBook} shown={detail.open != null && !detail.leaving && !look.open && (look.peek || look.pillHover)}
+      onHover={look.setPillHover} onOpen={() => { look.setPillHover(false); look.openInDetail(); }} />
+    <LookInsideBar shown={look.open} wide={look.home} page={look.page}
+      leaves={Math.ceil(scenePages(items[lookHome ?? detail.open ?? 0]?.pages).length / 2)} labels={labels}
+      onBack={() => look.setPage((current) => Math.max(0, current - 1))}
+      onForward={() => look.setPage((current) => Math.min(Math.ceil(scenePages(items[lookHome ?? detail.open ?? 0]?.pages).length / 2), current + 1))}
+      onClose={look.close} />
     <DetailStack shown={readingOpen && !detail.leaving} height={readingOpen ? readingHeight : 0} toShelf={labels.toShelf} onClose={() => detail.closeBook()}>
       {readingOpen && items.map((entry, index) => <DetailSlot key={entry.id} index={index} top={reading.layout.tops[index] ?? 0}
         onMeasured={reading.measured} anchors={reading.anchors}>{entry.details}</DetailSlot>)}
@@ -456,14 +483,51 @@ function TitleRail({ railRef, titles, active, fade, detail, onPick }: { railRef:
   </nav>;
 }
 
-/** The corner link (HomeViewDetailsCorner): desktop only, fixed bottom right, in 2 s after load (500 ms). */
-function ViewDetails({ href, label, hidden, onOpen }: { href: string; label: string; hidden: boolean; onOpen: () => void }) {
+/**
+ * The corner (HomeViewDetailsCorner): desktop only, fixed bottom right, in 2 s after load (500 ms): "Open book [+]" (or
+ * "Close book [-]" while it is open) and "View details [+]".
+ */
+function ViewDetails({ href, label, hidden, onOpen, book }: { href: string; label: string; hidden: boolean; onOpen: () => void;
+  book: { label: string; open: boolean; onToggle: () => void } }) {
   const [shown, setShown] = useState(false);
   useEffect(() => { const timer = window.setTimeout(() => setShown(true), 2000); return () => window.clearTimeout(timer); }, []);
-  return <div className={cn("fixed right-4 -bottom-0.5 z-20 flex h-[30px] items-center transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] max-[899px]:hidden",
+  return <div className={cn("fixed right-4 -bottom-0.5 z-20 flex h-[30px] items-center gap-3 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] max-[899px]:hidden",
     shown && !hidden ? "translate-y-0" : "translate-y-[calc(100%+24px)]")}>
+    <button type="button" onPointerDown={(event) => event.stopPropagation()} onClick={book.onToggle}
+      className="text-xs uppercase tracking-[-0.02em] transition-opacity hover:opacity-70">{book.label} {book.open ? "[-]" : "[+]"}</button>
+    <span aria-hidden="true" className="text-xs">·</span>
     <Link href={href} onClick={(event) => { if (event.metaKey || event.ctrlKey || event.shiftKey) return; event.preventDefault(); onOpen(); }}
       className="text-xs uppercase tracking-[-0.02em] transition-opacity hover:opacity-70">{label} [+]</Link>
+  </div>;
+}
+
+/** Their peek pill ("+ Open book +", 06w9:17934-17957): over the open book in the details, at 30 % of the width. */
+function OpenBookPill({ label, shown, onHover, onOpen }: { label: string; shown: boolean; onHover: (hovered: boolean) => void; onOpen: () => void }) {
+  return <button type="button" tabIndex={shown ? 0 : -1} aria-hidden={!shown} onMouseEnter={() => onHover(true)} onMouseLeave={() => onHover(false)}
+    onClick={(event) => { event.stopPropagation(); onOpen(); }}
+    className={cn("fixed bottom-[14%] left-[30%] z-30 -translate-x-1/2 rounded-full bg-background px-3 py-1.5 text-xs uppercase tracking-[-0.02em] text-foreground transition-opacity duration-300 max-[899px]:hidden",
+      shown ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0")}>+ {label} +</button>;
+}
+
+/**
+ * Their control bar while a book is open (LookInsideControlBar, 06w9:8661-8996): "[ < ]", the spread, "[ > ]" and
+ * "[ X ]"; across the width on the home, under the book (left of the details) in the details.
+ */
+function LookInsideBar({ shown, wide, page, leaves, labels, onBack, onForward, onClose }: { shown: boolean; wide: boolean; page: number; leaves: number;
+  labels: Labels; onBack: () => void; onForward: () => void; onClose: () => void }) {
+  const left = Math.max(1, 2 * page - 1), right = Math.min(2 * leaves, 2 * page);
+  return <div data-look-inside-bar aria-hidden={!shown} inert={!shown}
+    className={cn("fixed bottom-4 left-4 z-30 flex h-9 items-center justify-between text-xs uppercase tracking-[-0.02em] transition-opacity duration-300 max-[899px]:hidden",
+      wide ? "right-4" : "right-[calc(40%+16px)]", shown ? "opacity-100" : "pointer-events-none opacity-0")}>
+    <button type="button" aria-label={labels.previousPage} disabled={page <= 0} onClick={(event) => { event.stopPropagation(); onBack(); }}
+      className="min-h-9 px-2 transition-opacity hover:opacity-70 disabled:opacity-30">[ &lt; ]</button>
+    <span className="tabular-nums">{page <= 0 ? "" : left === right ? left : left + "–" + right}</span>
+    <div className="flex items-center gap-2">
+      <button type="button" aria-label={labels.nextPage} disabled={page >= leaves} onClick={(event) => { event.stopPropagation(); onForward(); }}
+        className="min-h-9 px-2 transition-opacity hover:opacity-70 disabled:opacity-30">[ &gt; ]</button>
+      <button type="button" aria-label={labels.closeBook} onClick={(event) => { event.stopPropagation(); onClose(); }}
+        className="min-h-9 px-2 transition-opacity hover:opacity-70">[ X ]</button>
+    </div>
   </div>;
 }
 

@@ -7,7 +7,7 @@ import { Badge } from "@/components/arc/badge/badge";
 import { ArcRoles } from "./arc-roles";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { ShopHome } from "./shop/shop-home";
-import { firstImage, ProductExtras, ProductInfo } from "./product-page/product-page";
+import { firstImage, pageTextures, ProductExtras, ProductInfo } from "./product-page/product-page";
 import { readProductPageContent, type ProductPageContent } from "./product-page/_shared/content";
 
 /**
@@ -31,8 +31,9 @@ export function CommerceShopView({ shop, contents = {}, initialOpen }: { shop: C
       price: money.format(entry.offer.priceKRW), href: "/shop/products/" + encodeURIComponent(entry.product.productID) }));
   return <PageInset as="main" className="pt-[4.5rem] pb-24 text-foreground">
     <h1 className="sr-only">{t("book")}</h1>
-    <ShopHome initialOpen={initialOpen} labels={{ featured: t("featured"), shelf: t("allProducts"), viewDetails: t("viewDetails"), toShelf: t("allProducts") }} items={entries.map(({ product, offer, content, title, price, href }) => ({
-      id: product.productID, title, price, href, stageArt: content.stageArt ?? firstImage(product),
+    <ShopHome initialOpen={initialOpen} labels={{ featured: t("featured"), shelf: t("allProducts"), viewDetails: t("viewDetails"), toShelf: t("allProducts"),
+      openBook: t("openBook"), closeBook: t("closeTheBook"), previousPage: t("previousPage"), nextPage: t("nextPage") }} items={entries.map(({ product, offer, content, title, price, href }) => ({
+      id: product.productID, title, price, href, stageArt: content.stageArt ?? firstImage(product), pages: pageTextures(content),
       // The details column for this book, opened in the scene (the product page's own column, unchanged).
       details: <><ProductInfo product={product} offer={offer} content={content} /><ProductExtras content={content} /></>,
     }))} />

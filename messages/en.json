@@ -828,6 +828,8 @@
       "pagesValue": "{value} pages",
       "wordsValue": "{value} words",
       "lookInside": "Look inside",
+      "openBook": "Open book",
+      "closeTheBook": "Close book",
       "closeBook": "Close",
       "previousPage": "Previous page",
       "nextPage": "Next page",

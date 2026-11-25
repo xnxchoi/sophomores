@@ -91,14 +91,21 @@ function load(books: unknown[], featured: number) {
   return loaded;
 }
 
-export type SceneBook = { id: string; title: string; stageArt: string | null };
+export type SceneBook = { id: string; title: string; stageArt: string | null;
+  /** The book's page images in reading order (Payload: the product's book pages, front then back of each leaf). */
+  pages?: string[] };
+/** Pages for their look inside: ours when the product has them, otherwise a blank book of plain paper (their
+ * `blank.png` is the endpaper texture, tiled, so blank interior pages need a plain image of their own). */
+export function scenePages(pages: string[] | undefined) {
+  return pages && pages.length >= 2 ? pages : Array.from({ length: 48 }, () => TEX + "shared/page_plain.png");
+}
 
 /** One of our products in their built book shape: our placeholder cover and neutral maps (no cover art exists yet). */
-function stripeBook({ id, title, stageArt }: SceneBook) {
-  const blank = TEX + "shared/blank.png";
+function stripeBook({ id, title, stageArt, pages }: SceneBook) {
+  const blank = TEX + "shared/blank.png", pageImages = scenePages(pages);
   return {
     id, title, author: "", type: "book", shaderType: "sophomores", backgroundColor: "#d9d8d4", chordSku: "",
-    pageCount: 240, pageImages: Array.from({ length: 240 }, () => blank), folios: { romanCount: 0, lastFolio: 240 },
+    pageCount: pageImages.length, pageImages, folios: { romanCount: 0, lastFolio: pageImages.length },
     startPage: 1, stackThicknessPct: 0.8, pageColor: "#f3f2ee", images: { background: stageArt ?? blank },
     material: {
       id, title, author: "", slug: id,

@@ -12,7 +12,9 @@ const inOutQuad = (x: number) => (x < 0.5 ? 2 * x * x : 1 - (-2 * x + 2) ** 2 / 
 export type BookDetailSource = { rawProgress: () => number; hrefOf: (index: number) => string | null; home: string;
   placeOf: (index: number) => number; shelfAt: () => number | null;
   /** Commit the scene's progress to the open book (theirs: `e6(e)` when the detail settles) and release it on close. */
-  pin: (index: number, arrived: boolean) => void; unpin: (index: number) => void };
+  pin: (index: number, arrived: boolean) => void; unpin: (index: number) => void;
+  /** True while the book's pages are open ("Open book"): ← turns a page then, it does not leave the details. */
+  pagesOpen: () => boolean };
 
 /**
  * Their book detail (06w9), desktop: a click on a shelf spine carries that book into its details inside the scene.
@@ -225,7 +227,7 @@ export function useBookDetail(hub: SceneHub, catalogue: SceneCatalogue, router: 
   }, [open, router]);
   useEffect(() => {
     if (open == null) return;
-    const scope = router.v("book-detail", { acceptsGesture: false, horizontal: (step: number) => { if (step === -1) closeRef.current(); } });
+    const scope = router.v("book-detail", { acceptsGesture: false, horizontal: (step: number) => { if (step === -1 && !source.current.pagesOpen()) closeRef.current(); } });
     const key = (event: KeyboardEvent) => { if (event.key === "Escape") closeRef.current(); };
     const back = () => { if (window.location.pathname === source.current.home) closeRef.current(true); };
     window.addEventListener("keydown", key);

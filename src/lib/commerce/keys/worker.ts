@@ -90,7 +90,7 @@ const later = (now: Date, ms: number): string => new Date(now.getTime() + ms).to
  * looks at either changes state or is pushed to the back of the due order, so
  * successive passes rotate through the whole queue however many rows are held.
  */
-async function* due(payload: Payload, state: Record<string, unknown>, now: () => Date): AsyncGenerator<CommerceDocument> {
+async function* due(payload: Payload, state: Record<string, unknown>, now: () => Date, deadline?: number): AsyncGenerator<CommerceDocument> {
   const seen = new Set<string>();
   const phases = [
     { where: { and: [state, { nextAttemptAt: { exists: false } }] }, sort: "createdAt" },
@@ -98,6 +98,7 @@ async function* due(payload: Payload, state: Record<string, unknown>, now: () =>
   ];
   for (const phase of phases) {
     while (seen.size < MAX_ROWS) {
+      if (pastDeadline(deadline, now)) return; // no new page query after the tick's deadline
       const where = typeof phase.where === "function" ? phase.where() : phase.where;
       const found = await payload.find({ collection: "commerce-key-grant-intents" as never, where: where as never, sort: phase.sort, limit: PAGE, depth: 0, overrideAccess: true });
       const fresh = (found.docs as unknown as CommerceDocument[]).filter((doc) => !seen.has(doc.id));
@@ -230,9 +231,10 @@ const signerLockKey = (signer: string) => `key-signer:${signer}`;
 const nonceLockKey = (signer: string) => `key-signer-nonce:${signer}`;
 
 /** Every row matching `where`, a page at a time, bounded by MAX_ROWS. With `req`, read inside its transaction. */
-async function findAll(payload: Payload, where: Where, req?: PayloadRequest, sort?: string): Promise<CommerceDocument[]> {
+async function findAll(payload: Payload, where: Where, req?: PayloadRequest, sort?: string, stop?: () => boolean): Promise<CommerceDocument[]> {
   const docs: CommerceDocument[] = [];
   for (let page = 1; docs.length < MAX_ROWS; page++) {
+    if (stop?.()) break; // a work list only (never a safety read): no new page after the tick's deadline
     const found = await payload.find({ collection: INTENTS as never, where, sort, limit: 100, page, depth: 0, overrideAccess: true, req });
     docs.push(...(found.docs as unknown as CommerceDocument[]));
     if (!found.hasNextPage) break;
@@ -400,7 +402,7 @@ async function recordUnsentGrant(payload: Payload, intentID: string, attemptID: 
 async function sweepInterruptedClaims(payload: Payload, now: () => Date, deadline?: number): Promise<void> {
   if (pastDeadline(deadline, now)) return;
   const cutoff = new Date(now().getTime() - CLAIM_STALE_MS).toISOString();
-  for await (const row of due(payload, { and: [{ state: { equals: "submitted" } }, { txHash: { exists: false } }, { dispatchStartedAt: { less_than_equal: cutoff } }] }, now)) {
+  for await (const row of due(payload, { and: [{ state: { equals: "submitted" } }, { txHash: { exists: false } }, { dispatchStartedAt: { less_than_equal: cutoff } }] }, now, deadline)) {
     if (pastDeadline(deadline, now)) break;
     await inIntent(payload, row.id, async (req, intent) => {
       if (intent.state !== "submitted" || intent.txHash || intent.attemptID !== row.attemptID) return;
@@ -417,7 +419,7 @@ async function sweepInterruptedClaims(payload: Payload, now: () => Date, deadlin
 async function requeueRetryable(payload: Payload, now: () => Date, deadline?: number): Promise<void> {
   if (pastDeadline(deadline, now)) return;
   const retryable = { and: [{ state: { equals: "failed_retryable" } }, { or: [{ lastErrorCode: { exists: false } }, { lastErrorCode: { not_in: [...parkedGrantCodes] } }] }] };
-  for await (const row of due(payload, retryable, now)) {
+  for await (const row of due(payload, retryable, now, deadline)) {
     if (pastDeadline(deadline, now)) break;
     await inIntent(payload, row.id, async (req, intent) => {
       if (intent.state !== "failed_retryable" || parked(String(intent.lastErrorCode ?? ""))) return;
@@ -439,8 +441,9 @@ export async function dispatchKeyGrants({ payload, adapter, limit = 10, now = ()
   // Behind a nonce stopped for a person, later nonces could never mine: hold new grants in pending.
   if (await signerHeld(payload, adapter.signer)) return 0;
   let dispatched = 0;
-  for await (const row of due(payload, { state: { equals: "pending" } }, now)) {
+  for await (const row of due(payload, { state: { equals: "pending" } }, now, deadline)) {
     if (dispatched >= limit || pastDeadline(deadline, now) || await signerHeld(payload, adapter.signer)) break;
+    if (pastDeadline(deadline, now)) break; // the signer-held read may itself have crossed the deadline: no claim
     const claimed = await claim(payload, row.id, now());
     if (!claimed) continue;
     dispatched++;
@@ -466,7 +469,7 @@ export async function dispatchKeyGrants({ payload, adapter, limit = 10, now = ()
 export async function reconcileKeyGrants({ payload, adapter, limit = 10, now = () => new Date(), onOverCap = (intentID) => logOverCap(intentID), deadline }: ReconcilePass): Promise<number> {
   if (pastDeadline(deadline, now)) return 0;
   let settled = 0;
-  for await (const row of due(payload, { and: [{ state: { in: ["submitted", "ambiguous"] } }, { txHash: { exists: true } }] }, now)) {
+  for await (const row of due(payload, { and: [{ state: { in: ["submitted", "ambiguous"] } }, { txHash: { exists: true } }] }, now, deadline)) {
     if (settled >= limit) break;
     if (pastDeadline(deadline, now)) break; // not started: keeps its due time, so it comes first next tick
     const hashes = [...new Set([String(row.txHash), ...recordedSends(row).map((send) => send.txHash)])];
@@ -679,7 +682,7 @@ async function replaceStuck(payload: Payload, operation: Operation, chain: Repla
   const rows = await findAll(payload, { and: [
     operation.inFlight(chain.signer), { [fields.lastSentAt]: { less_than_equal: recheck } },
     { or: [{ lastErrorCode: { exists: false } }, { lastErrorCode: { not_in: [...operation.stopCodes, ...operation.settledCodes] } }] },
-  ] }, undefined, fields.lastSentAt);
+  ] }, undefined, fields.lastSentAt, () => pastDeadline(deadline, now));
   let replaced = 0;
   for (const row of rows) {
     if (replaced >= limit || pastDeadline(deadline, now)) break;
@@ -931,7 +934,7 @@ export type KeyStateReader = { keyInvalidAtDepth(input: { target: KeyGrantTarget
 export async function reconcileOwnerCancels({ payload, reader, limit = 10, now = () => new Date(), deadline }: { payload: Payload; reader: KeyStateReader; limit?: number; now?: () => Date; deadline?: number }): Promise<number> {
   if (pastDeadline(deadline, now)) return 0;
   let settled = 0;
-  for await (const row of due(payload, { and: [{ state: { equals: "granted" } }, { cancelRequested: { equals: true } }, { tokenID: { exists: true } }] }, now)) {
+  for await (const row of due(payload, { and: [{ state: { equals: "granted" } }, { cancelRequested: { equals: true } }, { tokenID: { exists: true } }] }, now, deadline)) {
     if (settled >= limit || pastDeadline(deadline, now)) break;
     let invalid: boolean | null;
     try { invalid = await reader.keyInvalidAtDepth({ target: parseKeyGrantTarget(row.target), tokenID: String(row.tokenID) }); } catch { invalid = null; }

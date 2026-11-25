@@ -7,6 +7,9 @@ import { test } from "node:test";
 import { encodeAbiParameters, keccak256, numberToHex, type Hex } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { runKeyGrantTick } from "@/lib/commerce/keys/grant-catch-up";
+import { dispatchKeyGrants } from "@/lib/commerce/keys/worker";
+import { releaseInvalidatedSeatsSweep } from "@/lib/commerce/seat-release";
+import type { PayloadRequest } from "payload";
 import { createUnlockKeyGrantAdapter } from "@/lib/commerce/keys/unlock/adapter";
 import { fakePayload, type Row } from "./support/fake-payload";
 import { overCapTick } from "./support/over-cap-tick";
@@ -285,4 +288,54 @@ test("after the tick deadline no pass, query, write or RPC starts; the next tick
   assert.deepEqual([byID("00000000-0000-4000-8000-0000000000b1").state, byID("00000000-0000-4000-8000-0000000000b1").tokenID, byID("00000000-0000-4000-8000-0000000000b1").settledTxHash], ["granted", "42", older]);
   assert.notEqual(byID("interrupted").state, "submitted", "housekeeping ran on the next tick");
   assert.notEqual(byID("retryable").state, "failed_retryable", "requeued on the next tick");
+});
+
+// Review-A, 25 Nov (r5): the signer-held read can itself cross the deadline; no claim and no send follow it.
+test("a deadline crossed during the signer-held check claims nothing and sends nothing", async () => {
+  let clock = Date.parse("2026-11-25T12:00:00Z");
+  const tickNow = () => new Date(clock);
+  const account = privateKeyToAccount(generatePrivateKey());
+  const chain = mockChain(healthyChain({ eth_chainId: () => numberToHex(137) }));
+  const adapter = createUnlockKeyGrantAdapter({ chainID: 137, account, transport: chain.transport, now: tickNow, env: live, polygon: { lock: lockAddress, granter: account.address } });
+  const { payload: store, rows } = fakePayload([owed("waiting", 1)]);
+  let heldChecks = 0;
+  const payload = new Proxy(store, { get(target, property, receiver) {
+    const value = Reflect.get(target, property, receiver);
+    if (property !== "find" || typeof value !== "function") return value;
+    return async (args: { where: unknown; limit?: number }) => {
+      // signerHeld's query (a limit-1 search for stopped nonces): the second one, in the row loop, is slow.
+      if (args.limit === 1 && JSON.stringify(args.where).includes("replacement_exhausted") && ++heldChecks === 2) clock += 20 * 60_000;
+      return value.call(target, args);
+    };
+  } });
+  const dispatched = await dispatchKeyGrants({ payload, adapter, now: tickNow, deadline: clock + 60_000 });
+  assert.equal(heldChecks, 2);
+  assert.equal(dispatched, 0);
+  const row = rows["commerce-key-grant-intents"][0];
+  assert.deepEqual([row.state, row.attempts, row.attemptID], ["pending", 0, undefined], "not claimed");
+  assert.ok(!chain.requests.some((request) => ["eth_call", "eth_estimateGas", "eth_sendRawTransaction"].includes(request.method)), "nothing prepared or sent");
+});
+
+// Review-A, 25 Nov (r5): the seat sweep keeps its cursor when the deadline passes during its last order or before an
+// empty query result is saved, and makes no query at all once the deadline has passed.
+test("the seat sweep never persists its cursor after the deadline", async () => {
+  const revoked = [1, 2].map((unit) => ({ id: `00000000-0000-4000-8000-00000000000${unit}`, order: `order-${unit}`, status: "revoked", benefitReview: true }));
+  const sweep = async (admissions: Row[], stops: boolean[]) => {
+    const { payload, rows } = fakePayload([], admissions);
+    let call = 0;
+    const result = await releaseInvalidatedSeatsSweep({ req: { payload, context: {} } as unknown as PayloadRequest, limit: 2, stop: () => stops[Math.min(call++, stops.length - 1)] });
+    return { result, cursor: rows["commerce-reconciliations"], calls: call };
+  };
+  // Entry check, order 1, order 2 (the last), then the guard before the cursor: expired during the last order.
+  const lastOrder = await sweep(revoked, [false, false, false, true]);
+  assert.deepEqual(lastOrder.cursor, [], "cursor not saved after the last order crossed the deadline");
+  // An empty query, then the deadline passes before the cursor would be saved.
+  const empty = await sweep([], [false, true]);
+  assert.deepEqual(empty.cursor, [], "cursor not saved after an empty query past the deadline");
+  // Already past at entry: no query and nothing saved.
+  const before = await sweep(revoked, [true]);
+  assert.deepEqual([before.result, before.cursor, before.calls], [{ released: 0, failed: 0 }, [], 1]);
+  // Control: with time left, the cursor is saved.
+  const control = await sweep(revoked, [false]);
+  assert.equal(control.cursor.length, 1);
 });

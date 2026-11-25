@@ -60,6 +60,7 @@ export async function releaseInvalidatedSeatsSweep({ req, limit = 25, now = Date
   /** The key-grant tick's deadline: checked between orders. Once true, no further order starts and the cursor is kept as it was. */
   stop?: () => boolean }): Promise<{ released: number; failed: number }> {
   if (await req.transactionID) throw new Error("The seat sweep runs each order in its own transaction");
+  if (stop()) return { released: 0, failed: 0 }; // past the deadline: no query, cursor unchanged
   const cursor = await findCommerce(req, "commerce-reconciliations", "scope", seatSweepScope);
   const after = cursor ? seatSweepSchema.parse(cursor.state).after : null;
   const found = await req.payload.find({ collection: "commerce-admissions" as never, depth: 0, overrideAccess: true, limit, sort: "id", req,
@@ -73,6 +74,8 @@ export async function releaseInvalidatedSeatsSweep({ req, limit = 25, now = Date
     try { released += await inCommerceTransaction(req, () => withCommerceWrite(req, () => releaseInvalidatedSeats({ req, orderID, now }))); }
     catch { failed++; req.payload.logger?.error({ msg: "Seat release sweep: order skipped until its next turn", orderID }); }
   }
+  // The deadline may have passed during the last order or an empty query: the cursor is kept, never persisted late.
+  if (stop()) return { released, failed };
   const next = scanned.length < limit ? null : String(scanned[scanned.length - 1].id);
   try {
     await inCommerceTransaction(req, () => withCommerceWrite(req, async () => {

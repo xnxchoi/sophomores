@@ -1,6 +1,7 @@
 # Backstop for the path unit: a marker that landed while a sweep was running is never left uninstalled, and a marker
-# whose table is gone (a release that died between its two steps) gets its table back within one interval. 5 s, not
-# 30 s: that gap was measured at 19.8 s on the VM (KEY-GRANTS.md, "Measured residual"). An idle sweep is one nft listing.
+# whose table is gone (a release that died between its two steps) gets its table back at the next sweep. With 30 s,
+# 19.8 s with no drop was observed on the VM (KEY-GRANTS.md, "Measured residual"). 5 s is intended to shorten that gap;
+# recovery with it has not been measured and has no guaranteed 5 s bound. An idle sweep is one nft listing.
 [Unit]
 Description=Sweep key-job fence generations every 5 s
 [Timer]

@@ -192,16 +192,18 @@ script with this signer anywhere else, and never use this signer from another ho
 
 **Measured residual (VM acceptance, 26 Nov; accepted by the coordinator).** If `unfence` dies after deleting the table
 but before removing the marker, and that was the only generation, the bridge has no drop until the next sweep: a
-deleted table doesn't trigger the path unit, so the backstop timer puts it back. With the timer at 30 s the gap
-measured 19.8 s, and 172 packets from a test container that wasn't a key job got out. The timer is now 5 s, so the gap
-is at most about 5 s. No key job can use it: `unfence` had already proved that no tick or first-run container exists,
-and admission refuses the whole time because the marker is still there.
+deleted table doesn't trigger the path unit, so the backstop timer puts it back. With the 30 s timer, 19.8 s with no
+drop and 172 packets from a test container that wasn't a key job were observed. The new 5 s backstop is intended to
+shorten that gap; recovery with it has not been measured and has no guaranteed 5 s bound. No key job can use the gap:
+`unfence` had already proved that no tick or first-run container exists, and admission refuses the whole time because the marker is still there.
 
 **Operator notes.**
 - After a refused run, the tick unit sits in `failed`, and `unfence` refuses with `unit_active`. Run
   `systemctl reset-failed key-grant-tick.service key-grant-first-run.service` first.
-- Starting a key-job unit during a release fences again, by design: run and reap both time out on the release's lock,
-  and reap's exit trap writes a new generation. Release that one too.
+- Starting a key-job unit during a release can fence again, by design. In the observed case, run and reap both timed
+  out on the release's lock and reap's exit trap wrote a new generation; release that one too. A start that doesn't
+  reach the lock timeout may end differently, so after any start during a release list
+  `/var/lib/sophomores-key-grant/fence/` and `nft list tables inet` before going on.
 - A fencer killed after its table went in skips its packet check (the sweep treats an installed table as done). The
   next `kj-guard probe-all`, or the next boot, checks it with packets.
 - The VM run's guest, for K1 to compare against the VPS (arm64): kernel 6.8.0-147-generic, Docker 29.1.3 (containerd

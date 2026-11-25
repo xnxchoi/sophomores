@@ -82,11 +82,21 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
   // Scroll → progress on every scroll event (their readScroll): raw, locked and spine-row progress go to the scene's
   // refs; React only hears the locked index (±0.65 hysteresis, then a 200 ms debounce), whether the shelf is up, and,
   // 100 ms after the scroll settles, the committed progress.
-  const progressRef = useRef(0);
+  // Loaded on a product's address (desktop): the scene's first frame already has that book open at its own index, as
+  // theirs opens the deep link before its scene mounts (06w9:15177-15183); otherwise it would ease into the detail pose.
+  const [landing, setLanding] = useState(() => {
+    const index = initialOpen && window.innerWidth >= 900 ? items.findIndex((entry) => entry.id === initialOpen && entry.details) : -1;
+    if (index >= 0) {
+      hub.scrollProgressDirectLiveRef.current = index; hub.spineViewProgressLiveRef.current = hub.spineViewProgressFor(index);
+      hub.backgroundSnapScrollLiveRef.current = 6; hub.bookRowSeedLiveRef.current = 3;
+    }
+    return index >= 0 ? index : null;
+  });
+  const progressRef = useRef(landing ?? 0);
   // True while a book is open: the page holds still, so the scroll reader, the idle advance and the shelf catch stand
   // down and the scene keeps the progress the detail pinned (theirs: readScroll and the idle timer skip detail).
-  const held = useRef(false);
-  const [committed, setCommitted] = useState(0), [active, setActive] = useState(0), [onShelf, setOnShelf] = useState(false);
+  const held = useRef(landing != null);
+  const [committed, setCommitted] = useState(landing ?? 0), [active, setActive] = useState(landing ?? 0), [onShelf, setOnShelf] = useState(false);
   const listeners = useRef(new Set<() => void>());
   useEffect(() => {
     let settle = 0, debounce = 0, index = 0;
@@ -201,7 +211,7 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
   useEffect(() => {
     const index = items.findIndex((entry) => entry.id === arrived.current);
     arrived.current = undefined;
-    if (index >= 0 && items[index]?.details) detail.openBook(index, true);
+    if (!(index >= 0 && items[index]?.details && detail.openBook(index, true))) { setLanding(null); held.current = false; }
   }, []);   // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { openRef.current = (index: number) => {
     if (items[index]?.details && detail.openBook(index)) return;
@@ -263,11 +273,13 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
   // A product's address opens with its details already up, so the scene skips its intro (theirs: skipIntro for a book
   // address, 06w9:13210, 17840); otherwise the open book would reset and fly in beside its column a second later.
   const skipIntro = useRef(Boolean(initialOpen)).current;
+  // Once the detail state itself is open, the landing has done its job (closing must not fall back to it).
+  useEffect(() => { if (detail.open != null) setLanding(null); }, [detail.open]);
   const sceneProps = useMemo(() => ({ skipIntro,
     books: (window as unknown as { __SPBOOKS: unknown }).__SPBOOKS, scrollProgress: committed, scrollProgressLiveRef: progressRef,
     activeBookIndex: active, stackMode: "browse", onBookOpen: (index: number) => openRef.current(index),
-    isDetailOpen: detail.open != null, detailBookIndex: detail.open ?? -1,
-  }), [skipIntro, committed, active, detail.open]);
+    isDetailOpen: (detail.open ?? landing) != null, detailBookIndex: detail.open ?? landing ?? -1,
+  }), [skipIntro, committed, active, detail.open, landing]);
 
   // The spine row seats against, and lifts out ahead of, the section after the shelf (their #home-section-films, read
   // through homeWebsitesSectionElLiveRef); without one the scene treats the row as already gone. As theirs, the content

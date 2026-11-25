@@ -314,12 +314,12 @@ test("sign-in link is a code-stage fallback and honors capability, busy, recipie
 });
 
 test("recovery entry is explicit and available only to login with a supplied hook", () => {
-  assert.doesNotMatch(render(anonymous), /Can’t sign in/);
+  assert.doesNotMatch(render(anonymous), /Lost access/);
   const onRecover = () => {};
   const html = render(anonymous, {}, "email", "login", { onRecover });
-  assert.match(html, /Can’t sign in/);
-  assert.doesNotMatch(render(anonymous, {}, "email", "signup", { onRecover }), /Can’t sign in/);
-  assert.doesNotMatch(render({ ...anonymous, authenticated: true, phoneBindingAuth: "ready" as const, emailVerified: true }, {}, "email", "login", { onRecover }), /Can’t sign in/);
+  assert.match(html, /Lost access/);
+  assert.doesNotMatch(render(anonymous, {}, "email", "signup", { onRecover }), /Lost access/);
+  assert.doesNotMatch(render({ ...anonymous, authenticated: true, phoneBindingAuth: "ready" as const, emailVerified: true }, {}, "email", "login", { onRecover }), /Lost access/);
 });
 
 

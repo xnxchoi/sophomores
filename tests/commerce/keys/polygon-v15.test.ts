@@ -9,6 +9,7 @@ import { createUnlockKeyGrantAdapter } from "@/lib/commerce/keys/unlock/adapter"
 import { createUnlockKeyCancelAdapter } from "@/lib/commerce/keys/unlock/cancel";
 import { dispatchKeyGrants } from "@/lib/commerce/keys/worker";
 import { fakePayload } from "./support/fake-payload";
+import { ANCESTRY_CAP } from "@/lib/commerce/keys/unlock/transactions";
 import { address, cancelLog, hashOf, healthyChain, lockAbi, lockAddress, lockCalls, mockChain, receipt, recipient, transferLog, uint, uintArray } from "./support/mock-chain";
 
 // Owner, 24 Nov: "our lock is v15". The Signet lock reads publicLockVersion 15; Edition I reads 14. Our adapters
@@ -55,6 +56,7 @@ const polygon = (calls: Record<string, (params: unknown[]) => Hex> = {}, methods
     publicLockVersion: () => uint(15n), onHasRoleHook: () => address(zero), isLockManager: () => bool(true), ownerOf: () => address(recipient),
     isValidKey: () => bool(true), expireAndRefundFor: () => "0x", ...calls }),
   ...methods,
+  ...(typeof (methods.eth_getBlockByNumber as Partial<View> | undefined)?.byHash === "function" ? { eth_getBlockByHash: (methods.eth_getBlockByNumber as View).byHash } : {}),
 });
 function granter(handlers: ReturnType<typeof healthyChain>, account: LocalAccount = privateKeyToAccount(generatePrivateKey())) {
   const chain = mockChain(handlers);
@@ -185,21 +187,35 @@ test("re-sending recorded bytes re-reads the role hook: set is refused, unreadab
 });
 
 // Owner, 25 Nov (r6): Polygon trusts a receipt once its block is finalized (milestones), not after a fixed 256 blocks.
-const blockAt = (number: number, hash: Hex) => ({ ...(healthyChain().eth_getBlockByNumber([]) as object), number: numberToHex(number), hash });
-/** A node's view: the block it names `finalized`, and the hash it numbers at each height (answers in call order when a list). */
-function view(finalized: [number, Hex] | null | "fails", numberedHashes: Record<number, Hex | Hex[]>) {
+const blockAt = (number: number, hash: Hex, parentHash: Hex = hashOf("2")) => ({ ...(healthyChain().eth_getBlockByNumber([]) as object), number: numberToHex(number), hash, parentHash });
+const filler = (number: number): Hex => `0x${"a".repeat(8)}${number.toString(16).padStart(56, "0")}`;
+type View = ((params: unknown[]) => unknown) & { byHash: (params: unknown[]) => unknown };
+/**
+ * A node's view: the block it names `finalized`, the hash it numbers at each height (answers in call order when a
+ * list; unlisted heights get a filler hash), and by-hash answers whose parent is the numbered hash one height down.
+ * `forks` adds blocks only reachable by hash (a fork's block: its height and parent).
+ */
+function view(finalized: [number, Hex] | null | "fails", numberedHashes: Record<number, Hex | Hex[]>, forks: Record<Hex, [number, Hex]> = {}, ancestry: Record<number, Hex> = {}): View {
   const served: Record<number, number> = {};
-  return ([tag]: unknown[]) => {
+  // The by-hash (parent-link) chain: `ancestry` where given, otherwise the first numbered answer.
+  const first = (number: number): Hex => { if (ancestry[number]) return ancestry[number]; const answer = numberedHashes[number]; return answer === undefined ? filler(number) : Array.isArray(answer) ? answer[0] : answer; };
+  const byNumber = ([tag]: unknown[]) => {
     if (tag === "finalized") {
       if (finalized === "fails") throw new Error("unsupported block tag");
-      return finalized && blockAt(...finalized);
+      return finalized && blockAt(finalized[0], finalized[1], first(finalized[0] - 1));
     }
     const number = Number(BigInt(tag as string));
-    const answer = numberedHashes[number];
-    if (answer === undefined) return null;
+    const answer = numberedHashes[number] ?? first(number);
     const hash = Array.isArray(answer) ? answer[Math.min((served[number] = (served[number] ?? -1) + 1), answer.length - 1)] : answer;
-    return blockAt(number, hash);
+    return blockAt(number, hash, first(number - 1));
   };
+  const byHash = ([hash]: unknown[]) => {
+    const key = (hash as string).toLowerCase() as Hex;
+    if (forks[key]) return blockAt(forks[key][0], key, forks[key][1]);
+    for (let number = 0; number < 2_000; number++) if (first(number).toLowerCase() === key) return blockAt(number, first(number), first(number - 1));
+    return null;
+  };
+  return Object.assign(byNumber, { byHash });
 }
 
 test("Polygon settles a receipt once its block is at or below the finalized block, and never without one", async () => {
@@ -262,4 +278,44 @@ test("a key counts as already invalid only if, at the finalized block, it exists
     assert.equal(result, expected, label);
     assert.ok(reads.every((at) => JSON.stringify(at) === JSON.stringify({ blockHash: hashOf("5"), requireCanonical: true })), label);
   }
+});
+
+// Review-A, 25 Nov (r8): a receipt below the checkpoint must be on the checkpoint's own ancestry (parentHash links,
+// at most ANCESTRY_CAP blocks), not merely match a numbered read a mixed-backend RPC could serve from a fork.
+test("a receipt below the finalized block settles only on the finalized block's ancestry, within the cap", async () => {
+  const [one, five, forked] = [hashOf("1"), hashOf("5"), hashOf("6")];
+  const onFork = (answer: ReturnType<typeof receipt>) => ({ ...answer, blockHash: forked });
+  // The checkpoint (105) is canonical and its ancestry runs through `one` at 100; the lower numbered read and the
+  // receipt come from a fork whose block at 100 is `forked`.
+  const mixed = () => view([105, five], { 100: forked, 105: five }, { [forked]: [100, hashOf("4")] }, { 100: one });
+  const canonicalOnly = () => view([105, five], { 100: one, 105: five });
+  for (const [answer, kind] of [[receipt("0x1", [transferLog(42n)]), "confirmed"], [receipt("0x0", []), "definitelyReverted"]] as const) {
+    const honest = granter(polygon({}, { eth_getTransactionReceipt: () => answer, eth_blockNumber: () => numberToHex(105), eth_getBlockByNumber: canonicalOnly() }));
+    assert.equal((await honest.adapter.reconcile({ intentID: "i", txHash: hashOf("c"), target })).kind, kind, "on the ancestry");
+    assert.equal(honest.methods().filter((method) => method === "eth_getBlockByHash").length, 5, "one read per link, 105 down to 101");
+    const fork = granter(polygon({}, { eth_getTransactionReceipt: () => onFork(answer), eth_blockNumber: () => numberToHex(105), eth_getBlockByNumber: mixed() }));
+    assert.equal((await fork.adapter.reconcile({ intentID: "i", txHash: hashOf("c"), target })).kind, "unknown", `forked lower block (${kind})`);
+    const cancel = canceller(polygon({}, { eth_getTransactionReceipt: () => onFork(answer), eth_blockNumber: () => numberToHex(105), eth_getBlockByNumber: mixed() }));
+    assert.equal((await cancel.adapter.reconcileCancel({ txHash: hashOf("c"), target, tokenID: "5" })).kind, "unknown", `cancel: forked lower block (${kind})`);
+  }
+  // A broken link (a block that names another height) defers too.
+  const broken = view([105, five], { 100: one, 105: five }, { [hashOf("f")]: [999, one] });
+  const lying = Object.assign((params: unknown[]) => broken(params), { byHash: (params: unknown[]) => {
+    const block = broken.byHash(params) as { number: string } | null;
+    return block && block.number === numberToHex(103) ? { ...block, number: numberToHex(90) } : block;
+  } });
+  const link = granter(polygon({}, { eth_getTransactionReceipt: () => receipt("0x0", []), eth_blockNumber: () => numberToHex(105), eth_getBlockByNumber: lying }));
+  assert.equal((await link.adapter.reconcile({ intentID: "i", txHash: hashOf("c"), target })).kind, "unknown", "broken link");
+});
+
+test("a receipt more than ANCESTRY_CAP blocks below the finalized block is deferred, with no walk", async () => {
+  const cap = Number(ANCESTRY_CAP);
+  const top = hashOf("5");
+  const within = granter(polygon({}, { eth_getTransactionReceipt: () => receipt("0x1", [transferLog(42n)]), eth_blockNumber: () => numberToHex(100 + cap),
+    eth_getBlockByNumber: view([100 + cap, top], { 100: hashOf("1"), [100 + cap]: top }) }));
+  assert.equal((await within.adapter.reconcile({ intentID: "i", txHash: hashOf("c"), target })).kind, "confirmed", "exactly at the cap");
+  const beyond = granter(polygon({}, { eth_getTransactionReceipt: () => receipt("0x0", []), eth_blockNumber: () => numberToHex(101 + cap),
+    eth_getBlockByNumber: view([101 + cap, top], { 100: hashOf("1"), [101 + cap]: top }) }));
+  assert.equal((await beyond.adapter.reconcile({ intentID: "i", txHash: hashOf("c"), target })).kind, "unknown", "one past the cap: no revert");
+  assert.equal(beyond.methods().includes("eth_getBlockByHash"), false);
 });

@@ -32,12 +32,20 @@ The code is `src/lib/commerce/keys/` (worker passes, `grant-catch-up.ts`, `unloc
   rule (Polygon: at or below the node's `finalized` block; Base Sepolia: 10 blocks deep) *and* its block hash equals the canonical block at that height. A reorged-out or stale-fork receipt stays
   pending until the chain shows the transaction in a canonical block.
 - **RPC trust (Review-A, 25 Nov):** on Polygon the `finalized` block must also be the block the node numbers at that
-  height, the receipt's block is read in that same view, and the finalized block is re-read unchanged afterwards. Any
-  disagreement leaves the grant or cancel pending (never a revert, so never a retry). A key counts as already invalid
-  only if, at that block, it exists, is the recipient's and is not valid (a key minted after a lagging checkpoint is
-  not "cancelled"). This catches an **inconsistent** RPC (a load balancer mixing nodes, a node on a stale fork), not a
-  **consistently dishonest** one. Live use therefore needs a finality source the owner trusts (his own node or a paid
-  provider he chooses), or a second, independent RPC to corroborate; the code reads one RPC.
+  height. The receipt's block must be that block or its ancestor, found by walking `parentHash` links down from it,
+  at most 256 blocks (`ANCESTRY_CAP`). Afterwards the numbered block at the finalized height is re-read and must be
+  unchanged. Any disagreement, a broken link or a longer gap leaves the grant or cancel pending: never settled, never
+  a revert, so never a retry. A key counts as already invalid only if, at that block, it exists, is the recipient's
+  and is not valid (a key minted after a lagging checkpoint is not "cancelled").
+  - **What this does and does not catch:** these checks detect an RPC whose answers contradict each other. They do not
+    detect every way a pool of backends can mix answers, and nothing in one RPC's answers can expose a consistently
+    dishonest RPC.
+  - **Live prerequisite:** `KEY_GRANT_POLYGON_RPC_URL` must be an owner-chosen, trusted RPC that answers from a single
+    view of the chain (his own node or a provider endpoint he trusts). Not a load-balanced public pool. The code reads
+    one RPC; it does not corroborate against a second.
+  - **Over-cap gap:** at one tick a minute a receipt is checked within a few blocks of finality. If the tick stops for
+    more than about 8.5 minutes, receipts that fell over 256 blocks below the finalized block stay pending and need a
+    person: the code never settles them from a longer walk.
 - **Off** (the default): it prints `{"outcome":"off"}` before loading anything.
 - **What the tick never does:**
   - It never retries an `ambiguous` grant; that waits for reconcile and a person.
@@ -49,7 +57,7 @@ The code is `src/lib/commerce/keys/` (worker passes, `grant-catch-up.ts`, `unloc
 |---|---|---|---|
 | `KEY_GRANT_POLYGON_LIVE` | tick host | unset = off | Exactly `1` turns Polygon grants on. Anything else keeps them off. |
 | `KEY_GRANT_POLYGON_MAX_COST_WEI` | tick host | none. Required when on | The approved worst case for one transaction (gas limit × max fee), in wei. It must be at most 5 POL. Set it from a quote at go-live (below). Without it no Polygon transaction is built. |
-| `KEY_GRANT_POLYGON_RPC_URL` | tick host | none. Required when on | A Polygon mainnet RPC, https only. It must answer `eth_getBlockByNumber("finalized")`; without that, nothing ever settles (fail closed). Check before go-live (below). |
+| `KEY_GRANT_POLYGON_RPC_URL` | tick host | none. Required when on | A Polygon mainnet RPC, https only: owner-chosen and trusted, single view, not a load-balanced public pool (RPC trust, above). It must answer `eth_getBlockByNumber("finalized")`; without that, nothing ever settles (fail closed). Check before go-live (below). |
 | `KEY_GRANT_POLYGON_EVENT_LOCKS` | tick host (and wherever the export runs) | empty = no event locks | A comma list of event-ticket lock addresses on Polygon, one per event. Tonight it is the Edition I lock `0xef6414927acb08f4d5a35cc9e5de07b9f3255060`. Any entry that is not an address stops the tick (`bad_event_locks`). A ticket whose lock is not listed (nor Signet) parks with `lock_not_enabled`. That lock's `maxKeysPerAddress` is 1 on chain: a member plus two guests on one wallet fails until the owner sets it to 3. |
 | `UNLOCK_LIVE_GRANTER_PRIVATE_KEY`, `UNLOCK_LIVE_GRANTER_ADDRESS` | `~/.config/sphmrs/polygon-key-granter.env` on the tick host, mode 0600, owned by the tick's user | none | The grant signer. These are **not** app env and **not** in the VPS env allowlist. The address must be `0x2CDb…5336`; any other is refused. |
 | `MEMBER_WALLET_LOCK_ADDRESS` (existing) | app and tick | | It must be the Signet lock above on Polygon. |

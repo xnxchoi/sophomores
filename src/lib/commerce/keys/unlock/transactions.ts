@@ -39,6 +39,12 @@ const SEND_RPC_TIMEOUT_MS = 5_000;
  */
 export const confirmationDepth: Readonly<Record<number, number>> = { 84532: 10 };
 export const finalizedTagChains: ReadonlySet<number> = new Set([137]);
+/**
+ * How far below the settled block a receipt's block may sit and still be tied to it by parentHash links (one read per
+ * block). 256 blocks is about 8.5 min on Polygon and 8.5 min on Base Sepolia: the tick sees a receipt long before.
+ * A receipt further down stays pending for a person (deployment/KEY-GRANTS.md), never settled or reverted.
+ */
+export const ANCESTRY_CAP = 256n;
 
 /**
  * Highest `maxFeePerGas` (wei) any transaction of ours may carry, first sends
@@ -171,7 +177,22 @@ export function createSignerTransactions({ chainID, account, transport, holdMs =
     const hash = await numbered(head - depth + 1n);
     return hash ? { number: head - depth + 1n, hash } : null;
   };
-  /** Whether the settled block is still the node's block at its height after the other reads (the view held). */
+  /**
+   * The hash of the settled block's ancestor at `height`, found by walking `parentHash` links down from the settled
+   * block itself (Review-A, 25 Nov): a lower block a mixed-backend RPC serves from a fork is not on that path. Each
+   * step must name the expected height and hash. Null when the gap exceeds ANCESTRY_CAP or any link fails.
+   */
+  const ancestorAt = async (from: { number: bigint; hash: Hex }, height: bigint): Promise<Hex | null> => {
+    if (height > from.number || from.number - height > ANCESTRY_CAP) return null;
+    let hash = from.hash;
+    for (let number = from.number; number > height; number--) {
+      const block = await client.getBlock({ blockHash: hash });
+      if (block.number !== number || !block.hash || !same(block.hash, hash)) return null;
+      hash = block.parentHash;
+    }
+    return hash;
+  };
+  /** Whether the numbered block at the settled height is still the settled block after the other reads. */
   const stillSettled = async (settled: { number: bigint; hash: Hex }) => {
     const hash = await numbered(settled.number);
     return !!hash && same(hash, settled.hash);
@@ -334,10 +355,11 @@ export function createSignerTransactions({ chainID, account, transport, holdMs =
       try {
         const settled = await settledBlock();
         if (!settled || height > settled.number) return null;
-        // The receipt's block must be the node's block at its height in the same view as the settled block: read
-        // after it, and the settled block re-read unchanged afterwards. Any mismatch is unknown, never a revert.
-        const atHeight = height === settled.number ? settled.hash : await numbered(height);
-        if (!atHeight || !same(atHeight, seen.receipt.blockHash)) return null;
+        // The receipt's block must be the settled block or its ancestor (parentHash links, at most ANCESTRY_CAP), and
+        // the numbered block at the settled height is re-read unchanged afterwards. Any mismatch or an over-cap gap is
+        // unknown (deferred), never settled and never a revert.
+        const ancestor = await ancestorAt(settled, height);
+        if (!ancestor || !same(ancestor, seen.receipt.blockHash)) return null;
         return await stillSettled(settled) ? seen.receipt : null;
       } catch { return null; }
     },

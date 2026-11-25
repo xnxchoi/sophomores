@@ -82,7 +82,7 @@ export function tickAlertFromLine(line: string): TickAlert | null {
 
 /** Alert slots: at most this many alerts wait; the cap holds across concurrent writers (exclusive slot names). */
 export const SPOOL_MAX_FILES = 500;
-const SLOT = /^slot-[0-9]{3}\.alert\.json$/;
+const SLOT = /^slot-[0-4][0-9]{2}\.alert\.json$/; // slots 000-499 only
 const slotName = (index: number) => `slot-${String(index).padStart(3, "0")}.alert.json`;
 const MAX_ALERT_BYTES = 512;
 export type SpoolResult = "written" | "full" | "io_failed";
@@ -116,9 +116,12 @@ async function readSpooled(path: string): Promise<TickAlert> {
   let handle;
   try { handle = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK); } catch { return canonicalAlert(null); }
   try {
-    const info = await handle.stat();
-    if (!info.isFile() || info.size > MAX_ALERT_BYTES) return canonicalAlert(null);
-    return canonicalAlert(JSON.parse((await handle.readFile("utf8")).slice(0, MAX_ALERT_BYTES)));
+    if (!(await handle.stat()).isFile()) return canonicalAlert(null);
+    // At most MAX_ALERT_BYTES + 1 bytes into a fixed buffer: one byte more means oversize (never read to EOF).
+    const buffer = Buffer.alloc(MAX_ALERT_BYTES + 1);
+    const { bytesRead } = await handle.read(buffer, 0, buffer.length, 0);
+    if (bytesRead > MAX_ALERT_BYTES) return canonicalAlert(null);
+    return canonicalAlert(JSON.parse(buffer.subarray(0, bytesRead).toString("utf8")));
   } catch { return canonicalAlert(null); } finally { await handle.close(); }
 }
 

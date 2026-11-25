@@ -235,11 +235,14 @@ function settlingTick() {
   return { grant, payload, rows };
 }
 
-// Review-A, 25 Nov (r3): one deadline shared by hashes and passes. A multi-hash row whose budget runs out after a
-// revert, with another hash unread, is left exactly as it was; later work waits; the next tick settles it correctly.
-test("a multi-hash row interrupted by the tick deadline is left due, later passes wait, and the next tick settles it", async () => {
+// Review-A, 25 Nov (r3, r4): one deadline shared by hashes and passes. A multi-hash row whose budget runs out after a
+// revert, with another hash unread, is left exactly as it was. After expiry nothing more is read or written: no later
+// pass, no housekeeping (interrupted claim, retryable requeue), no seat sweep, no RPC. The next tick settles it all.
+test("after the tick deadline no pass, query, write or RPC starts; the next tick picks everything up", async () => {
   const [older, latest] = [`0x${"a".repeat(64)}`, `0x${"b".repeat(64)}`];
   let clock = Date.parse("2026-11-25T12:00:00Z");
+  let expired = false;
+  let rpcAtExpiry = -1;
   let slowOnce = true;
   const tickNow = () => new Date(clock);
   const account = privateKeyToAccount(generatePrivateKey());
@@ -248,23 +251,37 @@ test("a multi-hash row interrupted by the tick deadline is left due, later passe
     eth_blockNumber: () => numberToHex(101),
     // The latest send reverted (slowly, past the deadline); the older send at the same nonce is the one that mined.
     eth_getTransactionReceipt: ([hash]) => {
-      if (hash === latest) { if (slowOnce) { slowOnce = false; clock += 20 * 60_000; } return { ...receipt("0x0", []), transactionHash: latest }; }
+      if (hash === latest) { if (slowOnce) { slowOnce = false; clock += 20 * 60_000; expired = true; rpcAtExpiry = chain.requests.length; } return { ...receipt("0x0", []), transactionHash: latest }; }
       return { ...receipt("0x1", [transferLog(42n)]), transactionHash: older };
     },
   }));
   const grant = createUnlockKeyGrantAdapter({ chainID: 137, account, transport: chain.transport, now: tickNow, env: live, polygon: { lock: lockAddress, granter: account.address } });
   const send = (txHash: string) => ({ txHash, maxFeePerGas: "1", maxPriorityFeePerGas: "1", sentAt: "2026-11-25T11:00:00.000Z", accepted: true });
-  const { payload, rows } = fakePayload([
+  const { payload: store, rows } = fakePayload([
     { id: "00000000-0000-4000-8000-0000000000b1", operationKey: "unlock-grant:v1:order-m:1", entitlement: "adm", state: "submitted", attempts: 1, attemptID: "a1", txHash: latest, signer: grant.signer, nonce: 3, sends: [send(older), send(latest)], target },
     owed("later", 1),
+    { id: "interrupted", operationKey: "unlock-grant:v1:order-i:1", entitlement: "adm", state: "submitted", attempts: 1, attemptID: "ai", dispatchStartedAt: "2026-11-25T10:00:00.000Z", target },
+    { id: "retryable", operationKey: "unlock-grant:v1:order-r:1", entitlement: "adm", state: "failed_retryable", attempts: 1, lastErrorCode: "tx_reverted", target },
   ]);
+  // Every Payload call made after the deadline expired is recorded.
+  const afterExpiry: string[] = [];
+  const payload = new Proxy(store, { get(target, property, receiver) {
+    const value = Reflect.get(target, property, receiver);
+    return typeof value === "function" ? (...args: unknown[]) => { if (expired) afterExpiry.push(String(property)); return value.apply(target, args); } : value;
+  } });
   const first = await runKeyGrantTick({ payload, grant, acquire: runLock().acquire, env: live, now: tickNow });
-  assert.equal(first.outcome === "ran" && first.reconciled, 0);
-  assert.equal(first.outcome === "ran" && first.dispatched, 0, "later work waits for the next tick");
-  const [multi, later] = rows["commerce-key-grant-intents"];
-  assert.deepEqual([multi.state, multi.lastErrorCode, multi.nextAttemptAt], ["submitted", undefined, undefined], "not reverted, not deferred");
-  assert.equal(later.state, "pending");
+  assert.deepEqual(first, { outcome: "ran", reconciled: 0, replaced: 0, dispatched: 0, cancelled: 0, seatsReleased: 0, seatSweepFailures: 0, overCap: [] });
+  assert.deepEqual(afterExpiry, [], "no Payload read or write after expiry");
+  assert.equal(chain.requests.length, rpcAtExpiry, "no RPC after expiry (the older hash is not read)");
+  const byID = (id: string) => rows["commerce-key-grant-intents"].find((row) => row.id === id)!;
+  assert.deepEqual([byID("00000000-0000-4000-8000-0000000000b1").state, byID("00000000-0000-4000-8000-0000000000b1").lastErrorCode, byID("00000000-0000-4000-8000-0000000000b1").nextAttemptAt], ["submitted", undefined, undefined], "not reverted, not deferred");
+  assert.equal(byID("later").state, "pending");
+  assert.equal(byID("interrupted").state, "submitted", "the interrupted claim waits");
+  assert.equal(byID("retryable").state, "failed_retryable", "the retryable row waits");
+  expired = false;
   const second = await runKeyGrantTick({ payload, grant, acquire: runLock().acquire, env: live, now: tickNow });
   assert.equal(second.outcome === "ran" && second.reconciled, 1);
-  assert.deepEqual([multi.state, rows["commerce-key-grant-intents"][0].tokenID, rows["commerce-key-grant-intents"][0].settledTxHash], ["submitted", "42", older].map((value, index) => index === 0 ? "granted" : value));
+  assert.deepEqual([byID("00000000-0000-4000-8000-0000000000b1").state, byID("00000000-0000-4000-8000-0000000000b1").tokenID, byID("00000000-0000-4000-8000-0000000000b1").settledTxHash], ["granted", "42", older]);
+  assert.notEqual(byID("interrupted").state, "submitted", "housekeeping ran on the next tick");
+  assert.notEqual(byID("retryable").state, "failed_retryable", "requeued on the next tick");
 });

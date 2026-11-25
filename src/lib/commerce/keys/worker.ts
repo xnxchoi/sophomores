@@ -397,9 +397,11 @@ async function recordUnsentGrant(payload: Payload, intentID: string, attemptID: 
  * A claim with no hash after CLAIM_STALE_MS was interrupted before broadcast
  * (the hash always commits first), so it is proven unsent and retried.
  */
-async function sweepInterruptedClaims(payload: Payload, now: () => Date): Promise<void> {
+async function sweepInterruptedClaims(payload: Payload, now: () => Date, deadline?: number): Promise<void> {
+  if (pastDeadline(deadline, now)) return;
   const cutoff = new Date(now().getTime() - CLAIM_STALE_MS).toISOString();
   for await (const row of due(payload, { and: [{ state: { equals: "submitted" } }, { txHash: { exists: false } }, { dispatchStartedAt: { less_than_equal: cutoff } }] }, now)) {
+    if (pastDeadline(deadline, now)) break;
     await inIntent(payload, row.id, async (req, intent) => {
       if (intent.state !== "submitted" || intent.txHash || intent.attemptID !== row.attemptID) return;
       await updateCommerce(req, "commerce-key-grant-intents", row.id, notSentData("dispatch_interrupted", intent.attempts, now()));
@@ -412,9 +414,11 @@ async function sweepInterruptedClaims(payload: Payload, now: () => Date): Promis
  * to pending as a fresh attempt, clearing the previous attempt's hash so the old
  * transaction's result can never be applied to the new one.
  */
-async function requeueRetryable(payload: Payload, now: () => Date): Promise<void> {
+async function requeueRetryable(payload: Payload, now: () => Date, deadline?: number): Promise<void> {
+  if (pastDeadline(deadline, now)) return;
   const retryable = { and: [{ state: { equals: "failed_retryable" } }, { or: [{ lastErrorCode: { exists: false } }, { lastErrorCode: { not_in: [...parkedGrantCodes] } }] }] };
   for await (const row of due(payload, retryable, now)) {
+    if (pastDeadline(deadline, now)) break;
     await inIntent(payload, row.id, async (req, intent) => {
       if (intent.state !== "failed_retryable" || parked(String(intent.lastErrorCode ?? ""))) return;
       // A refunded key that never went out stays cancelled rather than retrying.
@@ -428,8 +432,10 @@ async function requeueRetryable(payload: Payload, now: () => Date): Promise<void
 
 /** Dispatch up to `limit` pending intents. Returns how many were dispatched. */
 export async function dispatchKeyGrants({ payload, adapter, limit = 10, now = () => new Date(), log, deadline }: Pass): Promise<number> {
-  await sweepInterruptedClaims(payload, now);
-  await requeueRetryable(payload, now);
+  if (pastDeadline(deadline, now)) return 0;
+  await sweepInterruptedClaims(payload, now, deadline);
+  await requeueRetryable(payload, now, deadline);
+  if (pastDeadline(deadline, now)) return 0;
   // Behind a nonce stopped for a person, later nonces could never mine: hold new grants in pending.
   if (await signerHeld(payload, adapter.signer)) return 0;
   let dispatched = 0;
@@ -458,6 +464,7 @@ export async function dispatchKeyGrants({ payload, adapter, limit = 10, now = ()
  * key, and a reverted one proves the nonce consumed without a key.
  */
 export async function reconcileKeyGrants({ payload, adapter, limit = 10, now = () => new Date(), onOverCap = (intentID) => logOverCap(intentID), deadline }: ReconcilePass): Promise<number> {
+  if (pastDeadline(deadline, now)) return 0;
   let settled = 0;
   for await (const row of due(payload, { and: [{ state: { in: ["submitted", "ambiguous"] } }, { txHash: { exists: true } }] }, now)) {
     if (settled >= limit) break;
@@ -666,6 +673,7 @@ type Replacer = {
  * operation to a new nonce: an earlier transaction may still mine.
  */
 async function replaceStuck(payload: Payload, operation: Operation, chain: Replacer, now: () => Date, limit: number, log?: (line: string) => void, deadline?: number): Promise<number> {
+  if (pastDeadline(deadline, now)) return 0; // before the replacement queries
   const { fields, prefix } = operation;
   const recheck = new Date(now().getTime() - REBROADCAST_AFTER_MS).toISOString();
   const rows = await findAll(payload, { and: [
@@ -921,6 +929,7 @@ export type KeyStateReader = { keyInvalidAtDepth(input: { target: KeyGrantTarget
  * A key still valid, or unreadable, is rechecked after RECONCILE_RECHECK_MS (nextAttemptAt), so every row is reached.
  */
 export async function reconcileOwnerCancels({ payload, reader, limit = 10, now = () => new Date(), deadline }: { payload: Payload; reader: KeyStateReader; limit?: number; now?: () => Date; deadline?: number }): Promise<number> {
+  if (pastDeadline(deadline, now)) return 0;
   let settled = 0;
   for await (const row of due(payload, { and: [{ state: { equals: "granted" } }, { cancelRequested: { equals: true } }, { tokenID: { exists: true } }] }, now)) {
     if (settled >= limit || pastDeadline(deadline, now)) break;

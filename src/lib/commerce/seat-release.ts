@@ -56,7 +56,9 @@ export const seatSweepSchema = z.strictObject({ after: z.uuid().nullable() });
  * cancels; the refund and the key worker still release right away where they can. Returns how many seats it released
  * and how many steps failed (an order skipped, or the cursor not saved), so a caller with no logger can still report it.
  */
-export async function releaseInvalidatedSeatsSweep({ req, limit = 25, now = Date.now() }: { req: PayloadRequest; limit?: number; now?: number }): Promise<{ released: number; failed: number }> {
+export async function releaseInvalidatedSeatsSweep({ req, limit = 25, now = Date.now(), stop = () => false }: { req: PayloadRequest; limit?: number; now?: number;
+  /** The key-grant tick's deadline: checked between orders. Once true, no further order starts and the cursor is kept as it was. */
+  stop?: () => boolean }): Promise<{ released: number; failed: number }> {
   if (await req.transactionID) throw new Error("The seat sweep runs each order in its own transaction");
   const cursor = await findCommerce(req, "commerce-reconciliations", "scope", seatSweepScope);
   const after = cursor ? seatSweepSchema.parse(cursor.state).after : null;
@@ -67,6 +69,7 @@ export async function releaseInvalidatedSeatsSweep({ req, limit = 25, now = Date
   const orders = new Set(scanned.flatMap((admission) => admission.order == null ? [] : [relationshipID(admission.order)]));
   let released = 0, failed = 0;
   for (const orderID of orders) {
+    if (stop()) return { released, failed }; // cursor unchanged: the next pass repeats this window (releases are idempotent)
     try { released += await inCommerceTransaction(req, () => withCommerceWrite(req, () => releaseInvalidatedSeats({ req, orderID, now }))); }
     catch { failed++; req.payload.logger?.error({ msg: "Seat release sweep: order skipped until its next turn", orderID }); }
   }

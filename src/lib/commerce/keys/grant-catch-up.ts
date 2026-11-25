@@ -61,15 +61,17 @@ export async function runKeyGrantTick({ payload, grant, acquire, env = process.e
     // One shared deadline (TICK_BUDGET_MS) across every pass (Review-A, 25 Nov).
     const clock = now ?? (() => new Date());
     const deadline = clock().getTime() + budgetMs;
-    const reconciled = await reconcileKeyGrants({ payload, adapter: grant, limit, now, deadline, onOverCap: (intentID) => { overCap.push(intentID); logOverCap(intentID, log); } });
-    const replaced = await replaceStuckKeyGrants({ payload, adapter: grant, limit, now, log, deadline });
-    const dispatched = await dispatchKeyGrants({ payload, adapter: grant, limit, now, log, deadline });
-    const cancelled = await reconcileOwnerCancels({ payload, reader: grant, limit, now, deadline });
+    // Once the deadline is spent, no later pass starts (each pass also checks it inside, before every query and row).
+    const spent = () => clock().getTime() > deadline;
+    const reconciled = spent() ? 0 : await reconcileKeyGrants({ payload, adapter: grant, limit, now, deadline, onOverCap: (intentID) => { overCap.push(intentID); logOverCap(intentID, log); } });
+    const replaced = spent() ? 0 : await replaceStuckKeyGrants({ payload, adapter: grant, limit, now, log, deadline });
+    const dispatched = spent() ? 0 : await dispatchKeyGrants({ payload, adapter: grant, limit, now, log, deadline });
+    const cancelled = spent() ? 0 : await reconcileOwnerCancels({ payload, reader: grant, limit, now, deadline });
     let seatsReleased = 0, seatSweepFailures = 0;
-    // The seat sweep is the last step; past the deadline it waits for the next tick (it is idempotent and cursored).
-    if (clock().getTime() <= deadline) try {
+    // The seat sweep is the last step; it checks the deadline between orders and keeps its cursor when it stops.
+    if (!spent()) try {
       const req = { payload, context: {} } as unknown as PayloadRequest;
-      ({ released: seatsReleased, failed: seatSweepFailures } = await releaseInvalidatedSeatsSweep({ req, limit, now: (now?.() ?? new Date()).getTime() }));
+      ({ released: seatsReleased, failed: seatSweepFailures } = await releaseInvalidatedSeatsSweep({ req, limit, now: clock().getTime(), stop: spent }));
     } catch {
       seatSweepFailures = 1;
     }

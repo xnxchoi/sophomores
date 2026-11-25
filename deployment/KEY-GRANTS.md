@@ -165,6 +165,10 @@ Env files are mounted read-only and loaded in-process with `node --env-file`, ne
   mailer and the failed-run unit are not chain-capable and keep running while fenced, so a fence alert is delivered.
 - **Fence alerts** arrive as "Key job fenced: its network is cut", with a fixed reason. A journal line at `crit`
   priority (`KJ_FENCE <reason>`) is written too.
+- **`fence_marker_failed` / `fence_unpublished` is an operator escalation, not a durable fence.** The guard couldn't
+  write the generation's marker, so its table went in unpublished: admission refuses while that table exists, but a
+  reboot or an nft flush would not bring it back. A person acts at once: fix the disk, then run `kj-guard fence
+  fence_unknown_quiescence` for a published generation before anything else.
 
 ### Emergency stop and the egress fence
 Each command runs as root in one shell. Never reset pending or submitted intents, never run a second tick or a one-grant

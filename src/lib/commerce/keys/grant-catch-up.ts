@@ -36,7 +36,9 @@ export const TICK_BUDGET_MS = 10 * 60_000;
 
 export type KeyGrantTickResult =
   | Readonly<{ outcome: "off" | "busy" }>
-  | Readonly<{ outcome: "ran"; reconciled: number; replaced: number; dispatched: number; cancelled: number; seatsReleased: number; seatSweepFailures: number; overCap: readonly string[] }>;
+  | Readonly<{ outcome: "ran"; reconciled: number; replaced: number; dispatched: number; cancelled: number; seatsReleased: number; seatSweepFailures: number; overCap: readonly string[];
+      /** Present only on a first run limited to its allowlist: owner-cancel maintenance and the seat sweep did not run. */
+      maintenance?: "skipped_allowlist" }>;
 
 export type KeyGrantTick = {
   payload: Payload;
@@ -50,9 +52,14 @@ export type KeyGrantTick = {
   /** Where the fixed alert lines go (stderr by default; the tick script writes them synchronously and spools them). */
   log?: (line: string) => void;
   budgetMs?: number;
+  /**
+   * A supervised first run's exact intent IDs (keyGrantRunScope, VPS plan v4 H1). Every pass works only on these, and
+   * owner-cancel maintenance and the seat sweep are skipped for the whole run.
+   */
+  scope?: ReadonlySet<string>;
 };
 
-export async function runKeyGrantTick({ payload, grant, acquire, env = process.env, limit = KEY_GRANT_TICK_LIMIT, now, log = (line) => console.error(line), budgetMs = TICK_BUDGET_MS }: KeyGrantTick): Promise<KeyGrantTickResult> {
+export async function runKeyGrantTick({ payload, grant, acquire, env = process.env, limit = KEY_GRANT_TICK_LIMIT, now, log = (line) => console.error(line), budgetMs = TICK_BUDGET_MS, scope }: KeyGrantTick): Promise<KeyGrantTickResult> {
   if (!polygonKeyGrantsLive(env)) return { outcome: "off" };
   const release = await acquire();
   if (!release) return { outcome: "busy" };
@@ -66,9 +73,11 @@ export async function runKeyGrantTick({ payload, grant, acquire, env = process.e
     // Once the budget is spent, no later pass starts. Each pass also checks it before every work-list page, row and
     // hash; the nonce safety reads and the hash in flight may still finish (cooperative, not a hard stop).
     const spent = () => clock().getTime() > deadline;
-    const reconciled = spent() ? 0 : await reconcileKeyGrants({ payload, adapter: grant, limit, now, deadline, onOverCap: (intentID) => { overCap.push(intentID); logOverCap(intentID, log); } });
-    const replaced = spent() ? 0 : await replaceStuckKeyGrants({ payload, adapter: grant, limit, now, log, deadline });
-    const dispatched = spent() ? 0 : await dispatchKeyGrants({ payload, adapter: grant, limit, now, log, deadline });
+    const reconciled = spent() ? 0 : await reconcileKeyGrants({ payload, adapter: grant, limit, now, deadline, scope, onOverCap: (intentID) => { overCap.push(intentID); logOverCap(intentID, log); } });
+    const replaced = spent() ? 0 : await replaceStuckKeyGrants({ payload, adapter: grant, limit, now, log, deadline, scope });
+    const dispatched = spent() ? 0 : await dispatchKeyGrants({ payload, adapter: grant, limit, now, log, deadline, scope });
+    // A first run limited to its allowlist does no maintenance: owner cancels and seats touch other intents and orders.
+    if (scope) return { outcome: "ran", reconciled, replaced, dispatched, cancelled: 0, seatsReleased: 0, seatSweepFailures: 0, overCap, maintenance: "skipped_allowlist" };
     const cancelled = spent() ? 0 : await reconcileOwnerCancels({ payload, reader: grant, limit, now, deadline });
     let seatsReleased = 0, seatSweepFailures = 0;
     // The seat sweep is the last step; it checks the deadline between orders and keeps its cursor when it stops.

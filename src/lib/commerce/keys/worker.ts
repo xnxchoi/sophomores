@@ -61,8 +61,17 @@ import type { KeyGrantTarget, RebroadcastInput } from "./contracts";
 /** `log`: where fixed alert lines go (stderr by default; the tick writes them synchronously and spools them). */
 type Pass = { payload: Payload; adapter: KeyGrantAdapter; limit?: number; now?: () => Date; log?: (line: string) => void;
   /** The tick's shared deadline (ms): no new row, hash or step starts after it; unfinished work stays due (Review-A, 25 Nov). */
-  deadline?: number };
-const pastDeadline = (deadline: number | undefined, now: () => Date) => deadline !== undefined && now().getTime() > deadline;
+  deadline?: number;
+  /**
+   * A supervised first run's exact intent IDs (KEY_GRANT_POLYGON_ALLOWED_INTENTS; VPS plan v4 H1). When set, every work
+   * list selects only these intents, and claim, replacement and send refuse any other one again right before signing.
+   * The nonce safety reads (signerHeld, inFlightNonces, nonceFloor) stay global.
+   */
+  scope?: ReadonlySet<string> };
+const inScope = (scope: ReadonlySet<string> | undefined, intentID: unknown) => !scope || scope.has(String(intentID));
+const scopedWhere = (where: Record<string, unknown>, scope: ReadonlySet<string> | undefined) =>
+  scope ? { and: [where, { id: { in: [...scope] } }] } : where;
+const pastDeadline =(deadline: number | undefined, now: () => Date) => deadline !== undefined && now().getTime() > deadline;
 /** reconcileKeyGrants only: told each intent whose receipt is beyond the ancestry cap (default: logOverCap to stderr). */
 type ReconcilePass = Pass & { onOverCap?: (intentID: string) => void };
 type CancelPass = { payload: Payload; adapter: KeyCancelAdapter; limit?: number; now?: () => Date };
@@ -90,7 +99,9 @@ const later = (now: Date, ms: number): string => new Date(now.getTime() + ms).to
  * looks at either changes state or is pushed to the back of the due order, so
  * successive passes rotate through the whole queue however many rows are held.
  */
-async function* due(payload: Payload, state: Record<string, unknown>, now: () => Date, deadline?: number): AsyncGenerator<CommerceDocument> {
+async function* due(payload: Payload, selection: Record<string, unknown>, now: () => Date, deadline?: number, scope?: ReadonlySet<string>): AsyncGenerator<CommerceDocument> {
+  if (scope && !scope.size) return;
+  const state = scopedWhere(selection, scope);
   const seen = new Set<string>();
   const phases = [
     { where: { and: [state, { nextAttemptAt: { exists: false } }] }, sort: "createdAt" },
@@ -103,7 +114,7 @@ async function* due(payload: Payload, state: Record<string, unknown>, now: () =>
       const found = await payload.find({ collection: "commerce-key-grant-intents" as never, where: where as never, sort: phase.sort, limit: PAGE, depth: 0, overrideAccess: true });
       const fresh = (found.docs as unknown as CommerceDocument[]).filter((doc) => !seen.has(doc.id));
       if (!fresh.length) break; // phase exhausted, or only rows this pass could not move
-      for (const doc of fresh) { seen.add(doc.id); yield doc; }
+      for (const doc of fresh) { seen.add(doc.id); if (inScope(scope, doc.id)) yield doc; }
     }
   }
 }
@@ -196,8 +207,10 @@ async function matchesGuestOrder(req: PayloadRequest, orderID: string, admission
   return matchesFrozenEventTicket(await readCommerce(req, "commerce-events", eventID), "guest", snapshot.data.productID, target);
 }
 
-async function claim(payload: Payload, intentID: string, now: Date): Promise<{ attemptID: string; intent: CommerceDocument } | null> {
+async function claim(payload: Payload, intentID: string, now: Date, scope?: ReadonlySet<string>): Promise<{ attemptID: string; intent: CommerceDocument } | null> {
+  if (!inScope(scope, intentID)) return null;
   return inGrant(payload, intentID, async (req, intent, held) => {
+    if (!inScope(scope, intent.id)) return null;
     if (intent.state !== "pending" || intent.cancelRequested === true) return null;
     if (held) {
       await updateCommerce(req, "commerce-key-grant-intents", intentID, { nextAttemptAt: later(now, HOLD_RECHECK_MS) });
@@ -399,10 +412,10 @@ async function recordUnsentGrant(payload: Payload, intentID: string, attemptID: 
  * A claim with no hash after CLAIM_STALE_MS was interrupted before broadcast
  * (the hash always commits first), so it is proven unsent and retried.
  */
-async function sweepInterruptedClaims(payload: Payload, now: () => Date, deadline?: number): Promise<void> {
+async function sweepInterruptedClaims(payload: Payload, now: () => Date, deadline?: number, scope?: ReadonlySet<string>): Promise<void> {
   if (pastDeadline(deadline, now)) return;
   const cutoff = new Date(now().getTime() - CLAIM_STALE_MS).toISOString();
-  for await (const row of due(payload, { and: [{ state: { equals: "submitted" } }, { txHash: { exists: false } }, { dispatchStartedAt: { less_than_equal: cutoff } }] }, now, deadline)) {
+  for await (const row of due(payload, { and: [{ state: { equals: "submitted" } }, { txHash: { exists: false } }, { dispatchStartedAt: { less_than_equal: cutoff } }] }, now, deadline, scope)) {
     if (pastDeadline(deadline, now)) break;
     await inIntent(payload, row.id, async (req, intent) => {
       if (intent.state !== "submitted" || intent.txHash || intent.attemptID !== row.attemptID) return;
@@ -416,10 +429,10 @@ async function sweepInterruptedClaims(payload: Payload, now: () => Date, deadlin
  * to pending as a fresh attempt, clearing the previous attempt's hash so the old
  * transaction's result can never be applied to the new one.
  */
-async function requeueRetryable(payload: Payload, now: () => Date, deadline?: number): Promise<void> {
+async function requeueRetryable(payload: Payload, now: () => Date, deadline?: number, scope?: ReadonlySet<string>): Promise<void> {
   if (pastDeadline(deadline, now)) return;
   const retryable = { and: [{ state: { equals: "failed_retryable" } }, { or: [{ lastErrorCode: { exists: false } }, { lastErrorCode: { not_in: [...parkedGrantCodes] } }] }] };
-  for await (const row of due(payload, retryable, now, deadline)) {
+  for await (const row of due(payload, retryable, now, deadline, scope)) {
     if (pastDeadline(deadline, now)) break;
     await inIntent(payload, row.id, async (req, intent) => {
       if (intent.state !== "failed_retryable" || parked(String(intent.lastErrorCode ?? ""))) return;
@@ -433,22 +446,23 @@ async function requeueRetryable(payload: Payload, now: () => Date, deadline?: nu
 }
 
 /** Dispatch up to `limit` pending intents. Returns how many were dispatched. */
-export async function dispatchKeyGrants({ payload, adapter, limit = 10, now = () => new Date(), log, deadline }: Pass): Promise<number> {
+export async function dispatchKeyGrants({ payload, adapter, limit = 10, now = () => new Date(), log, deadline, scope }: Pass): Promise<number> {
   if (pastDeadline(deadline, now)) return 0;
-  await sweepInterruptedClaims(payload, now, deadline);
-  await requeueRetryable(payload, now, deadline);
+  await sweepInterruptedClaims(payload, now, deadline, scope);
+  await requeueRetryable(payload, now, deadline, scope);
   if (pastDeadline(deadline, now)) return 0;
   // Behind a nonce stopped for a person, later nonces could never mine: hold new grants in pending.
   if (await signerHeld(payload, adapter.signer)) return 0;
   let dispatched = 0;
-  for await (const row of due(payload, { state: { equals: "pending" } }, now, deadline)) {
+  for await (const row of due(payload, { state: { equals: "pending" } }, now, deadline, scope)) {
     if (dispatched >= limit || pastDeadline(deadline, now) || await signerHeld(payload, adapter.signer)) break;
     if (pastDeadline(deadline, now)) break; // the signer-held read may itself have crossed the deadline: no claim
-    const claimed = await claim(payload, row.id, now());
+    const claimed = await claim(payload, row.id, now(), scope);
     if (!claimed) continue;
     dispatched++;
     const outcome = await lockedSend<Prepared & { nonce: number }, never>(payload, adapter.signer, async () => {
       if (await signerHeld(payload, adapter.signer)) return { kind: "notSent", code: "signer_held" };
+      if (!inScope(scope, row.id)) return { kind: "notSent", code: "outside_allowlist" }; // again, right before signing
       // Nothing is sent while preparing, so a throw here is proven non-execution.
       const prepared = await adapter.prepare({ intentID: row.id, attemptID: claimed.attemptID, target: parseKeyGrantTarget(claimed.intent.target), nonceFloor: await nonceFloor(payload, adapter.signer) });
       return prepared.kind === "prepared" ? { kind: "prepared", prepared } : { kind: "notSent", code: prepared.code };
@@ -466,10 +480,10 @@ export async function dispatchKeyGrants({ payload, adapter, limit = 10, now = ()
  * sends. Only one transaction per nonce can mine: a confirmed hash grants the
  * key, and a reverted one proves the nonce consumed without a key.
  */
-export async function reconcileKeyGrants({ payload, adapter, limit = 10, now = () => new Date(), onOverCap = (intentID) => logOverCap(intentID), deadline }: ReconcilePass): Promise<number> {
+export async function reconcileKeyGrants({ payload, adapter, limit = 10, now = () => new Date(), onOverCap = (intentID) => logOverCap(intentID), deadline, scope }: ReconcilePass): Promise<number> {
   if (pastDeadline(deadline, now)) return 0;
   let settled = 0;
-  for await (const row of due(payload, { and: [{ state: { in: ["submitted", "ambiguous"] } }, { txHash: { exists: true } }] }, now, deadline)) {
+  for await (const row of due(payload, { and: [{ state: { in: ["submitted", "ambiguous"] } }, { txHash: { exists: true } }] }, now, deadline, scope)) {
     if (settled >= limit) break;
     if (pastDeadline(deadline, now)) break; // not started: keeps its due time, so it comes first next tick
     const hashes = [...new Set([String(row.txHash), ...recordedSends(row).map((send) => send.txHash)])];
@@ -675,17 +689,19 @@ type Replacer = {
  * Only accepted sends count toward MAX_REPLACEMENTS. Nothing here ever moves the
  * operation to a new nonce: an earlier transaction may still mine.
  */
-async function replaceStuck(payload: Payload, operation: Operation, chain: Replacer, now: () => Date, limit: number, log?: (line: string) => void, deadline?: number): Promise<number> {
+async function replaceStuck(payload: Payload, operation: Operation, chain: Replacer, now: () => Date, limit: number, log?: (line: string) => void, deadline?: number, scope?: ReadonlySet<string>): Promise<number> {
+  if (scope && !scope.size) return 0;
   if (pastDeadline(deadline, now)) return 0; // before the replacement queries
   const { fields, prefix } = operation;
   const recheck = new Date(now().getTime() - REBROADCAST_AFTER_MS).toISOString();
-  const rows = await findAll(payload, { and: [
+  const rows = await findAll(payload, scopedWhere({ and: [
     operation.inFlight(chain.signer), { [fields.lastSentAt]: { less_than_equal: recheck } },
     { or: [{ lastErrorCode: { exists: false } }, { lastErrorCode: { not_in: [...operation.stopCodes, ...operation.settledCodes] } }] },
-  ] }, undefined, fields.lastSentAt, () => pastDeadline(deadline, now));
+  ] }, scope), undefined, fields.lastSentAt, () => pastDeadline(deadline, now));
   let replaced = 0;
   for (const row of rows) {
     if (replaced >= limit || pastDeadline(deadline, now)) break;
+    if (!inScope(scope, row.id)) continue;
     const sends = recordedSends(row, fields.sends);
     const last = sends.at(-1);
     if (!last || row[fields.nonce] == null) continue; // recorded before nonces were persisted: left to a person
@@ -696,6 +712,7 @@ async function replaceStuck(payload: Payload, operation: Operation, chain: Repla
       const tries = last.rebroadcasts ?? 0;
       if (tries >= MAX_REBROADCASTS) { await markAttempt(payload, operation, row, operation.stop(`${prefix}rebroadcast_failed`)); continue; }
       const send = async (): Promise<RebroadcastOutcome> => {
+        if (!inScope(scope, row.id)) return { kind: "unavailable" }; // again, right before the bytes go out
         try {
           return await chain.rebroadcast({ raw: String(last.raw), txHash: last.txHash, nonce, target: parseKeyGrantTarget(row.target),
             ...(row.tokenID != null ? { tokenID: String(row.tokenID) } : {}) });
@@ -720,6 +737,7 @@ async function replaceStuck(payload: Payload, operation: Operation, chain: Repla
     if (Date.parse(String(row[fields.lastSentAt])) > now().getTime() - REPLACE_AFTER_MS) continue;
     if (sends.filter(acceptedSend).length - 1 >= MAX_REPLACEMENTS) { await markAttempt(payload, operation, row, operation.stop(`${prefix}exhausted`)); continue; }
     const outcome = await lockedSend<Prepared, "moved" | "nonceConsumed">(payload, chain.signer, async () => {
+      if (!inScope(scope, row.id)) return { kind: "skipped", reason: "moved" }; // again, right before signing
       const canPrepare = operation === grantOperation
         ? await inGrant(payload, row.id, (req, intent, held) => grantRecoveryAllowed(req, intent, held, row, sends.length, last.txHash))
         : await readCommerce(requestFor(payload), INTENTS, row.id).then(intent =>
@@ -780,14 +798,14 @@ async function replaceStuck(payload: Payload, operation: Operation, chain: Repla
  * Selected by `lastSentAt`, not by reconcile's `nextAttemptAt`. Returns how many
  * fee-raised replacements the node accepted.
  */
-export async function replaceStuckKeyGrants({ payload, adapter, limit = 10, now = () => new Date(), log, deadline }: Pass): Promise<number> {
+export async function replaceStuckKeyGrants({ payload, adapter, limit = 10, now = () => new Date(), log, deadline, scope }: Pass): Promise<number> {
   return replaceStuck(payload, grantOperation, {
     signer: adapter.signer,
     replace: (row, nonce, previous) => adapter.prepareReplacement({ intentID: row.id, target: parseKeyGrantTarget(row.target), nonce, previous }),
     rebroadcast: (input) => adapter.rebroadcast(input),
     broadcast: (input) => adapter.broadcast(input),
     release: (input) => adapter.release(input),
-  }, now, limit, log, deadline);
+  }, now, limit, log, deadline, scope);
 }
 
 /* ADR-0009: cancel a granted key on chain with the lock-manager authority. */

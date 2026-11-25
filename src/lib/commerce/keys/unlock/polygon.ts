@@ -46,6 +46,38 @@ export function polygonKeyGrantsLive(env: Readonly<Record<string, string | undef
   return env.KEY_GRANT_POLYGON_LIVE === "1";
 }
 
+/** A tick run mode refusal, as a fixed code the tick prints. */
+export class KeyGrantRunModeError extends Error {
+  constructor(readonly code: "mode_invalid" | "allowlist_invalid" | "allowlist_in_scheduled") { super(code); }
+}
+const INTENT_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+export const MAX_ALLOWED_INTENTS = 50;
+
+/**
+ * Which work a tick may do (VPS plan v4 H1, v5 K4), read before Payload, the signer or the RPC load:
+ * - KEY_GRANT_TICK_MODE=first-run: one supervised run limited to KEY_GRANT_POLYGON_ALLOWED_INTENTS, a comma list of
+ *   intent UUIDs. Unset, empty, malformed, duplicated or longer than MAX_ALLOWED_INTENTS refuses (allowlist_invalid);
+ *   it never means "all".
+ * - KEY_GRANT_TICK_MODE=scheduled, or unset: the whole due queue. It never inherits a first-run permit, so an allowlist
+ *   in its environment refuses the run (allowlist_in_scheduled).
+ * Any other mode refuses (mode_invalid).
+ */
+export function keyGrantRunScope(env: Readonly<Record<string, string | undefined>> = process.env):
+  Readonly<{ mode: "scheduled" }> | Readonly<{ mode: "first-run"; intents: ReadonlySet<string> }> {
+  const mode = env.KEY_GRANT_TICK_MODE ?? "scheduled";
+  const listed = env.KEY_GRANT_POLYGON_ALLOWED_INTENTS;
+  if (mode === "scheduled") {
+    if (listed !== undefined) throw new KeyGrantRunModeError("allowlist_in_scheduled");
+    return { mode };
+  }
+  if (mode !== "first-run") throw new KeyGrantRunModeError("mode_invalid");
+  const entries = (listed ?? "").split(",");
+  const intents = new Set(entries);
+  if (!listed || entries.length > MAX_ALLOWED_INTENTS || intents.size !== entries.length ||
+    entries.some((entry) => !INTENT_UUID.test(entry))) throw new KeyGrantRunModeError("allowlist_invalid");
+  return { mode, intents };
+}
+
 /** The pinned grant signer. Refuses a file whose key derives any other address (fixed messages, no key material). */
 export async function loadPolygonKeyGranterAccount(file = polygonKeyGranterFile): Promise<PrivateKeyAccount> {
   const account = await loadSignerAccount(file, "UNLOCK_LIVE_GRANTER");

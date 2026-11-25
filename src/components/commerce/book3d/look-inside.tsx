@@ -105,7 +105,7 @@ export function stepLookTimeline(l: LookState, want: 1 | -1, dt: number) {
 function createSheetMaterial(width: number, height: number, front?: Texture, back?: Texture, color = 0xf3f3f1) {
   const uniforms = {
     uW: { value: width }, uH: { value: height }, uCurl: { value: 0 }, uSweep: { value: SWEEP }, uThin: { value: 0 }, uFlop: { value: 0 },
-    uTipFlop: { value: 0 }, uOffset: { value: 0 }, uDepth: { value: 0 }, uStack: { value: 0 }, uEdgeLift: { value: 0 },
+    uTipFlop: { value: 0 }, uOffset: { value: 0 }, uDepth: { value: 0 }, uStack: { value: 0 }, uEdgeLift: { value: 0 }, uByFace: { value: 0 }, uMirror: { value: 0 },
     uCurlAmount: { value: 0 }, uCurlPower: { value: CURL_POWER }, uCurlAngle: { value: 0 }, uPivotU: { value: 0.74 }, uPivotV: { value: 0.5 },
     uSpan: { value: SPAN * width / STRIPE_PAGE_W }, uLiftSign: { value: 1 },
     uFront: { value: front ?? null }, uBack: { value: back ?? null }, uHasFront: { value: front ? 1 : 0 }, uHasBack: { value: back ? 1 : 0 },
@@ -119,7 +119,7 @@ function createSheetMaterial(width: number, height: number, front?: Texture, bac
     shader.vertexShader = shader.vertexShader
       .replace("#include <common>", `#include <common>
         uniform float uW, uH, uCurl, uSweep, uThin, uFlop, uTipFlop, uOffset, uDepth, uStack;
-        varying float vEdge;
+        varying float vEdge, vFaceZ;
         uniform float uCurlAmount, uCurlPower, uCurlAngle, uPivotU, uPivotV, uSpan, uLiftSign;
         varying vec2 vLeafUv;
         float sheetA(float u) {
@@ -163,14 +163,19 @@ function createSheetMaterial(width: number, height: number, front?: Texture, bac
         vec3 sheetPos = vec3(land.x + nor2.x * depth, position.y + dAlong * curlDir.y, land.y + nor2.y * depth + uStack) + dOut * liftN;
         vec3 curledN = normalize(cos(curlEnd) * liftN - sin(curlEnd) * (curlDir.x * sheetT + curlDir.y * sheetB)) * uLiftSign;
         vec3 objectNormal = normalize(sheetT * normal.x + sheetB * normal.y + curledN * normal.z);`)
-      .replace("#include <begin_vertex>", "vec3 transformed = sheetPos;\nvLeafUv = uv;\nvEdge = 1.0 - abs(normal.z);");
+      .replace("#include <begin_vertex>", "vec3 transformed = sheetPos;\nvLeafUv = uv;\nvEdge = 1.0 - abs(normal.z);\nvFaceZ = normal.z;");
     shader.fragmentShader = shader.fragmentShader
-      .replace("#include <common>", "#include <common>\nuniform sampler2D uFront, uBack, uInkFront, uInkBack;\nuniform float uHasFront, uHasBack, uHasInkFront, uHasInkBack, uEdgeLift;\nvarying vec2 vLeafUv;\nvarying float vEdge;")
+      .replace("#include <common>", "#include <common>\nuniform sampler2D uFront, uBack, uInkFront, uInkBack;\nuniform float uHasFront, uHasBack, uHasInkFront, uHasInkBack, uEdgeLift, uByFace, uMirror;\nvarying vec2 vLeafUv;\nvarying float vEdge, vFaceZ;")
       // A block's page edges read as paper, not shadow: they take back some of their own colour (stripe.press's light fore edge).
       .replace("#include <emissivemap_fragment>", "#include <emissivemap_fragment>\ntotalEmissiveRadiance += diffuseColor.rgb * uEdgeLift * vEdge;")
       .replace("#include <map_fragment>", `#include <map_fragment>
-        if (gl_FrontFacing && uHasFront > 0.5) diffuseColor.rgb *= texture2D(uFront, vLeafUv).rgb;
-        if (!gl_FrontFacing && uHasBack > 0.5) diffuseColor.rgb *= texture2D(uBack, vec2(1.0 - vLeafUv.x, vLeafUv.y)).rgb;
+        // A sheet shows its front page on its front face, its back page (mirrored) on the other. A riffled block (uByFace)
+        // shows its top leaf's page on its top face and its last leaf's on its underside, mirrored when it lies left.
+        bool byFace = uByFace > 0.5;
+        bool topSide = byFace ? vFaceZ > 0.5 : gl_FrontFacing, underSide = byFace ? vFaceZ < -0.5 : !gl_FrontFacing;
+        vec2 mirrored = vec2(1.0 - vLeafUv.x, vLeafUv.y), faceUv = uMirror > 0.5 ? mirrored : vLeafUv;
+        if (topSide && uHasFront > 0.5) diffuseColor.rgb *= texture2D(uFront, byFace ? faceUv : vLeafUv).rgb;
+        if (underSide && uHasBack > 0.5) diffuseColor.rgb *= texture2D(uBack, byFace ? faceUv : mirrored).rgb;
         vec4 ink = vec4(0.0);
         if (gl_FrontFacing && uHasInkFront > 0.5) ink = texture2D(uInkFront, vLeafUv);
         if (!gl_FrontFacing && uHasInkBack > 0.5) ink = texture2D(uInkBack, vLeafUv);
@@ -265,7 +270,10 @@ export function LookInside({ source, look, signals, sound, width, height, thickn
     const faces = [0, 1].map(() => { const canvas = document.createElement("canvas"); canvas.width = 512; canvas.height = Math.round(512 * height / width); return { canvas, texture: new CanvasTexture(canvas) }; });
     return { ...sheet, faces, leaf: -1 };
   }), [width, height]);
-  const blocks = useMemo(() => [0, 1, 2].map(() => createSheetMaterial(width, height, undefined, undefined, 0xe9e9e6)), [width, height]);
+  // The two resting stacks, and the riffled run (in sheet white: its top face is a page, Review-B c, 25 Nov).
+  const blocks = useMemo(() => [0, 1, 2].map((k) => createSheetMaterial(width, height, undefined, undefined, k === 2 ? 0xf3f3f1 : 0xe9e9e6)), [width, height]);
+  // The riffled run's two outer pages, drawn when it changes (key: top page, under page).
+  const chunkFaces = useMemo(() => ({ key: "", faces: [0, 1].map(() => { const canvas = document.createElement("canvas"); canvas.width = 512; canvas.height = Math.round(512 * height / width); return { canvas, texture: new CanvasTexture(canvas) }; }) }), [width, height]);
   const peels = useMemo(() => Array.from({ length: PEEL }, () => createSheetMaterial(width, height)), [width, height]);
   // stripe.press's page plane: 48 across and in proportion down. The blocks bend across their width only.
   const geometry = useMemo(() => { const g = new PlaneGeometry(width, height, 48, Math.floor(48 * height / width)); g.translate(width / 2, 0, 0); return g; }, [width, height]);
@@ -273,7 +281,8 @@ export function LookInside({ source, look, signals, sound, width, height, thickn
   useEffect(() => () => {
     geometry.dispose(); block.dispose(); blocks.forEach((b) => b.material.dispose()); peels.forEach((p) => p.material.dispose());
     slots.forEach((slot) => { slot.material.dispose(); slot.faces.forEach((face) => face.texture.dispose()); });
-  }, [geometry, block, slots, blocks, peels]);
+    chunkFaces.faces.forEach((face) => face.texture.dispose());
+  }, [geometry, block, slots, blocks, peels, chunkFaces]);
 
   const per = thickness / LEAVES;
   const group = useRef<Group>(null), slotMeshes = useRef<(Group | null)[]>([]), blockMeshes = useRef<(Group | null)[]>([]), peelMeshes = useRef<(Group | null)[]>([]);
@@ -829,6 +838,14 @@ export function LookInside({ source, look, signals, sound, width, height, thickn
       uni.uCurl.value = (-(1 - fTurn) * tE + fTurn * (1 - tE)) * ld2; uni.uThin.value = smooth(0.6, 1, (1 - fTurn) * tE + fTurn * (1 - tE));
       uni.uOffset.value = c.left ? 0.5 * per : 0.5 * per; uni.uDepth.value = c.left ? -c.count * per : c.count * per;
       uni.uLiftSign.value = Math.cos(chunkAngle) >= 0 ? 1 : -1;
+      // Its faces are pages: the top leaf's visible page on top (front lying right, back lying left), the last leaf's other
+      // page underneath; the product's page images where there are some, otherwise drawn placeholder pages.
+      const first = chunkFrom, last = chunkFrom + c.count - 1;
+      const topPage = c.left ? 2 * last + 2 : 2 * first + 1, underPage = c.left ? 2 * first + 1 : 2 * last + 2;
+      const key = topPage + "," + underPage;
+      if (chunkFaces.key !== key) { chunkFaces.key = key; drawPage(chunkFaces.faces[0], topPage); drawPage(chunkFaces.faces[1], underPage); }
+      uni.uFront.value = maps[topPage - 1] ?? chunkFaces.faces[0].texture; uni.uBack.value = maps[underPage - 1] ?? chunkFaces.faces[1].texture;
+      uni.uHasFront.value = 1; uni.uHasBack.value = 1; uni.uByFace.value = 1; uni.uMirror.value = c.left ? 1 : 0;
     });
     if (group.current) group.current.position.set(-width / 2 - 0.075, 0, 0);
 

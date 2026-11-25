@@ -45,7 +45,7 @@ export function ShopHome({ items, labels, initialOpen }: { items: Item[]; labels
   return <section data-lenis-prevent-wheel aria-label={labels.featured} className="relative min-h-svh">
     {vendored && items.length > 0 ? <Home vendored={vendored} items={items} labels={labels} initialOpen={initialOpen} /> : first && (
       // The first card where theirs lands (162 px down, 16 px in, 24 px off the bottom) until their code is running.
-      <div className="pointer-events-none fixed inset-x-4 top-[162px] bottom-6 z-0 overflow-hidden rounded-[8px] bg-muted max-[899px]:top-[140px]">
+      <div className="pointer-events-none fixed inset-x-4 top-[162px] bottom-6 z-0 overflow-hidden rounded-[8px] bg-muted max-[900px]:top-[140px]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={first.url} alt={first.alt ?? ""} draggable={false} className="absolute inset-0 size-full object-cover" />
       </div>)}
@@ -442,7 +442,7 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
         [ {onShelf ? labels.shelf : labels.featured} ]
       </p>
       <button type="button" tabIndex={phoneDetail ? 0 : -1} aria-hidden={!phoneDetail} onClick={() => detail.closeBook()}
-        className={cn("col-start-1 row-start-1 -my-3.5 inline-flex min-h-11 items-center self-start text-left uppercase transition-[opacity,translate,color] duration-300 hover:text-foreground",
+        className={cn("col-start-1 row-start-1 -my-3.5 inline-flex min-h-11 min-w-11 items-center self-start text-left uppercase transition-[opacity,translate,color] duration-300 hover:text-foreground",
           phoneDetail ? "pointer-events-auto delay-100" : "pointer-events-none translate-x-2.5 opacity-0")}>
         <ArrowLeftIcon aria-hidden="true" className="mr-1.5 size-3.5" />{labels.toShelf}
       </button>
@@ -532,7 +532,7 @@ function Cards({ items, featured, geometry, progressRef, listeners, reading, J, 
   }, [geometry, featured, progressRef, listeners, reading, J, hub, openRef]);
   // The card's box: 8 px off the bottom on desktop, 25 on a phone (theirs, 1jyk:64-77, without the URL-bar terms).
   return <div aria-hidden="true" style={{ top: geometry.top, height: geometry.height - (geometry.mobile ? 25 : CARD_INSET_BOTTOM) }}
-    className="pointer-events-none fixed inset-x-4 z-0 overflow-hidden rounded-[8px] max-[899px]:z-[2]">
+    className="pointer-events-none fixed inset-x-4 z-0 overflow-hidden rounded-[8px] max-[900px]:z-[2]">
     {items.slice(0, featured).map((entry, index) => <div key={entry.id} ref={(plate) => { plates.current[index] = plate; }}
       className={cn("absolute inset-0 overflow-hidden rounded-[8px] bg-muted transition-opacity duration-[450ms] will-change-transform",
         shown ? "opacity-100" : "opacity-0", index === 0 ? "delay-[1100ms]" : "delay-[1600ms]")}>
@@ -569,15 +569,15 @@ function TitleRail({ railRef, label, titles, refunds, active, fade, detail, hidd
     return () => window.removeEventListener("resize", place);
   }, [active, titles, detail]);
   return <nav ref={railRef} aria-label={label} aria-hidden={hidden || undefined} inert={hidden} style={{ opacity: shown && !hidden ? 1 - 2 * fade : 0 }}
-    className={cn("pointer-events-none fixed inset-x-0 top-[70px] z-20 overflow-hidden px-5 pt-5 pb-3 transition-[opacity,clip-path] duration-[1600ms] max-[899px]:top-[63px]",
+    className={cn("pointer-events-none fixed inset-x-0 top-[70px] z-20 overflow-hidden px-5 pt-5 pb-3 transition-[opacity,clip-path] duration-[1600ms] max-[900px]:top-[63px]",
       hidden ? "duration-300" : detail ? "[clip-path:inset(0_40%_0_0)] [transition-duration:1600ms,600ms] [transition-timing-function:ease,cubic-bezier(0.16,1,0.3,1)]" : "[clip-path:inset(0_0_0_0)]")}>
     <ul style={{ transform: "translateX(" + shift + "px)" }}
-      className="flex w-max gap-x-[72px] transition-transform duration-500 ease-in-out max-[899px]:gap-x-[30px]">
+      className="flex w-max gap-x-[72px] transition-transform duration-500 ease-in-out max-[900px]:gap-x-[30px]">
       {/* Three copies, the middle one active, so the active title always has neighbours on both sides (theirs: 21ix). */}
       {[...titles, ...titles, ...titles].map((title, slot) => { const index = slot % titles.length, middle = slot >= titles.length && slot < 2 * titles.length;
         return <li key={slot} aria-hidden={middle ? undefined : true}>
         <button ref={(item) => { items.current[slot] = item; }} type="button" tabIndex={middle ? undefined : -1} onClick={() => onPick(index)}
-          className="pointer-events-auto relative font-display text-[length:calc(40px+16*(100vw-375px)/1353)] leading-[1.12] font-medium tracking-[-0.1rem] whitespace-nowrap text-foreground outline-offset-4 focus-visible:outline-2 max-[899px]:text-[length:calc(44px+17.6*(100vw-375px)/1353)]">
+          className="pointer-events-auto relative font-display text-[length:calc(40px+16*(100vw-375px)/1353)] leading-[1.12] font-medium tracking-[-0.1rem] whitespace-nowrap text-foreground outline-offset-4 focus-visible:outline-2 max-[900px]:text-[length:calc(44px+17.6*(100vw-375px)/1353)]">
           <span className={cn("block origin-[0_78%] italic transition-[opacity,transform] duration-[448ms] ease-[ease]",
             middle && index === active ? "opacity-0 [transform:skewX(9deg)]" : "opacity-80")}>{title}</span>
           <span className={cn("absolute inset-0 not-italic transition-[opacity,transform] duration-[448ms] ease-[ease]",
@@ -597,13 +597,13 @@ function ViewDetails({ href, label, hidden, onOpen, book }: { href: string; labe
   book: { label: string; open: boolean; onToggle: () => void } }) {
   const [shown, setShown] = useState(false);
   useEffect(() => { const timer = window.setTimeout(() => setShown(true), 2000); return () => window.clearTimeout(timer); }, []);
-  return <div className={cn("fixed right-4 -bottom-0.5 z-20 flex h-[30px] items-center gap-3 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] max-[899px]:hidden",
+  return <div className={cn("fixed right-4 -bottom-0.5 z-20 flex h-[30px] items-center gap-3 pointer-coarse:h-11 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] max-[900px]:hidden",
     shown && !hidden ? "translate-y-0" : "translate-y-[calc(100%+24px)]")}>
     <button type="button" onPointerDown={(event) => event.stopPropagation()} onClick={book.onToggle}
-      className="text-xs uppercase tracking-[-0.02em] transition-opacity hover:opacity-70">{book.label} {book.open ? "[-]" : "[+]"}</button>
+      className="text-xs uppercase tracking-[-0.02em] transition-opacity hover:opacity-70 pointer-coarse:min-h-11 pointer-coarse:min-w-11">{book.label} {book.open ? "[-]" : "[+]"}</button>
     <span aria-hidden="true" className="text-xs">·</span>
     <Link href={href} onClick={(event) => { if (event.metaKey || event.ctrlKey || event.shiftKey) return; event.preventDefault(); onOpen(); }}
-      className="text-xs uppercase tracking-[-0.02em] transition-opacity hover:opacity-70">{label} [+]</Link>
+      className="inline-flex items-center text-xs uppercase tracking-[-0.02em] transition-opacity hover:opacity-70 pointer-coarse:min-h-11 pointer-coarse:min-w-11">{label} [+]</Link>
   </div>;
 }
 
@@ -611,7 +611,7 @@ function ViewDetails({ href, label, hidden, onOpen, book }: { href: string; labe
 function OpenBookPill({ label, shown, onHover, onOpen }: { label: string; shown: boolean; onHover: (hovered: boolean) => void; onOpen: () => void }) {
   return <button type="button" tabIndex={shown ? 0 : -1} aria-hidden={!shown} onMouseEnter={() => onHover(true)} onMouseLeave={() => onHover(false)}
     onClick={(event) => { event.stopPropagation(); onOpen(); }}
-    className={cn("fixed bottom-[14%] left-[30%] z-30 -translate-x-1/2 rounded-full bg-background px-3 py-1.5 text-xs uppercase tracking-[-0.02em] text-foreground transition-opacity duration-300 max-[899px]:hidden",
+    className={cn("fixed bottom-[14%] left-[30%] z-30 -translate-x-1/2 rounded-full bg-background px-3 py-1.5 text-xs pointer-coarse:min-h-11 uppercase tracking-[-0.02em] text-foreground transition-opacity duration-300 max-[900px]:hidden",
       shown ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0")}>+ {label} +</button>;
 }
 
@@ -623,16 +623,16 @@ function LookInsideBar({ shown, wide, page, leaves, labels, onBack, onForward, o
   labels: Labels; onBack: () => void; onForward: () => void; onClose: () => void }) {
   const left = Math.max(1, 2 * page - 1), right = Math.min(2 * leaves, 2 * page);
   return <div data-look-inside-bar aria-hidden={!shown} inert={!shown}
-    className={cn("fixed bottom-4 left-4 z-30 flex h-9 items-center justify-between text-xs uppercase tracking-[-0.02em] transition-opacity duration-300 max-[899px]:bottom-7 max-[899px]:h-11",
-      wide ? "right-4" : "right-[calc(40%+16px)] max-[899px]:right-4", shown ? "opacity-100" : "pointer-events-none opacity-0")}>
+    className={cn("fixed bottom-4 left-4 z-30 flex h-9 items-center justify-between text-xs uppercase tracking-[-0.02em] transition-opacity duration-300 pointer-coarse:h-11 max-[900px]:bottom-7 max-[900px]:h-11",
+      wide ? "right-4" : "right-[calc(40%+16px)] max-[900px]:right-4", shown ? "opacity-100" : "pointer-events-none opacity-0")}>
     <button type="button" aria-label={labels.previousPage} disabled={page <= 0} onClick={(event) => { event.stopPropagation(); onBack(); }}
-      className="min-h-9 px-2 transition-opacity hover:opacity-70 disabled:opacity-30 max-[899px]:min-h-11 max-[899px]:min-w-11">[ &lt; ]</button>
+      className="min-h-9 px-2 transition-opacity hover:opacity-70 disabled:opacity-30 pointer-coarse:min-h-11 pointer-coarse:min-w-11 max-[900px]:min-h-11 max-[900px]:min-w-11">[ &lt; ]</button>
     <span className="tabular-nums">{page <= 0 ? "" : left === right ? left : left + "–" + right}</span>
     <div className="flex items-center gap-2">
       <button type="button" aria-label={labels.nextPage} disabled={page >= leaves} onClick={(event) => { event.stopPropagation(); onForward(); }}
-        className="min-h-9 px-2 transition-opacity hover:opacity-70 disabled:opacity-30 max-[899px]:min-h-11 max-[899px]:min-w-11">[ &gt; ]</button>
+        className="min-h-9 px-2 transition-opacity hover:opacity-70 disabled:opacity-30 pointer-coarse:min-h-11 pointer-coarse:min-w-11 max-[900px]:min-h-11 max-[900px]:min-w-11">[ &gt; ]</button>
       <button type="button" aria-label={labels.closeBook} onClick={(event) => { event.stopPropagation(); onClose(); }}
-        className="min-h-9 px-2 transition-opacity hover:opacity-70 max-[899px]:min-h-11 max-[899px]:min-w-11">[ X ]</button>
+        className="min-h-9 px-2 transition-opacity hover:opacity-70 pointer-coarse:min-h-11 pointer-coarse:min-w-11 max-[900px]:min-h-11 max-[900px]:min-w-11">[ X ]</button>
     </div>
   </div>;
 }
@@ -648,14 +648,14 @@ function DetailStack({ shown, height, toShelf, onClose, children }: { shown: boo
   return <aside aria-hidden={!shown} inert={!shown} style={{ height }}
     className={cn("absolute top-0 right-0 z-30 w-[40%] rounded-l-[8px] bg-background text-foreground",
       // A phone (0ckg:125-183): full width, under the card and the book (their slot 10099 < card 10200 < canvas 10300), no slide.
-      "max-[899px]:z-[1] max-[899px]:w-full max-[899px]:rounded-none max-[899px]:translate-x-0 max-[899px]:transition-opacity max-[899px]:duration-300",
-      shown ? "translate-x-0 transition-transform duration-600 ease-[cubic-bezier(0.16,1,0.3,1)]" : "translate-x-full transition-transform duration-300 ease-[cubic-bezier(0.32,0,0.67,0)] max-[899px]:opacity-0")}>
-    <div className={cn("relative h-full transition-transform duration-[810ms] ease-out max-[899px]:translate-x-0", shown ? "translate-x-0" : "translate-x-[5vw]")}>
+      "max-[900px]:z-[1] max-[900px]:w-full max-[900px]:rounded-none max-[900px]:translate-x-0 max-[900px]:transition-opacity max-[900px]:duration-300",
+      shown ? "translate-x-0 transition-transform duration-600 ease-[cubic-bezier(0.16,1,0.3,1)]" : "translate-x-full transition-transform duration-300 ease-[cubic-bezier(0.32,0,0.67,0)] max-[900px]:opacity-0")}>
+    <div className={cn("relative h-full transition-transform duration-[810ms] ease-out max-[900px]:translate-x-0", shown ? "translate-x-0" : "translate-x-[5vw]")}>
       {/* Under the site header (which overlays the top 72 px), where their 46 px under their own nav would be covered. On a
           phone the link sits in the label's slot instead. */}
-      <div className="sticky top-[88px] z-10 px-6 max-[899px]:hidden">
+      <div className="sticky top-[88px] z-10 px-6 max-[900px]:hidden">
         <button type="button" onClick={onClose}
-          className="inline-flex min-h-8 items-center bg-background text-[11px] uppercase tracking-[0.04em] text-muted-foreground transition-colors hover:text-foreground">
+          className="inline-flex min-h-8 items-center bg-background text-[11px] uppercase pointer-coarse:min-h-11 pointer-coarse:min-w-11 tracking-[0.04em] text-muted-foreground transition-colors hover:text-foreground">
           <ArrowLeftIcon aria-hidden="true" className="mr-1.5 size-3.5" />{toShelf}
         </button>
       </div>
@@ -683,11 +683,11 @@ function DetailSlot({ index, top, onMeasured, anchors, children }: { index: numb
     observer.observe(element);
     return () => { observer.disconnect(); anchors.current.delete(index); };
   }, [index, onMeasured, anchors]);
-  return <div className="absolute inset-x-0 top-0 px-6 pt-[118px] pb-[260px] max-[899px]:px-4" style={{ transform: "translateY(" + top + "px)" }}>
+  return <div className="absolute inset-x-0 top-0 px-6 pt-[118px] pb-[260px] max-[900px]:px-4" style={{ transform: "translateY(" + top + "px)" }}>
     {/* A phone: the details start under a window for the book (MobileBookViewGap, calc(94vh − 185px)), inside the
         measured block, which is at least a screen tall (theirs). */}
-    <div ref={content} data-detail-panel-index={index} className="max-[899px]:min-h-[100vh]">
-      <div aria-hidden="true" className="hidden h-[calc(94vh-185px)] max-[899px]:block" />
+    <div ref={content} data-detail-panel-index={index} className="max-[900px]:min-h-[100vh]">
+      <div aria-hidden="true" className="hidden h-[calc(94vh-185px)] max-[900px]:block" />
       {children}
     </div>
   </div>;

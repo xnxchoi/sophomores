@@ -23,7 +23,7 @@ import { useEffect } from "react";
  *
  * Sounds live only while the working scene is mounted (useBookSounds(active)): leaving it removes the unlock
  * listeners, cancels pending delays and load callbacks (each carries the mount's generation), and stops every voice.
- * Only a trusted input unlocks.
+ * Only a trusted input unlocks. A clip is handed to Howler only once its context is running (see `whenPlayable`).
  */
 const DIR = "/assets/three/book/audio/";
 const FILES = {
@@ -76,13 +76,27 @@ function later(run: () => void, delayMs: number) {
   timers.add(id);
 }
 
+// Howler's own audio state ("running" | "suspending" | "suspended"; it suspends after 30 s of quiet) and its resume,
+// which moves that state on. Neither is in @types/howler.
+const howler = Howler as unknown as { state?: string; _autoResume?: () => void };
+const playable = () => howler.state === "running" && Howler.ctx?.state !== "interrupted";
+
+/**
+ * Runs `run` once Howler can start a clip at once, if the same mount is still live then. Howler's play() on a context
+ * that isn't running defers the start to its own resume and holds stop() until then, so a stop at unmount couldn't
+ * cancel it; here the resume is asked for without play(), and play() is called only when it starts synchronously.
+ */
+function whenPlayable(mount: number, run: () => void, frame = 0) {
+  if (mount !== generation || !mounted) return;
+  if (playable()) { run(); return; }
+  if (frame === 0) { if (howler._autoResume) howler._autoResume(); else resume(); }
+  if (frame < 120) requestAnimationFrame(() => whenPlayable(mount, run, frame + 1));
+}
+
 function play(role: Role, volume: number, rate = 1) {
   if (!ready()) return;
   const mount = generation, howl = pick(load()[role]);
-  const start = () => {
-    if (mount !== generation || !mounted) return;
-    resume(); const id = howl.play(); howl.volume(volume, id); howl.rate(rate, id);
-  };
+  const start = () => whenPlayable(mount, () => { const id = howl.play(); howl.volume(volume, id); howl.rate(rate, id); });
   if (howl.state() === "loaded") start(); else howl.once("load", start);
 }
 

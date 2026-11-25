@@ -1450,7 +1450,7 @@ test("recovery remains available after a nonbusy status failure but disables dur
     onPhone: () => {}, onOtp: () => {}
   };
   const rendered = ui.render(<View {...props} />, { wrapper: MemberAuthProviders });
-  const recovery = ui.screen.getByRole("button", { name: "Can’t sign in?" }) as HTMLButtonElement;
+  const recovery = ui.screen.getByRole("button", { name: "Lost access?" }) as HTMLButtonElement;
   assert.equal(recovery.type, "button");
   assert.equal(recovery.disabled, false, "review intake does not depend on authentication status");
   assert.equal(document.querySelector<HTMLButtonElement>("[data-phase-action=submit]")?.disabled, true, "credential actions remain gated without status");

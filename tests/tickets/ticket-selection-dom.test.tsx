@@ -114,7 +114,7 @@ test("inline email entry makes no phone promise and offers recovery without a di
   const email = ui.screen.getByRole("textbox", { name: "Email address" }) as HTMLInputElement;
   await ui.waitFor(() => assert.equal(email.disabled, false));
   ui.fireEvent.change(email, { target: { value: "returning@example.com" } });
-  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Can’t sign in?" }));
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Lost access?" }));
   await ui.screen.findByRole("textbox", { name: messages.MemberAuth.registeredMobileNumber });
   assert.equal(ui.screen.queryByRole("dialog") === null, true);
   assert.equal(sent, 0);
@@ -133,7 +133,7 @@ test("recovery detachment cannot leave a stale focus marker that steals focus af
   const email = await ui.screen.findByRole("textbox", { name: "Email address" }) as HTMLInputElement;
   await ui.waitFor(() => assert.equal(email.disabled, false));
   ui.fireEvent.change(email, { target: { value: "retained@example.com" } });
-  const help = ui.screen.getByRole("button", { name: "Can’t sign in?" });
+  const help = ui.screen.getByRole("button", { name: "Lost access?" });
   help.focus();
   ui.fireEvent.click(help);
   await ui.screen.findByRole("textbox", { name: messages.MemberAuth.registeredMobileNumber });
@@ -1355,5 +1355,5 @@ test("the code step's cells opt out of the legacy input rule, and its text actio
   const centred = (name: string) => ui.screen.getByRole("button", { name }).classList.contains("mx-auto");
   assert.equal(centred("Change email"), true);
   assert.equal(centred("Email a sign-in link instead"), true);
-  assert.equal(centred("Can’t sign in?"), true);
+  assert.equal(centred("Lost access?"), true);
 });

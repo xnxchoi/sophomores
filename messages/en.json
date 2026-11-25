@@ -352,7 +352,7 @@
     "emailSignInIsUnavailableTryAgainShortly": "Email sign-in is unavailable. Try again shortly.",
     "signUpIsUnavailableTryAgainShortly": "Sign-up is unavailable. Try again shortly.",
     "emailASignInLinkInstead": "Email a sign-in link instead",
-    "cantSignIn": "Can’t sign in?",
+    "cantSignIn": "Lost access?",
     "openAccountOptions": "Open account options",
     "cancel": "Cancel",
     "chooseLogInOrSignUpToContinue": "Choose Sign in or Sign up to continue.",

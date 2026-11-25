@@ -58,7 +58,7 @@ test("anonymous status retry is an icon action beside described feedback and bef
   assert.ok(retry.classList.contains("size-11"), "fine-pointer retry remains a full 44px control");
   assert.equal(retry.parentElement?.getAttribute("aria-live"), null, "the action row must not be a live region");
   assert.ok(!retry.parentElement?.classList.contains("overflow-hidden"), "the action focus ring must not be clipped by its feedback row");
-  for (const name of ["Continue", "Sign in with a passkey", /Google/i, "Can’t sign in?"]) {
+  for (const name of ["Continue", "Sign in with a passkey", /Google/i, "Lost access?"]) {
     assert.ok(retry.compareDocumentPosition(ui.screen.getByRole("button", { name })) & Node.DOCUMENT_POSITION_FOLLOWING, "retry precedes " + name);
   }
 });
@@ -125,7 +125,7 @@ for (const [width, pointer] of [[393, false], [393, true], [1024, true]] as cons
     const alternatives = identity.querySelector("[data-account-entry-alternatives]");
     // The gap stays inside the collapsing height, plus the 4px focus-ring clearance the shell's -m-1 gives back.
     assert.ok(alternatives?.classList.contains("pt-[calc(var(--account-action-gap)+0.25rem)]"), "provider gap belongs inside its collapsing height");
-    assert.ok(ui.screen.getByRole("button", { name: "Can’t sign in?" }).classList.contains("mt-[var(--account-action-gap)]"), "recovery owns the same responsive action gap");
+    assert.ok(ui.screen.getByRole("button", { name: "Lost access?" }).classList.contains("mt-[var(--account-action-gap)]"), "recovery owns the same responsive action gap");
     assert.ok(panel.classList.contains("!px-6"), "short surfaces retain horizontal alignment and wrapping");
     assert.ok(panel.classList.contains("data-[authentication-presentation=modal]:[@media(max-height:600px)]:pt-4!"));
     assert.ok(panel.classList.contains("data-[authentication-presentation=modal]:[@media(max-height:600px)]:pb-4!"));

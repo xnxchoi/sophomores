@@ -254,6 +254,7 @@ export function RightZone({
   const account = <AccountTrigger active={view === "account"} onClick={(event) => select("account", event)} />;
   if (!reading) {
     if (state !== "signed-out") return account;
+    if (signIn.onSignInPage) return null;
     return (
       <Link
         href={signIn.href}

@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type Ref } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode, type Ref } from "react";
 import { useTransitionRouter } from "next-transition-router";
+import { ArrowLeftIcon } from "@phosphor-icons/react/dist/ssr";
 import { Link } from "@/components/core/Link/Link";
 import { cn } from "@/lib/utils";
 import { lockedProgressFor, StripeScene, useStripeScene, type SceneBook, type Vendored } from "./stripe-scene";
 import { useShelfCatch, type ShelfCatchSource } from "./use-shelf-catch";
+import { useBookDetail, type BookDetailSource } from "./use-book-detail";
 
 /**
  * The shop's home, rebuilt from stripe.press's home code (06w9 module 43181; .tmp/stripe-notes/home-layout-inventory.md,
@@ -17,8 +19,10 @@ import { useShelfCatch, type ShelfCatchSource } from "./use-shelf-catch";
  */
 const FEATURED_MAX = 4, CARD_GAP = 16, CARD_INSET_BOTTOM = 8;
 
-type Item = { id: string; title: string; price: string; href: string; stageArt: { url: string; alt?: string | null } | null };
-type Labels = { featured: string; shelf: string; viewDetails: string };
+type Item = { id: string; title: string; price: string; href: string; stageArt: { url: string; alt?: string | null } | null;
+  /** The book's details column (server-rendered: ProductInfo + ProductExtras), shown when it opens in the scene. */
+  details?: ReactNode };
+type Labels = { featured: string; shelf: string; viewDetails: string; toShelf: string };
 type Geometry = { lvh: number; mobile: boolean; top: number; height: number; offset: number; extents: number[];
   starts: number[]; lock: number[]; total: number };
 
@@ -41,7 +45,7 @@ export function ShopHome({ items, labels }: { items: Item[]; labels: Labels }) {
 }
 
 function Home({ vendored, items, labels }: { vendored: Vendored; items: Item[]; labels: Labels }) {
-  const { hub, scroll, catalogue, router, seats } = vendored;
+  const { hub, scroll, catalogue, router, seats, motion: tokens } = vendored;
   const navigate = useTransitionRouter();
   const count = items.length, J = catalogue.J, K = catalogue.K;
 
@@ -165,6 +169,17 @@ function Home({ vendored, items, labels }: { vendored: Vendored; items: Item[]; 
   useEffect(() => { catchSource.current = { seatY, driving: () => drive.current.active, stopDriving, titles: () => titles.current }; });
   useShelfCatch(hub, catalogue, catchSource);
 
+  // Opening a book into its details inside the scene (use-book-detail.ts); the phone keeps the product page for now.
+  const detailSource = useRef<BookDetailSource>({ rawProgress: () => 0, hrefOf: () => null, home: "/shop" });
+  useEffect(() => { detailSource.current = { rawProgress: () => hub.scrollProgressDirectLiveRef.current as number,
+    hrefOf: (index) => items[index]?.href ?? null, home: "/shop" }; });
+  const detail = useBookDetail(hub, catalogue, router, tokens, detailSource);
+  const openRef = useRef((index: number) => { const item = items[index]; if (item) navigate.push(item.href); });
+  useEffect(() => { openRef.current = (index: number) => {
+    if (items[index]?.details && detail.openBook(index)) return;
+    const item = items[index]; if (item) navigate.push(item.href);
+  }; });
+
   // Idle auto-advance (06w9:14528-14582): 1.5 s after mount, then after every 3 s of stillness, one book down (1 s;
   // 1.83 s into the shelf), until the visitor does anything at all.
   useEffect(() => {
@@ -192,7 +207,7 @@ function Home({ vendored, items, labels }: { vendored: Vendored; items: Item[]; 
   useEffect(() => { activeRef.current = active; }, [active]);
   useEffect(() => {
     const uninstall = router.e();
-    const open = (index: number) => { const item = items[index]; if (item) navigate.push(item.href); };
+    const open = (index: number) => openRef.current(index);
     const featuredScope = router.v("featured", {
       acceptsGesture: false,
       horizontal: (step: number) => { if (step === 1) open(activeRef.current); },
@@ -218,8 +233,9 @@ function Home({ vendored, items, labels }: { vendored: Vendored; items: Item[]; 
   // Their BookStack reads the books from its prop; ours are also their catalogue now (change 7): the same list.
   const sceneProps = useMemo(() => ({
     books: (window as unknown as { __SPBOOKS: unknown }).__SPBOOKS, scrollProgress: committed, scrollProgressLiveRef: progressRef,
-    activeBookIndex: active, stackMode: "browse", onBookOpen: (index: number) => { const item = items[index]; if (item) navigate.push(item.href); },
-  }), [committed, active, items, navigate]);
+    activeBookIndex: active, stackMode: "browse", onBookOpen: (index: number) => openRef.current(index),
+    isDetailOpen: detail.open != null, detailBookIndex: detail.open ?? -1,
+  }), [committed, active, detail.open]);
 
   // The spine row seats against, and lifts out ahead of, the section after the shelf (their #home-section-films, read
   // through homeWebsitesSectionElLiveRef); without one the scene treats the row as already gone. As theirs, the content
@@ -252,9 +268,13 @@ function Home({ vendored, items, labels }: { vendored: Vendored; items: Item[]; 
     <p className="fixed top-[3.75rem] left-4 z-20 text-[11px] uppercase leading-4 tracking-[0.06em] text-muted-foreground">
       [ {onShelf ? labels.shelf : labels.featured} ]
     </p>
-    <TitleRail railRef={titles} titles={items.map((entry) => entry.title)} active={selected ?? active} fade={Math.max(0, Math.min(1, (committed - K - 0.2) / 0.3))}
-      onPick={(index) => index < catalogue.t ? scrollTo(bookY(index), 1000) : scrollTo(shelfY(), 1833)} />
-    {item && <ViewDetails href={item.href} label={labels.viewDetails} hidden={onShelf} />}
+    <TitleRail railRef={titles} titles={items.map((entry) => entry.title)} active={detail.open ?? selected ?? active}
+      fade={detail.open != null ? 0 : Math.max(0, Math.min(1, (committed - K - 0.2) / 0.3))} detail={detail.open != null && !detail.leaving}
+      onPick={(index) => detail.open != null ? openRef.current(index) : index < catalogue.t ? scrollTo(bookY(index), 1000) : scrollTo(shelfY(), 1833)} />
+    {item && <ViewDetails href={item.href} label={labels.viewDetails} hidden={onShelf || detail.open != null} onOpen={() => openRef.current(active)} />}
+    <DetailColumn open={detail.open != null && !detail.leaving} toShelf={labels.toShelf} onClose={() => detail.closeBook()}>
+      {detail.open != null && items[detail.open]?.details}
+    </DetailColumn>
   </div>;
 }
 
@@ -304,22 +324,24 @@ function Cards({ items, featured, geometry, progressRef, listeners, J }: { items
  * upright and centred at 47.5 % of the width (500 ms ease-in-out), the rest italic at 0.8; "(Hardcover)" above each
  * title's end; the titles fade in 1.2 s after load and fade out as the shelf takes the screen.
  */
-function TitleRail({ railRef, titles, active, fade, onPick }: { railRef: Ref<HTMLElement>; titles: string[]; active: number; fade: number;
-  onPick: (index: number) => void }) {
+function TitleRail({ railRef, titles, active, fade, detail, onPick }: { railRef: Ref<HTMLElement>; titles: string[]; active: number; fade: number;
+  detail: boolean; onPick: (index: number) => void }) {
   const items = useRef<(HTMLButtonElement | null)[]>([]);
   const [shift, setShift] = useState(0), [shown, setShown] = useState(false);
   useEffect(() => { const timer = window.setTimeout(() => setShown(true), 1200); return () => window.clearTimeout(timer); }, []);
   useEffect(() => {
     const place = () => {
       const item = items.current[titles.length + active];
-      if (item) setShift(0.475 * window.innerWidth - 20 - (item.offsetLeft + item.offsetWidth / 2));
+      // Centred at 47.5vw, or 27.5vw over the shifted scene while a book is open (their centerOffsetVw −20).
+      if (item) setShift((detail ? 0.275 : 0.475) * window.innerWidth - 20 - (item.offsetLeft + item.offsetWidth / 2));
     };
     place();
     window.addEventListener("resize", place);
     return () => window.removeEventListener("resize", place);
-  }, [active, titles]);
+  }, [active, titles, detail]);
   return <nav ref={railRef} aria-label="Titles" style={{ opacity: shown ? 1 - 2 * fade : 0 }}
-    className="pointer-events-none fixed inset-x-0 top-[70px] z-20 overflow-hidden px-5 pt-5 pb-3 transition-opacity duration-[1600ms] max-[899px]:top-[63px]">
+    className={cn("pointer-events-none fixed inset-x-0 top-[70px] z-20 overflow-hidden px-5 pt-5 pb-3 transition-[opacity,clip-path] duration-[1600ms] max-[899px]:top-[63px]",
+      detail ? "[clip-path:inset(0_40%_0_0)] [transition-duration:1600ms,600ms] [transition-timing-function:ease,cubic-bezier(0.16,1,0.3,1)]" : "[clip-path:inset(0_0_0_0)]")}>
     <ul style={{ transform: "translateX(" + shift + "px)" }}
       className="flex w-max gap-x-[72px] transition-transform duration-500 ease-in-out max-[899px]:gap-x-[30px]">
       {/* Three copies, the middle one active, so the active title always has neighbours on both sides (theirs: 21ix). */}
@@ -339,11 +361,31 @@ function TitleRail({ railRef, titles, active, fade, onPick }: { railRef: Ref<HTM
 }
 
 /** The corner link (HomeViewDetailsCorner): desktop only, fixed bottom right, in 2 s after load (500 ms). */
-function ViewDetails({ href, label, hidden }: { href: string; label: string; hidden: boolean }) {
+function ViewDetails({ href, label, hidden, onOpen }: { href: string; label: string; hidden: boolean; onOpen: () => void }) {
   const [shown, setShown] = useState(false);
   useEffect(() => { const timer = window.setTimeout(() => setShown(true), 2000); return () => window.clearTimeout(timer); }, []);
   return <div className={cn("fixed right-4 -bottom-0.5 z-20 flex h-[30px] items-center transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] max-[899px]:hidden",
     shown && !hidden ? "translate-y-0" : "translate-y-[calc(100%+24px)]")}>
-    <Link href={href} className="text-xs uppercase tracking-[-0.02em] transition-opacity hover:opacity-70">{label} [+]</Link>
+    <Link href={href} onClick={(event) => { if (event.metaKey || event.ctrlKey || event.shiftKey) return; event.preventDefault(); onOpen(); }}
+      className="text-xs uppercase tracking-[-0.02em] transition-opacity hover:opacity-70">{label} [+]</Link>
   </div>;
+}
+
+/**
+ * The details column (DetailPanelBackdrop + BookDetailPanel, 0ckg:145-205; ReturnToShelfWrap 1imu:851-867): the right
+ * 40 %, sliding in from the right over 600 ms (out over 300 ms), its text from 5vw over 810 ms; the return link
+ * ("← All products", as the product page's) at its top; Escape and Back close it too. It scrolls on its own while the scene holds the book (their stacked panels for every book are slice C).
+ */
+function DetailColumn({ open, toShelf, onClose, children }: { open: boolean; toShelf: string; onClose: () => void; children: ReactNode }) {
+  return <aside aria-hidden={!open} inert={!open} data-lenis-prevent
+    className={cn("fixed inset-y-0 right-0 z-30 w-[40%] overflow-y-auto overscroll-contain rounded-l-[8px] bg-background text-foreground max-[899px]:hidden",
+      open ? "translate-x-0 transition-transform duration-600 ease-[cubic-bezier(0.16,1,0.3,1)]" : "translate-x-full transition-transform duration-300 ease-[cubic-bezier(0.32,0,0.67,0)]")}>
+    <div className={cn("px-6 pt-[46px] pb-[260px] transition-transform duration-[810ms] ease-out", open ? "translate-x-0" : "translate-x-[5vw]")}>
+      <button type="button" onClick={onClose}
+        className="mb-[72px] inline-flex min-h-8 items-center text-[11px] uppercase tracking-[0.04em] text-muted-foreground transition-colors hover:text-foreground">
+        <ArrowLeftIcon aria-hidden="true" className="mr-1.5 size-3.5" />{toShelf}
+      </button>
+      {children}
+    </div>
+  </aside>;
 }

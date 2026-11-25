@@ -7,7 +7,7 @@ import { Badge } from "@/components/arc/badge/badge";
 import { ArcRoles } from "./arc-roles";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { ShopHome } from "./shop/shop-home";
-import { firstImage } from "./product-page/product-page";
+import { firstImage, ProductExtras, ProductInfo } from "./product-page/product-page";
 import { readProductPageContent, type ProductPageContent } from "./product-page/_shared/content";
 
 /**
@@ -25,12 +25,14 @@ export function CommerceShopView({ shop, contents = {} }: { shop: CommerceEditio
   const entries = shop.products
     .map((entry, index) => ({ entry, index, content: contents[entry.product.productID] ?? empty }))
     .sort((a, b) => (a.content.shelfOrder ?? Number.MAX_SAFE_INTEGER) - (b.content.shelfOrder ?? Number.MAX_SAFE_INTEGER) || a.index - b.index)
-    .map(({ entry, content }) => ({ product: entry.product, content, title: content.shelfTitle ?? entry.product.title,
+    .map(({ entry, content }) => ({ product: entry.product, offer: entry.offer, content, title: content.shelfTitle ?? entry.product.title,
       price: money.format(entry.offer.priceKRW), href: "/shop/products/" + encodeURIComponent(entry.product.productID) }));
   return <PageInset as="main" className="pt-[4.5rem] pb-24 text-foreground">
     <h1 className="sr-only">{t("book")}</h1>
-    <ShopHome labels={{ featured: t("featured"), shelf: t("allProducts"), viewDetails: t("viewDetails") }} items={entries.map(({ product, content, title, price, href }) => ({
+    <ShopHome labels={{ featured: t("featured"), shelf: t("allProducts"), viewDetails: t("viewDetails"), toShelf: t("allProducts") }} items={entries.map(({ product, offer, content, title, price, href }) => ({
       id: product.productID, title, price, href, stageArt: content.stageArt ?? firstImage(product),
+      // The details column for this book, opened in the scene (the product page's own column, unchanged).
+      details: <><ProductInfo product={product} offer={offer} content={content} /><ProductExtras content={content} /></>,
     }))} />
   </PageInset>;
 }

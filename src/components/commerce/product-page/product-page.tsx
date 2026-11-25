@@ -30,11 +30,7 @@ export type ShelfEntry = { productID: string; title: string; current: boolean };
  */
 export function ProductPage({ product, offer, content, shelf }: { product: EditionProduct; offer: CommerceEditionOffer; content: ProductPageContent; shelf: readonly ShelfEntry[] }) {
   const t = useTranslations("Customer.components_commerce_book_offer");
-  const locale = useLocale();
   const art = content.stageArt ?? firstImage(product);
-  const details = physicalDetails(content, locale, t);
-  const hasTable = details.length > 0 || content.typefaces.length > 0 || content.materials.length > 0 || content.techniques.length > 0;
-  const hasFullWidth = content.praise.length > 0 || hasTable || content.gallery.length > 0;
   return <PageInset as="main" className="pt-[4.5rem] pb-24 text-foreground lg:grid lg:grid-cols-[minmax(0,1.58fr)_minmax(0,1fr)] lg:items-start lg:gap-x-10">
     <div className="relative z-0 flex min-w-0 flex-col lg:sticky lg:top-[4.5rem] max-lg:has-[[data-open=true]]:z-50 lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:h-[calc(100svh-5.5rem)]">
       <ShelfStrip shelf={shelf} label={t("shelf")} />
@@ -50,41 +46,64 @@ export function ProductPage({ product, offer, content, shelf }: { product: Editi
           <FocusShape className="inline-flex items-center gap-[inherit]"><ArrowLeftIcon aria-hidden="true" className="size-3.5" />{t("allProducts")}</FocusShape>
         </Link>
       </div>
-      <header className="border-t border-foreground pt-3">
-        <Label>{content.kicker ?? t("book")}</Label>
-        <h1 className="mt-4 font-display text-[2.5rem] font-normal leading-[1.06] tracking-[-0.02em] text-balance [overflow-wrap:anywhere]">{product.title}</h1>
-        {content.byline && <p className="mt-2 font-display text-lg italic text-muted-foreground">{t("byline", { name: content.byline })}</p>}
-      </header>
-
-      <ColumnSection label={t("description")}>
-        {content.longDescription
-          ? <Prose data={content.longDescription} />
-          : <p className="whitespace-pre-line text-[15px] leading-[1.5] text-pretty [overflow-wrap:anywhere]">{product.description}</p>}
-      </ColumnSection>
-
-      <section aria-label={t("formats")} className="mt-10">
-        <PurchaseNotOpen priceKRW={offer.priceKRW} />
-        {content.formats.length > 0 && <ul>
-          {content.formats.map((format) => <FormatRow key={format.label} {...format} />)}
-        </ul>}
-        <p className="mt-3 text-xs leading-5 text-muted-foreground text-pretty">
-          {offer.editionEntitlements.membershipSignet ? t("includesBundle") : t("includesBookOnly")}
-          {offer.maximumQuantity === 1 && <> {t("onePerAccount")}.</>}
-        </p>
-      </section>
-
-      {content.about && (content.about.body || content.about.links.length > 0) && <ColumnSection label={content.about.heading ?? t("aboutTheAuthor")}>
-        {content.about.body && <Prose data={content.about.body} />}
-        {content.about.links.length > 0 && <ul className="mt-5 border-t border-dotted border-foreground/40">
-          {content.about.links.map((link) => <li key={link.url} className="border-b border-dotted border-foreground/40">
-            <a href={link.url} target="_blank" rel="noreferrer" className="group/focus flex min-h-10 items-center justify-between gap-4 text-[13px] transition-colors hover:text-muted-foreground pointer-coarse:min-h-11">
-              <FocusShape className="flex min-w-0 flex-1 items-center justify-between gap-[inherit]">{link.label}<ArrowUpRightIcon aria-hidden="true" className="size-3.5 text-muted-foreground" /></FocusShape>
-            </a>
-          </li>)}
-        </ul>}
-      </ColumnSection>}
+      <ProductInfo product={product} offer={offer} content={content} />
     </div>
 
+    <ProductExtras content={content} />
+  </PageInset>;
+}
+
+/**
+ * The product's information column: label, title, byline, description, the format rows (purchase not open) and about.
+ * Shared by the product page and the shop's details column (shop-home.tsx, opened in stripe.press's scene).
+ */
+export function ProductInfo({ product, offer, content }: { product: EditionProduct; offer: CommerceEditionOffer; content: ProductPageContent }) {
+  const t = useTranslations("Customer.components_commerce_book_offer");
+  return <>
+    <header className="border-t border-foreground pt-3">
+      <Label>{content.kicker ?? t("book")}</Label>
+      <h1 className="mt-4 font-display text-[2.5rem] font-normal leading-[1.06] tracking-[-0.02em] text-balance [overflow-wrap:anywhere]">{product.title}</h1>
+      {content.byline && <p className="mt-2 font-display text-lg italic text-muted-foreground">{t("byline", { name: content.byline })}</p>}
+    </header>
+
+    <ColumnSection label={t("description")}>
+      {content.longDescription
+        ? <Prose data={content.longDescription} />
+        : <p className="whitespace-pre-line text-[15px] leading-[1.5] text-pretty [overflow-wrap:anywhere]">{product.description}</p>}
+    </ColumnSection>
+
+    <section aria-label={t("formats")} className="mt-10">
+      <PurchaseNotOpen priceKRW={offer.priceKRW} />
+      {content.formats.length > 0 && <ul>
+        {content.formats.map((format) => <FormatRow key={format.label} {...format} />)}
+      </ul>}
+      <p className="mt-3 text-xs leading-5 text-muted-foreground text-pretty">
+        {offer.editionEntitlements.membershipSignet ? t("includesBundle") : t("includesBookOnly")}
+        {offer.maximumQuantity === 1 && <> {t("onePerAccount")}.</>}
+      </p>
+    </section>
+
+    {content.about && (content.about.body || content.about.links.length > 0) && <ColumnSection label={content.about.heading ?? t("aboutTheAuthor")}>
+      {content.about.body && <Prose data={content.about.body} />}
+      {content.about.links.length > 0 && <ul className="mt-5 border-t border-dotted border-foreground/40">
+        {content.about.links.map((link) => <li key={link.url} className="border-b border-dotted border-foreground/40">
+          <a href={link.url} target="_blank" rel="noreferrer" className="group/focus flex min-h-10 items-center justify-between gap-4 text-[13px] transition-colors hover:text-muted-foreground pointer-coarse:min-h-11">
+            <FocusShape className="flex min-w-0 flex-1 items-center justify-between gap-[inherit]">{link.label}<ArrowUpRightIcon aria-hidden="true" className="size-3.5 text-muted-foreground" /></FocusShape>
+          </a>
+        </li>)}
+      </ul>}
+    </ColumnSection>}
+  </>;
+}
+
+/** The full-width sections under the column: praise in two columns, then the details table beside the gallery strip. */
+export function ProductExtras({ content }: { content: ProductPageContent }) {
+  const t = useTranslations("Customer.components_commerce_book_offer");
+  const locale = useLocale();
+  const details = physicalDetails(content, locale, t);
+  const hasTable = details.length > 0 || content.typefaces.length > 0 || content.materials.length > 0 || content.techniques.length > 0;
+  const hasFullWidth = content.praise.length > 0 || hasTable || content.gallery.length > 0;
+  return <>
     {/* stripe.press's detail geometry (desktop): the info column runs to 100lvh + 560 px down the page and the full-width
         sections start under a 160 px top padding, where the book's scroll exit is measured from (the anchor), so the book
         holds for about 500 px of scroll before it leaves (book-stage.tsx). */}
@@ -129,7 +148,7 @@ export function ProductPage({ product, offer, content, shelf }: { product: Editi
         </div>}
       </section>}
     </div>}
-  </PageInset>;
+  </>;
 }
 
 /** stripe.press's title ribbon: every edition's title across the top of the stage, this one full strength. */

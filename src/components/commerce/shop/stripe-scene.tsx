@@ -41,9 +41,13 @@ export type SceneCatalogue = {
   F: (count: number, canvasHeight: number, lockPx: number[], shelfScreens: number) => number[];
 };
 /** Their gesture router (module 11743): `e()` installs it, `v(scope, handlers)` registers a scope. */
-export type SceneRouter = { e: () => (() => void) | void; v: (scope: string, handlers: Props) => () => void };
+export type SceneRouter = { e: () => (() => void) | void; v: (scope: string, handlers: Props) => () => void;
+  /** The router's surface state (`td`): which scope wins (book-detail while a book is open). */
+  _: { current: { bookDetail: boolean; transitioning: boolean } } };
+/** Their motion tokens (module 72646): `P` and `i` time the close (the column fades, then the book returns). */
+export type SceneMotion = { P: number; i: number };
 export type Vendored = { mount: (element: HTMLElement) => { render: (props: Props) => void; unmount: () => void };
-  hub: SceneHub; scroll: SceneScroll; catalogue: SceneCatalogue; router: SceneRouter; seats: SceneSeats };
+  hub: SceneHub; scroll: SceneScroll; catalogue: SceneCatalogue; router: SceneRouter; seats: SceneSeats; motion: SceneMotion };
 type Context = { i: (id: number) => unknown };
 
 let loaded: Promise<Vendored> | null = null;
@@ -78,6 +82,7 @@ function load(books: unknown[], featured: number) {
           },
           hub: context.i(50016) as SceneHub, scroll: context.i(73900) as SceneScroll,
           catalogue: context.i(67168) as SceneCatalogue, router: context.i(11743) as SceneRouter, seats: context.i(2449) as SceneSeats,
+          motion: context.i(72646) as SceneMotion,
         });
       }]);
       queue.push([entry, { otherChunks: [], runtimeModuleIds: [990001] }]);

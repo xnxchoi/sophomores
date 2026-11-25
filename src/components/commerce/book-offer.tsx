@@ -9,7 +9,8 @@ import { Badge } from "@/components/arc/badge/badge";
 import { ArcRoles } from "./arc-roles";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { ShopHome } from "./shop/shop-home";
-import { firstImage, pageTextures, ProductExtras, ProductInfo } from "./product-page/product-page";
+import { firstImage, pageTextures } from "./product-page/product-page";
+import { DetailPanel } from "./shop/detail-panel";
 import { readProductPageContent, type ProductPageContent } from "./product-page/_shared/content";
 
 /**
@@ -37,8 +38,8 @@ export function CommerceShopView({ shop, contents = {}, initialOpen }: { shop: C
       openBook: t("openBook"), closeBook: t("closeTheBook"), previousPage: t("previousPage"), nextPage: t("nextPage"),
       titles: t("titles"), sceneFailed: t("sceneFailed"), tryAgain: t("tryAgain") }} items={entries.map(({ product, offer, content, title, price, href }) => ({
       id: product.productID, title, price, href, stageArt: content.stageArt ?? firstImage(product), pages: pageTextures(content),
-      // The details column for this book, opened in the scene (the product page's own column, unchanged).
-      details: <><ProductInfo product={product} offer={offer} content={content} /><ProductExtras content={content} /></>,
+      // The details for this book, opened in the scene: stripe.press's detail panel on our fields (slice G).
+      details: <DetailPanel product={product} offer={offer} content={content} />,
       // Its refund rule, a line under its title wherever the shop lists it (owner, 25 Nov; Review-B r3).
       refund: <RefundTerms terms={editionRefundTerms(offer.editionEntitlements)} as="span" />,
     }))} />

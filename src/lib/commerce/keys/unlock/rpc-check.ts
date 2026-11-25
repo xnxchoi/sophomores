@@ -1,6 +1,6 @@
 import { join } from "node:path";
 import { parseEnv } from "node:util";
-import { createPublicClient, type Hex, type Transport } from "viem";
+import { createPublicClient, http, type Hex, type Transport } from "viem";
 import { polygon } from "viem/chains";
 import { readOwnerOnly, signerDirectory } from "./signer";
 
@@ -13,18 +13,42 @@ import { readOwnerOnly, signerDirectory } from "./signer";
 /** Where the owner keeps the RPC URL on the tick host: KEY_GRANT_POLYGON_RPC_URL=https://..., mode 0600. */
 export const polygonRpcFile = join(signerDirectory, "polygon-rpc.env");
 
+export type RpcFileCode = "rpc_file_missing" | "rpc_file_symlink" | "rpc_file_not_regular" | "rpc_file_not_owner_only"
+  | "rpc_file_unparsable" | "rpc_url_not_allowed";
 export class RpcFileError extends Error {
   override name = "RpcFileError";
+  constructor(readonly code: RpcFileCode) { super(code); }
 }
 
-/** The https RPC URL from an owner-only file; fixed messages only. */
+/** The only RPC shape accepted (owner, 25 Nov: Alchemy): https, Alchemy's Polygon mainnet host, `/v2/<key>`, nothing else. */
+export const ALCHEMY_POLYGON_HOST = "polygon-mainnet.g.alchemy.com";
+export function polygonRpcUrlAllowed(value: string): boolean {
+  let url: URL;
+  try { url = new URL(value); } catch { return false; }
+  return url.protocol === "https:" && url.username === "" && url.password === "" && url.hostname === ALCHEMY_POLYGON_HOST
+    && url.port === "" && /^\/v2\/[A-Za-z0-9_-]{16,64}$/.test(url.pathname) && url.search === "" && url.hash === "";
+}
+
+/**
+ * The Alchemy URL from the owner-only file, through the same checks as the signer file (regular file, not a
+ * symlink, owned by this user, mode 0600). Every failure is a fixed code; nothing from the file is ever in an error.
+ */
 export async function loadPolygonRpcUrl(file = polygonRpcFile, uid = process.getuid?.()): Promise<string> {
   let text: string;
-  try { text = await readOwnerOnly(file, uid); } catch { throw new RpcFileError("rpc_file_unreadable_or_not_owner_only"); }
+  try { text = await readOwnerOnly(file, uid); } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    throw new RpcFileError(/symbolic link/.test(message) ? "rpc_file_symlink" : /regular file/.test(message) ? "rpc_file_not_regular"
+      : /owned by|mode 0600/.test(message) ? "rpc_file_not_owner_only" : "rpc_file_missing");
+  }
   let url: string | undefined;
   try { url = parseEnv(text).KEY_GRANT_POLYGON_RPC_URL; } catch { throw new RpcFileError("rpc_file_unparsable"); }
-  if (!url || !/^https:\/\/[^\s/]+\/\S*$/.test(url)) throw new RpcFileError("rpc_url_missing_or_not_https");
+  if (!url || !polygonRpcUrlAllowed(url)) throw new RpcFileError("rpc_url_not_allowed");
   return url;
+}
+
+/** The transport every Polygon caller uses: no retries, a 10 s timeout, and a redirect is an error (never followed). */
+export function polygonRpcTransport(url: string): Transport {
+  return http(url, { retryCount: 0, timeout: 10_000, fetchOptions: { redirect: "error" } });
 }
 
 /** Finalized lag above this many blocks fails the check: Polygon finalizes within a few blocks. */

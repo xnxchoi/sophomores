@@ -40,13 +40,16 @@ The code is `src/lib/commerce/keys/` (worker passes, `grant-catch-up.ts`, `unloc
   - **What this does and does not catch:** these checks detect an RPC whose answers contradict each other. They do not
     detect every way a pool of backends can mix answers, and nothing in one RPC's answers can expose a consistently
     dishonest RPC.
-  - **Live RPC: Alchemy (owner decision, 25 Nov, verbatim: "Sure, we use alchemy").** `KEY_GRANT_POLYGON_RPC_URL` is
-    the https URL of the owner's Alchemy app for Polygon mainnet (the provider key is in the URL path). It lives only
-    in an owner-only file on the tick host, `~/.config/sphmrs/polygon-rpc.env` (mode 0600, not a symlink), as
-    `KEY_GRANT_POLYGON_RPC_URL=https://...`. It is never pasted in chat, committed or printed. The scheduler loads it
-    into the tick's environment (systemd `EnvironmentFile=`, or `set -a; . ~/.config/sphmrs/polygon-rpc.env; set +a`
-    in the cron line). The owner accepts Alchemy as the trusted single-view provider; the code still reads one RPC
-    and does not corroborate against a second.
+  - **Live RPC: Alchemy (owner decision, 25 Nov, verbatim: "Sure, we use alchemy").** The RPC is the owner's Alchemy
+    app for Polygon mainnet. Its URL carries the provider key, so it lives only in an owner-only file on the tick host,
+    `~/.config/sphmrs/polygon-rpc.env` (regular file, mode 0600, owned by the user the tick runs as, not a symlink),
+    as `KEY_GRANT_POLYGON_RPC_URL=https://polygon-mainnet.g.alchemy.com/v2/<key>`. The tick, the recovery command and
+    the checker each read it **themselves**, through one checked loader (`rpc-check.ts`). It accepts only that exact
+    host and `/v2/<key>` shape (no userinfo, port, query or fragment); redirects are errors; failures are fixed codes.
+    Never put the URL in the environment, a shell profile, a systemd unit or `EnvironmentFile=`, and never source
+    the file as shell code: a tick that finds `KEY_GRANT_POLYGON_RPC_URL` in its environment refuses
+    (`rpc_url_in_env`). Never paste it in chat, commit it or print it. The owner accepts Alchemy as the trusted
+    single-view provider; the code reads one RPC and does not corroborate against a second.
   - **Why not Unlock's hosted RPC** (`https://rpc.unlock-protocol.com/137`, proposed for launch, then dropped): its
     published source rate-limits reads such as `eth_getBlockByHash`, receipts and `eth_blockNumber` per IP (10 per 10 s
     and 1,000 per hour per method, exempting only calls to Unlock contracts). That makes the 256-block ancestry walk
@@ -97,7 +100,7 @@ The code is `src/lib/commerce/keys/` (worker passes, `grant-catch-up.ts`, `unloc
 |---|---|---|---|
 | `KEY_GRANT_POLYGON_LIVE` | tick host | unset = off | Exactly `1` turns Polygon grants on. Anything else keeps them off. |
 | `KEY_GRANT_POLYGON_MAX_COST_WEI` | tick host | none. Required when on | The approved worst case for one transaction (gas limit × max fee), in wei. It must be at most 5 POL. Set it from a quote at go-live (below). Without it no Polygon transaction is built. |
-| `KEY_GRANT_POLYGON_RPC_URL` | tick host | none. Required when on | The owner's Alchemy Polygon mainnet URL, https only, loaded from `~/.config/sphmrs/polygon-rpc.env` (0600); never printed (RPC trust, above). It must answer `eth_getBlockByNumber("finalized")`; without that, nothing ever settles (fail closed). Check before go-live (below). |
+| `~/.config/sphmrs/polygon-rpc.env` (a file, not an env key) | tick host | none. Required when on | `KEY_GRANT_POLYGON_RPC_URL=https://polygon-mainnet.g.alchemy.com/v2/<key>`, 0600, read by the tick's checked loader (RPC trust, above). The env key itself must be unset. |
 | `KEY_GRANT_POLYGON_EVENT_LOCKS` | tick host (and wherever the export runs) | empty = no event locks | A comma list of event-ticket lock addresses on Polygon, one per event. Tonight it is the Edition I lock `0xef6414927acb08f4d5a35cc9e5de07b9f3255060`. Any entry that is not an address stops the tick (`bad_event_locks`). A ticket whose lock is not listed (nor Signet) parks with `lock_not_enabled`. That lock's `maxKeysPerAddress` is 1 on chain: a member plus two guests on one wallet fails until the owner sets it to 3. |
 | `UNLOCK_LIVE_GRANTER_PRIVATE_KEY`, `UNLOCK_LIVE_GRANTER_ADDRESS` | `~/.config/sphmrs/polygon-key-granter.env` on the tick host, mode 0600, owned by the tick's user | none | The grant signer. These are **not** app env and **not** in the VPS env allowlist. The address must be `0x2CDb…5336`; any other is refused. |
 | `MEMBER_WALLET_LOCK_ADDRESS` (existing) | app and tick | | It must be the Signet lock above on Polygon. |
@@ -113,8 +116,9 @@ There is **no lock-manager key on any of our hosts** (ADR-0008, ADR-0011). The o
    latency. It prints the URL's host, never its path, and uses no account. Record the result line here.
    - **25 Nov, 14:1x KST: pass.** File `-rw-------`, 94 bytes. `{"host":"polygon-mainnet.g.alchemy.com","outcome":"pass",
      "chainId":137,"safe":"unsupported","latest":"97918787","finalized":"97918785","finalizedLagBlocks":2,"walked":10,
-     "latencyMs":{"calls":15,"median":165,"max":584}}`. Gate 1 is closed.
-2. **Over-cap alert through the real scheduler:** on the tick host, under the actual scheduler (systemd timer or cron),
+     "latencyMs":{"calls":15,"median":165,"max":584}}` (on the owner's Mac). Rerun on the tick server once the
+     file is placed there; gate 1 closes with a pass on the server.
+2. **Over-cap alert through the real scheduler:** the tick runs on a server, not the owner's Mac (owner, 25 Nov: he is often on the move and loses connection). On that server, under the actual scheduler (a systemd timer, running as the user who owns the two private files),
    run a synthetic over-cap tick and confirm both the result line's `overCap` and the
    `{"event":"key_grant_over_cap",...}` line reach the scheduler's log and the alert. The unit test proved it only
    under a cron-style redirect and pipes on macOS.
@@ -125,7 +129,7 @@ There is **no lock-manager key on any of our hosts** (ADR-0008, ADR-0011). The o
    - Compute `0.10 / price` POL, then convert to wei (× 10^18, rounded down). At POL USD 0.076 that is about `1315789473684210526`.
    - Set `KEY_GRANT_POLYGON_MAX_COST_WEI` to that value. Recheck it if POL moves far.
    - The per-gas ceiling (3,000 gwei) also applies. The budget checks the gas *limit*, not the gas used. The 20 Nov estimate for `grantKeys` was about 261,000 gas: at 3,000 gwei that is about 0.78 POL, about USD 0.06, so the ceiling alone stays under the cap at today's price, and the budget is the real check.
-3. **RPC.** Set `KEY_GRANT_POLYGON_RPC_URL`. Check it reports finality: `curl -s -H 'content-type: application/json' --data '{"jsonrpc":"2.0","id":1,"method":"eth_getBlockByNumber","params":["finalized",false]}' "$KEY_GRANT_POLYGON_RPC_URL"` must return a block a few blocks behind `latest`, not null or an error.
+3. **RPC.** The file `~/.config/sphmrs/polygon-rpc.env` is in place (RPC trust, above). Check it with `node --import tsx scripts/key-grant-rpc-check.ts`, which must print `"outcome":"pass"`. Never pass the URL to `curl` or any command line.
 4. **Event locks.** Set `KEY_GRANT_POLYGON_EVENT_LOCKS` to the event locks to grant on, comma-separated.
 5. **Switch.** Set `KEY_GRANT_POLYGON_LIVE=1`.
 6. **Schedule.** Schedule the tick, from a release checkout with dependencies installed and the app's database env. For example, a systemd timer every minute running `node --import tsx scripts/key-grant-tick.ts`, or the cron line `* * * * * cd <release> && node --import tsx scripts/key-grant-tick.ts >> <log> 2>&1`. Only one runs at a time anyway.
@@ -147,7 +151,8 @@ A refund marks the order's key `cancelRequested`. Nothing on our hosts can cance
 
 ## Checks
 - `{"outcome":"failure","reason":...}`:
-  - `no_rpc`: `KEY_GRANT_POLYGON_RPC_URL` is missing or not https.
+  - `rpc_url_in_env`: `KEY_GRANT_POLYGON_RPC_URL` is set in the environment; remove it (the file is the only source).
+  - `rpc_file_missing`, `rpc_file_symlink`, `rpc_file_not_regular`, `rpc_file_not_owner_only`, `rpc_file_unparsable`, `rpc_url_not_allowed`: the RPC file is absent, unsafe or not the Alchemy shape; `scripts/key-grant-rpc-check.ts` gives the same code.
   - `no_budget`: `KEY_GRANT_POLYGON_MAX_COST_WEI` is missing or invalid.
   - `bad_event_locks`: an entry in `KEY_GRANT_POLYGON_EVENT_LOCKS` is not an address.
   - `signer_refused`: the signer file is missing, has the wrong mode, or holds the wrong key.

@@ -1,6 +1,7 @@
 import type { PostgresAdapter } from "@payloadcms/db-postgres";
 import { writeSync } from "node:fs";
 import type { Config, SanitizedConfig } from "payload";
+import type { RpcFileCode } from "../src/lib/commerce/keys/unlock/rpc-check";
 
 /*
  * One key-grant tick (src/lib/commerce/keys/grant-catch-up.ts): reconcile, replace, dispatch owed keys, then mark
@@ -9,7 +10,7 @@ import type { Config, SanitizedConfig } from "payload";
  * a schedule on the signer host (deployment/KEY-GRANTS.md). With KEY_GRANT_POLYGON_LIVE off it
  * prints {"outcome":"off"} and exits before loading Payload, a signer or an RPC. It prints one JSON line and never a
  * key, an address book or an error's details. A failure prints {"outcome":"failure","reason":<fixed code>} and exits 1:
- * no_rpc, no_budget, bad_event_locks, signer_refused, or unexpected (anything else, including the database).
+ * rpc_url_in_env, rpc_file_* / rpc_url_not_allowed (the owner-only RPC file), no_budget, bad_event_locks, signer_refused, or unexpected (anything else, including the database).
  * The Payload logger is silent here, so a seat-sweep failure shows as seatSweepFailures in that line and as one fixed
  * stderr line, {"event":"seat_sweep_failed","count":n}; the tick still exits 0 and the next tick retries.
  */
@@ -17,15 +18,19 @@ const RUN_LOCK = "sphmrs:key-grant-tick:v1";
 
 /** A known, fixed precondition failure: its code is printed, never a message. */
 class TickRefusal extends Error {
-  constructor(readonly reason: "no_rpc" | "no_budget" | "bad_event_locks" | "signer_refused") { super(reason); }
+  constructor(readonly reason: "rpc_url_in_env" | RpcFileCode | "no_budget" | "bad_event_locks" | "signer_refused") { super(reason); }
 }
 
 async function tick() {
   const polygon = await import("../src/lib/commerce/keys/unlock/polygon");
   if (!polygon.polygonKeyGrantsLive(process.env)) return { outcome: "off" };
   if (process.env.PAYLOAD_DROP_DATABASE || process.env.PAYLOAD_MIGRATING) throw new Error("Unexpected database mode");
-  const rpc = process.env.KEY_GRANT_POLYGON_RPC_URL;
-  if (!rpc || !rpc.startsWith("https://")) throw new TickRefusal("no_rpc");
+  // The RPC URL (it carries the provider key) comes only from the owner-only file, through the checked loader; never
+  // from the environment or a sourced shell file (Review-A, 25 Nov).
+  if (process.env.KEY_GRANT_POLYGON_RPC_URL !== undefined) throw new TickRefusal("rpc_url_in_env");
+  const rpcCheck = await import("../src/lib/commerce/keys/unlock/rpc-check");
+  let rpc: string;
+  try { rpc = await rpcCheck.loadPolygonRpcUrl(); } catch (error) { throw new TickRefusal(error instanceof rpcCheck.RpcFileError ? error.code : "rpc_file_missing"); }
   // Every precondition is checked before Payload or the site config is loaded.
   const { maxCostWei } = await import("../src/lib/commerce/keys/unlock/transactions");
   if (maxCostWei(polygon.POLYGON_CHAIN_ID, process.env) === null) throw new TickRefusal("no_budget");
@@ -33,11 +38,11 @@ async function tick() {
   // The signer next: a missing or wrong key stops the tick before any database work.
   let granter: Awaited<ReturnType<typeof polygon.loadPolygonKeyGranterAccount>>;
   try { granter = await polygon.loadPolygonKeyGranterAccount(); } catch { throw new TickRefusal("signer_refused"); }
-  const [{ http }, { default: canonical }, { getPayload }, { createUnlockKeyGrantAdapter }, { runKeyGrantTick }] = await Promise.all([
-    import("viem"), import("../src/payload.config"), import("payload"),
+  const [{ default: canonical }, { getPayload }, { createUnlockKeyGrantAdapter }, { runKeyGrantTick }] = await Promise.all([
+    import("../src/payload.config"), import("payload"),
     import("../src/lib/commerce/keys/unlock/adapter"), import("../src/lib/commerce/keys/grant-catch-up"),
   ]);
-  const grant = createUnlockKeyGrantAdapter({ chainID: polygon.POLYGON_CHAIN_ID, account: granter, transport: http(rpc, { retryCount: 0, timeout: 10_000 }) });
+  const grant = createUnlockKeyGrantAdapter({ chainID: polygon.POLYGON_CHAIN_ID, account: granter, transport: rpcCheck.polygonRpcTransport(rpc) });
   const config = await canonical;
   const logger = { options: { level: "silent" } } satisfies Config["logger"];
   const payload = await getPayload({

@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
-import { chmodSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { chmodSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 import { numberToHex, type Hex } from "viem";
-import { checkPolygonRpc, loadPolygonRpcUrl } from "@/lib/commerce/keys/unlock/rpc-check";
+import { checkPolygonRpc, loadPolygonRpcUrl, polygonRpcUrlAllowed, RpcFileError } from "@/lib/commerce/keys/unlock/rpc-check";
 import { hashOf, healthyChain, mockChain } from "./support/mock-chain";
 
 // Owner, 25 Nov: "Sure, we use alchemy". Read-only validation of that RPC before go-live; scripted chain only here.
@@ -46,18 +47,60 @@ test("each inconsistency fails with a fixed code, and an RPC error never surface
   assert.deepEqual([noSafe.outcome, noSafe.safe], ["pass", "unsupported"], "safe is reported, not required (the tick does not use it)");
 });
 
-test("the RPC file must be owner-only and hold an https URL", async () => {
+const marker = ["Synthetic", "Marker", "0123456789abcdef"].join(""); // a made-up key, never a real one
+const good = `https://polygon-mainnet.g.alchemy.com/v2/${marker}`;
+
+test("only Alchemy's Polygon mainnet https /v2/<key> shape is allowed", () => {
+  assert.equal(polygonRpcUrlAllowed(good), true);
+  for (const bad of [
+    `http://polygon-mainnet.g.alchemy.com/v2/${marker}`, `https://user:pw@polygon-mainnet.g.alchemy.com/v2/${marker}`,
+    `https://polygon-mainnet.g.alchemy.com:8443/v2/${marker}`, `https://eth-mainnet.g.alchemy.com/v2/${marker}`,
+    `https://polygon-mainnet.g.alchemy.com.evil.example/v2/${marker}`, `https://polygon-mainnet.g.alchemy.com/v2/${marker}?x=1`,
+    `https://polygon-mainnet.g.alchemy.com/v2/${marker}#x`, `https://polygon-mainnet.g.alchemy.com/v3/${marker}`,
+    "https://polygon-mainnet.g.alchemy.com/v2/short", "https://rpc.unlock-protocol.com/137", "not a url",
+  ]) assert.equal(polygonRpcUrlAllowed(bad), false, bad);
+});
+
+test("the RPC file loader returns fixed typed codes and never the file's content", async () => {
   const folder = mkdtempSync(join(tmpdir(), "rpc-file-"));
   try {
     const file = join(folder, "polygon-rpc.env");
-    writeFileSync(file, "KEY_GRANT_POLYGON_RPC_URL=https://polygon-mainnet.g.alchemy.com/v2/synthetic\n");
-    chmodSync(file, 0o600);
-    assert.equal(await loadPolygonRpcUrl(file), "https://polygon-mainnet.g.alchemy.com/v2/synthetic");
-    chmodSync(file, 0o644);
-    await assert.rejects(loadPolygonRpcUrl(file), /rpc_file_unreadable_or_not_owner_only/);
-    writeFileSync(file, "KEY_GRANT_POLYGON_RPC_URL=http://polygon-mainnet.g.alchemy.com/v2/synthetic\n");
-    chmodSync(file, 0o600);
-    await assert.rejects(loadPolygonRpcUrl(file), /rpc_url_missing_or_not_https/);
+    const write = (text: string, mode = 0o600) => { writeFileSync(file, text); chmodSync(file, mode); };
+    write(`KEY_GRANT_POLYGON_RPC_URL=${good}\n`);
+    assert.equal(await loadPolygonRpcUrl(file), good);
+    const codeOf = async (target = file) => { try { await loadPolygonRpcUrl(target); return "loaded"; } catch (error) { assert.ok(error instanceof RpcFileError); assert.ok(!String(error.message).includes(marker)); return error.code; } };
+    write(`KEY_GRANT_POLYGON_RPC_URL=${good}\n`, 0o644);
+    assert.equal(await codeOf(), "rpc_file_not_owner_only");
+    write(`KEY_GRANT_POLYGON_RPC_URL=https://user:${marker}@polygon-mainnet.g.alchemy.com/v2/${marker}\n`);
+    assert.equal(await codeOf(), "rpc_url_not_allowed");
+    write("NOTHING=1\n");
+    assert.equal(await codeOf(), "rpc_url_not_allowed");
+    assert.equal(await codeOf(join(folder, "absent.env")), "rpc_file_missing");
+    const link = join(folder, "link.env");
+    symlinkSync(file, link);
+    assert.equal(await codeOf(link), "rpc_file_symlink");
+  } finally {
+    rmSync(folder, { recursive: true, force: true });
+  }
+});
+
+test("the CLI prints only a fixed code for every refused file, never the key", () => {
+  const folder = mkdtempSync(join(tmpdir(), "rpc-cli-"));
+  try {
+    const file = join(folder, "polygon-rpc.env");
+    const cases: [string, number, string][] = [
+      [`KEY_GRANT_POLYGON_RPC_URL=${good}\n`, 0o644, "rpc_file_not_owner_only"],
+      [`KEY_GRANT_POLYGON_RPC_URL=https://evil.example/v2/${marker}\n`, 0o600, "rpc_url_not_allowed"],
+      [`KEY_GRANT_POLYGON_RPC_URL=https://user:${marker}@polygon-mainnet.g.alchemy.com/v2/${marker}\n`, 0o600, "rpc_url_not_allowed"],
+    ];
+    for (const [text, mode, code] of cases) {
+      writeFileSync(file, text);
+      chmodSync(file, mode);
+      const run = spawnSync("node", ["--import", "tsx", "scripts/key-grant-rpc-check.ts", "--file", file], { encoding: "utf8", timeout: 60_000 });
+      assert.equal(run.status, 1, code);
+      assert.deepEqual(JSON.parse(run.stdout.trim()), { outcome: "fail", failures: [code] });
+      assert.ok(!run.stdout.includes(marker) && !run.stderr.includes(marker), code);
+    }
   } finally {
     rmSync(folder, { recursive: true, force: true });
   }

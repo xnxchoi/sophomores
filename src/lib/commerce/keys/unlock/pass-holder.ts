@@ -15,6 +15,8 @@ import { untracedFetch } from "./untraced-fetch";
  *   state (Review-A, H).
  * - One deadline covers all three stages (chain id, block, reads) (Review-A, M).
  * - The RPC goes through untracedFetch, never Next's patched fetch, so the Alchemy key stays out of trace spans (M).
+ * - The deadline also aborts: one AbortSignal reaches every request and is checked before each stage, so no work goes
+ *   on once the check has answered false (Review-A, 26 Nov, LOW).
  */
 export type PassKey = { lock: string; tokenID: string; recipient: string };
 export type PassHolderCheck = (key: PassKey) => Promise<boolean>;
@@ -23,17 +25,25 @@ const lockAbi = PublicLockV14.abi as Abi;
 export const PASS_HOLDER_DEADLINE_MS = 5_000;
 
 export function createPassHolderCheck({ loadUrl = () => loadPolygonRpcUrl(walletPassRpcFile, process.getuid?.(), "WALLET_PASS_POLYGON_RPC_URL"),
-  transportFor = (url: string) => polygonRpcTransport(url, { fetchFn: untracedFetch, timeout: PASS_HOLDER_DEADLINE_MS }),
-  deadlineMs = PASS_HOLDER_DEADLINE_MS }: { loadUrl?: () => Promise<string>; transportFor?: (url: string) => Transport; deadlineMs?: number } = {}): PassHolderCheck {
+  transportFor = (url: string, signal: AbortSignal) => polygonRpcTransport(url, {
+    fetchFn: ((input, init) => untracedFetch(input, { ...init, signal: init?.signal ? AbortSignal.any([init.signal, signal]) : signal })) as typeof fetch,
+    timeout: PASS_HOLDER_DEADLINE_MS }),
+  deadlineMs = PASS_HOLDER_DEADLINE_MS }: { loadUrl?: () => Promise<string>; transportFor?: (url: string, signal: AbortSignal) => Transport; deadlineMs?: number } = {}): PassHolderCheck {
   return async ({ lock, tokenID, recipient }) => {
     if (!/^[1-9][0-9]{0,76}$/.test(tokenID)) return false;
     let timer: ReturnType<typeof setTimeout> | undefined;
-    const expired = new Promise<false>(resolve => { timer = setTimeout(() => resolve(false), deadlineMs); });
+    const stop = new AbortController();
+    const expired = new Promise<false>(resolve => { timer = setTimeout(() => { stop.abort(); resolve(false); }, deadlineMs); });
+    const live = () => { if (stop.signal.aborted) throw new Error("Pass holder check expired"); };
     const check = (async () => {
-      const client = createPublicClient({ chain: polygon, transport: transportFor(await loadUrl()) });
+      const url = await loadUrl();
+      live();
+      const client = createPublicClient({ chain: polygon, transport: transportFor(url, stop.signal) });
       if (await client.getChainId() !== POLYGON_CHAIN_ID) return false;
+      live();
       const block = await client.getBlock({ blockTag: "latest" });
       if (!block?.hash) return false;
+      live();
       const at = { address: lock as Address, abi: lockAbi, args: [BigInt(tokenID)], blockHash: block.hash, requireCanonical: true } as const;
       const [valid, owner] = await Promise.all([
         client.readContract({ ...at, functionName: "isValidKey" }),
@@ -42,6 +52,6 @@ export function createPassHolderCheck({ loadUrl = () => loadPolygonRpcUrl(wallet
       return valid === true && typeof owner === "string" && isAddressEqual(owner as Address, recipient as Address);
     })().catch(() => false);
     try { return await Promise.race([check, expired]); }
-    finally { clearTimeout(timer); }
+    finally { clearTimeout(timer); stop.abort(); }
   };
 }

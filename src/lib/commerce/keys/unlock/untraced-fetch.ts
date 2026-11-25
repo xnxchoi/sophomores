@@ -8,6 +8,21 @@ import { request } from "node:https";
  * error), a bounded response, and the caller's AbortSignal honoured. Errors carry no URL.
  */
 const MAX_RESPONSE_BYTES = 1024 * 1024;
+const NULL_BODY_STATUSES: ReadonlySet<number> = new Set([101, 103, 204, 205, 304]);
+
+/**
+ * The Response for what came back, built so it can't throw: a null-body status (204, 304...) gets no body, and a status
+ * the Response constructor refuses (outside 200-599) becomes null, which the caller rejects (Review-A, 26 Nov: a
+ * constructor throw inside the 'end' listener escaped the promise as an uncaught exception).
+ */
+export function responseFrom(status: number | undefined, chunks: readonly Buffer[], headers: Headers): Response | null {
+  const code = status ?? 502;
+  try {
+    return new Response(NULL_BODY_STATUSES.has(code) ? null : Buffer.concat(chunks), { status: code, headers });
+  } catch {
+    return null;
+  }
+}
 
 export const untracedFetch = (async (input: string | URL | Request, init: RequestInit = {}): Promise<Response> => {
   const url = new URL(typeof input === "string" || input instanceof URL ? input : input.url);
@@ -33,7 +48,9 @@ export const untracedFetch = (async (input: string | URL | Request, init: Reques
           if (typeof value === "string") responseHeaders.set(name, value);
           else if (Array.isArray(value)) responseHeaders.set(name, value.join(", "));
         }
-        resolve(new Response(Buffer.concat(chunks), { status: res.statusCode ?? 502, headers: responseHeaders }));
+        const response = responseFrom(res.statusCode, chunks, responseHeaders);
+        if (response) resolve(response);
+        else reject(new Error("RPC response status unsupported"));
       });
       res.on("error", () => reject(new Error("RPC response failed")));
     });

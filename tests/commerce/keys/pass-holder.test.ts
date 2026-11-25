@@ -3,7 +3,8 @@ import test from "node:test";
 import PublicLockV14 from "@unlock-protocol/contracts/dist/abis/PublicLock/PublicLockV14.json";
 import { custom, decodeFunctionData, encodeFunctionResult, type Abi } from "viem";
 import { createPassHolderCheck } from "@/lib/commerce/keys/unlock/pass-holder";
-import { untracedFetch } from "@/lib/commerce/keys/unlock/untraced-fetch";
+import { responseFrom, untracedFetch } from "@/lib/commerce/keys/unlock/untraced-fetch";
+import { polygonRpcTransport } from "@/lib/commerce/keys/unlock/rpc-check";
 
 // Review-A HOLD (msg_8076f4870ae9): a hosted Wallet pass is fetched only after a live Polygon read shows the key valid
 // and owned by the member's recorded Safe; any doubt answers false (the endpoint then fetches nothing).
@@ -86,4 +87,31 @@ test("no RPC file, or a malformed token, reads nothing and fails closed", async 
   const { check, methods } = chain();
   for (const tokenID of ["0", "-1", "07", "x", "1".repeat(78)]) assert.equal(await check({ ...key, tokenID }), false, tokenID);
   assert.equal(methods.length, 0);
+});
+
+test("a 204 or 304 from the RPC never throws outside the promise; the check answers false", async () => {
+  for (const status of [204, 205, 304]) {
+    const response = responseFrom(status, [Buffer.from("ignored")], new Headers());
+    assert.equal(response?.status, status);
+    assert.equal(response?.body, null);
+  }
+  assert.equal(responseFrom(99, [], new Headers()), null, "an impossible status is refused, not thrown");
+  for (const status of [204, 304]) {
+    let requests = 0;
+    const check = createPassHolderCheck({ loadUrl: async () => "https://polygon-mainnet.g.alchemy.com/v2/test-key-0123456789", deadlineMs: 500,
+      transportFor: (url) => polygonRpcTransport(url, { fetchFn: (async () => { requests++; return responseFrom(status, [], new Headers())!; }) as typeof fetch }) });
+    assert.equal(await check({ lock: "0x" + "1".repeat(40), tokenID: "7", recipient: "0x" + "2".repeat(40) }), false);
+    assert.equal(requests, 1, "fails at the first stage: nothing more is asked");
+  }
+});
+
+test("the deadline aborts the shared signal, and no stage starts after it", async () => {
+  let seen: AbortSignal | undefined;
+  let calls = 0;
+  const check = createPassHolderCheck({ loadUrl: async () => "https://polygon-mainnet.g.alchemy.com/v2/test-key-0123456789", deadlineMs: 50,
+    transportFor: (_url, signal) => { seen = signal; return custom({ request: async () => { calls++; await new Promise((resolve) => setTimeout(resolve, 150)); return "0x89"; } }); } });
+  assert.equal(await check({ lock: "0x" + "1".repeat(40), tokenID: "7", recipient: "0x" + "2".repeat(40) }), false);
+  assert.equal(seen?.aborted, true);
+  await new Promise((resolve) => setTimeout(resolve, 200));
+  assert.equal(calls, 1, "the chain-id answer arrived after the deadline: no block read started");
 });

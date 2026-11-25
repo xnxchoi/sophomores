@@ -43,6 +43,12 @@ const trayTransition = {
   duration: motionTokens.duration.normal,
   ease: motionTokens.easing.smooth
 };
+/**
+ * The phone tray's offset and height limit follow the visual viewport (the keyboard) at once. Easing them replayed a
+ * slide every time a field gained or lost focus (owner, 26 Nov: "reanimating every time focus changed"). Only real
+ * changes, width and radius, ease. The centred modal keeps easing `bottom`, which there follows its content's height.
+ */
+const trayViewportTransition = { ...trayTransition, bottom: { duration: 0 }, maxHeight: { duration: 0 } };
 
 function TrayDismissButton({
   touch,
@@ -171,7 +177,7 @@ export function VerificationTray({
                   : undefined
               }
               initial={false}
-              transition={trayTransition}
+              transition={modal ? trayTransition : trayViewportTransition}
             >
               <ContentHeight open={open} onMeasure={setContentHeight}>
                 <Bar

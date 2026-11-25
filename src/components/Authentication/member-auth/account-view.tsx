@@ -26,7 +26,8 @@ import {
 } from "./account-controls";
 
 export type MemberAccountViewProps = {
-  presentation?: "ticket-checkout";
+  /** "page": the sign-in page lays the flow out itself (no panel padding, no sheet indents; its h1 names the step). */
+  presentation?: "ticket-checkout" | "page";
   noAccountMessage?: string;
   onVerifiedFocus?: () => void;
   emailEntry?: { email: string; state: "pending" | "error" | "existing" | "new"; retryAt?: number };
@@ -208,7 +209,7 @@ export function MemberAccountView(props: MemberAccountViewProps) {
     </Panel>;
   }
   return (
-    <Panel ref={capturePanel} data-authentication-presentation={presentation ?? undefined} className={cn(props.presentation === "ticket-checkout" ? "!px-0 !pt-0 !pb-0" : "!px-6 !pb-6 [font-family:system-ui] data-[authentication-presentation=modal]:[@media(max-height:600px)]:pt-4! data-[authentication-presentation=modal]:[@media(max-height:600px)]:pb-4!", props.presentation !== "ticket-checkout" && (mobileTray ? "!pt-0" : "!pt-6"))} data-member-account-flow="">
+    <Panel ref={capturePanel} data-authentication-presentation={presentation ?? undefined} className={cn(props.presentation === "ticket-checkout" ? "!px-0 !pt-0 !pb-0" : props.presentation === "page" ? "!px-0 !pt-0 !pb-0 [font-family:system-ui]" : "!px-6 !pb-6 [font-family:system-ui] data-[authentication-presentation=modal]:[@media(max-height:600px)]:pt-4! data-[authentication-presentation=modal]:[@media(max-height:600px)]:pb-4!", !props.presentation && (mobileTray ? "!pt-0" : "!pt-6"))} data-member-account-flow="">
       <motion.div
         key={phase}
         data-member-account-phase={phase}
@@ -221,14 +222,14 @@ export function MemberAccountView(props: MemberAccountViewProps) {
           <Heading
             id={props.headingId ?? "member-account-heading"}
             tabIndex={-1}
-            className={cn("!text-[24px] !leading-[30px] !font-medium", mobileTray || props.presentation === "ticket-checkout" ? "!mt-0" : "pl-14", pendingSetup && !embeddedPhone && "mt-0! mb-2!", status?.member && "!mt-0 !mb-4 flex items-center gap-2.5", embeddedPhone && "sr-only")}
+            className={cn("!text-[24px] !leading-[30px] !font-medium", mobileTray || props.presentation ? "!mt-0" : "pl-14", props.presentation === "page" && phase === "identity" && "sr-only", pendingSetup && !embeddedPhone && "mt-0! mb-2!", status?.member && "!mt-0 !mb-4 flex items-center gap-2.5", embeddedPhone && "sr-only")}
           >
             {status?.member && <Check aria-hidden="true" data-account-confirmed="" className="size-5 shrink-0 text-foreground" strokeWidth={1.5} />}
             {heading}
           </Heading>
         </VerificationTrayTitle>
       )}
-        <div className={cn(!sharedEmail && (status?.member ? "space-y-4" : "space-y-5"), !mobileTray && props.presentation !== "ticket-checkout" && "[&>p:first-child]:pl-14")}>
+        <div className={cn(!sharedEmail && (status?.member ? "space-y-4" : "space-y-5"), !mobileTray && !props.presentation && "[&>p:first-child]:pl-14")}>
           {embeddedPhone ? (
             <>
               <div hidden={props.reauthenticating} inert={props.reauthenticating}>

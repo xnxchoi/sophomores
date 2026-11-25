@@ -227,7 +227,7 @@ test('a native product goes to its own display-only checkout through the real E1
     await ui.screen.findByRole('heading', { name: 'Édition personnelle' })
     // The price shows in the facts and again in the Release pending row.
     assert.ok(ui.screen.getAllByText('₩82,000').length >= 1)
-    assert.ok(ui.screen.getByText('Includes the book, one membership token and one free Member Ticket.'))
+    assert.ok(ui.screen.getByText('Includes the book, one membership token and one free Member Ticket. Personalised with your membership. No refunds.'))
     assert.ok(ui.screen.getByText('Release pending'))
     // One way back to the product: the page's top link, not a second copy inside the summary.
     assert.deepEqual(ui.screen.getAllByRole('link', { name: 'Product details' }).map((link) => link.getAttribute('href')), ['/shop/products/personal'])

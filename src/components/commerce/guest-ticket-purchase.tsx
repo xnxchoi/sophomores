@@ -69,6 +69,7 @@ function PurchaseForm({ customerID, productID, title, priceKRW, available, limit
     <h2 className="text-xl">{title}</h2>
     <p>{t("memberLimit", { limit })}</p>
     <p>{t("priceEach", { price: price.format(priceKRW) })}</p>
+    <p>{t("refundableUntil")}</p>
     {!compatible ? <p>{t("differentCart")} <Link href="/shop/cart" className="underline">{t("viewCart")}</Link></p> : (
       <div className="flex flex-wrap items-end gap-4">
         <label className="grid gap-2">

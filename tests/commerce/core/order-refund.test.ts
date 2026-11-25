@@ -98,3 +98,12 @@ test("refund policy: guest tickets until the cutoff, the book-only edition, neve
     assert.deepEqual(refundPolicy(other), { refundable: false, reason: "not-refundable-product" }, JSON.stringify(other));
   }
 });
+
+test("the pre-sale notice and staff refunds read the same edition rule", async () => {
+  const { editionRefundable, refundPolicy } = await import("../../../src/lib/commerce/refund-policy");
+  for (const bundle of [false, true]) {
+    const included = { membershipSignet: bundle, freeLaunchTicket: bundle };
+    const recorded = refundPolicy({ version: 2, kind: "native-edition-v1", eventID: bundle ? "event" : null, editionEntitlements: included });
+    assert.equal(editionRefundable(included), recorded.refundable, JSON.stringify(included));
+  }
+});

@@ -12,6 +12,11 @@ export type RefundPolicy =
   | { refundable: true; cutoff: "event" | "none" }
   | { refundable: false; reason: "personalised-edition" | "not-refundable-product" };
 
+/** The same rule for an edition's offer, before the sale: refundable only without membership (and its launch ticket). */
+export function editionRefundable(included: Readonly<{ membershipSignet: boolean; freeLaunchTicket: boolean }>): boolean {
+  return !included.membershipSignet && !included.freeLaunchTicket;
+}
+
 export function refundPolicy(snapshot: unknown): RefundPolicy {
   const recorded = (snapshot ?? {}) as { version?: unknown; kind?: unknown; eventID?: unknown; editionEntitlements?: { membershipSignet?: unknown; freeLaunchTicket?: unknown } };
   if (recorded.version === 3 && recorded.kind === "guest-ticket-v1" && typeof recorded.eventID === "string") return { refundable: true, cutoff: "event" };

@@ -841,6 +841,8 @@
       "allProducts": "All products",
       "includesBundle": "Includes the book, one membership token and one free Member Ticket.",
       "includesBookOnly": "The book only. No membership token or ticket.",
+      "refundable": "Refundable.",
+      "personalisedNoRefunds": "Personalised with your membership. No refunds.",
       "onePerAccount": "One per account",
       "description": "Description",
       "shelf": "Editions",
@@ -1356,6 +1358,7 @@
       "differentCart": "Your cart contains a different item. Resolve that cart before buying guest tickets.",
       "viewCart": "View your cart",
       "priceEach": "{price} per guest",
+      "refundableUntil": "Refundable until 3 days before Part I.",
       "total": "Total",
       "checkoutAddress": "Checkout still asks for an address. Your guest tickets will not be shipped."
     },

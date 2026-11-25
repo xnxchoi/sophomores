@@ -841,6 +841,8 @@
       "allProducts": "",
       "includesBundle": "",
       "includesBookOnly": "",
+      "refundable": "",
+      "personalisedNoRefunds": "",
       "onePerAccount": "",
       "description": "",
       "shelf": "",
@@ -1356,6 +1358,7 @@
       "differentCart": "",
       "viewCart": "",
       "priceEach": "",
+      "refundableUntil": "",
       "total": "",
       "checkoutAddress": ""
     },

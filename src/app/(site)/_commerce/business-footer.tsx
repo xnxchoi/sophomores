@@ -90,11 +90,14 @@ export function BusinessFooterFacts({ facts }: { facts: FooterSellerFacts | null
   );
 }
 
-/** A tiny label over its value (DESIGN.md Label: 11 px, uppercase, 0.06em), at 60 % ink so it holds about 4:1 on the ground. */
+/**
+ * A tiny label over its value (DESIGN.md Label: 11 px, uppercase, 0.06em), at 80 % ink: 60 % measured 5.03:1 on flat
+ * plum but about 3.9:1 over the screened grain (Review-B), and the grain stays at the owner's values.
+ */
 function FooterFact({ label, wide, children }: { label: string; wide?: boolean; children: ReactNode }) {
   return (
     <div className={cn("flex min-w-0 flex-col gap-1", wide && "sm:col-span-2")}>
-      <dt className="text-[11px] leading-4 tracking-[0.06em] text-foreground/60 uppercase">{label}</dt>
+      <dt className="text-[11px] leading-4 tracking-[0.06em] text-foreground/80 uppercase">{label}</dt>
       <dd className="min-w-0 text-[13px] leading-5 break-words text-foreground">{children}</dd>
     </div>
   );

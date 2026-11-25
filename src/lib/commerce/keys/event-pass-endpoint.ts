@@ -5,7 +5,8 @@ import { isReviewCopyRequest } from "@/lib/auth/review-editor-policy";
 import { getPayloadMemberRuntime } from "@/lib/member-auth/payload-runtime";
 import { assertCommerceBrowserAuthority } from "../access";
 import { readOwnedEventPassSource } from "./event-pass";
-import { googleWalletSaveURL, loadGoogleWalletIssuer, type GoogleWalletIssuer, type PassEvent } from "./google-wallet-pass";
+import { appleWalletPass, loadAppleSigner, type AppleSigner } from "./apple-wallet-pass";
+import { googleWalletSaveURL, loadGoogleWalletIssuer, passSerial, type GoogleWalletIssuer, type PassEvent } from "./google-wallet-pass";
 import { hostedBarcode, LOCKSMITH_SIGNERS } from "./unlock/hosted-barcode";
 import { createPassHolderCheck, type PassHolderCheck, type PassKey } from "./unlock/pass-holder";
 
@@ -73,17 +74,23 @@ async function servePass(response: Response, platform: "ios" | "android", json: 
 const sendSave = (href: string, json: boolean) => json ? Response.json({ passObjectUrl: href }, { headers: privateHeaders })
   : new Response(null, { status: 302, headers: { ...privateHeaders, Location: href } });
 
-type OwnPass = { issuer: GoogleWalletIssuer; key: PassKey; event: PassEvent; origin: string; signers: readonly Address[] };
+type OwnPass = { signer: { google: GoogleWalletIssuer } | { apple: AppleSigner }; key: PassKey; event: PassEvent; origin: string;
+  signers: readonly Address[] };
 
-/** Our own Google pass: Unlock's QR from its hosted Android answer, proved for this key and Safe, in our signed JWT. */
-async function serveOwnGooglePass(response: Response, own: OwnPass, json: boolean, unavailable: Fail) {
+/** Our own pass: Unlock's QR from its hosted Android answer, proved for this key and Safe, in a pass we sign. */
+async function serveOwnPass(response: Response, own: OwnPass, json: boolean, unavailable: Fail) {
   if (!response.ok || response.headers.get("content-type")?.split(";")[0].trim() !== "application/json") {
     await response.body?.cancel();
     return unavailable(502);
   }
   const barcode = await hostedBarcode((await readBounded(response, 20 * 1024)).toString("utf8"), own.key, own.signers);
   if (!barcode) return unavailable(502);
-  return sendSave(await googleWalletSaveURL(own.issuer, { key: own.key, event: own.event, barcode, origin: own.origin }), json);
+  if ("google" in own.signer) {
+    return sendSave(await googleWalletSaveURL(own.signer.google, { key: own.key, event: own.event, barcode, origin: own.origin }), json);
+  }
+  const bytes = await appleWalletPass(own.signer.apple, { serial: passSerial(own.key), event: own.event, barcode });
+  return new Response(new Uint8Array(bytes), { headers: { ...privateHeaders,
+    "Content-Type": appleType, "Content-Disposition": 'attachment; filename="event-ticket.pkpass"' } });
 }
 
 type Dependencies = {
@@ -93,12 +100,14 @@ type Dependencies = {
   keyHeld?: PassHolderCheck;
   /** Our own Google issuer (google-wallet-pass.ts); loaded before the chain or Unlock is asked, so a gap fetches nothing. */
   googleIssuer?: () => Promise<GoogleWalletIssuer>;
+  /** Our own Apple signer and pass art (apple-wallet-pass.ts); loaded first for the same reason. */
+  appleSigner?: () => Promise<AppleSigner>;
   /** Who may have signed Unlock's QR (hosted-barcode.ts); tests pass their own. */
   qrSigners?: readonly Address[];
 };
 
 export function createEventPassEndpoint({ getMemberRuntime = getPayloadMemberRuntime, fetcher = (...args) => fetch(...args),
-  keyHeld = createPassHolderCheck(), googleIssuer = () => loadGoogleWalletIssuer(), qrSigners = LOCKSMITH_SIGNERS }: Dependencies = {}): Endpoint {
+  keyHeld = createPassHolderCheck(), googleIssuer = () => loadGoogleWalletIssuer(), appleSigner = () => loadAppleSigner(), qrSigners = LOCKSMITH_SIGNERS }: Dependencies = {}): Endpoint {
   const rates = new Map<string, { count: number; until: number }>();
   return {
     path: "/commerce/orders/:orderID/admissions/:admissionID/wallet-pass/:platform",
@@ -134,16 +143,18 @@ export function createEventPassEndpoint({ getMemberRuntime = getPayloadMemberRun
       // Own pass: our signing material loads first, so a missing or broken key file refuses with zero fetches.
       let own: OwnPass | null = null;
       if (source.mode === "own") {
-        if (platform !== "android" || !source.event) return fail(404);
-        try { own = { issuer: await googleIssuer(), key: source.key, event: source.event, origin: siteOrigin, signers: qrSigners }; }
-        catch { return fail(503); }
+        if (!source.event) return fail(404);
+        try {
+          own = { signer: platform === "ios" ? { apple: await appleSigner() } : { google: await googleIssuer() },
+            key: source.key, event: source.event, origin: siteOrigin, signers: qrSigners };
+        } catch { return fail(503); }
       }
       // Live on Polygon, right before Unlock is asked: a key that moved, expired or was cancelled gets no pass.
       try { if (!(await keyHeld(source.key))) return fail(404); } catch { return fail(404); }
       try {
         const upstream = await fetcher(source.url, { cache: "no-store", credentials: "omit", redirect: "error",
           signal: AbortSignal.timeout(5000) });
-        return own ? await serveOwnGooglePass(upstream, own, json, fail) : await servePass(upstream, platform, json, fail);
+        return own ? await serveOwnPass(upstream, own, json, fail) : await servePass(upstream, platform, json, fail);
       } catch {
         return fail(502);
       }

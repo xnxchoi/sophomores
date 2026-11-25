@@ -21,7 +21,7 @@ const googleWalletEnabled = () => process.env.UNLOCK_GOOGLE_WALLET_PASSES_ENABLE
 /**
  * Our own passes (owner GO, 26 Nov) take over from Unlock-hosted ones; both are off by default. Own passes still read
  * Unlock's signed QR from the hosted Android route (unlock/hosted-barcode.ts), so UNLOCK_PASS_ORIGIN stays required.
- * The own Apple pass is the next slice: until it lands, own mode offers Google only.
+ * The own Apple pass has its own switch (OWN_APPLE_WALLET_PASSES_ENABLED, off until the owner approves the pass art).
  */
 const passMode = (): PassMode | null =>
   process.env.OWN_WALLET_PASSES_ENABLED === "1" ? "own" : process.env.UNLOCK_HOSTED_PASSES_ENABLED === "1" ? "hosted" : null;
@@ -104,7 +104,9 @@ async function resolveEventPassSources(req: PayloadRequest, admission: CommerceD
     kind: "ready",
     mode,
     event: passEvent,
-    applePassURL: mode === "hosted" ? new URL(route + "/ios", origin).href : null,
+    // Own mode: both platforms read Unlock's QR from the hosted Android route; nothing else is taken from Unlock.
+    applePassURL: mode === "hosted" ? new URL(route + "/ios", origin).href
+      : process.env.OWN_APPLE_WALLET_PASSES_ENABLED === "1" ? new URL(route + "/android", origin).href : null,
     // Hosted Google Wallet: shared Guest tickets, and member tickets (owner ruling, 25 Nov: "and add the wallet pass now",
     // option (a)), only behind its own switch. Own mode reads this route for Unlock's QR only, for every tier: our object
     // IDs include the lock, so the hosted route's cross-lock collision doesn't apply.

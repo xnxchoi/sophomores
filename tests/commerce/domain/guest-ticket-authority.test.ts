@@ -6,7 +6,9 @@ import { join } from "node:path";
 import test from "node:test";
 import { exportPKCS8, generateKeyPair, jwtVerify, SignJWT } from "jose";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
-import { googleEventClassID, googleTicketObjectID, loadGoogleWalletIssuer, type GoogleWalletIssuer, type GoogleWalletIssuerError } from "@/lib/commerce/keys/google-wallet-pass";
+import { loadAppleSigner, type AppleSigner } from "@/lib/commerce/keys/apple-wallet-pass";
+import { appleSigningFixture, openPass, opensslAvailable } from "../keys/fixtures/apple-signing";
+import { googleEventClassID, googleTicketObjectID, passSerial, loadGoogleWalletIssuer, type GoogleWalletIssuer, type GoogleWalletIssuerError } from "@/lib/commerce/keys/google-wallet-pass";
 import { checkInGuest, claimGuestAdmission, grantOrderAdmissions, issueGuestClaim } from "@/lib/commerce/guests";
 import { loadWalletConfig, predictMemberSafe } from "@/lib/member-auth/wallet/safe";
 import { readEventPassLinks } from "@/lib/commerce/keys/event-pass";
@@ -423,7 +425,7 @@ test("with passes on but the Google switch off, only Apple is offered and the Go
 
 // Our own Google Wallet pass (owner GO, 26 Nov, via Cordy): Unlock's signed QR, harvested from the hosted Android route
 // and proved for this key and Safe, inside a save JWT we sign with jose. Off unless OWN_WALLET_PASSES_ENABLED=1.
-async function ownPass(t: { after: (fn: () => void) => void }, { issuerFails = false } = {}) {
+async function ownPass(t: { after: (fn: () => void) => void }, { issuerFails = false, apple = null as null | (() => Promise<AppleSigner>) } = {}) {
   const google = await generateKeyPair("RS256", { extractable: true });
   const unlockKey = await generateKeyPair("RS256");
   const locksmith = privateKeyToAccount(generatePrivateKey());
@@ -431,8 +433,9 @@ async function ownPass(t: { after: (fn: () => void) => void }, { issuerFails = f
   const m = await memberTicket(t, {
     googleIssuer: async () => { if (issuerFails) throw new Error("issuer_file_unreadable"); return issuer; },
     qrSigners: [locksmith.address],
+    ...(apple ? { appleSigner: apple } : {}),
   });
-  for (const [key, value] of Object.entries({ OWN_WALLET_PASSES_ENABLED: "1" })) {
+  for (const [key, value] of Object.entries({ OWN_WALLET_PASSES_ENABLED: "1", OWN_APPLE_WALLET_PASSES_ENABLED: apple ? "1" : "0" })) {
     const previous = process.env[key];
     t.after(() => { if (previous === undefined) delete process.env[key]; else process.env[key] = previous; });
     process.env[key] = value;
@@ -582,4 +585,42 @@ test("our Google issuer file: owner-only, well formed, and every failure a fixed
   assert.equal(await code(), "issuer_file_unreadable");
   const thrown = await loadGoogleWalletIssuer(file).catch((error: Error) => error);
   assert.equal(String(thrown).includes(dir), false, "no path or content in the error");
+});
+
+test("own Apple pass: behind its own switch, the same proved QR in a pass we sign", { skip: !opensslAvailable() && "no openssl" }, async t => {
+  const f = await appleSigningFixture();
+  t.after(f.cleanup);
+  const signer = await loadAppleSigner({ files: f.files, artDirectory: f.art, wwdr: f.wwdr });
+  const m = await ownPass(t, { apple: async () => signer });
+  assert.deepEqual(await m.links(), { walletPass: "ready", applePassURL: m.base + "/ios", androidPassURL: m.base + "/android" });
+  const value = await m.qr();
+  const answer = await m.hosted(value);
+  m.setUpstream(() => answer.clone());
+  const opened = await m.open("ios");
+  assert.equal(opened.status, 200);
+  assert.equal(opened.headers.get("content-type"), "application/vnd.apple.pkpass");
+  assert.equal(opened.headers.get("cache-control"), "private, no-store");
+  assert.deepEqual(m.calls, [`${m.passOrigin}/v2/pass/137/${guestLock}/7/android`], "Apple reads Unlock's QR from the same route");
+  assert.equal(m.held.length, 1, "the holder check ran first");
+  const pass = await openPass(Buffer.from(await opened.arrayBuffer()), f.caFile);
+  assert.equal(pass.verified, true);
+  assert.deepEqual(pass.pass.barcodes, [{ message: value, format: "PKBarcodeFormatQR", messageEncoding: "iso-8859-1" }]);
+  assert.equal(pass.pass.serialNumber, passSerial({ lock: guestLock, tokenID: "7", recipient: m.safe.safeAddress }));
+  const outside = JSON.stringify({ ...pass.pass, barcodes: null });
+  for (const personal of [m.order.id, "123e4567-e89b-42d3-a456-426614174011", m.safe.safeAddress.toLowerCase(), "Fixture"]) {
+    assert.equal(outside.toLowerCase().includes(personal.toLowerCase()), false, `no ${personal} outside the QR`);
+  }
+  const bad = await m.hosted(await m.qr({ tokenId: "8" }));
+  m.setUpstream(() => bad.clone());
+  assert.equal((await m.open("ios")).status, 303, "a QR for another token builds no Apple pass either");
+});
+
+test("own Apple pass: without our signer or pass art, nothing is fetched, not even the chain", async t => {
+  const m = await ownPass(t, { apple: async () => { throw new Error("pass_art_missing"); } });
+  const opened = await m.open("ios");
+  assert.equal(opened.status, 303);
+  assert.equal(opened.headers.get("location"), m.back);
+  assert.equal((await m.open("ios", undefined, "application/json")).status, 503);
+  assert.equal(m.calls.length, 0);
+  assert.equal(m.held.length, 0);
 });

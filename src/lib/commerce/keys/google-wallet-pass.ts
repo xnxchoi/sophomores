@@ -45,8 +45,9 @@ export async function loadGoogleWalletIssuer(file = googleWalletIssuerFile, uid 
 const digest = (value: string) => createHash("sha256").update(value).digest("hex").slice(0, 32);
 const text = (value: string) => ({ defaultValue: { language: "en-US", value } });
 
-/** Stable per key on its lock: a reissued key (new token) is a new object, and two locks never share one. */
-export const googleTicketObjectID = (issuerID: string, key: PassKey) => `${issuerID}.ticket-${digest(`137:${key.lock.toLowerCase()}:${key.tokenID}`)}`;
+/** Stable per key on its lock: a reissued key (new token) is a new pass, and two locks never share one. Apple's serial too. */
+export const passSerial = (key: PassKey) => digest(`137:${key.lock.toLowerCase()}:${key.tokenID}`);
+export const googleTicketObjectID = (issuerID: string, key: PassKey) => `${issuerID}.ticket-${passSerial(key)}`;
 export const googleEventClassID = (issuerID: string, eventID: string) => `${issuerID}.event-${digest(`event:${eventID}`)}`;
 
 export async function googleWalletSaveURL(issuer: GoogleWalletIssuer,

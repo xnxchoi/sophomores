@@ -981,6 +981,11 @@
       "guestNameForAdmission": "Guest name for admission {unit}",
       "privateLinkExpiry": "Expires {date} KST. Anyone with this link can attempt to claim it."
     },
+    "components_commerce_wallet_pass": {
+      "description": "Sophomores event ticket",
+      "event": "Event",
+      "starts": "Starts"
+    },
     "components_commerce_payment": {
       "ticketEmailConsent": "Share my checkout email with Unlock so they can send my tickets when email delivery is available.",
       "guestQuoteChanged": "Your guest ticket selection or price changed. Reload and review the total before paying.",

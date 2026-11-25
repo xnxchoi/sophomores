@@ -87,7 +87,7 @@ export default async function RootLayout({
       // A loader's .className would set font-family on <html> directly and override the roles.
       className={cn(
         "dark",
-        // The shop shelf's scroll catch holds the page with this attribute while it glides (shop/use-shelf-catch.ts).
+        // The shop shelf's scroll catch holds the page with this attribute while it glides (shop/use-shelf-catch.tsx).
         "data-shelf-scroll-lock:overflow-hidden data-shelf-scroll-lock:[scrollbar-gutter:stable]",
         message.variable,
         serif.variable,

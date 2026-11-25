@@ -35,11 +35,13 @@ our catalogue requests none of them (checked in the harness request log).
    it is left at the right end. Ours is the same idea as a rotation putting `J` at `floor((n-1)/2)`: the same order as
    theirs for `n >= 2J+1`, and `J` still mid-row with fewer books (owner, 25 Nov: their carousel starts with the last
    featured book in the middle, ours started at the end).
-10. `12s2cqzsl56ip.js` (module 63913, their sound): an inert stub with the same eight exports (`t B J D X G r z`, each a
-    no-op; every original export already returned nothing before its first unlock, so callers are unaffected). No
-    capture listeners, no Howl, no audio path, no Web Audio node. Howler (43469), imported only by 63913, is an empty
-    module, which also drops its two 48-byte WAV probes. After this no vendored file contains `/audio/` or `.m4a`
-    (tests/commerce/ui/vendor-silence.test.ts). Our own sounds (the owner's Kenney files) come in slice S.
+10. `12s2cqzsl56ip.js` (module 63913, their sound): the same eight exports (`t B J D X G r z`), each forwarding its
+    call to `globalThis.__SPSOUND[letter]` and doing nothing when that is unset (every original export already returned
+    nothing before its first unlock, so callers are unaffected). The shop sets `__SPSOUND` to our sounds, the owner's
+    Kenney files (`src/components/commerce/shop/use-book-sounds.tsx`, slice S). The vendored code has no capture
+    listener, Howl, audio path or Web Audio node of its own. Howler (43469), imported only by 63913, is an empty module,
+    which also drops its two 48-byte WAV probes. After this no vendored file contains `/audio/` or `.m4a`
+    (tests/commerce/ui/vendor-silence.test.ts).
 
 ## Inventory: the 21 files `stripe-scene.tsx` loads (`chunks.json` + the runtime)
 
@@ -72,7 +74,7 @@ why the scene's graph pulls the file in. All are their shipped code; the changes
 
 ## What else is inside them (named, not shipped as assets)
 
-- **Audio:** none of theirs after change 10. three.js's own `Audio` classes stay in `1hkd3mo7rce98.js` (library code;
+- **Audio:** none of theirs after change 10; the scene's sound calls reach our module through `__SPSOUND`. three.js's own `Audio` classes stay in `1hkd3mo7rce98.js` (library code;
   nothing on our page constructs them).
 - **Font:** `1imu45qukg0dp.js` exports the path `/fonts/SuisseIntlMono-Regular.otf` (with a system mono stack) as a
   constant. We ship no font file; no request for it has been observed yet; the browser proof of the r3 build checks the request log for it.

@@ -52,6 +52,13 @@ test('feature hooks stay beside actual consumers and contain real React hook cod
     'src/components/Authentication/phone-verification/use-compose-fallback.tsx',
     'src/components/arc/copy-button/use-copy-feedback.tsx',
     'src/components/teaser/use-device-flags.tsx',
+    // The shop's scene hooks (shop-home.tsx is their one consumer): state, effects and frame loops for opening a book,
+    // its reading scroll, look-inside, the shelf catch and the book sounds.
+    'src/components/commerce/shop/use-book-detail.tsx',
+    'src/components/commerce/shop/use-book-sounds.tsx',
+    'src/components/commerce/shop/use-look-inside.tsx',
+    'src/components/commerce/shop/use-reading-scroll.tsx',
+    'src/components/commerce/shop/use-shelf-catch.tsx',
   ]) {
     const source = readFileSync(resolve(repositoryRoot, file), 'utf8');
     assert.match(source, /from ["']react["']/);

@@ -29,7 +29,7 @@ export function PageFrame({
         layout === "editorial" && "lg:mb-0", titleHidden && "sr-only")}>
         {/* stripe.press spec §1: page titles at 40px over a solid title rule (§2). */}
         <h1 className={cn("text-[2.5rem] font-normal leading-[1.05] tracking-[-0.02em]", displayTitle ? "font-display" : "font-sans")}>{title}</h1>
-        {introduction && <p className="mt-4 max-w-xl text-base leading-6 text-muted-foreground">{introduction}</p>}
+        {introduction && <p className="mt-4 max-w-xl text-base leading-6 text-pretty text-muted-foreground">{introduction}</p>}
       </header>
       <div className="min-w-0">{children}</div>
     </PageInset>

@@ -401,9 +401,11 @@ function DetailColumn({ open, toShelf, onClose, children }: { open: boolean; toS
   return <aside aria-hidden={!open} inert={!open} data-lenis-prevent
     className={cn("fixed inset-y-0 right-0 z-30 w-[40%] overflow-y-auto overscroll-contain rounded-l-[8px] bg-background text-foreground max-[899px]:hidden",
       open ? "translate-x-0 transition-transform duration-600 ease-[cubic-bezier(0.16,1,0.3,1)]" : "translate-x-full transition-transform duration-300 ease-[cubic-bezier(0.32,0,0.67,0)]")}>
-    <div className={cn("px-6 pt-[46px] pb-[260px] transition-transform duration-[810ms] ease-out", open ? "translate-x-0" : "translate-x-[5vw]")}>
+    {/* The return link sits under the site header (which overlays the top 72 px), where their 46 px under their own nav
+        would be covered; the content still starts about 150 px down, as theirs. */}
+    <div className={cn("px-6 pt-[88px] pb-[260px] transition-transform duration-[810ms] ease-out", open ? "translate-x-0" : "translate-x-[5vw]")}>
       <button type="button" onClick={onClose}
-        className="mb-[72px] inline-flex min-h-8 items-center text-[11px] uppercase tracking-[0.04em] text-muted-foreground transition-colors hover:text-foreground">
+        className="mb-[30px] inline-flex min-h-8 items-center text-[11px] uppercase tracking-[0.04em] text-muted-foreground transition-colors hover:text-foreground">
         <ArrowLeftIcon aria-hidden="true" className="mr-1.5 size-3.5" />{toShelf}
       </button>
       {children}

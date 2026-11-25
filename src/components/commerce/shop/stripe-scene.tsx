@@ -98,16 +98,21 @@ function load(books: unknown[], featured: number) {
 
 export type SceneBook = { id: string; title: string; stageArt: string | null;
   /** The book's page images in reading order (Payload: the product's book pages, front then back of each leaf). */
-  pages?: string[] };
-/** Pages for their look inside: ours when the product has them, otherwise a blank book of plain paper (their
- * `blank.png` is the endpaper texture, tiled, so blank interior pages need a plain image of their own). */
-export function scenePages(pages: string[] | undefined) {
-  return pages && pages.length >= 2 ? pages : Array.from({ length: 48 }, () => TEX + "shared/page_plain.png");
+  pages?: string[];
+  /** The edition's page count (Payload: details.pages), for a book whose page images aren't in yet. */
+  pageCount?: number };
+/** A blank book's length when the edition gives none: about theirs (their open blocks measure ~140 leaves deep). */
+const BLANK_PAGES = 288;
+/** Pages for their look inside: ours when the product has them, otherwise a blank book of plain paper as long as the
+ * edition (their `blank.png` is the endpaper texture, tiled, so blank interior pages need a plain image of their own).
+ * The open book's page blocks are as deep as its leaves: 48 blank pages made them a sixth of theirs, too thin to see. */
+export function scenePages(pages: string[] | undefined, pageCount?: number) {
+  return pages && pages.length >= 2 ? pages : Array.from({ length: pageCount && pageCount >= 2 ? pageCount : BLANK_PAGES }, () => TEX + "shared/page_plain.png");
 }
 
 /** One of our products in their built book shape: our placeholder cover and neutral maps (no cover art exists yet). */
-function stripeBook({ id, title, stageArt, pages }: SceneBook) {
-  const blank = TEX + "shared/blank.png", pageImages = scenePages(pages);
+function stripeBook({ id, title, stageArt, pages, pageCount }: SceneBook) {
+  const blank = TEX + "shared/blank.png", pageImages = scenePages(pages, pageCount);
   return {
     id, title, author: "", type: "book", shaderType: "sophomores", backgroundColor: "#d9d8d4", chordSku: "",
     pageCount: pageImages.length, pageImages, folios: { romanCount: 0, lastFolio: pageImages.length },

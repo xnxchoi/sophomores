@@ -29,6 +29,8 @@ type Item = { id: string; title: string; price: string; href: string; stageArt: 
   details?: ReactNode;
   /** The book's page images for "Open book", in reading order. */
   pages?: string[];
+  /** The edition's page count, for a blank book's length. */
+  pageCount?: number;
   /** Its refund rule (RefundTerms), a line under its title wherever the shop lists it. */
   refund?: ReactNode };
 type Labels = { featured: string; shelf: string; viewDetails: string; toShelf: string; openBook: string; closeBook: string;
@@ -39,7 +41,7 @@ type Geometry = { lvh: number; mobile: boolean; top: number; height: number; off
 export function ShopHome({ items, labels, initialOpen }: { items: Item[]; labels: Labels;
   /** The product whose address the page was loaded on: it opens in place once the scene is ready. */
   initialOpen?: string }) {
-  const books = useMemo<SceneBook[]>(() => items.map(({ id, title, stageArt, pages }) => ({ id, title, stageArt: stageArt?.url ?? null, pages })), [items]);
+  const books = useMemo<SceneBook[]>(() => items.map(({ id, title, stageArt, pages, pageCount }) => ({ id, title, stageArt: stageArt?.url ?? null, pages, pageCount })), [items]);
   const { vendored, failed } = useStripeScene(books, Math.min(FEATURED_MAX, items.length));
   // Sounds only while the working scene is up: not while it loads, nor on the plain list it falls back to.
   useBookSounds(vendored != null && !failed);
@@ -279,7 +281,7 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
   const lookSource = useRef<LookInsideSource>({ place: () => undefined, book: () => null });
   useEffect(() => { lookSource.current = {
     place: (index) => window.scrollTo({ top: Math.max(0, index < catalogue.t ? bookY(index) : (seatY() ?? shelfY())), behavior: "smooth" }),
-    book: (index) => (items[index] ? { pageCount: scenePages(items[index].pages).length, startPage: 1 } : null) }; });
+    book: (index) => (items[index] ? { pageCount: scenePages(items[index].pages, items[index].pageCount).length, startPage: 1 } : null) }; });
   const look = useLookInside(hub, detail.open, lookSource);
   const lookOpen = useRef(false);
   useEffect(() => { lookOpen.current = look.open; });
@@ -463,9 +465,9 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
     <OpenBookPill label={labels.openBook} shown={detail.open != null && !detail.leaving && !look.open && (look.peek || look.pillHover)}
       onHover={look.setPillHover} onOpen={() => { look.setPillHover(false); look.openInDetail(); }} />
     <LookInsideBar shown={look.open} wide={look.home} page={look.page}
-      leaves={Math.ceil(scenePages(items[lookHome ?? detail.open ?? 0]?.pages).length / 2)} labels={labels}
-      onBack={() => look.turnBy(-1, Math.ceil(scenePages(items[lookHome ?? detail.open ?? 0]?.pages).length / 2))}
-      onForward={() => look.turnBy(1, Math.ceil(scenePages(items[lookHome ?? detail.open ?? 0]?.pages).length / 2))}
+      leaves={Math.ceil(scenePages(items[lookHome ?? detail.open ?? 0]?.pages, items[lookHome ?? detail.open ?? 0]?.pageCount).length / 2)} labels={labels}
+      onBack={() => look.turnBy(-1, Math.ceil(scenePages(items[lookHome ?? detail.open ?? 0]?.pages, items[lookHome ?? detail.open ?? 0]?.pageCount).length / 2))}
+      onForward={() => look.turnBy(1, Math.ceil(scenePages(items[lookHome ?? detail.open ?? 0]?.pages, items[lookHome ?? detail.open ?? 0]?.pageCount).length / 2))}
       onClose={look.close} />
     <DetailStack shown={readingOpen && !detail.leaving} height={readingOpen ? readingHeight : 0} toShelf={labels.toShelf} onClose={() => detail.closeBook()}>
       {readingOpen && items.map((entry, index) => <DetailSlot key={entry.id} index={index} top={reading.layout.tops[index] ?? 0}

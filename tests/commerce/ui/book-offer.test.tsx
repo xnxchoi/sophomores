@@ -24,17 +24,16 @@ async function shop() {
   return value as Extract<CommerceEditionShop, { status: "displayable" }>;
 }
 
-test("the shop lists three separate products, each linking to its own page, with no picker", async () => {
+test("the shop lists three separate products, each with its price and its own page, with no picker", async () => {
   const html = render(<CommerceShopView shop={await shop()} />);
   const order = ["Book only", "Édition personnelle", "Premium edition"].map((name) => html.indexOf(name));
   assert.deepEqual([...order].sort((a, b) => a - b), order, "sorted by price");
   assert.equal(order.every((index) => index >= 0), true);
   for (const id of ["book", "personal", "premium"]) assert.match(html, new RegExp('href="/shop/products/' + id + '"'));
   assert.match(html, /₩35,000/); assert.match(html, /₩82,000/); assert.match(html, /₩329,000/);
-  assert.match(html, /The book only\. No membership token or ticket\./);
-  assert.equal((html.match(/Includes the book, one membership token and one free Member Ticket\./g) ?? []).length, 2);
-  // Each card states its refund rule on its own line (owner, 25 Nov; Review-B r3): the book only, then two membership editions.
-  const lines = [...html.matchAll(/<p data-refund-terms="(\w+)" class="([^"]*)">([^<]*)<\/p>/g)];
+  // What each product includes is on its own page; the shop shows title and price under each book (stripe.press's home).
+  // Each product's refund rule is on its own line (owner, 25 Nov; Review-B r3): the book only, then two membership editions.
+  const lines = [...html.matchAll(/<span data-refund-terms="(\w+)" class="([^"]*)">([^<]*)<\/span>/g)];
   assert.deepEqual(lines.map(([, kind, , text]) => [kind, text]), [["refundable", "Refundable."],
     ["none", "Personalised with your membership. No refunds."], ["none", "Personalised with your membership. No refunds."]]);
   for (const [, , classes] of lines) { assert.match(classes, /\btext-sm\b/); assert.match(classes, /\btext-foreground\b/); }
@@ -49,11 +48,11 @@ test("a product page shows one product, its facts and that purchase is not open,
   assert.match(html, /One per account/);
   assert.match(html, /Release pending/);
   assert.match(html, /href="\/shop"/);
-  // Its own body-size line in the foreground colour, right after the buy row (owner, 25 Nov; Review-B r2).
   assert.match(html, /Release pending[\s\S]*?<p data-refund-terms="none" class="[^"]*\btext-sm\b[^"]*\btext-foreground\b[^"]*">Personalised with your membership\. No refunds\.<\/p>/);
   assert.doesNotMatch(html, /Refundable\./);
-  // The only button is the 3D book's own Look inside control; nothing buys, carts or pays.
-  assert.deepEqual(html.match(/<button\b[^>]*>/g)?.map((tag) => tag.includes("data-book-ui")), [true]);
+  // No button in the server HTML: the book's Look inside control mounts on the client, in its layer above the shared
+  // canvas. Nothing buys, carts or pays.
+  assert.equal(/<button\b/.test(html), false);
   assert.doesNotMatch(html, /Book only|Premium edition|<input\b|<form\b|href="[^"]*(?:checkout|payment)/i);
 });
 

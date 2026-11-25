@@ -310,6 +310,7 @@ function resolveTarget(fromHref: string, toHref: string): string {
  *   menu open        → FROM_MENU
  *   LOSTINSEOUL internal handoff → LOST_PRODUCT
  *   /me/settings ↔ /me/settings/* → SHELL (shell stays; pane owns the fade)
+ *   /shop ↔ /shop/products/* → SHELL (one page; the shop layout owns the move)
  *   from.group ≠ to  → CURTAIN
  *   default          → FADE
  */
@@ -332,6 +333,12 @@ export function pickTransitionType(ctx: TransitionContext): TransitionDecision {
   ) {
     return { type: "SHELL", from, to };
   }
+  // The shop shelf and its product pages share one page and one book canvas (UI-Commerce, 24 Nov; stripe.press keeps
+  // the shelf, detail and canvas mounted and only the URL changes): no page cover between them, the shop layout
+  // owns the move.
+  if (isShopShelfPath(from.pathname) && isShopShelfPath(to.pathname) && from.pathname !== to.pathname) {
+    return { type: "SHELL", from, to };
+  }
   // Finishing a purchase: from the shop or tickets to the buyer's own order under /me/orders, the page
   // fades rather than taking the account curtain, so the step after payment doesn't read as leaving.
   if (from.group === "commerce" && isOwnOrderPath(to.pathname)) return { type: "FADE", from, to };
@@ -342,6 +349,19 @@ export function pickTransitionType(ctx: TransitionContext): TransitionDecision {
 function isOwnOrderPath(pathname: string): boolean {
   const path = normalizePath(pathname);
   return path === "/me/orders" || path.startsWith("/me/orders/");
+}
+
+export function isShopShelfPath(pathname: string): boolean {
+  const path = normalizePath(pathname);
+  return path === "/shop" || path.startsWith("/shop/products/");
+}
+
+// The shop shelf and a product page are one mounted page (SHELL): the shelf keeps its scroll when a product opens
+// and when it closes, as stripe.press's does (UI-Commerce, 24 Nov). The router's enter gets no from/to
+// (next-transition-router dist/index.js:139), so this reads where the move arrived: SHELL is only picked within
+// one family (pickTransitionType above), so a SHELL arrival on a shelf path came from one.
+export function keepsShelfScroll(type: string | null | undefined, arrivedAt: string): boolean {
+  return type === "SHELL" && isShopShelfPath(arrivedAt);
 }
 
 export function isSettingsPath(pathname: string): boolean {

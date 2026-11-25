@@ -859,12 +859,20 @@
       "pagesValue": "",
       "wordsValue": "",
       "lookInside": "",
+      "openBook": "",
+      "closeTheBook": "",
       "closeBook": "",
       "previousPage": "",
       "nextPage": "",
       "magnifier": "",
       "highlighterPink": "",
-      "highlighterYellow": ""
+      "highlighterYellow": "",
+      "copyPageLink": "",
+      "featured": "",
+      "viewDetails": "",
+      "titles": "",
+      "sceneFailed": "",
+      "tryAgain": ""
     },
     "components_commerce_checkout": {
       "customerSignInIsOffInThisReviewCopy": "",

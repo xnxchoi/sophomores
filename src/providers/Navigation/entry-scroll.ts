@@ -216,12 +216,14 @@ export function createEntryScroll() {
         restore(pending.key, places.get(pending.key) as number, lenis);
     },
     cancel,
-    /** Called once the incoming page is in place. */
-    settle(lenis: Scroller) {
+    /** Called once the incoming page is in place. `keep`: the page stayed mounted (the shop shelf ↔ a product), so
+     *  its scroll stays where the reader left it rather than going to the top. */
+    settle(lenis: Scroller, keep = false) {
       leavingFrom = null;
       // A Back/Forward entry (a Back taken mid-curtain): arrived() puts it back; nothing resets it here.
       if (traversal) return;
       cancel();
+      if (keep) return;
       const id = hashId(window.location.hash);
       const target = id ? document.getElementById(id) : null;
       if (target) return land(target, lenis);

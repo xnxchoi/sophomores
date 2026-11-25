@@ -12,6 +12,8 @@ import { loadPublicMemberCapabilities } from "@/lib/member-auth/public-capabilit
 import { CommerceAccountGate, CommerceCheckout, type PurchaseAllowance } from "@/components/commerce/checkout";
 import { legacyPurchaseAllowance } from "../_commerce/purchase-allowance";
 import { CommerceOfferView } from "@/components/commerce/offer";
+import { readProductPageContent, type ProductPageContent } from "@/components/commerce/product-page/_shared/content";
+import { loadProductPageDocuments } from "./products/[id]/page-documents";
 import { refundPolicy, refundTerms } from "@/lib/commerce/refund-policy";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -23,6 +25,8 @@ export default async function ShopPage() {
   await connection();
   let offer: CommerceOffer | null = null;
   let editions: CommerceEditionShop | null = null;
+  // Each listed product's page fields (art, book textures, shelf title and order); a failed read leaves the books plain.
+  const contents: Record<string, ProductPageContent> = {};
   let showLegacy = false;
   // A read that threw is a failure to show with a retry, never the closed shop (Review-B).
   let failed = false;
@@ -31,6 +35,11 @@ export default async function ShopPage() {
     const payload = await getPayload({ config });
     // Each edition is its own product: list them all, never pick one (owner).
     editions = await listCommerceEditionProducts(payload);
+    if (editions.status === "displayable") {
+      const ids = editions.products.map((entry) => entry.product.productID);
+      const documents = await loadProductPageDocuments(payload, ids).catch(() => [] as unknown[]);
+      for (const id of ids) contents[id] = readProductPageContent(documents.find((document) => String((document as { id?: unknown }).id) === id));
+    }
     // Only explicit native absence can admit the independent legacy offer.
     showLegacy = editions.status === "unavailable" &&
       (editions.reason === "native-schema-unregistered" || editions.reason === "product-unpublished");
@@ -46,7 +55,7 @@ export default async function ShopPage() {
   return (
     <div className="min-h-dvh bg-background text-foreground">
       {failed ? <BookUnavailable retry={<CommerceLoadRetry className="mt-4" />} /> :  !showLegacy ? (
-        <CommerceShopView shop={editions} />
+        <CommerceShopView shop={editions} contents={contents} />
       ) : (
         <CommerceOfferView offer={offer}>
           {offer && (

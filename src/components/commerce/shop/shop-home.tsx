@@ -1,0 +1,637 @@
+"use client";
+
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type Ref } from "react";
+import { useTransitionRouter } from "next-transition-router";
+import { ArrowLeftIcon } from "@phosphor-icons/react/dist/ssr";
+import { Link } from "@/components/core/Link/Link";
+import { cn } from "@/lib/utils";
+import { lockedProgressFor, scenePages, StripeScene, useStripeScene, type SceneBook, type Vendored } from "./stripe-scene";
+import { useLookInside, type LookInsideSource } from "./use-look-inside";
+import { useShelfCatch, type ShelfCatchSource } from "./use-shelf-catch";
+import { useBookDetail, type BookDetailSource } from "./use-book-detail";
+import { useReadingScroll, type ReadingSource } from "./use-reading-scroll";
+
+/**
+ * The shop's home, rebuilt from stripe.press's home code (06w9 module 43181; .tmp/stripe-notes/home-layout-inventory.md,
+ * gap list shop-gap-list.md), their 3D scene verbatim (stripe-scene.tsx). Short: the first few books are featured in a
+ * vertical stack, each holding on its art card, then one shelf segment where every book stands spine out in a row that
+ * only horizontal input moves (their gesture router); vertical scroll passes on. As theirs: the scroll height is
+ * computed from their segment extents, scroll maps to progress through their `scrollYToProgress` and `lockedProgressFor`,
+ * the scene reads live refs written on every scroll, and React state changes only at thresholds.
+ */
+const FEATURED_MAX = 4, CARD_GAP = 16, CARD_INSET_BOTTOM = 8;
+
+type Item = { id: string; title: string; price: string; href: string; stageArt: { url: string; alt?: string | null } | null;
+  /** The book's details column (server-rendered: ProductInfo + ProductExtras), shown when it opens in the scene. */
+  details?: ReactNode;
+  /** The book's page images for "Open book", in reading order. */
+  pages?: string[];
+  /** Its refund rule (RefundTerms), a line under its title wherever the shop lists it. */
+  refund?: ReactNode };
+type Labels = { featured: string; shelf: string; viewDetails: string; toShelf: string; openBook: string; closeBook: string;
+  previousPage: string; nextPage: string; titles: string; sceneFailed: string; tryAgain: string };
+type Geometry = { lvh: number; mobile: boolean; top: number; height: number; offset: number; extents: number[];
+  starts: number[]; lock: number[]; total: number };
+
+export function ShopHome({ items, labels, initialOpen }: { items: Item[]; labels: Labels;
+  /** The product whose address the page was loaded on: it opens in place once the scene is ready. */
+  initialOpen?: string }) {
+  const books = useMemo<SceneBook[]>(() => items.map(({ id, title, stageArt, pages }) => ({ id, title, stageArt: stageArt?.url ?? null, pages })), [items]);
+  const { vendored, failed } = useStripeScene(books, Math.min(FEATURED_MAX, items.length));
+  const first = items[0]?.stageArt;
+  if (failed) return <ShopFallback items={items} labels={labels} initialOpen={initialOpen} />;
+  // Native wheel scrolling here, as on stripe.press: their scroll mapping, holds and shelf catch read the browser's own
+  // scroll, and the site's Lenis smoothing would keep driving the page through the shelf's catch.
+  return <section data-lenis-prevent-wheel aria-label={labels.featured} className="relative min-h-svh">
+    {vendored && items.length > 0 ? <Home vendored={vendored} items={items} labels={labels} initialOpen={initialOpen} /> : first && (
+      // The first card where theirs lands (162 px down, 16 px in, 24 px off the bottom) until their code is running.
+      <div className="pointer-events-none fixed inset-x-4 top-[162px] bottom-6 z-0 overflow-hidden rounded-[8px] bg-muted max-[899px]:inset-x-2 max-[899px]:top-[140px]">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={first.url} alt={first.alt ?? ""} draggable={false} className="absolute inset-0 size-full object-cover" />
+      </div>)}
+    {/* Every book reachable without the scene (their hidden keyboard listbox of every book). */}
+    <ul className="sr-only">{items.map((entry) => <li key={entry.id}><Link href={entry.href}>{entry.title} {entry.price}</Link> {entry.refund}</li>)}</ul>
+  </section>;
+}
+
+/**
+ * When the scene's code doesn't load: the products as a plain list (title, price, refund rule, a link to each), with a
+ * product's own details first on its address, and a reload to try the scene again.
+ */
+function ShopFallback({ items, labels, initialOpen }: { items: Item[]; labels: Labels; initialOpen?: string }) {
+  const open = items.find((entry) => entry.id === initialOpen && entry.details);
+  return <section aria-label={labels.featured} className="min-h-svh pt-24 pb-24">
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+      <p>{labels.sceneFailed}</p>
+      <button type="button" onClick={() => window.location.reload()}
+        className="inline-flex min-h-11 items-center text-foreground underline-offset-4 transition-opacity hover:opacity-70">{labels.tryAgain}</button>
+    </div>
+    {open && <div className="mt-10 max-w-2xl">{open.details}</div>}
+    <ul className="mt-16 grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
+      {items.map((entry) => <li key={entry.id} className="min-w-0">
+        <Link href={entry.href} className="group block min-w-0 outline-offset-4 focus-visible:outline-2">
+          <h2 className="text-2xl leading-snug tracking-tight underline-offset-4 [overflow-wrap:anywhere] group-hover:underline">{entry.title}</h2>
+          <p className="mt-2 text-[15px] leading-[21px] tabular-nums">{entry.price}</p>
+        </Link>
+        {entry.refund && <div className="mt-2 text-sm leading-6">{entry.refund}</div>}
+      </li>)}
+    </ul>
+  </section>;
+}
+
+function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; items: Item[]; labels: Labels; initialOpen?: string }) {
+  const { hub, scroll, catalogue, router, seats, motion: tokens } = vendored;
+  const navigate = useTransitionRouter();
+  const count = items.length, J = catalogue.J, K = catalogue.K;
+
+  // Canvas geometry and segment extents (06w9:11476-11503, 11634-11667): the card starts where the title rail ends,
+  // each featured book gets a canvas height plus its 150 px hold (the last one 0.67 canvas more), the shelf 1.67 canvas
+  // heights on desktop (2.3–3.8 on a phone), and every later book 1 px.
+  const measure = (): Geometry => {
+    const width = scroll.X(), lvh = scroll.C(), mobile = width < 900, top = scroll.p(width), height = scroll.$(lvh, top);
+    const offset = (top + height / 2 - Math.max(1, lvh) / 2) / Math.max(1, lvh);
+    const shelfScreens = mobile ? Math.max(2.3, Math.min(3.8, 2.3 + ((lvh - 650) / 350) * 1.2)) : 1.67;
+    const lock = Array.from({ length: catalogue.t }, (_, index) => 150 + (index === J ? Math.round(0.67 * height) : 0));
+    const extents = catalogue.F(count, height, lock, shelfScreens), starts = scroll.e(extents);
+    return { lvh, mobile, top, height, offset, extents, starts, lock, total: extents.reduce((sum, value) => sum + value, 0) };
+  };
+  const [geometry, setGeometry] = useState<Geometry>(measure);
+  const geo = useRef(geometry);
+  useEffect(() => { geo.current = geometry; }, [geometry]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => scroll.d(() => setGeometry(measure())), [scroll]);
+
+  // The scene's own refs (06w9:11578-11587, 13660-13662), written whenever the geometry changes.
+  useEffect(() => {
+    const { lvh, top, height, offset, mobile, extents } = geometry, shelf = extents[K] ?? 1;
+    hub.detailCanvasCenterOffsetLiveRef.current = offset;
+    hub.heroCardCenterPxLiveRef.current = top + (Math.min(height, scroll.$(scroll.B(), top)) - hub.SCENE_CARD_BOTTOM_INSET_CSS_PX) / 2;
+    hub.homeStackIsMobileLiveRef.current = mobile;
+    hub.spineScrollSectionScreensLiveRef.current = shelf / Math.max(1, height);
+    hub.postCoverflowBgGapProgressLiveRef.current = (-0.1 * lvh) / shelf;
+    hub.firstPostArriveLeadProgressLiveRef.current = (0.5 * lvh) / shelf;
+  }, [geometry, hub, scroll, K]);
+
+  // Scroll → progress on every scroll event (their readScroll): raw, locked and spine-row progress go to the scene's
+  // refs; React only hears the locked index (±0.65 hysteresis, then a 200 ms debounce), whether the shelf is up, and,
+  // 100 ms after the scroll settles, the committed progress.
+  // Loaded on a product's address (desktop): the scene's first frame already has that book open at its own index, as
+  // theirs opens the deep link before its scene mounts (06w9:15177-15183); otherwise it would ease into the detail pose.
+  const [landing, setLanding] = useState(() => {
+    const index = initialOpen && window.innerWidth >= 900 ? items.findIndex((entry) => entry.id === initialOpen && entry.details) : -1;
+    if (index >= 0) {
+      hub.scrollProgressDirectLiveRef.current = index; hub.spineViewProgressLiveRef.current = hub.spineViewProgressFor(index);
+      hub.backgroundSnapScrollLiveRef.current = 6; hub.bookRowSeedLiveRef.current = 3;
+    }
+    return index >= 0 ? index : null;
+  });
+  const progressRef = useRef(landing ?? 0);
+  // What the art cards follow: the locked progress, on the home and while reading.
+  const cardsRef = useRef(landing ?? 0);
+  // True while a book is open: the page holds still, so the scroll reader, the idle advance and the shelf catch stand
+  // down and the scene keeps the progress the detail pinned (theirs: readScroll and the idle timer skip detail).
+  const held = useRef(landing != null);
+  const [committed, setCommitted] = useState(landing ?? 0), [active, setActive] = useState(landing ?? 0), [onShelf, setOnShelf] = useState(false);
+  const listeners = useRef(new Set<() => void>());
+  useEffect(() => {
+    let settle = 0, debounce = 0, index = 0;
+    const read = () => {
+      if (held.current) return;
+      const { extents, height, lock, offset } = geo.current;
+      const raw = scroll.m(window.scrollY, extents);
+      const locked = lockedProgressFor(raw, { bookScrollExtentsPx: extents, canvasHeightPx: height, browseLockScrollPx: lock, canvasCenterOffset: offset }, catalogue);
+      progressRef.current = locked; cardsRef.current = locked;
+      hub.scrollProgressDirectLiveRef.current = raw;
+      hub.spineViewProgressLiveRef.current = hub.spineViewProgressFor(raw);
+      listeners.current.forEach((listener) => listener());
+      const centred = locked - offset;
+      if (Math.abs(centred - index) > 0.65) index = Math.round(centred);
+      const book = catalogue.a(index), next = book == null ? J : Math.max(0, Math.min(count - 1, book));
+      window.clearTimeout(debounce); debounce = window.setTimeout(() => setActive(next), 200);
+      setOnShelf(raw >= K - 0.5);
+      window.clearTimeout(settle); settle = window.setTimeout(() => setCommitted(locked), 100);
+    };
+    read();
+    window.addEventListener("scroll", read, { passive: true });
+    return () => { window.removeEventListener("scroll", read); window.clearTimeout(settle); window.clearTimeout(debounce); };
+  }, [catalogue, hub, scroll, J, K, count]);
+
+  // Where the page scrolls to bring a featured book onto its card, or the shelf into place (easeInOutSine, as theirs).
+  // One drive at a time; the shelf catch can stop it.
+  const drive = useRef({ token: 0, active: false });
+  /** The idle advance's glide in flight (its own, so a wheel doesn't cut it short; theirs `n`/`o`). */
+  const gliding = useRef<{ at: number } | null>(null);
+  const stopDriving = () => { drive.current.token += 1; drive.current.active = false; };
+  const scrollTo = (target: number, ms: number) => {
+    const from = window.scrollY, start = performance.now(), token = ++drive.current.token;
+    drive.current.active = true;
+    const step = (now: number) => {
+      if (drive.current.token !== token) return;
+      const t = Math.min(1, (now - start) / ms);
+      window.scrollTo(0, from + (target - from) * (0.5 - 0.5 * Math.cos(Math.PI * t)));
+      if (t < 1) requestAnimationFrame(step); else drive.current.active = false;
+    };
+    requestAnimationFrame(step);
+  };
+  // Any input of the visitor's takes the scroll back at once (their scroll owner, 62178: wheel, touch, pointer and the
+  // scroll keys release it), so a drive (the idle advance, a title click) never fights a hand on the page. Capture, so
+  // it runs before the gesture router, whose own step may start a new drive.
+  useEffect(() => {
+    const keys = ["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " ", "Spacebar"];
+    const release = (event: Event) => {
+      if (event instanceof KeyboardEvent && !keys.includes(event.key)) return;
+      drive.current.token += 1; drive.current.active = false;
+    };
+    const events = ["wheel", "touchstart", "pointerdown", "keydown"] as const;
+    events.forEach((event) => window.addEventListener(event, release, { passive: true, capture: true }));
+    return () => events.forEach((event) => window.removeEventListener(event, release, { capture: true }));
+  }, []);
+  const bookY = (index: number) => {
+    const { starts, extents, offset } = geo.current, segment = catalogue.D(index);
+    const at = index === 0 || index === J ? 0 : Math.max(0.01, Math.min(0.99, offset));
+    return (starts[segment] ?? 0) + at * (extents[segment] ?? 0) + 1;
+  };
+  // The shelf's seat (their `nH`, 06w9:11116-11160): where the spine row sits seated, lifted clear of the titles.
+  const seatY = () => {
+    const { starts, extents } = geo.current, width = window.innerWidth || 0, height = window.innerHeight || 1, mobile = width < 900;
+    const at = (progress: number) => {
+      const segment = Math.floor(progress), start = starts[segment], extent = extents[segment];
+      return start != null && extent ? Math.round(start + (progress - segment) * extent) : null;
+    };
+    if (mobile) { const y = at(seats.d(true)); if (y != null) return y; }
+    const seat = hub.spineRowSeatGeomLiveRef.current as { valid?: boolean; exitTarget?: number } | null;
+    const line = hub.homeTitlesClearLinePxLiveRef.current as number | null;
+    if (seat?.valid && (seat.exitTarget ?? 0) > 0 && line != null) {
+      const y = at(seats.h(Math.max(0, hub.spineRowLiftForTopPx(line)) / (seat.exitTarget ?? 1), false));
+      if (y != null) return y;
+    }
+    const start = starts[K], extent = extents[K];
+    if (start == null || !extent) return null;
+    const into = Math.max(0, Math.min(1, seats.j(mobile) - K)), d = height;
+    const vh = d >= 1300 ? -87 : d >= 1100 ? -79.3 + ((d - 1100) / 200) * (-87 - -79.3) : d >= 850 ? -37.4 - ((d - 850) / 250) * 41.9
+      : d >= 650 ? -13.6 + ((d - 650) / 200) * (-37.4 - -13.6) : -13.6;
+    return Math.round(start + into * extent + ((vh + ((hub.shelfScrollTargetOffsetVhLiveRef.current as number) ?? 0)) * d) / 100);
+  };
+  const shelfY = () => seatY() ?? (geo.current.starts[K] ?? 0) + 0.3 * (geo.current.extents[K] ?? 0);
+  const motion = useRef({ scrollTo, bookY, shelfY });
+  useEffect(() => { motion.current = { scrollTo, bookY, shelfY }; });
+
+  // Their shelf catch and the titles' clear line (use-shelf-catch.ts).
+  const titles = useRef<HTMLElement>(null);
+  const catchSource = useRef<ShelfCatchSource>({ seatY: () => null, driving: () => false, stopDriving: () => undefined, titles: () => null, held: () => false });
+  useEffect(() => { catchSource.current = { seatY, driving: () => drive.current.active || gliding.current != null, stopDriving, titles: () => titles.current, held: () => held.current }; });
+  useShelfCatch(hub, catalogue, catchSource);
+
+  // Opening a book into its details inside the scene (use-book-detail.ts); the phone keeps the product page for now.
+  const detailSource = useRef<BookDetailSource>({ rawProgress: () => 0, hrefOf: () => null, home: "/shop", placeOf: () => 0, shelfAt: () => null,
+    pin: () => undefined, unpin: () => undefined, pagesOpen: () => false });
+  useEffect(() => { detailSource.current = { rawProgress: () => hub.scrollProgressDirectLiveRef.current as number,
+    hrefOf: (index) => items[index]?.href ?? null, home: "/shop", placeOf: bookY, shelfAt: seatY, pagesOpen: () => lookOpen.current,
+    // The scene poses an open book by the progress in its details: at the open book's own index, the top of them. As
+    // theirs (06w9:15271-15273), the scene's row smoother snaps to it (snap 6 frames, row seed 3) instead of easing
+    // through the stack between the shelf and the book's own place.
+    pin: (index, arrived) => {
+      // Where closing returns to (their origin snapshot `te`): the home scroll the book opened from; none for an address.
+      const raw = hub.scrollProgressDirectLiveRef.current as number;
+      if (arrived) origin.current = null;
+      else if (!held.current) origin.current = { y: window.scrollY, index, fromShelf: raw >= J + 0.5 && raw < K + 1 };
+      held.current = true; stopDriving();
+      progressRef.current = cardsRef.current = index; hub.scrollProgressDirectLiveRef.current = index;
+      hub.spineViewProgressLiveRef.current = hub.spineViewProgressFor(index); setCommitted(index);
+      hub.backgroundSnapScrollLiveRef.current = 6; hub.bookRowSeedLiveRef.current = 3;
+      readingRef.current?.begin(index);
+    },
+    // Back to the home scroll once the reading stack is gone (their `hJ`, 15872-15918): a featured book not opened from
+    // the shelf returns onto its own card; the book it opened from returns where it was; any other to the shelf.
+    unpin: (index) => {
+      const from = origin.current;
+      returning.current = { y: index < catalogue.t && !from?.fromShelf ? bookY(index) : from && from.index === index ? from.y : null };
+    } }; });
+  const detail = useBookDetail(hub, catalogue, router, tokens, detailSource);
+  const origin = useRef<{ y: number; index: number; fromShelf: boolean } | null>(null), returning = useRef<{ y: number | null } | null>(null);
+
+  // The reading scroll (use-reading-scroll.ts): while a book is open the page scrolls every book's details, and that
+  // scroll moves the scene (the reading book's exit, the next one's arrival) and the cards; the address follows.
+  const readingSource = useRef<ReadingSource>({ hrefOf: () => null, onIndex: () => undefined, onProgress: () => undefined, onCommit: () => undefined });
+  useEffect(() => { readingSource.current = { hrefOf: (index) => items[index]?.href ?? null, onIndex: (index) => detail.setReading(index),
+    onProgress: (locked) => { progressRef.current = cardsRef.current = locked; listeners.current.forEach((listener) => listener()); },
+    onCommit: (locked) => setCommitted(locked) }; });
+  const page = useRef<HTMLDivElement>(null);
+  const reading = useReadingScroll(hub, scroll, detail.open, geometry, count, readingSource, page);
+  // As theirs: the page places itself (a product's address parks on its details); the browser's restore would fight it.
+  useEffect(() => {
+    const before = window.history.scrollRestoration;
+    window.history.scrollRestoration = "manual";
+    return () => { window.history.scrollRestoration = before; };
+  }, []);
+  const readingRef = useRef(reading);
+  useEffect(() => { readingRef.current = reading; });
+  // "Open book" (use-look-inside.ts): in the details the open book's pages open in place; on the home the book comes
+  // forward first. The home scrolls onto the book (their `ut`, or the shelf's seat) before it comes forward.
+  const lookSource = useRef<LookInsideSource>({ place: () => undefined, book: () => null });
+  useEffect(() => { lookSource.current = {
+    place: (index) => window.scrollTo({ top: Math.max(0, index < catalogue.t ? bookY(index) : (seatY() ?? shelfY())), behavior: "smooth" }),
+    book: (index) => (items[index] ? { pageCount: scenePages(items[index].pages).length, startPage: 1 } : null) }; });
+  const look = useLookInside(hub, detail.open, lookSource);
+  const lookOpen = useRef(false);
+  useEffect(() => { lookOpen.current = look.open; });
+  // The scene hears the book being read 200 ms late (their `uK`), the first one at once.
+  const [sceneIndex, setSceneIndex] = useState<number | null>(landing);
+  useEffect(() => {
+    if (detail.open == null) { setSceneIndex(null); return; }
+    const timer = window.setTimeout(() => setSceneIndex(detail.open), sceneIndex == null ? 0 : 200);
+    return () => window.clearTimeout(timer);
+  }, [detail.open]);   // eslint-disable-line react-hooks/exhaustive-deps
+  // Closed: the home layout is back in this commit, so the page returns to its home scroll before anything paints.
+  useLayoutEffect(() => {
+    const back = returning.current;
+    if (detail.open != null || !back) return;
+    returning.current = null;
+    window.scrollTo(0, back.y ?? seatY() ?? shelfY());
+    held.current = false;
+    hub.backgroundSnapScrollLiveRef.current = 6; hub.bookRowSeedLiveRef.current = 6;
+    window.dispatchEvent(new Event("scroll"));
+  }, [detail.open]);   // eslint-disable-line react-hooks/exhaustive-deps
+  const openRef = useRef((index: number) => { const item = items[index]; if (item) navigate.push(item.href); });
+  const arrived = useRef(initialOpen);
+  useEffect(() => {
+    const index = items.findIndex((entry) => entry.id === arrived.current);
+    arrived.current = undefined;
+    if (!(index >= 0 && items[index]?.details && detail.openBook(index, true))) { setLanding(null); held.current = false; }
+  }, []);   // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { openRef.current = (index: number) => {
+    if (items[index]?.details && detail.openBook(index)) return;
+    const item = items[index]; if (item) navigate.push(item.href);
+  }; });
+
+  // Idle auto-advance (06w9:14528-14582, 14912-14925): from 1.5 s after mount, once the hero intro has settled (checked
+  // every 120 ms), one book down every 3 s, counted from the start of the last glide (1 s; 1.83 s into the shelf). A
+  // wheel or touch stops the next glides but not the one in flight: theirs runs it to the end on its own token
+  // (`lo`), which only opening a book bumps. Measured on stripe.press: first glide 5.9 s after load, 2.0 s pauses.
+  useEffect(() => {
+    let timer = 0, stopped = false;
+    const stop = () => { stopped = true; window.clearTimeout(timer); };
+    // While it glides, a scroll more than 50 px off its own line (a hand on the page) stops the glides after it.
+    const glide = (target: number, ms: number) => {
+      const from = window.scrollY, start = performance.now();
+      gliding.current = { at: from };
+      const step = (now: number) => {
+        if (held.current) { gliding.current = null; return; }
+        const t = Math.min(1, (now - start) / ms), y = from + (target - from) * (0.5 - 0.5 * Math.cos(Math.PI * t));
+        gliding.current = { at: y };
+        window.scrollTo(0, y);
+        if (t < 1) requestAnimationFrame(step); else gliding.current = null;
+      };
+      requestAnimationFrame(step);
+    };
+    const drift = () => { const g = gliding.current; if (g && Math.abs(window.scrollY - g.at) > 50) stop(); };
+    window.addEventListener("scroll", drift, { passive: true });
+    const arm = (delay: number) => {
+      timer = window.setTimeout(() => {
+        if (stopped) return;
+        if (held.current) { arm(3000); return; }
+        const index = catalogue.a(Math.round(hub.scrollProgressDirectLiveRef.current as number));
+        if (index == null || index >= catalogue.t) return;
+        const move = motion.current;
+        if (index >= J) glide(move.shelfY(), 1833); else glide(move.bookY(index + 1), 1000);
+        arm(3000);
+      }, delay);
+    };
+    const wait = () => {
+      timer = window.setTimeout(() => {
+        if (stopped) return;
+        if (!hub.heroIntroSettledLiveRef.current) { wait(); return; }
+        arm(3000);
+      }, 120);
+    };
+    timer = window.setTimeout(wait, 1500 - 120);
+    // Theirs stops on wheel and touchmove only (a press or key elsewhere scrolls the page, which the drift check sees).
+    const events = ["wheel", "touchmove"] as const;
+    events.forEach((event) => window.addEventListener(event, stop, { passive: true }));
+    return () => { stop(); gliding.current = null; window.removeEventListener("scroll", drift); events.forEach((event) => window.removeEventListener(event, stop)); };
+  }, [catalogue, hub, J]);
+
+  // Their gesture scopes (06w9:16955-16998): on the stack a vertical step moves one book and → opens it; on the shelf
+  // horizontal wheel, drag, swipe and arrows move the row, and vertical leaves it.
+  const activeRef = useRef(active);
+  useEffect(() => { activeRef.current = active; }, [active]);
+  useEffect(() => {
+    const uninstall = router.e();
+    const open = (index: number) => openRef.current(index);
+    const featuredScope = router.v("featured", {
+      acceptsGesture: false,
+      horizontal: (step: number) => { if (step === 1 && !lookOpen.current) open(activeRef.current); },
+      vertical: (step: number) => {
+        if (lookOpen.current) return true;
+        const move = motion.current, current = activeRef.current, next = current + step;
+        if (next >= catalogue.t) move.scrollTo(move.shelfY(), 1833);
+        else if (next >= 0) move.scrollTo(move.bookY(next), 1000);
+        else return false;
+        return true;
+      },
+    });
+    const shelfScope = router.v("shelf", {
+      horizontal: (step: number, options?: { repeat?: boolean }) => hub.stepSpineSelection(step, count, { repeat: options?.repeat }),
+      drag: { begin: hub.beginSpineDrag, move: hub.moveSpineDrag, end: hub.endSpineDrag },
+      vertical: (step: number) => {
+        const move = motion.current;
+        if (step === -1) move.scrollTo(move.bookY(J), 1000); else move.scrollTo(geo.current.total, 1000);
+      },
+    });
+    return () => { featuredScope(); shelfScope(); if (typeof uninstall === "function") uninstall(); };
+  }, [router, hub, catalogue, count, items, navigate, J]);
+
+  // Their BookStack reads the books from its prop; ours are also their catalogue now (change 7): the same list.
+  // A product's address opens with its details already up, so the scene skips its intro (theirs: skipIntro for a book
+  // address, 06w9:13210, 17840); otherwise the open book would reset and fly in beside its column a second later.
+  const skipIntro = useRef(Boolean(initialOpen)).current;
+  // Once the detail state itself is open, the landing has done its job (closing must not fall back to it).
+  useEffect(() => { if (detail.open != null) setLanding(null); }, [detail.open]);
+  const lookProps = look.sceneProps, lookHome = look.home && look.homeIndex != null ? look.homeIndex : null;
+  const sceneProps = useMemo(() => ({ skipIntro, ...lookProps,
+    books: (window as unknown as { __SPBOOKS: unknown }).__SPBOOKS, scrollProgress: committed, scrollProgressLiveRef: progressRef,
+    activeBookIndex: lookHome ?? (detail.open != null ? (sceneIndex ?? detail.open) : active), stackMode: "browse", onBookOpen: (index: number) => openRef.current(index),
+    // Their `isDetailOpen: tx || iv` and `detailBookIndex: iv ? nI : uK`: the home's open book is posed as a detail book.
+    isDetailOpen: (detail.open ?? landing ?? lookHome) != null,
+    detailBookIndex: lookHome ?? (detail.open != null || landing != null ? (sceneIndex ?? detail.open ?? landing) : -1),
+  }), [skipIntro, lookProps, lookHome, committed, active, detail.open, landing, sceneIndex]);
+
+  // The spine row seats against, and lifts out ahead of, the section after the shelf (their #home-section-films, read
+  // through homeWebsitesSectionElLiveRef); without one the scene treats the row as already gone. As theirs, the content
+  // layer begins ~0.81 of a screen before the stack's scroll ends (729 px at 900 tall), with their transparent books box
+  // (171.1vh − 40px) before the next section.
+  const next = useRef<HTMLDivElement>(null);
+  useEffect(() => { hub.homeWebsitesSectionElLiveRef.current = next.current; return () => { hub.homeWebsitesSectionElLiveRef.current = null; }; }, [hub]);
+
+  // On the shelf the rail names the selected spine (their rail follows the spine selection there).
+  const [selected, setSelected] = useState<number | null>(null);
+  useEffect(() => {
+    if (!onShelf) { setSelected(null); return; }
+    let frame = 0;
+    const follow = () => {
+      const to = (hub.spineSelectionLiveRef.current as { to?: number } | null)?.to;
+      if (typeof to === "number") setSelected(to);
+      frame = requestAnimationFrame(follow);
+    };
+    frame = requestAnimationFrame(follow);
+    return () => cancelAnimationFrame(frame);
+  }, [onShelf, hub]);
+
+  const item = items[active] ?? items[0];
+  const readingOpen = detail.open != null;
+  // While reading, the page is the stack of every book's details (their sections, then half a screen); otherwise the
+  // home's own scroll.
+  const readingHeight = reading.layout.total + Math.round(geometry.lvh / 2);
+  return <div ref={page} className="relative overflow-x-clip">
+    {readingOpen ? <div style={{ height: readingHeight }} /> : <>
+      <div style={{ height: Math.max(0, geometry.total - Math.round(0.81 * geometry.lvh)) }} />
+      <div aria-hidden="true" className="pointer-events-none h-[calc(171.1lvh-40px)]" />
+    </>}
+    <div ref={next} aria-hidden="true" className="h-[40lvh]" />
+    <Cards items={items} featured={catalogue.t} geometry={geometry} progressRef={cardsRef} listeners={listeners} reading={held} J={J} />
+    <StripeScene vendored={vendored} props={sceneProps} className="pointer-events-none fixed inset-0 isolate z-10" />
+    <p className="fixed top-[3.75rem] left-4 z-20 text-[11px] uppercase leading-4 tracking-[0.06em] text-muted-foreground">
+      [ {onShelf ? labels.shelf : labels.featured} ]
+    </p>
+    <TitleRail railRef={titles} label={labels.titles} titles={items.map((entry) => entry.title)} refunds={items.map((entry) => entry.refund)} active={detail.open ?? selected ?? active}
+      fade={detail.open != null ? 0 : Math.max(0, Math.min(1, (committed - K - 0.2) / 0.3))} detail={detail.open != null && !detail.leaving}
+      onPick={(index) => detail.open != null ? openRef.current(index) : index < catalogue.t ? scrollTo(bookY(index), 1000) : scrollTo(shelfY(), 1833)} />
+    {item && <ViewDetails href={item.href} label={labels.viewDetails} hidden={(onShelf || detail.open != null) && !look.home} onOpen={() => openRef.current(active)}
+      book={{ label: look.open && look.home ? labels.closeBook : labels.openBook, open: look.open && look.home,
+        onToggle: () => (look.open ? look.close() : look.openOnHome(active)) }} />}
+    {/* The peek pill (their "+ Open book +", left 30 %): while the open book in the details is hovered, or the pill is. */}
+    <OpenBookPill label={labels.openBook} shown={detail.open != null && !detail.leaving && !look.open && (look.peek || look.pillHover)}
+      onHover={look.setPillHover} onOpen={() => { look.setPillHover(false); look.openInDetail(); }} />
+    <LookInsideBar shown={look.open} wide={look.home} page={look.page}
+      leaves={Math.ceil(scenePages(items[lookHome ?? detail.open ?? 0]?.pages).length / 2)} labels={labels}
+      onBack={() => look.setPage((current) => Math.max(0, current - 1))}
+      onForward={() => look.setPage((current) => Math.min(Math.ceil(scenePages(items[lookHome ?? detail.open ?? 0]?.pages).length / 2), current + 1))}
+      onClose={look.close} />
+    <DetailStack shown={readingOpen && !detail.leaving} height={readingOpen ? readingHeight : 0} toShelf={labels.toShelf} onClose={() => detail.closeBook()}>
+      {readingOpen && items.map((entry, index) => <DetailSlot key={entry.id} index={index} top={reading.layout.tops[index] ?? 0}
+        onMeasured={reading.measured} anchors={reading.anchors}>{entry.details}</DetailSlot>)}
+    </DetailStack>
+  </div>;
+}
+
+/**
+ * The art cards (BackgroundScene, 1jyk:291-622): one canvas-sized card per featured book in a column, 16 px apart (8 on
+ * a phone), sliding with the locked progress, so a book's hold is its card's pause; the photo counter-moves 70 % and
+ * zooms to ~1.06 one book away; the last card lifts out as the shelf arrives. Written per scroll, outside React.
+ */
+function Cards({ items, featured, geometry, progressRef, listeners, reading, J }: { items: Item[]; featured: number; geometry: Geometry;
+  progressRef: { current: number }; listeners: { current: Set<() => void> };
+  /** True while reading: the cards follow the reading progress (the last card does not lift away). */
+  reading: { current: boolean }; J: number }) {
+  const plates = useRef<(HTMLDivElement | null)[]>([]), photos = useRef<(HTMLImageElement | null)[]>([]);
+  const [shown, setShown] = useState(false);
+  useEffect(() => { const timer = window.setTimeout(() => setShown(true), 50); return () => window.clearTimeout(timer); }, []);
+  useEffect(() => {
+    const { height, mobile } = geometry, gap = mobile ? 8 : CARD_GAP, set = listeners.current;
+    const write = () => {
+      const locked = progressRef.current;
+      for (let index = 0; index < featured; index += 1) {
+        const plate = plates.current[index], photo = photos.current[index];
+        if (!plate) continue;
+        const lift = index === J && !reading.current ? 1.25 * height * Math.max(0, Math.min(1, (locked - J) / (0.35 / 0.6))) : 0;
+        const y = (index - locked) * (height + gap) - lift;
+        plate.style.transform = "translate3d(0," + y + "px,0)";
+        const c = Math.max(0, Math.min(1, (locked - index + 1) / 2)), e = (0.48 * (1 + Math.cos(2 * Math.PI * c))) / 2;
+        if (photo) photo.style.transform = "translate3d(0," + -0.7 * y + "px,0) scale(" + 1 / (0.5 / 2 ** (0.38 * e) + 0.5) + ")";
+      }
+    };
+    write();
+    set.add(write);
+    return () => { set.delete(write); };
+  }, [geometry, featured, progressRef, listeners, reading, J]);
+  return <div aria-hidden="true" style={{ top: geometry.top, height: geometry.height - CARD_INSET_BOTTOM }}
+    className="pointer-events-none fixed inset-x-4 z-0 overflow-hidden rounded-[8px] max-[899px]:inset-x-2">
+    {items.slice(0, featured).map((entry, index) => <div key={entry.id} ref={(plate) => { plates.current[index] = plate; }}
+      className={cn("absolute inset-0 overflow-hidden rounded-[8px] bg-muted transition-opacity duration-[450ms] will-change-transform",
+        shown ? "opacity-100" : "opacity-0", index === 0 ? "delay-[1100ms]" : "delay-[1600ms]")}>
+      {entry.stageArt && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img ref={(photo) => { photos.current[index] = photo; }} src={entry.stageArt.url} alt={entry.stageArt.alt ?? ""} draggable={false}
+          className="absolute inset-0 size-full object-cover will-change-transform" />)}
+    </div>)}
+  </div>;
+}
+
+/**
+ * The title rail (FeaturedTitleList, 21ix): fixed at 70 px (63 on a phone), every title (three times over) in one line, the active one
+ * upright and centred at 47.5 % of the width (500 ms ease-in-out), the rest italic at 0.8; each title's refund rule on a
+ * line under it (owner, 25 Nov); the titles fade in 1.2 s after load and fade out as the shelf takes the screen.
+ */
+function TitleRail({ railRef, label, titles, refunds, active, fade, detail, onPick }: { railRef: Ref<HTMLElement>; label: string; titles: string[];
+  /** Each title's refund rule, a line under it. */
+  refunds: ReactNode[]; active: number; fade: number;
+  detail: boolean; onPick: (index: number) => void }) {
+  const items = useRef<(HTMLButtonElement | null)[]>([]);
+  const [shift, setShift] = useState(0), [shown, setShown] = useState(false);
+  useEffect(() => { const timer = window.setTimeout(() => setShown(true), 1200); return () => window.clearTimeout(timer); }, []);
+  useEffect(() => {
+    const place = () => {
+      const item = items.current[titles.length + active];
+      // Centred at 47.5vw, or 27.5vw over the shifted scene while a book is open (their centerOffsetVw −20).
+      if (item) setShift((detail ? 0.275 : 0.475) * window.innerWidth - 20 - (item.offsetLeft + item.offsetWidth / 2));
+    };
+    place();
+    window.addEventListener("resize", place);
+    return () => window.removeEventListener("resize", place);
+  }, [active, titles, detail]);
+  return <nav ref={railRef} aria-label={label} style={{ opacity: shown ? 1 - 2 * fade : 0 }}
+    className={cn("pointer-events-none fixed inset-x-0 top-[70px] z-20 overflow-hidden px-5 pt-5 pb-3 transition-[opacity,clip-path] duration-[1600ms] max-[899px]:top-[63px]",
+      detail ? "[clip-path:inset(0_40%_0_0)] [transition-duration:1600ms,600ms] [transition-timing-function:ease,cubic-bezier(0.16,1,0.3,1)]" : "[clip-path:inset(0_0_0_0)]")}>
+    <ul style={{ transform: "translateX(" + shift + "px)" }}
+      className="flex w-max gap-x-[72px] transition-transform duration-500 ease-in-out max-[899px]:gap-x-[30px]">
+      {/* Three copies, the middle one active, so the active title always has neighbours on both sides (theirs: 21ix). */}
+      {[...titles, ...titles, ...titles].map((title, slot) => { const index = slot % titles.length, middle = slot >= titles.length && slot < 2 * titles.length;
+        return <li key={slot} aria-hidden={middle ? undefined : true}>
+        <button ref={(item) => { items.current[slot] = item; }} type="button" tabIndex={middle ? undefined : -1} onClick={() => onPick(index)}
+          className="pointer-events-auto relative font-display text-[length:calc(40px+16*(100vw-375px)/1353)] leading-[1.12] font-medium tracking-[-0.1rem] whitespace-nowrap text-foreground outline-offset-4 focus-visible:outline-2 max-[899px]:text-[length:calc(44px+17.6*(100vw-375px)/1353)]">
+          <span className={cn("block origin-[0_78%] italic transition-[opacity,transform] duration-[448ms] ease-[ease]",
+            middle && index === active ? "opacity-0 [transform:skewX(9deg)]" : "opacity-80")}>{title}</span>
+          <span className={cn("absolute inset-0 not-italic transition-[opacity,transform] duration-[448ms] ease-[ease]",
+            middle && index === active ? "opacity-100" : "opacity-0 [transform:skewX(-5deg)]")}>{title}</span>
+          {refunds[index] && <span className="mt-1 block font-sans text-sm leading-6 font-normal tracking-normal not-italic">{refunds[index]}</span>}
+        </button>
+      </li>; })}
+    </ul>
+  </nav>;
+}
+
+/**
+ * The corner (HomeViewDetailsCorner): desktop only, fixed bottom right, in 2 s after load (500 ms): "Open book [+]" (or
+ * "Close book [-]" while it is open) and "View details [+]".
+ */
+function ViewDetails({ href, label, hidden, onOpen, book }: { href: string; label: string; hidden: boolean; onOpen: () => void;
+  book: { label: string; open: boolean; onToggle: () => void } }) {
+  const [shown, setShown] = useState(false);
+  useEffect(() => { const timer = window.setTimeout(() => setShown(true), 2000); return () => window.clearTimeout(timer); }, []);
+  return <div className={cn("fixed right-4 -bottom-0.5 z-20 flex h-[30px] items-center gap-3 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] max-[899px]:hidden",
+    shown && !hidden ? "translate-y-0" : "translate-y-[calc(100%+24px)]")}>
+    <button type="button" onPointerDown={(event) => event.stopPropagation()} onClick={book.onToggle}
+      className="text-xs uppercase tracking-[-0.02em] transition-opacity hover:opacity-70">{book.label} {book.open ? "[-]" : "[+]"}</button>
+    <span aria-hidden="true" className="text-xs">·</span>
+    <Link href={href} onClick={(event) => { if (event.metaKey || event.ctrlKey || event.shiftKey) return; event.preventDefault(); onOpen(); }}
+      className="text-xs uppercase tracking-[-0.02em] transition-opacity hover:opacity-70">{label} [+]</Link>
+  </div>;
+}
+
+/** Their peek pill ("+ Open book +", 06w9:17934-17957): over the open book in the details, at 30 % of the width. */
+function OpenBookPill({ label, shown, onHover, onOpen }: { label: string; shown: boolean; onHover: (hovered: boolean) => void; onOpen: () => void }) {
+  return <button type="button" tabIndex={shown ? 0 : -1} aria-hidden={!shown} onMouseEnter={() => onHover(true)} onMouseLeave={() => onHover(false)}
+    onClick={(event) => { event.stopPropagation(); onOpen(); }}
+    className={cn("fixed bottom-[14%] left-[30%] z-30 -translate-x-1/2 rounded-full bg-background px-3 py-1.5 text-xs uppercase tracking-[-0.02em] text-foreground transition-opacity duration-300 max-[899px]:hidden",
+      shown ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0")}>+ {label} +</button>;
+}
+
+/**
+ * Their control bar while a book is open (LookInsideControlBar, 06w9:8661-8996): "[ < ]", the spread, "[ > ]" and
+ * "[ X ]"; across the width on the home, under the book (left of the details) in the details.
+ */
+function LookInsideBar({ shown, wide, page, leaves, labels, onBack, onForward, onClose }: { shown: boolean; wide: boolean; page: number; leaves: number;
+  labels: Labels; onBack: () => void; onForward: () => void; onClose: () => void }) {
+  const left = Math.max(1, 2 * page - 1), right = Math.min(2 * leaves, 2 * page);
+  return <div data-look-inside-bar aria-hidden={!shown} inert={!shown}
+    className={cn("fixed bottom-4 left-4 z-30 flex h-9 items-center justify-between text-xs uppercase tracking-[-0.02em] transition-opacity duration-300 max-[899px]:hidden",
+      wide ? "right-4" : "right-[calc(40%+16px)]", shown ? "opacity-100" : "pointer-events-none opacity-0")}>
+    <button type="button" aria-label={labels.previousPage} disabled={page <= 0} onClick={(event) => { event.stopPropagation(); onBack(); }}
+      className="min-h-9 px-2 transition-opacity hover:opacity-70 disabled:opacity-30">[ &lt; ]</button>
+    <span className="tabular-nums">{page <= 0 ? "" : left === right ? left : left + "–" + right}</span>
+    <div className="flex items-center gap-2">
+      <button type="button" aria-label={labels.nextPage} disabled={page >= leaves} onClick={(event) => { event.stopPropagation(); onForward(); }}
+        className="min-h-9 px-2 transition-opacity hover:opacity-70 disabled:opacity-30">[ &gt; ]</button>
+      <button type="button" aria-label={labels.closeBook} onClick={(event) => { event.stopPropagation(); onClose(); }}
+        className="min-h-9 px-2 transition-opacity hover:opacity-70">[ X ]</button>
+    </div>
+  </div>;
+}
+
+/**
+ * The details stack (DetailPanelBackdrop + BookDetailPanel, 0ckg:145-205; ReturnToShelfWrap 1imu:851-867): the right
+ * 40 % of the page, as tall as the reading scroll, sliding in from the right over 600 ms (out over 300 ms), its text
+ * from 5vw over 810 ms; every book's details stand in it at their section tops; the return link ("← All products", as
+ * the product page's) stays at its top under the site header; Escape and Back close it too.
+ */
+function DetailStack({ shown, height, toShelf, onClose, children }: { shown: boolean; height: number; toShelf: string; onClose: () => void;
+  children: ReactNode }) {
+  return <aside aria-hidden={!shown} inert={!shown} style={{ height }}
+    className={cn("absolute top-0 right-0 z-30 w-[40%] rounded-l-[8px] bg-background text-foreground max-[899px]:hidden",
+      shown ? "translate-x-0 transition-transform duration-600 ease-[cubic-bezier(0.16,1,0.3,1)]" : "translate-x-full transition-transform duration-300 ease-[cubic-bezier(0.32,0,0.67,0)]")}>
+    <div className={cn("relative h-full transition-transform duration-[810ms] ease-out", shown ? "translate-x-0" : "translate-x-[5vw]")}>
+      {/* Under the site header (which overlays the top 72 px), where their 46 px under their own nav would be covered. */}
+      <div className="sticky top-[88px] z-10 px-6">
+        <button type="button" onClick={onClose}
+          className="inline-flex min-h-8 items-center bg-background text-[11px] uppercase tracking-[0.04em] text-muted-foreground transition-colors hover:text-foreground">
+          <ArrowLeftIcon aria-hidden="true" className="mr-1.5 size-3.5" />{toShelf}
+        </button>
+      </div>
+      {children}
+    </div>
+  </aside>;
+}
+
+/**
+ * One book's details in the stack (BookDetailSlot, 06w9:7348-7366): placed at its section top, 118 px down and 260 px
+ * of tail; its content measured (height + 300, theirs) for the reading scroll's sections, and its exit anchor
+ * registered: the top of its full-width section (praise, details), when it has one.
+ */
+function DetailSlot({ index, top, onMeasured, anchors, children }: { index: number; top: number; onMeasured: (index: number, px: number) => void;
+  anchors: { current: Map<number, HTMLElement> }; children: ReactNode }) {
+  const content = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const element = content.current;
+    if (!element) return;
+    const anchor = element.querySelector<HTMLElement>("[data-book-exit-anchor]");
+    if (anchor) anchors.current.set(index, anchor);
+    const report = () => onMeasured(index, Math.round(element.getBoundingClientRect().height + 300));
+    report();
+    const observer = new ResizeObserver(report);
+    observer.observe(element);
+    return () => { observer.disconnect(); anchors.current.delete(index); };
+  }, [index, onMeasured, anchors]);
+  return <div className="absolute inset-x-0 top-0 px-6 pt-[118px] pb-[260px]" style={{ transform: "translateY(" + top + "px)" }}>
+    <div ref={content} data-detail-panel-index={index}>{children}</div>
+  </div>;
+}

@@ -35,6 +35,11 @@ export function SharedCanvas({ eventSource, children, style, ...props }: SharedC
       // View may call gl.setPixelRatio or gl.setSize, which would override this on the next resize.
       dpr={[1, 2]}
       performance={{ min: 0.2 }}
+      // Shadow maps on the renderer, as The Hideaway's MainInternal: a View opts in through castShadow and receiveShadow
+      // (the book's dark-theme spotlight, UI-Commerce 24 Nov); Views that set neither draw no shadow pass. The Hideaway
+      // asks for "soft" (PCFSoftShadowMap) on three r181; three 0.186 removed that type and falls back to PCFShadowMap
+      // with a warning (WebGLShadowMap.js:99). Its PCF is the soft successor (Vogel-disk filtered taps), so ask for it.
+      shadows="percentage"
       gl={{ alpha: true, premultipliedAlpha: false, powerPreference: "high-performance" }}
       {...props}
       style={{ width: "100%", height: "100%", ...style }}

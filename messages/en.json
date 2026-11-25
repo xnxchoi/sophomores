@@ -859,12 +859,20 @@
       "pagesValue": "{value} pages",
       "wordsValue": "{value} words",
       "lookInside": "Look inside",
+      "openBook": "Open book",
+      "closeTheBook": "Close book",
       "closeBook": "Close",
       "previousPage": "Previous page",
       "nextPage": "Next page",
       "magnifier": "Magnifier",
       "highlighterPink": "Pink highlighter",
-      "highlighterYellow": "Yellow highlighter"
+      "highlighterYellow": "Yellow highlighter",
+      "copyPageLink": "Copy page link",
+      "featured": "New and featured",
+      "viewDetails": "View details",
+      "titles": "Titles",
+      "sceneFailed": "The books didn't load.",
+      "tryAgain": "Try again"
     },
     "components_commerce_checkout": {
       "customerSignInIsOffInThisReviewCopy": "Customer sign-in is off in this review copy.",

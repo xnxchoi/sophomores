@@ -3,10 +3,13 @@ import { globSync, readFileSync } from "node:fs";
 import { test } from "node:test";
 
 // Owner, 21 Nov: "don't fucking use mono as a default anywhere besides the places that I explicitly tell you".
-// He has named no place yet, so nothing in the site's own code may ask for a monospace face. src/hideaway is The
-// Hideaway's reference copy and is left as it is; its --font-mono reads now resolve to the sans (globals.css).
-// To allow a place the owner names, add its file here with his words.
-const OWNER_NAMED: Record<string, string> = {};
+// Nothing else in the site's own code may ask for a monospace face. src/hideaway is The Hideaway's reference copy and
+// is left as it is; its --font-mono reads now resolve to the sans (globals.css). Each place the owner names is listed
+// here with his words.
+const OWNER_NAMED: Record<string, string> = {
+  // Owner, 24 Nov, on the open book's bottom bar: "bottom bar is mono - Geist for now" ("No mono here is exception").
+  "src/components/commerce/book3d/book-controls.tsx": "bottom bar is mono - Geist for now"
+};
 
 const root = new URL("../../", import.meta.url);
 const files = globSync("src/**/*.{ts,tsx,css,scss}", {

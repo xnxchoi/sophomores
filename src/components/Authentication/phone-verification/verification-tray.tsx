@@ -372,6 +372,9 @@ function useTrayViewport() {
       const layoutHeight = window.innerHeight;
       const width = window.innerWidth;
       const finePointer = pointer.matches;
+      // A reading that isn't a number keeps the last good bounds (none yet: the shell's CSS placement), so no NaN
+      // offset or height limit ever reaches the shell (Review-B, 26 Nov, LOW).
+      if (![height, offset, layoutHeight, width].every(Number.isFinite)) return;
       setBounds((current) =>
         current?.viewportHeight === height &&
         current.offsetTop === offset &&

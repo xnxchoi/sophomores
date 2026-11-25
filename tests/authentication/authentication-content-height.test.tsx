@@ -150,6 +150,22 @@ test("logical growth and shrinkage preserve the same mounted field and its focus
   assert.ok(document.activeElement === input, "measuring content must not move focus");
 });
 
+test("an unreadable viewport never reaches the shell, and the first good reading places it", async () => {
+  // Review-B, 26 Nov (LOW): invalid viewport input must not forward NaN; a later valid reading recovers.
+  dimensions = { ...dimensions, viewport: Number.NaN };
+  ui.render(content(), { wrapper: EnglishMessages });
+  await settledHeight(520);
+  const { shell } = surface();
+  for (const property of ["top", "bottom", "maxHeight"] as const) assert.equal(shell.style[property].includes("NaN"), false, property + " stays clear of NaN");
+  dimensions = { ...dimensions, viewport: 768 };
+  await ui.act(async () => { window.dispatchEvent(new window.Event("resize")); });
+  await ui.waitFor(() => assert.ok(Math.abs(parseFloat(shell.style.top) - 124) < 0.01, "recovers to the centred top; received " + shell.style.top));
+  dimensions = { ...dimensions, viewport: Number.NaN };
+  await ui.act(async () => { window.dispatchEvent(new window.Event("resize")); });
+  assert.ok(Math.abs(parseFloat(shell.style.top) - 124) < 0.01, "a later bad reading keeps the last good placement; received " + shell.style.top);
+  assert.ok(Math.abs(parseFloat(shell.style.maxHeight) - 720) < 0.01, "and its height limit; received " + shell.style.maxHeight);
+});
+
 test("genuine desktop overflow retains its full content height and a capped scrollable shell", async () => {
   dimensions = { ...dimensions, logical: 900 };
   ui.render(content(), { wrapper: EnglishMessages });

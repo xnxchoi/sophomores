@@ -173,14 +173,38 @@ function Home({ vendored, items, labels }: { vendored: Vendored; items: Item[]; 
     activeBookIndex: active, stackMode: "browse", onBookOpen: (index: number) => { const item = items[index]; if (item) navigate.push(item.href); },
   }), [committed, active, items, navigate]);
 
+  // The spine row seats against, and lifts out ahead of, the section after the shelf (their #home-section-films, read
+  // through homeWebsitesSectionElLiveRef); without one the scene treats the row as already gone. As theirs, the content
+  // layer begins ~0.81 of a screen before the stack's scroll ends (729 px at 900 tall), with their transparent books box
+  // (171.1vh − 40px) before the next section.
+  const next = useRef<HTMLDivElement>(null);
+  useEffect(() => { hub.homeWebsitesSectionElLiveRef.current = next.current; return () => { hub.homeWebsitesSectionElLiveRef.current = null; }; }, [hub]);
+
+  // On the shelf the rail names the selected spine (their rail follows the spine selection there).
+  const [selected, setSelected] = useState<number | null>(null);
+  useEffect(() => {
+    if (!onShelf) { setSelected(null); return; }
+    let frame = 0;
+    const follow = () => {
+      const to = (hub.spineSelectionLiveRef.current as { to?: number } | null)?.to;
+      if (typeof to === "number") setSelected(to);
+      frame = requestAnimationFrame(follow);
+    };
+    frame = requestAnimationFrame(follow);
+    return () => cancelAnimationFrame(frame);
+  }, [onShelf, hub]);
+
   const item = items[active] ?? items[0];
-  return <div style={{ minHeight: geometry.total + geometry.lvh }}>
+  return <div>
+    <div style={{ height: Math.max(0, geometry.total - Math.round(0.81 * geometry.lvh)) }} />
+    <div aria-hidden="true" className="pointer-events-none h-[calc(171.1lvh-40px)]" />
+    <div ref={next} aria-hidden="true" className="h-[40lvh]" />
     <Cards items={items} featured={catalogue.t} geometry={geometry} progressRef={progressRef} listeners={listeners} J={J} />
     <StripeScene vendored={vendored} props={sceneProps} className="pointer-events-none fixed inset-0 isolate z-10" />
     <p className="fixed top-[3.75rem] left-4 z-20 text-[11px] uppercase leading-4 tracking-[0.06em] text-muted-foreground">
       [ {onShelf ? labels.shelf : labels.featured} ]
     </p>
-    <TitleRail titles={items.map((entry) => entry.title)} active={active} fade={Math.max(0, Math.min(1, (committed - K - 0.2) / 0.3))}
+    <TitleRail titles={items.map((entry) => entry.title)} active={selected ?? active} fade={Math.max(0, Math.min(1, (committed - K - 0.2) / 0.3))}
       onPick={(index) => index < catalogue.t ? scrollTo(bookY(index), 1000) : scrollTo(shelfY(), 1833)} />
     {item && <ViewDetails href={item.href} label={labels.viewDetails} hidden={onShelf} />}
   </div>;

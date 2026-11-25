@@ -17,6 +17,8 @@ CHANGES = [
     #    __SPFEATURED (how many lead the list as featured), the scene's book list and featured/shelf indices are ours.
     ("3aodgiaju4hkl.js", 'd=h.j.books.filter(e=>e.isFeatured).length+ +!!u,', 'd=globalThis.__SPBOOKS?globalThis.__SPFEATURED:h.j.books.filter(e=>e.isFeatured).length+ +!!u,'),
     ("3aodgiaju4hkl.js", 'w=u?[...H.slice(0,2),', 'w=globalThis.__SPBOOKS?globalThis.__SPBOOKS:u?[...H.slice(0,2),'),
+    #    ...and their social-card check (every book must have a share image of theirs) is skipped for our books.
+    ("3aodgiaju4hkl.js", 'i=new Map,w.forEach(e=>{let g=W[e.id];if(null===g)return;', 'i=new Map,w.forEach(e=>{let g=W[e.id];if(null===g||globalThis.__SPBOOKS)return;'),
 ]
 for f, old, new in CHANGES:
     p = os.path.join(OUT, f); s = open(p).read(); n = s.count(old)

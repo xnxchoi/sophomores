@@ -696,7 +696,8 @@ function IdentityStep(props: MemberAccountViewProps & { locked: boolean; reserve
         locale="en"
         headingId={props.headingId ?? "member-account-heading"}
         renderHeading={(heading) => (
-          props.reauthenticating ? <div className="sr-only">{heading}</div> : props.presentation === "ticket-checkout"
+          // The sign-in page's h1 already names the entry step; its later steps (the code) keep their own heading.
+          props.reauthenticating || (props.presentation === "page" && !snapshot.codeRequested) ? <div className="sr-only">{heading}</div> : props.presentation === "ticket-checkout"
             // The code step keeps the step's one heading.
             ? <Heading id={props.headingId ?? "member-account-heading"} tabIndex={-1} className="m-0 text-[length:var(--step-heading)] leading-tight font-normal tracking-normal sm:text-[length:var(--step-heading)]">{t("signIn")}</Heading>
             : <VerificationTrayTitle>{heading}</VerificationTrayTitle>

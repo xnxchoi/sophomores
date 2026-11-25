@@ -64,7 +64,8 @@ export function useReadingScroll(hub: SceneHub, scroll: SceneScroll, open: numbe
   }), []);
   const layout = useMemo(() => layoutFor(geometry, heights, scroll), [geometry, heights, scroll]);
   const live = useRef({ layout, geometry, count });
-  useEffect(() => { live.current = { layout, geometry, count }; });
+  // Layout effect, ahead of the park below: a park must never read the layout from before the panels were measured.
+  useLayoutEffect(() => { live.current = { layout, geometry, count }; });
   const anchors = useRef(new Map<number, HTMLElement>());
   const index = useRef({ shown: 0, raw: 0 }), pending = useRef<number | null>(null), guard = useRef({ index: -1, until: 0 });
   const [opened, setOpened] = useState(0);

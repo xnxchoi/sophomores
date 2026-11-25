@@ -141,7 +141,7 @@ export function createUnlockKeyGrantAdapter({ chainID, account, transport, now =
       } catch { return false; }
     }),
 
-    /** Reads only: whether the key is no longer valid (cancelled or expired) at a canonical block at the chain's depth. */
+    /** Reads only: whether this recipient's existing key is no longer valid (cancelled or expired) at a settled canonical block; null when that cannot be shown. */
     async keyInvalidAtDepth({ target: value, tokenID }) {
       const target = targetHere(value);
       if (typeof target === "string" || !/^[1-9][0-9]{0,76}$/.test(tokenID)) return null;
@@ -149,8 +149,13 @@ export function createUnlockKeyGrantAdapter({ chainID, account, transport, now =
         if (!(await chain.onChain())) return null;
         const blockHash = await chain.buriedBlockHash();
         if (!blockHash) return null;
-        const valid = await client.readContract({ address: target.lock, abi: lockAbi, functionName: "isValidKey", args: [BigInt(tokenID)], blockHash, requireCanonical: true });
-        return valid === false;
+        const at = { blockHash, requireCanonical: true } as const;
+        const valid = await client.readContract({ address: target.lock, abi: lockAbi, functionName: "isValidKey", args: [BigInt(tokenID)], ...at });
+        if (valid !== false) return false;
+        // isValidKey is false for a token not yet minted at a lagging checkpoint too (Review-A, 25 Nov): the token must
+        // exist there and belong to this intent's recipient, as in the cancel adapter; otherwise nothing is proven.
+        const owner = await client.readContract({ address: target.lock, abi: lockAbi, functionName: "ownerOf", args: [BigInt(tokenID)], ...at }) as Address;
+        return isAddressEqual(owner, target.recipient) ? true : null;
       } catch { return null; }
     },
 

@@ -145,18 +145,36 @@ export function createSignerTransactions({ chainID, account, transport, holdMs =
   const byFinality = finalizedTagChains.has(chainID);
   const depth = BigInt(confirmationDepth[chainID] ?? 0);
   if (!byFinality && depth < 1n) throw new Error(`Unlock transactions are refused on chain ${chainID}: no confirmation rule`);
-  /** The highest block whose receipts are trusted now: the finalized block, or the head less the depth; null if none. */
+  const same = (a: Hex, b: Hex) => a.toLowerCase() === b.toLowerCase();
+  /** The hash of the block this node numbers `number`; null if the answer names another height or no hash. */
+  const numbered = async (number: bigint): Promise<Hex | null> => {
+    const block = await client.getBlock({ blockNumber: number });
+    return block.number === number && block.hash ? block.hash : null;
+  };
+  /**
+   * The highest block whose receipts are trusted now: the finalized block, or the head less the depth; null if none.
+   * On Polygon the `finalized` checkpoint must also be the block the node numbers at that height (Review-A, 25 Nov):
+   * a node whose finality and numbering disagree proves nothing. This catches an inconsistent RPC, not a consistently
+   * dishonest one (deployment/KEY-GRANTS.md).
+   */
   const settledBlock = async (): Promise<{ number: bigint; hash: Hex } | null> => {
     if (byFinality) {
       const final = await client.getBlock({ blockTag: "finalized" });
       if (final.number === null || !final.hash) return null;
       const head = await client.getBlockNumber({ cacheTime: 0 });
-      return final.number <= head ? { number: final.number, hash: final.hash } : null; // a finalized block past the head is not believed
+      if (final.number > head) return null; // a finalized block past the head is not believed
+      const atHeight = await numbered(final.number);
+      return atHeight && same(atHeight, final.hash) ? { number: final.number, hash: final.hash } : null;
     }
     const head = await client.getBlockNumber({ cacheTime: 0 });
     if (head + 1n < depth) return null;
-    const block = await client.getBlock({ blockNumber: head - depth + 1n });
-    return block.number === head - depth + 1n && block.hash ? { number: block.number, hash: block.hash } : null;
+    const hash = await numbered(head - depth + 1n);
+    return hash ? { number: head - depth + 1n, hash } : null;
+  };
+  /** Whether the settled block is still the node's block at its height after the other reads (the view held). */
+  const stillSettled = async (settled: { number: bigint; hash: Hex }) => {
+    const hash = await numbered(settled.number);
+    return !!hash && same(hash, settled.hash);
   };
   const ceiling = maxFeeCeiling[chainID];
   if (!transport) throw new Error("Unlock requires an explicit transport");
@@ -316,8 +334,11 @@ export function createSignerTransactions({ chainID, account, transport, holdMs =
       try {
         const settled = await settledBlock();
         if (!settled || height > settled.number) return null;
-        const canonical = await client.getBlock({ blockNumber: height });
-        return canonical.number === height && !!canonical.hash && canonical.hash.toLowerCase() === seen.receipt.blockHash.toLowerCase() ? seen.receipt : null;
+        // The receipt's block must be the node's block at its height in the same view as the settled block: read
+        // after it, and the settled block re-read unchanged afterwards. Any mismatch is unknown, never a revert.
+        const atHeight = height === settled.number ? settled.hash : await numbered(height);
+        if (!atHeight || !same(atHeight, seen.receipt.blockHash)) return null;
+        return await stillSettled(settled) ? seen.receipt : null;
       } catch { return null; }
     },
   };

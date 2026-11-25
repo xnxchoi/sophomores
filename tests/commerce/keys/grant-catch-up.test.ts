@@ -5,7 +5,7 @@ import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { runKeyGrantTick } from "@/lib/commerce/keys/grant-catch-up";
 import { createUnlockKeyGrantAdapter } from "@/lib/commerce/keys/unlock/adapter";
 import { fakePayload, type Row } from "./support/fake-payload";
-import { healthyChain, lockAddress, lockCalls, mockChain, recipient, uint, uintArray } from "./support/mock-chain";
+import { address, healthyChain, lockAddress, lockCalls, mockChain, recipient, uint, uintArray } from "./support/mock-chain";
 
 // The key-grant tick (owner, 24 Nov: "automatic catchup it is"; coordinator: wire the cancel runner, OFF until go-live).
 // Fake Payload and the scripted mock chain only: no RPC, no real key, no broadcast.
@@ -30,6 +30,7 @@ function grantAdapter(keyValid?: boolean | (() => never)) {
       eth_call: lockCalls({
         totalKeys: () => uint(0n), expirationDuration: () => uint(30n * 86_400n), grantKeys: () => uintArray([1n]),
         isValidKey: () => typeof keyValid === "function" ? keyValid() : bool(keyValid),
+        ownerOf: () => address(recipient), // the key exists at the checkpoint and is the recipient's (Review-A r7)
       }),
     }),
   }));
@@ -128,7 +129,7 @@ test("unresolved owner cancels rotate: a full first page of still-valid keys doe
     eth_call: lockCalls({ isValidKey: (params) => {
       const data = (params[0] as { data: Hex }).data;
       return bool(BigInt(`0x${data.slice(-64)}`) !== 26n);
-    } }),
+    }, ownerOf: () => address(recipient) }),
   }));
   const adapter = createUnlockKeyGrantAdapter({ chainID: 137, account, transport: chain.transport, now, env: live, polygon: { lock: lockAddress, granter: account.address } });
   const rows: Row[] = Array.from({ length: 26 }, (_, index) => ({ ...refunded(adapter.signer), id: `k${index + 1}`, operationKey: `unlock-grant:v1:order-k${index + 1}:1`, tokenID: String(index + 1) }));

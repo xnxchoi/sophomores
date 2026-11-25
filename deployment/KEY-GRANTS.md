@@ -31,6 +31,13 @@ The code is `src/lib/commerce/keys/` (worker passes, `grant-catch-up.ts`, `unloc
 - **Canonical receipts:** a receipt settles a grant or cancel, or counts as a revert, only once it is settled by the chain's
   rule (Polygon: at or below the node's `finalized` block; Base Sepolia: 10 blocks deep) *and* its block hash equals the canonical block at that height. A reorged-out or stale-fork receipt stays
   pending until the chain shows the transaction in a canonical block.
+- **RPC trust (Review-A, 25 Nov):** on Polygon the `finalized` block must also be the block the node numbers at that
+  height, the receipt's block is read in that same view, and the finalized block is re-read unchanged afterwards. Any
+  disagreement leaves the grant or cancel pending (never a revert, so never a retry). A key counts as already invalid
+  only if, at that block, it exists, is the recipient's and is not valid (a key minted after a lagging checkpoint is
+  not "cancelled"). This catches an **inconsistent** RPC (a load balancer mixing nodes, a node on a stale fork), not a
+  **consistently dishonest** one. Live use therefore needs a finality source the owner trusts (his own node or a paid
+  provider he chooses), or a second, independent RPC to corroborate; the code reads one RPC.
 - **Off** (the default): it prints `{"outcome":"off"}` before loading anything.
 - **What the tick never does:**
   - It never retries an `ambiguous` grant; that waits for reconcile and a person.

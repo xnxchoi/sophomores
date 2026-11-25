@@ -92,7 +92,10 @@ test("switch on: a grant is confirmed only once Polygon has finalized its block"
   const base = healthyChain().eth_getBlockByNumber([]) as object;
   let finalized = 99;
   const { adapter } = pinnedAdapter(polygonChain({ eth_getTransactionReceipt: () => minted, eth_blockNumber: () => numberToHex(400),
-    eth_getBlockByNumber: ([tag]) => tag === "finalized" ? { ...base, number: numberToHex(finalized), hash: `0x${"9".repeat(64)}` } : base }));
+    eth_getBlockByNumber: ([tag]) => {
+      const number = tag === "finalized" ? finalized : Number(BigInt(tag as string));
+      return { ...base, number: numberToHex(number), hash: number === 100 ? (base as { hash: string }).hash : `0x${"9".repeat(64)}` };
+    } }));
   const txHash = `0x${"e".repeat(64)}`;
   assert.deepEqual(await adapter.reconcile({ intentID: "i", txHash, target: polygonTarget }), { kind: "unknown" }, "one block short of finalized");
   finalized += 1;

@@ -185,28 +185,81 @@ test("re-sending recorded bytes re-reads the role hook: set is refused, unreadab
 });
 
 // Owner, 25 Nov (r6): Polygon trusts a receipt once its block is finalized (milestones), not after a fixed 256 blocks.
+const blockAt = (number: number, hash: Hex) => ({ ...(healthyChain().eth_getBlockByNumber([]) as object), number: numberToHex(number), hash });
+/** A node's view: the block it names `finalized`, and the hash it numbers at each height (answers in call order when a list). */
+function view(finalized: [number, Hex] | null | "fails", numberedHashes: Record<number, Hex | Hex[]>) {
+  const served: Record<number, number> = {};
+  return ([tag]: unknown[]) => {
+    if (tag === "finalized") {
+      if (finalized === "fails") throw new Error("unsupported block tag");
+      return finalized && blockAt(...finalized);
+    }
+    const number = Number(BigInt(tag as string));
+    const answer = numberedHashes[number];
+    if (answer === undefined) return null;
+    const hash = Array.isArray(answer) ? answer[Math.min((served[number] = (served[number] ?? -1) + 1), answer.length - 1)] : answer;
+    return blockAt(number, hash);
+  };
+}
+
 test("Polygon settles a receipt once its block is at or below the finalized block, and never without one", async () => {
-  const block = (number: number, hash: Hex = hashOf("1")) => ({ ...(healthyChain().eth_getBlockByNumber([]) as object), number: numberToHex(number), hash });
-  const cases: [string, (params: unknown[]) => unknown, () => Hex, string][] = [
-    ["finalized at the receipt's block", ([tag]) => tag === "finalized" ? block(100) : block(100), () => numberToHex(101), "confirmed"],
-    ["finalized past it, head barely ahead", ([tag]) => tag === "finalized" ? block(105, hashOf("5")) : block(100), () => numberToHex(105), "confirmed"],
-    ["finalized one block short", ([tag]) => tag === "finalized" ? block(99, hashOf("9")) : block(100), () => numberToHex(400), "unknown"],
-    ["no finalized block", ([tag]) => tag === "finalized" ? null : block(100), () => numberToHex(400), "unknown"],
-    ["finalized read fails", ([tag]) => { if (tag === "finalized") throw new Error("unsupported block tag"); return block(100); }, () => numberToHex(400), "unknown"],
-    ["finalized past the head", ([tag]) => tag === "finalized" ? block(120, hashOf("5")) : block(100), () => numberToHex(110), "unknown"],
+  const [one, five, nine] = [hashOf("1"), hashOf("5"), hashOf("9")];
+  const cases: [string, ReturnType<typeof view>, number, string][] = [
+    ["finalized at the receipt's block", view([100, one], { 100: one }), 101, "confirmed"],
+    ["finalized past it", view([105, five], { 100: one, 105: five }), 105, "confirmed"],
+    ["finalized one block short", view([99, nine], { 99: nine, 100: one }), 400, "unknown"],
+    ["no finalized block", view(null, { 100: one }), 400, "unknown"],
+    ["finalized read fails", view("fails", { 100: one }), 400, "unknown"],
+    ["finalized past the head", view([120, five], { 100: one, 120: five }), 110, "unknown"],
   ];
   for (const [label, blocks, head, kind] of cases) {
-    const { adapter, requests } = granter(polygon({}, { eth_getTransactionReceipt: () => receipt("0x1", [transferLog(42n)]), eth_blockNumber: head, eth_getBlockByNumber: blocks }));
+    const { adapter, requests } = granter(polygon({}, { eth_getTransactionReceipt: () => receipt("0x1", [transferLog(42n)]), eth_blockNumber: () => numberToHex(head), eth_getBlockByNumber: blocks }));
     assert.equal((await adapter.reconcile({ intentID: "i", txHash: hashOf("c"), target })).kind, kind, label);
     assert.ok(requests.some((request) => request.method === "eth_getBlockByNumber" && request.params?.[0] === "finalized"), label);
   }
 });
 
-test("on Polygon, a key read as already invalid is read at the finalized block", async () => {
-  const final = { ...(healthyChain().eth_getBlockByNumber([]) as object), number: "0x64", hash: hashOf("5") };
-  const reads: unknown[] = [];
-  const { adapter } = granter(polygon({ isValidKey: ([, at]) => { reads.push(at); return bool(false); } }, {
-    eth_blockNumber: () => numberToHex(101), eth_getBlockByNumber: ([tag]) => { assert.equal(tag, "finalized"); return final; } }));
-  assert.equal(await adapter.keyInvalidAtDepth({ target, tokenID: "5" }), true);
-  assert.deepEqual(reads, [{ blockHash: hashOf("5"), requireCanonical: true }]);
+// Review-A, 25 Nov (r7): the finalized checkpoint is itself checked against the node's numbered block at its height,
+// and the receipt's block is read in that same view. A disagreement is unknown: no settle, and no revert to retry from.
+test("a finalized checkpoint the node does not number at its height, or a view that moves, settles nothing", async () => {
+  const [one, five, other] = [hashOf("1"), hashOf("5"), hashOf("7")];
+  const cases: [string, ReturnType<typeof view>][] = [
+    ["finalized names another block at its height", view([105, five], { 100: one, 105: other })],
+    ["finalized at the receipt's height names another block", view([100, other], { 100: one })],
+    ["the settled height is renumbered during the reads", view([105, five], { 100: one, 105: [five, other] })],
+  ];
+  for (const [answer, kind] of [[receipt("0x1", [transferLog(42n)]), "confirmed"], [receipt("0x0", []), "definitelyReverted"]] as const) {
+    const consistent = granter(polygon({}, { eth_getTransactionReceipt: () => answer, eth_blockNumber: () => numberToHex(105), eth_getBlockByNumber: view([105, five], { 100: one, 105: five }) }));
+    assert.equal((await consistent.adapter.reconcile({ intentID: "i", txHash: hashOf("c"), target })).kind, kind, "consistent view");
+    for (const [label, blocks] of cases) {
+      const { adapter } = granter(polygon({}, { eth_getTransactionReceipt: () => answer, eth_blockNumber: () => numberToHex(105), eth_getBlockByNumber: blocks }));
+      assert.equal((await adapter.reconcile({ intentID: "i", txHash: hashOf("c"), target })).kind, "unknown", `${label} (${kind})`);
+    }
+  }
+  const { adapter } = canceller(polygon({}, { eth_getTransactionReceipt: () => receipt("0x0", []), eth_blockNumber: () => numberToHex(105), eth_getBlockByNumber: cases[0][1] }));
+  assert.equal((await adapter.reconcileCancel({ txHash: hashOf("c"), target, tokenID: "5" })).kind, "unknown", "cancel: no false revert");
+});
+
+// Review-A, 25 Nov (r7): isValidKey is false for a token not yet minted at a lagging checkpoint, so invalidity counts
+// only when the token exists there and is this recipient's.
+test("a key counts as already invalid only if, at the finalized block, it exists, is the recipient's, and is not valid", async () => {
+  const final = view([100, hashOf("5")], { 100: hashOf("5") });
+  const cases: [string, Hex | "reverts", Hex, boolean | null][] = [
+    ["recipient's key, cancelled", address(recipient), bool(false), true],
+    ["not minted yet at the checkpoint (zero owner)", address(zero), bool(false), null],
+    ["not minted yet at the checkpoint (ownerOf reverts)", "reverts", bool(false), null],
+    ["held by someone else", address(`0x${"d".repeat(40)}`), bool(false), null],
+    ["still valid", address(recipient), bool(true), false],
+  ];
+  for (const [label, owner, valid, expected] of cases) {
+    const reads: unknown[] = [];
+    const { adapter } = granter(polygon({
+      isValidKey: ([, at]) => { reads.push(at); return valid; },
+      ownerOf: ([, at]) => { reads.push(at); if (owner === "reverts") throw new Error("execution reverted"); return owner; },
+    }, { eth_blockNumber: () => numberToHex(101), eth_getBlockByNumber: final }));
+    let result: boolean | null;
+    try { result = await adapter.keyInvalidAtDepth({ target, tokenID: "5" }); } catch { result = null; }
+    assert.equal(result, expected, label);
+    assert.ok(reads.every((at) => JSON.stringify(at) === JSON.stringify({ blockHash: hashOf("5"), requireCanonical: true })), label);
+  }
 });

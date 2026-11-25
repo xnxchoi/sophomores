@@ -30,3 +30,8 @@ our catalogue requests none of them (checked in the harness request log).
    so the scene's featured/shelf indices (t, J, K, segment helpers) follow our catalogue. Set by shop/stripe-scene.tsx
    before their modules first run. With our books, their social-card check (each book needs one of their share images)
    is skipped.
+9. `12s2cqzsl56ip.js` (module 50016, spine-row display order `ec`): theirs moves the last `floor((n-2J-1)/2)` books to
+   the front so the last featured book `J` (selected when the shelf arrives) sits mid-row; with fewer than `2J+1` books
+   it is left at the right end. Ours is the same idea as a rotation putting `J` at `floor((n-1)/2)`: the same order as
+   theirs for `n >= 2J+1`, and `J` still mid-row with fewer books (owner, 25 Nov: their carousel starts with the last
+   featured book in the middle, ours started at the end).

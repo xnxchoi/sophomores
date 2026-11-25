@@ -4,11 +4,11 @@ import { useEffect, useRef, useState } from "react";
 
 /**
  * stripe.press's book scene, copied verbatim (owner, 25 Nov: "only copy over the 3D parts verbatim … Dont build webgl
- * stuff from ground up"). Their shipped chunks live in public/vendor/stripe-press with seven recorded changes
+ * stuff from ground up"). Their shipped chunks live in public/vendor/stripe-press with nine recorded changes
  * (scripts/stripe-press-vendor/VENDOR-CHANGES.md) and run in their own Turbopack runtime and React copy, beside the
  * site's. `useStripeScene` loads them once with our catalogue and hands the page (shop-home.tsx, ours) what their home
  * page itself uses: BookStack to render, the live-ref hub (module 50016), the scroll helpers (73900), the catalogue
- * helpers (67168) and the gesture router (11743).
+ * helpers (67168), the gesture router (11743) and the spine-row seat helpers (2449).
  */
 const BASE = "/vendor/stripe-press/", DIR = BASE + "static/immutable/chunks/", RUNTIME = "turbopack-2_04ewhudzrza.js";
 const CHUNKS = ["04ud9hjinltfg.js", "0o8wbxikbqj64.js", "02r0qv9ged3vb.js", "14l5yxhvu5ecr.js", "0_xwvg_h93t1m.js", "0al_0m9d4_k3k.js",
@@ -23,8 +23,12 @@ export type SceneHub = Record<string, Ref<unknown>> & {
   spineViewProgressFor: (progress: number) => number;
   stepSpineSelection: (step: number, count: number, options?: { repeat?: boolean }) => void;
   beginSpineDrag: unknown; moveSpineDrag: unknown; endSpineDrag: unknown;
+  spineRowLiftForTopPx: (topPx: number) => number; hintSpineRow: () => void;
   SCENE_CARD_BOTTOM_INSET_CSS_PX: number;
 };
+/** Their spine-row seat helpers (module 2449): the shelf progress at which the row seats, for a phone (`d`), for a lift
+ * fraction of the row's exit travel (`h`), and the seated progress without a lift (`j`). */
+export type SceneSeats = { d: (mobile: boolean) => number; h: (liftFraction: number, mobile: boolean) => number; j: (mobile: boolean) => number };
 /** Their scroll helpers (module 73900): lvh/width probes, canvas geometry, scrollYToProgress (m), prefix sums (e). */
 export type SceneScroll = {
   d: (listener: () => void) => () => void; C: () => number; X: () => number; B: () => number;
@@ -33,13 +37,13 @@ export type SceneScroll = {
 };
 /** Their catalogue helpers (module 67168), built from our catalogue (change 7). */
 export type SceneCatalogue = {
-  t: number; J: number; K: number; a: (segment: number) => number | null; D: (index: number) => number;
+  t: number; J: number; K: number; a: (segment: number) => number | null; D: (index: number) => number; E: (progress: number) => boolean;
   F: (count: number, canvasHeight: number, lockPx: number[], shelfScreens: number) => number[];
 };
 /** Their gesture router (module 11743): `e()` installs it, `v(scope, handlers)` registers a scope. */
 export type SceneRouter = { e: () => (() => void) | void; v: (scope: string, handlers: Props) => () => void };
 export type Vendored = { mount: (element: HTMLElement) => { render: (props: Props) => void; unmount: () => void };
-  hub: SceneHub; scroll: SceneScroll; catalogue: SceneCatalogue; router: SceneRouter };
+  hub: SceneHub; scroll: SceneScroll; catalogue: SceneCatalogue; router: SceneRouter; seats: SceneSeats };
 type Context = { i: (id: number) => unknown };
 
 let loaded: Promise<Vendored> | null = null;
@@ -73,7 +77,7 @@ function load(books: unknown[], featured: number) {
             return { render: (props) => root.render(jsx.jsx(stack.I, props)), unmount: () => root.unmount() };
           },
           hub: context.i(50016) as SceneHub, scroll: context.i(73900) as SceneScroll,
-          catalogue: context.i(67168) as SceneCatalogue, router: context.i(11743) as SceneRouter,
+          catalogue: context.i(67168) as SceneCatalogue, router: context.i(11743) as SceneRouter, seats: context.i(2449) as SceneSeats,
         });
       }]);
       queue.push([entry, { otherChunks: [], runtimeModuleIds: [990001] }]);

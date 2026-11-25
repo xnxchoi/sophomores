@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type Ref } from "react";
 import { useTransitionRouter } from "next-transition-router";
 import { Link } from "@/components/core/Link/Link";
 import { cn } from "@/lib/utils";
 import { lockedProgressFor, StripeScene, useStripeScene, type SceneBook, type Vendored } from "./stripe-scene";
+import { useShelfCatch, type ShelfCatchSource } from "./use-shelf-catch";
 
 /**
  * The shop's home, rebuilt from stripe.press's home code (06w9 module 43181; .tmp/stripe-notes/home-layout-inventory.md,
@@ -38,7 +39,7 @@ export function ShopHome({ items, labels }: { items: Item[]; labels: Labels }) {
 }
 
 function Home({ vendored, items, labels }: { vendored: Vendored; items: Item[]; labels: Labels }) {
-  const { hub, scroll, catalogue, router } = vendored;
+  const { hub, scroll, catalogue, router, seats } = vendored;
   const navigate = useTransitionRouter();
   const count = items.length, J = catalogue.J, K = catalogue.K;
 
@@ -99,12 +100,17 @@ function Home({ vendored, items, labels }: { vendored: Vendored; items: Item[]; 
   }, [catalogue, hub, scroll, J, K, count]);
 
   // Where the page scrolls to bring a featured book onto its card, or the shelf into place (easeInOutSine, as theirs).
+  // One drive at a time; the shelf catch can stop it.
+  const drive = useRef({ token: 0, active: false });
+  const stopDriving = () => { drive.current.token += 1; drive.current.active = false; };
   const scrollTo = (target: number, ms: number) => {
-    const from = window.scrollY, start = performance.now();
+    const from = window.scrollY, start = performance.now(), token = ++drive.current.token;
+    drive.current.active = true;
     const step = (now: number) => {
+      if (drive.current.token !== token) return;
       const t = Math.min(1, (now - start) / ms);
       window.scrollTo(0, from + (target - from) * (0.5 - 0.5 * Math.cos(Math.PI * t)));
-      if (t < 1) requestAnimationFrame(step);
+      if (t < 1) requestAnimationFrame(step); else drive.current.active = false;
     };
     requestAnimationFrame(step);
   };
@@ -113,9 +119,36 @@ function Home({ vendored, items, labels }: { vendored: Vendored; items: Item[]; 
     const at = index === 0 || index === J ? 0 : Math.max(0.01, Math.min(0.99, offset));
     return (starts[segment] ?? 0) + at * (extents[segment] ?? 0) + 1;
   };
-  const shelfY = () => (geo.current.starts[K] ?? 0) + 0.3 * (geo.current.extents[K] ?? 0);
+  // The shelf's seat (their `nH`, 06w9:11116-11160): where the spine row sits seated, lifted clear of the titles.
+  const seatY = () => {
+    const { starts, extents } = geo.current, width = window.innerWidth || 0, height = window.innerHeight || 1, mobile = width < 900;
+    const at = (progress: number) => {
+      const segment = Math.floor(progress), start = starts[segment], extent = extents[segment];
+      return start != null && extent ? Math.round(start + (progress - segment) * extent) : null;
+    };
+    if (mobile) { const y = at(seats.d(true)); if (y != null) return y; }
+    const seat = hub.spineRowSeatGeomLiveRef.current as { valid?: boolean; exitTarget?: number } | null;
+    const line = hub.homeTitlesClearLinePxLiveRef.current as number | null;
+    if (seat?.valid && (seat.exitTarget ?? 0) > 0 && line != null) {
+      const y = at(seats.h(Math.max(0, hub.spineRowLiftForTopPx(line)) / (seat.exitTarget ?? 1), false));
+      if (y != null) return y;
+    }
+    const start = starts[K], extent = extents[K];
+    if (start == null || !extent) return null;
+    const into = Math.max(0, Math.min(1, seats.j(mobile) - K)), d = height;
+    const vh = d >= 1300 ? -87 : d >= 1100 ? -79.3 + ((d - 1100) / 200) * (-87 - -79.3) : d >= 850 ? -37.4 - ((d - 850) / 250) * 41.9
+      : d >= 650 ? -13.6 + ((d - 650) / 200) * (-37.4 - -13.6) : -13.6;
+    return Math.round(start + into * extent + ((vh + ((hub.shelfScrollTargetOffsetVhLiveRef.current as number) ?? 0)) * d) / 100);
+  };
+  const shelfY = () => seatY() ?? (geo.current.starts[K] ?? 0) + 0.3 * (geo.current.extents[K] ?? 0);
   const motion = useRef({ scrollTo, bookY, shelfY });
   useEffect(() => { motion.current = { scrollTo, bookY, shelfY }; });
+
+  // Their shelf catch and the titles' clear line (use-shelf-catch.ts).
+  const titles = useRef<HTMLElement>(null);
+  const catchSource = useRef<ShelfCatchSource>({ seatY: () => null, driving: () => false, stopDriving: () => undefined, titles: () => null });
+  useEffect(() => { catchSource.current = { seatY, driving: () => drive.current.active, stopDriving, titles: () => titles.current }; });
+  useShelfCatch(hub, catalogue, catchSource);
 
   // Idle auto-advance (06w9:14528-14582): 1.5 s after mount, then after every 3 s of stillness, one book down (1 s;
   // 1.83 s into the shelf), until the visitor does anything at all.
@@ -204,7 +237,7 @@ function Home({ vendored, items, labels }: { vendored: Vendored; items: Item[]; 
     <p className="fixed top-[3.75rem] left-4 z-20 text-[11px] uppercase leading-4 tracking-[0.06em] text-muted-foreground">
       [ {onShelf ? labels.shelf : labels.featured} ]
     </p>
-    <TitleRail titles={items.map((entry) => entry.title)} active={selected ?? active} fade={Math.max(0, Math.min(1, (committed - K - 0.2) / 0.3))}
+    <TitleRail railRef={titles} titles={items.map((entry) => entry.title)} active={selected ?? active} fade={Math.max(0, Math.min(1, (committed - K - 0.2) / 0.3))}
       onPick={(index) => index < catalogue.t ? scrollTo(bookY(index), 1000) : scrollTo(shelfY(), 1833)} />
     {item && <ViewDetails href={item.href} label={labels.viewDetails} hidden={onShelf} />}
   </div>;
@@ -256,7 +289,8 @@ function Cards({ items, featured, geometry, progressRef, listeners, J }: { items
  * upright and centred at 47.5 % of the width (500 ms ease-in-out), the rest italic at 0.8; "(Hardcover)" above each
  * title's end; the titles fade in 1.2 s after load and fade out as the shelf takes the screen.
  */
-function TitleRail({ titles, active, fade, onPick }: { titles: string[]; active: number; fade: number; onPick: (index: number) => void }) {
+function TitleRail({ railRef, titles, active, fade, onPick }: { railRef: Ref<HTMLElement>; titles: string[]; active: number; fade: number;
+  onPick: (index: number) => void }) {
   const items = useRef<(HTMLButtonElement | null)[]>([]);
   const [shift, setShift] = useState(0), [shown, setShown] = useState(false);
   useEffect(() => { const timer = window.setTimeout(() => setShown(true), 1200); return () => window.clearTimeout(timer); }, []);
@@ -269,7 +303,7 @@ function TitleRail({ titles, active, fade, onPick }: { titles: string[]; active:
     window.addEventListener("resize", place);
     return () => window.removeEventListener("resize", place);
   }, [active, titles]);
-  return <nav aria-label="Titles" style={{ opacity: shown ? 1 - 2 * fade : 0 }}
+  return <nav ref={railRef} aria-label="Titles" style={{ opacity: shown ? 1 - 2 * fade : 0 }}
     className="pointer-events-none fixed inset-x-0 top-[70px] z-20 overflow-hidden px-5 pt-5 pb-3 transition-opacity duration-[1600ms] max-[899px]:top-[63px]">
     <ul style={{ transform: "translateX(" + shift + "px)" }}
       className="flex w-max gap-x-[72px] transition-transform duration-500 ease-in-out max-[899px]:gap-x-[30px]">

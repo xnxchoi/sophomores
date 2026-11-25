@@ -19,6 +19,11 @@ CHANGES = [
     ("3aodgiaju4hkl.js", 'w=u?[...H.slice(0,2),', 'w=globalThis.__SPBOOKS?globalThis.__SPBOOKS:u?[...H.slice(0,2),'),
     #    ...and their social-card check (every book must have a share image of theirs) is skipped for our books.
     ("3aodgiaju4hkl.js", 'i=new Map,w.forEach(e=>{let g=W[e.id];if(null===g)return;', 'i=new Map,w.forEach(e=>{let g=W[e.id];if(null===g||globalThis.__SPBOOKS)return;'),
+    # 9. Spine-row order (module 50016, `ec`): theirs moves the last floor((n-2J-1)/2) books to the front so the last
+    #    featured book (J) sits mid-row, which only works with n >= 2J+1 books. As a rotation that puts J at
+    #    floor((n-1)/2) for any n: identical order to theirs when n >= 2J+1, and still mid-row with fewer books.
+    ("12s2cqzsl56ip.js", 'ec=(t=a.I.length,o=Array.from({length:r=Math.max(0,Math.floor((t-(n=a.J)-1-n)/2))},(e,n)=>t-r+n),i=Array.from({length:t},(e,t)=>t).filter(e=>!o.includes(e)),[...o,...i])',
+     'ec=(t=a.I.length,n=a.J,r=((n-Math.floor((t-1)/2))%t+t)%t,Array.from({length:t},(e,o)=>(o+r)%t))'),
 ]
 for f, old, new in CHANGES:
     p = os.path.join(OUT, f); s = open(p).read(); n = s.count(old)

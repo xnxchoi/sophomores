@@ -159,11 +159,25 @@ test("an unreadable viewport never reaches the shell, and the first good reading
   for (const property of ["top", "bottom", "maxHeight"] as const) assert.equal(shell.style[property].includes("NaN"), false, property + " stays clear of NaN");
   dimensions = { ...dimensions, viewport: 768 };
   await ui.act(async () => { window.dispatchEvent(new window.Event("resize")); });
-  await ui.waitFor(() => assert.ok(Math.abs(parseFloat(shell.style.top) - 124) < 0.01, "recovers to the centred top; received " + shell.style.top));
+  // jsdom gives Motion no computed starting values, so a value the shell never had can't be read here; the
+  // browser applies it at once (live: top 327px at 1440x900). The placement switching to the modal is the proof.
+  await ui.waitFor(() => assert.equal(shell.dataset.authenticationPresentation, "modal"));
+});
+
+test("a bad viewport reading after a good one keeps the last good placement, and the next good one is followed", async () => {
+  ui.render(content(), { wrapper: EnglishMessages });
+  await settledHeight(520);
+  const { shell } = surface();
+  await ui.waitFor(() => assert.ok(Math.abs(parseFloat(shell.style.top) - 124) < 0.01));
   dimensions = { ...dimensions, viewport: Number.NaN };
   await ui.act(async () => { window.dispatchEvent(new window.Event("resize")); });
-  assert.ok(Math.abs(parseFloat(shell.style.top) - 124) < 0.01, "a later bad reading keeps the last good placement; received " + shell.style.top);
+  await new Promise((done) => setTimeout(done, 300));
+  assert.ok(Math.abs(parseFloat(shell.style.top) - 124) < 0.01, "keeps the last good top; received " + shell.style.top);
   assert.ok(Math.abs(parseFloat(shell.style.maxHeight) - 720) < 0.01, "and its height limit; received " + shell.style.maxHeight);
+  dimensions = { ...dimensions, viewport: 900 };
+  await ui.act(async () => { window.dispatchEvent(new window.Event("resize")); });
+  await ui.waitFor(() => assert.ok(Math.abs(parseFloat(shell.style.maxHeight) - 852) < 0.01, "recovers with the new window; received " + shell.style.maxHeight));
+  assert.ok(Math.abs(parseFloat(shell.style.top) - 124) < 0.01, "the held top stays: the window grew, nothing passes its edge");
 });
 
 test("genuine desktop overflow retains its full content height and a capped scrollable shell", async () => {

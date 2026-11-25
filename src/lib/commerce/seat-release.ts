@@ -53,9 +53,10 @@ export const seatSweepSchema = z.strictObject({ after: z.uuid().nullable() });
  * then moves the cursor past them; at the end it starts again from the first. Rows that are still ineligible (keys
  * valid) or whose release failed are revisited on the next round, never ahead of the rest. Each order runs in its own
  * transaction; a failure is logged and skipped. Auth's key tick calls it every pass, after reconciling owner-signed
- * cancels; the refund and the key worker still release right away where they can. Returns how many seats it released.
+ * cancels; the refund and the key worker still release right away where they can. Returns how many seats it released
+ * and how many steps failed (an order skipped, or the cursor not saved), so a caller with no logger can still report it.
  */
-export async function releaseInvalidatedSeatsSweep({ req, limit = 25, now = Date.now() }: { req: PayloadRequest; limit?: number; now?: number }): Promise<number> {
+export async function releaseInvalidatedSeatsSweep({ req, limit = 25, now = Date.now() }: { req: PayloadRequest; limit?: number; now?: number }): Promise<{ released: number; failed: number }> {
   if (await req.transactionID) throw new Error("The seat sweep runs each order in its own transaction");
   const cursor = await findCommerce(req, "commerce-reconciliations", "scope", seatSweepScope);
   const after = cursor ? seatSweepSchema.parse(cursor.state).after : null;
@@ -64,10 +65,10 @@ export async function releaseInvalidatedSeatsSweep({ req, limit = 25, now = Date
       ...(after ? [{ id: { greater_than: after } }] : [])] } });
   const scanned = found.docs as unknown as { id: string; order?: unknown }[];
   const orders = new Set(scanned.flatMap((admission) => admission.order == null ? [] : [relationshipID(admission.order)]));
-  let released = 0;
+  let released = 0, failed = 0;
   for (const orderID of orders) {
     try { released += await inCommerceTransaction(req, () => withCommerceWrite(req, () => releaseInvalidatedSeats({ req, orderID, now }))); }
-    catch { req.payload.logger?.error({ msg: "Seat release sweep: order skipped until its next turn", orderID }); }
+    catch { failed++; req.payload.logger?.error({ msg: "Seat release sweep: order skipped until its next turn", orderID }); }
   }
   const next = scanned.length < limit ? null : String(scanned[scanned.length - 1].id);
   try {
@@ -77,6 +78,6 @@ export async function releaseInvalidatedSeatsSweep({ req, limit = 25, now = Date
       if (row) await updateCommerce(req, "commerce-reconciliations", row.id, { state });
       else await createCommerce(req, "commerce-reconciliations", { scope: seatSweepScope, state });
     }));
-  } catch { req.payload.logger?.error({ msg: "Seat release sweep: cursor not saved; the next pass repeats this window" }); }
-  return released;
+  } catch { failed++; req.payload.logger?.error({ msg: "Seat release sweep: cursor not saved; the next pass repeats this window" }); }
+  return { released, failed };
 }

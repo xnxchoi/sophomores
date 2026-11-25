@@ -65,7 +65,7 @@ test("an owed key is granted once; the next tick does not send it again", async 
   const { payload, rows } = fakePayload([owed("a", 1)]);
   const lock = runLock();
   const first = await runKeyGrantTick({ payload, grant: adapter, acquire: lock.acquire, env: live, now });
-  assert.deepEqual(first, { outcome: "ran", reconciled: 0, replaced: 0, dispatched: 1, cancelled: 0, seatsReleased: 0 });
+  assert.deepEqual(first, { outcome: "ran", reconciled: 0, replaced: 0, dispatched: 1, cancelled: 0, seatsReleased: 0, seatSweepFailures: 0 });
   const second = await runKeyGrantTick({ payload, grant: adapter, acquire: lock.acquire, env: live, now });
   assert.equal(second.outcome === "ran" && second.dispatched, 0);
   assert.equal(raws.length, 1, "one transaction for the order");
@@ -139,4 +139,20 @@ test("unresolved owner cancels rotate: a full first page of still-valid keys doe
   assert.equal(intents.find((row) => row.id === "k26")?.state, "cancelled");
   assert.equal(intents.filter((row) => row.state === "granted" && typeof row.nextAttemptAt === "string").length, 25, "the still-valid ones are rechecked later");
   assert.equal(raws.length, 0);
+});
+
+test("a failed seat sweep does not fail the tick: it is counted, written as one fixed line, and the next tick retries", async () => {
+  const { adapter } = grantAdapter();
+  const { payload, rows } = fakePayload([]);
+  const lines: string[] = [];
+  const ledger = rows["commerce-reconciliations"];
+  delete rows["commerce-reconciliations"]; // the sweep's ledger read now throws
+  const failed = await runKeyGrantTick({ payload, grant: adapter, acquire: runLock().acquire, env: live, now, log: (line) => lines.push(line) });
+  assert.deepEqual(failed, { outcome: "ran", reconciled: 0, replaced: 0, dispatched: 0, cancelled: 0, seatsReleased: 0, seatSweepFailures: 1 });
+  assert.deepEqual(lines, ['{"event":"seat_sweep_failed","count":1}'], "no message, id or customer data");
+  rows["commerce-reconciliations"] = ledger;
+  const retried = await runKeyGrantTick({ payload, grant: adapter, acquire: runLock().acquire, env: live, now, log: (line) => lines.push(line) });
+  assert.equal(retried.outcome === "ran" && retried.seatSweepFailures, 0);
+  assert.equal(lines.length, 1);
+  assert.equal(rows["commerce-reconciliations"].length, 1, "the retry saved its cursor");
 });

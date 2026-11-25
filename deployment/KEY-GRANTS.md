@@ -5,15 +5,22 @@ Owner direction (24 Nov): paid orders get their key on the Polygon Signet lock `
 The code is `src/lib/commerce/keys/` (worker passes, `grant-catch-up.ts`, `unlock/polygon.ts`) and `scripts/key-grant-tick.ts`. Recovery of a stuck signer nonce is in [SIGNER-RECOVERY.md](SIGNER-RECOVERY.md).
 
 ## What runs where
-- **The tick** (`scripts/key-grant-tick.ts`, about once a minute) runs four passes:
+- **The tick** (`scripts/key-grant-tick.ts`, about once a minute) runs five passes:
   1. reconcile what is on chain;
   2. replace stuck grants at their own nonce;
   3. grant owed keys;
-  4. mark refunded keys cancelled once the owner's wallet has cancelled them.
+  4. mark refunded keys cancelled once the owner's wallet has cancelled them;
+  5. release the seats of refunded Unlock event tickets whose keys are all invalid now, before Part I starts
+     (`src/lib/commerce/seat-release.ts`; owner, 24 Nov: "yes, cancel. release seat."). Each seat is released once, in
+     its own transaction, through a durable cursor so no refund waits behind others. A failure here never fails the
+     tick; the next tick retries it.
 - **One tick at a time:** a PostgreSQL advisory lock enforces it. A second tick sees `busy` and exits.
-- **Output:** one JSON line per run, such as `{"outcome":"off"}`, `{"outcome":"busy"}`, `{"outcome":"ran","reconciled":0,"replaced":0,"dispatched":1,"cancelled":0}` or `{"outcome":"failure","reason":"..."}`. It never prints a key or an error's details.
+- **Output:** one JSON line per run, such as `{"outcome":"off"}`, `{"outcome":"busy"}`, `{"outcome":"ran","reconciled":0,"replaced":0,"dispatched":1,"cancelled":0,"seatsReleased":0,"seatSweepFailures":0}` or `{"outcome":"failure","reason":"..."}`. It never prints a key or an error's details.
 - **Parks are loud:** every grant parked for a person writes one stderr line, `{"event":"key_grant_parked","intent":"<id>","code":"<code>"}` (no address, order or customer data). Point an alert at it.
   Parked owner cancels write the same line with a `cancel_` code.
+- **Seat sweep failures are loud too:** the tick's Payload logger is silent, so pass 5 reports failures as
+  `seatSweepFailures` (orders skipped plus a cursor not saved) and writes one stderr line,
+  `{"event":"seat_sweep_failed","count":<n>}`. The tick still exits 0. A count that repeats tick after tick needs a person.
 - **Role hook (PublicLock v15):** the Signet lock is v15 and Edition I is v14. On a v15 lock, a lock manager can set
   `onHasRoleHook`, which then decides who holds the key-granter and lock-manager roles. Every Polygon grant and cancel
   first reads `publicLockVersion()` and, on v15, `onHasRoleHook()`. A non-zero hook parks the operation with

@@ -4,11 +4,14 @@ import type { Config, SanitizedConfig } from "payload";
 
 /*
  * One key-grant tick (src/lib/commerce/keys/grant-catch-up.ts): reconcile, replace, dispatch owed keys, then mark
- * refunded keys cancelled once the owner's wallet has cancelled them on chain (no cancel key on this host). Run it on
+ * refunded keys cancelled once the owner's wallet has cancelled them on chain (no cancel key on this host), then release
+ * refunded Unlock event seats whose keys are all invalid. Run it on
  * a schedule on the signer host (deployment/KEY-GRANTS.md). With KEY_GRANT_POLYGON_LIVE off it
  * prints {"outcome":"off"} and exits before loading Payload, a signer or an RPC. It prints one JSON line and never a
  * key, an address book or an error's details. A failure prints {"outcome":"failure","reason":<fixed code>} and exits 1:
  * no_rpc, no_budget, bad_event_locks, signer_refused, or unexpected (anything else, including the database).
+ * The Payload logger is silent here, so a seat-sweep failure shows as seatSweepFailures in that line and as one fixed
+ * stderr line, {"event":"seat_sweep_failed","count":n}; the tick still exits 0 and the next tick retries.
  */
 const RUN_LOCK = "sphmrs:key-grant-tick:v1";
 

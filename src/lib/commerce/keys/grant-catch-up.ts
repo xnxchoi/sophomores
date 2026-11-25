@@ -17,7 +17,9 @@ import { dispatchKeyGrants, reconcileKeyGrants, reconcileOwnerCancels, replaceSt
  *    marks each granted intent with cancelRequested cancelled once the chain shows its key no longer valid.
  *
  * 5. seats: refunded Unlock event seats whose keys are now all invalid are released (seat-release.ts, a durable,
- *    fair sweep). Its own transactions; a failure is logged, never fails the tick, and the next tick retries.
+ *    fair sweep). Its own transactions; a failure never fails the tick and the next tick retries. Failures are counted
+ *    in the result (seatSweepFailures) and written as one fixed stderr line, {"event":"seat_sweep_failed","count":n},
+ *    because the tick script silences the Payload logger.
  *
  * Off (KEY_GRANT_POLYGON_LIVE not "1") nothing runs and nothing is read. One tick at a time: `acquire` must take an
  * exclusive run lock (the tick script uses a PostgreSQL advisory lock) or return null, and a busy tick does nothing.
@@ -26,7 +28,7 @@ export const KEY_GRANT_TICK_LIMIT = 10;
 
 export type KeyGrantTickResult =
   | Readonly<{ outcome: "off" | "busy" }>
-  | Readonly<{ outcome: "ran"; reconciled: number; replaced: number; dispatched: number; cancelled: number; seatsReleased: number }>;
+  | Readonly<{ outcome: "ran"; reconciled: number; replaced: number; dispatched: number; cancelled: number; seatsReleased: number; seatSweepFailures: number }>;
 
 export type KeyGrantTick = {
   payload: Payload;
@@ -37,9 +39,11 @@ export type KeyGrantTick = {
   env?: Readonly<Record<string, string | undefined>>;
   limit?: number;
   now?: () => Date;
+  /** Where the fixed failure line goes (stderr by default). */
+  log?: (line: string) => void;
 };
 
-export async function runKeyGrantTick({ payload, grant, acquire, env = process.env, limit = KEY_GRANT_TICK_LIMIT, now }: KeyGrantTick): Promise<KeyGrantTickResult> {
+export async function runKeyGrantTick({ payload, grant, acquire, env = process.env, limit = KEY_GRANT_TICK_LIMIT, now, log = (line) => console.error(line) }: KeyGrantTick): Promise<KeyGrantTickResult> {
   if (!polygonKeyGrantsLive(env)) return { outcome: "off" };
   const release = await acquire();
   if (!release) return { outcome: "busy" };
@@ -48,14 +52,15 @@ export async function runKeyGrantTick({ payload, grant, acquire, env = process.e
     const replaced = await replaceStuckKeyGrants({ payload, adapter: grant, limit, now });
     const dispatched = await dispatchKeyGrants({ payload, adapter: grant, limit, now });
     const cancelled = await reconcileOwnerCancels({ payload, reader: grant, limit, now });
-    let seatsReleased = 0;
+    let seatsReleased = 0, seatSweepFailures = 0;
     try {
       const req = { payload, context: {} } as unknown as PayloadRequest;
-      seatsReleased = await releaseInvalidatedSeatsSweep({ req, limit, now: (now?.() ?? new Date()).getTime() });
+      ({ released: seatsReleased, failed: seatSweepFailures } = await releaseInvalidatedSeatsSweep({ req, limit, now: (now?.() ?? new Date()).getTime() }));
     } catch {
-      payload.logger?.error({ msg: "Key grant tick: seat release sweep failed; the next tick retries" });
+      seatSweepFailures = 1;
     }
-    return { outcome: "ran", reconciled, replaced, dispatched, cancelled, seatsReleased };
+    if (seatSweepFailures) log(JSON.stringify({ event: "seat_sweep_failed", count: seatSweepFailures }));
+    return { outcome: "ran", reconciled, replaced, dispatched, cancelled, seatsReleased, seatSweepFailures };
   } finally {
     await release();
   }

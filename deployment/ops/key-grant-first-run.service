@@ -1,0 +1,21 @@
+# The ONE supervised first run (VPS plan v4 H1, v3 K6f): the tick in first-run mode, limited to
+# KEY_GRANT_POLYGON_ALLOWED_INTENTS in KJ/config/live.env (written just before, from the re-taken queue receipt).
+# Started by hand with the timer disabled. No timer, no [Install]: it is never enabled.
+# ExecStopPost deletes live.env whatever happened and proves it gone; if it can't, the guard fences.
+[Unit]
+Description=Sophomores Polygon key-grant first run (supervised, allowlist only)
+After=network-online.target docker.service key-grant-fence-restore.service
+Wants=network-online.target
+Requires=docker.service
+OnFailure=key-grant-tick-failed.service
+
+[Service]
+Type=oneshot
+RuntimeDirectory=key-grant/first-run
+RuntimeDirectoryMode=0700
+RuntimeDirectoryPreserve=yes
+ExecStart=/usr/local/sbin/kj-guard run first-run
+ExecStopPost=/usr/local/sbin/kj-guard reap first-run
+TimeoutStartSec=900
+TimeoutStopSec=300
+NoNewPrivileges=yes

@@ -106,6 +106,8 @@ The code is `src/lib/commerce/keys/` (worker passes, `grant-catch-up.ts`, `unloc
 | `KEY_GRANT_POLYGON_EVENT_LOCKS` | tick host (and wherever the export runs) | empty = no event locks | A comma list of event-ticket lock addresses on Polygon, one per event. Tonight it is the Edition I lock `0xef6414927acb08f4d5a35cc9e5de07b9f3255060`. Any entry that is not an address stops the tick (`bad_event_locks`). A ticket whose lock is not listed (nor Signet) parks with `lock_not_enabled`. That lock's `maxKeysPerAddress` is 1 on chain: a member plus two guests on one wallet fails until the owner sets it to 3. |
 | `UNLOCK_LIVE_GRANTER_PRIVATE_KEY`, `UNLOCK_LIVE_GRANTER_ADDRESS` | `~/.config/sphmrs/polygon-key-granter.env` on the tick host, mode 0600, owned by the tick's user | none | The grant signer. These are **not** app env and **not** in the VPS env allowlist. The address must be `0x2CDb…5336`; any other is refused. |
 | `MEMBER_WALLET_LOCK_ADDRESS` (existing) | app and tick | | It must be the Signet lock above on Polygon. |
+| `KEY_GRANT_TICK_MODE` | the unit (`-e`, set by kj-guard) | `scheduled` | `scheduled` (the timer) or `first-run` (the one supervised run). Anything else stops the tick (`mode_invalid`). |
+| `KEY_GRANT_POLYGON_ALLOWED_INTENTS` | `KJ/config/live.env` only, first run only | none | The first run's exact intent UUIDs, comma-separated, from the queue receipt. Unset, empty or malformed refuses (`allowlist_invalid`); in scheduled mode its presence refuses (`allowlist_in_scheduled`). |
 
 There is **no lock-manager key on any of our hosts** (ADR-0008, ADR-0011). The owner's own wallet is the lock manager.
 
@@ -138,6 +140,55 @@ There is **no lock-manager key on any of our hosts** (ADR-0008, ADR-0011). The o
 7. **Watch.** Watch the first runs: `dispatched` counts sends, and each grant settles once its block is finalized, usually seconds (25 Nov read: `finalized` trailed the head by 2 blocks, about 3 s, on a public node).
 
 To stop: unset `KEY_GRANT_POLYGON_LIVE`, or set it to anything but `1`. The next tick does nothing. Grants already sent keep being reconciled once the switch is back on.
+
+## On the preview VPS: guarded units (VPS plans v3-v6)
+Everything on the VPS is Docker, so the tick runs as a container from the pinned runner image, started only through the
+host guard `deployment/ops/kj-guard.sh` (installed as `/usr/local/sbin/kj-guard`). The units in `deployment/ops/` call
+it; its settings are `KJ/config/guard.conf` (root 0600, no secrets; `key-grant-guard.conf.example`).
+`KJ=/var/lib/sophomores-key-grant` (root 0700): `rpc/` and `signer/` hold the two owner files (1000:1000 0600, separate
+mounts); `config/key-job.env` (DATABASE_URI with the key job's own role, its secrets, the budget and event locks);
+`config/queue-read.env` (the receipt's read role); `mail/alert-mail.env` (2002:2002 0400); `alerts/spool`, `alerts/mailer`; `fence/` (one marker per fence generation).
+Env files are mounted read-only and loaded in-process with `node --env-file`, never `docker --env-file`.
+
+- **Run modes.** `key-grant-tick.service` (the timer's) runs in scheduled mode. Its `KEY_GRANT_POLYGON_LIVE` comes only
+  from `KJ/config/scheduled.env`, which exists only after K6g and its own owner go. `key-grant-first-run.service` is
+  the one supervised first run: it reads `KJ/config/live.env` (LIVE plus the allowlist), is started by hand with the
+  timer disabled, and its ExecStopPost deletes `live.env` whatever happened.
+- **Queue receipt, before every supervised run:** `kj-guard receipt <the grant signer's address from gate 1>`. It runs
+  `scripts/key-grant-queue-read.ts` in a container on the DB network only, with no signer or RPC mount, from
+  `KJ/config/queue-read.env` (1000:1000 0400: `DATABASE_URI` with the read-only role `sophomores_key_grant_read`, plus
+  the Payload secrets and `KEY_GRANT_POLYGON_EVENT_LOCKS`). One line per intent the tick could act on (UUID, state,
+  attempts, nonce, hash flags, target check), then `{"receipt":"complete",...}`. `receipt_incomplete` (exit 1) means
+  it proves nothing: stop. The allowlist must equal exactly the owner-approved intents on this receipt.
+- **Admission.** `kj-guard run` refuses a chain-capable start (tick, first run) while any fence marker or
+  `key_grant_fence_*` table exists, or if it can't tell. It re-checks between `docker create` and `docker start`. The
+  mailer and the failed-run unit are not chain-capable and keep running while fenced, so a fence alert is delivered.
+- **Fence alerts** arrive as "Key job fenced: its network is cut", with a fixed reason. A journal line at `crit`
+  priority (`KJ_FENCE <reason>`) is written too.
+- **`fence_marker_failed` / `fence_unpublished` is an operator escalation, not a durable fence.** The guard couldn't
+  write the generation's marker, so its table went in unpublished: admission refuses while that table exists, but a
+  reboot or an nft flush would not bring it back. A person acts at once: fix the disk, then run `kj-guard fence
+  fence_unknown_quiescence` for a published generation before anything else.
+
+### Emergency stop and the egress fence
+Each command runs as root in one shell. Never reset pending or submitted intents, never run a second tick or a one-grant
+script with this signer anywhere else, and never use this signer from another host.
+1. `systemctl disable --now key-grant-tick.timer`
+2. `rm -f /var/lib/sophomores-key-grant/config/live.env /var/lib/sophomores-key-grant/config/scheduled.env`
+3. `systemctl stop key-grant-tick.service key-grant-first-run.service`
+4. `kj-guard prove-dead tick` and `kj-guard prove-dead first-run`: each must print `"event":"dead"`.
+5. If either can't be shown, cut the key job's network: `kj-guard fence fence_unknown_quiescence`. It writes a new
+   generation's marker, installs its own nftables table (`inet key_grant_fence_<N>`, dropping traffic from the key
+   job's bridge only), verifies it with packets, and alerts. It never waits on anything else, and it holds through a
+   Docker restart and a reboot.
+6. **Release is a separate, approved act (coordinator's go):** `kj-guard unfence <N>` for each generation. It keeps
+   admission locked, stops and restarts Docker (with `live-restore` off this interrupts the preview and needs the
+   owner's approval), then requires both units inactive with empty cgroups, the timer disabled, a successful listing
+   with no tick or first-run container, and every run record proven absent. Before changing anything it also needs a
+   successful nft listing and a table that is ours; a marker whose table isn't installed yet waits for the sweep. Only
+   then does it delete that generation's table; its marker stays (admission refused, restore would reinstall) until a
+   fresh listing shows the table gone, and only then is the marker removed and "released" said. Any other generation stays in force.
+7. Resume only after a complete queue receipt.
 
 ## Refund cancels (the owner, from his wallet)
 A refund marks the order's key `cancelRequested`. Nothing on our hosts can cancel it: the owner does, from the wallet that manages the Signet lock.

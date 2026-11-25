@@ -1,28 +1,19 @@
 # Delivers the key-grant alert spool by email (scripts/key-grant-alert.ts deliver; owner, 25 Nov: "email alerts via
-# Zoho is fine"). Its own user <mailer>: not the tick's <runner>, no signer or RPC file, no journal access. It can
-# read the release, change only the spool and its own state, and talk to the network. Template: replace <mailer>,
-# <release>, <mail env file> (0600, owned by <mailer>: MEMBER_AUTH_MAIL_MODE=smtp, MEMBER_AUTH_SMTP_*, KEY_GRANT_ALERT_TO).
+# Zoho is fine"). uid 2002 with the alerts group 2001, sophomores-review-egress only (never the fenced key-job bridge),
+# no signer, RPC or DB. Its settings come from KJ/mail/alert-mail.env (2002:2002 0400), loaded in-process with
+# node --env-file, never docker --env-file. Not chain-capable, so a fence alert is still delivered while fenced.
 [Unit]
 Description=Sophomores key-grant alert mail (one delivery pass)
-After=network-online.target
+After=network-online.target docker.service
 Wants=network-online.target
+Requires=docker.service
 
 [Service]
 Type=oneshot
-User=<mailer>
-WorkingDirectory=<release>
-EnvironmentFile=<mail env file>
-Environment=KEY_GRANT_ALERT_SPOOL=/var/lib/sophomores-key-grant-alerts/spool
-Environment=KEY_GRANT_ALERT_STATE=/var/lib/sophomores-key-grant-alerts/mailer/state.json
-ExecStart=/usr/bin/env node --import tsx scripts/key-grant-alert.ts deliver
+RuntimeDirectory=key-grant/mail
+RuntimeDirectoryMode=0700
+RuntimeDirectoryPreserve=yes
+ExecStart=/usr/local/sbin/kj-guard run mail
+ExecStopPost=/usr/local/sbin/kj-guard reap mail
 TimeoutStartSec=120
 NoNewPrivileges=yes
-PrivateTmp=yes
-PrivateDevices=yes
-ProtectSystem=strict
-ProtectHome=tmpfs
-BindReadOnlyPaths=<release>
-ReadWritePaths=/var/lib/sophomores-key-grant-alerts/spool /var/lib/sophomores-key-grant-alerts/mailer
-RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
-ProtectKernelTunables=yes
-ProtectControlGroups=yes

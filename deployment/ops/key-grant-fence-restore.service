@@ -1,0 +1,20 @@
+# Boot, before Docker (VPS plan v6 §1): reinstall one table per KJ/fence/<N> marker, verified by presence and owned
+# definition (the bridge does not exist yet). Pulled in two ways: WantedBy=multi-user.target, and by the docker.service
+# drop-in (docker.service.d/key-grant-fence.conf: Wants= + After=), so any start of Docker starts this first.
+# Wants, not Requires: Docker also serves the shared preview. A failed restore can't resume chain traffic: no key-job
+# container runs after a reboot (restart policy no; leftovers are removed by the next admission), admission refuses
+# while a marker exists, and the guard escalates (fence alert + crit journal line).
+[Unit]
+Description=Restore key-job fence tables before Docker
+DefaultDependencies=no
+After=local-fs.target
+Before=docker.service network-pre.target
+Wants=network-pre.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/kj-guard restore
+TimeoutStartSec=60
+
+[Install]
+WantedBy=multi-user.target

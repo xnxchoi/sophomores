@@ -1,29 +1,26 @@
-# Polygon key-grant tick, one run (deployment/KEY-GRANTS.md). Template: replace <runner>, <release>, <grant env files>.
-# The RPC URL and the signer key are NOT here: the tick reads ~<runner>/.config/sphmrs/polygon-rpc.env and
-# polygon-key-granter.env itself (0600, owned by <runner>) and refuses if KEY_GRANT_POLYGON_RPC_URL is in its env.
-# Alerts go to the durable spool, which key-grant-alert-mail delivers as another user; nothing reads the journal.
+# Polygon key-grant tick, one run (deployment/KEY-GRANTS.md; VPS plans v3-v6). Everything goes through the host guard
+# (kj-guard.sh, installed as /usr/local/sbin/kj-guard): admission under its lock (refused while any fence generation
+# exists), a labelled `docker create` with a per-invocation CID record, a re-check, then `docker start -a`; ExecStopPost
+# removes this invocation's container and proves it absent, or fences. Scheduled mode: its LIVE comes only from
+# KJ/config/scheduled.env (written at K6g, its own owner go), never from the first-run permit. The container command,
+# mounts and limits are built by the guard from KJ/config/guard.conf (root 0600, no secrets).
 [Unit]
 Description=Sophomores Polygon key-grant tick (one run)
-After=network-online.target
+After=network-online.target docker.service key-grant-fence-restore.service
 Wants=network-online.target
+Requires=docker.service
 # A failed or timed-out run is an alert too.
 OnFailure=key-grant-tick-failed.service
 
 [Service]
 Type=oneshot
-User=<runner>
-WorkingDirectory=<release>
-EnvironmentFile=<grant env files: database, KEY_GRANT_POLYGON_MAX_COST_WEI, KEY_GRANT_POLYGON_EVENT_LOCKS, KEY_GRANT_POLYGON_LIVE>
-Environment=KEY_GRANT_ALERT_SPOOL=/var/lib/sophomores-key-grant-alerts/spool
-ExecStart=/usr/bin/env node --import tsx scripts/key-grant-tick.ts
-# 900 s is systemd's HARD STOP: it kills the run (reported via OnFailure as systemd_failed). It is not a graceful
-# completion bound. Graceful completion is in the code: no pass, query page, row or hash starts after 10 min
-# (grant-catch-up.ts TICK_BUDGET_MS) and a walk gives up after 2 min (transactions.ts WALK_BUDGET_MS).
-# The timer never starts a second run meanwhile.
+RuntimeDirectory=key-grant/tick
+RuntimeDirectoryMode=0700
+RuntimeDirectoryPreserve=yes
+ExecStart=/usr/local/sbin/kj-guard run tick
+ExecStopPost=/usr/local/sbin/kj-guard reap tick
+# 900 s is systemd's HARD STOP: it kills the docker client (reported via OnFailure as systemd_failed); the reap above
+# then removes the container or fences. Graceful completion is in the code (grant-catch-up.ts TICK_BUDGET_MS).
 TimeoutStartSec=900
-UMask=0007
+TimeoutStopSec=300
 NoNewPrivileges=yes
-PrivateTmp=yes
-ProtectSystem=strict
-ProtectHome=read-only
-ReadWritePaths=/var/lib/sophomores-key-grant-alerts/spool

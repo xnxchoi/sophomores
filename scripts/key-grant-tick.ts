@@ -10,7 +10,9 @@ import type { RpcFileCode } from "../src/lib/commerce/keys/unlock/rpc-check";
  * a schedule on the signer host (deployment/KEY-GRANTS.md). With KEY_GRANT_POLYGON_LIVE off it
  * prints {"outcome":"off"} and exits before loading Payload, a signer or an RPC. It prints one JSON line and never a
  * key, an address book or an error's details. A failure prints {"outcome":"failure","reason":<fixed code>} and exits 1:
- * rpc_url_in_env, rpc_file_* / rpc_url_not_allowed (the owner-only RPC file), no_budget, bad_event_locks, signer_refused, or unexpected (anything else, including the database).
+ * mode_invalid / allowlist_invalid / allowlist_in_scheduled (the run mode, keyGrantRunScope), rpc_url_in_env,
+ * rpc_file_* / rpc_url_not_allowed (the owner-only RPC file), no_budget, bad_event_locks, signer_refused, or unexpected
+ * (anything else, including the database).
  * The Payload logger is silent here, so a seat-sweep failure shows as seatSweepFailures in that line and as one fixed
  * stderr line, {"event":"seat_sweep_failed","count":n}; the tick still exits 0 and the next tick retries.
  */
@@ -18,7 +20,7 @@ const RUN_LOCK = "sphmrs:key-grant-tick:v1";
 
 /** A known, fixed precondition failure: its code is printed, never a message. */
 class TickRefusal extends Error {
-  constructor(readonly reason: "rpc_url_in_env" | RpcFileCode | "no_budget" | "bad_event_locks" | "signer_refused") { super(reason); }
+  constructor(readonly reason: "mode_invalid" | "allowlist_invalid" | "allowlist_in_scheduled" | "rpc_url_in_env" | RpcFileCode | "no_budget" | "bad_event_locks" | "signer_refused") { super(reason); }
 }
 
 const loadAlerts = () => import("../src/lib/commerce/keys/tick-alerts"); // only after the switch check: off loads nothing
@@ -27,6 +29,10 @@ let alertLog: { log: (line: string) => void; settled: () => Promise<unknown> } =
 async function tick() {
   const polygon = await import("../src/lib/commerce/keys/unlock/polygon");
   if (!polygon.polygonKeyGrantsLive(process.env)) return { outcome: "off" };
+  // The run mode first (VPS plan v4 H1, v5 K4): a first run is limited to its allowlist, and the scheduled timer never
+  // inherits one. Refused before Payload, the signer or the RPC load.
+  let runScope: ReturnType<typeof polygon.keyGrantRunScope>;
+  try { runScope = polygon.keyGrantRunScope(process.env); } catch (error) { throw new TickRefusal(error instanceof polygon.KeyGrantRunModeError ? error.code : "mode_invalid"); }
   const alerts = await loadAlerts();
   alertLog = alerts.createTickAlertLog(alerts.alertSpoolDir(), (line) => writeSync(2, line + "\n"));
   if (process.env.PAYLOAD_DROP_DATABASE || process.env.PAYLOAD_MIGRATING) throw new Error("Unexpected database mode");
@@ -72,7 +78,7 @@ async function tick() {
     };
     // Alert lines go to stderr synchronously and into the durable alert spool (KEY_GRANT_ALERT_SPOOL), which the
     // separate mailer delivers; the spool writes finish before the result is printed (Review-A, 25 Nov).
-    try { return await runKeyGrantTick({ payload, grant, acquire, log: alertLog.log }); } finally { await alertLog.settled(); }
+    try { return await runKeyGrantTick({ payload, grant, acquire, log: alertLog.log, ...(runScope.mode === "first-run" ? { scope: runScope.intents } : {}) }); } finally { await alertLog.settled(); }
   } finally {
     await payload.destroy();
   }

@@ -1,17 +1,16 @@
-# OnFailure of key-grant-tick.service: spools {"kind":"tick_failure","detail":"reason systemd_failed"} for the mailer.
+# OnFailure of the tick units: spools {"kind":"tick_failure","reason":"systemd_failed"} for the mailer. Same image,
+# no network, the spool only (built by kj-guard). Not chain-capable, so it still runs while the key job is fenced.
 [Unit]
-Description=Spool an alert for a failed or timed-out key-grant tick
+Description=Spool an alert for a failed or timed-out key-grant run
+Requires=docker.service
+After=docker.service
 
 [Service]
 Type=oneshot
-User=<runner>
-WorkingDirectory=<release>
-Environment=KEY_GRANT_ALERT_SPOOL=/var/lib/sophomores-key-grant-alerts/spool
-ExecStart=/usr/bin/env node --import tsx scripts/key-grant-alert.ts systemd-failed
+RuntimeDirectory=key-grant/failed
+RuntimeDirectoryMode=0700
+RuntimeDirectoryPreserve=yes
+ExecStart=/usr/local/sbin/kj-guard run failed
+ExecStopPost=/usr/local/sbin/kj-guard reap failed
 TimeoutStartSec=60
-UMask=0007
 NoNewPrivileges=yes
-PrivateTmp=yes
-ProtectSystem=strict
-ProtectHome=read-only
-ReadWritePaths=/var/lib/sophomores-key-grant-alerts/spool

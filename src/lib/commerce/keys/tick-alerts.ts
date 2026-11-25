@@ -15,13 +15,14 @@ import { RPC_FILE_CODES } from "./unlock/rpc-check";
  * - A separate mailer (its own user, run once a minute) delivers the spool: at most one email per kind per hour, a
  *   file deleted only after its email is sent, failures retried with backoff, window and backoff kept on disk.
  */
-export type TickAlertKind = "over_cap" | "parked" | "seat_sweep_failed" | "tick_failure";
+export type TickAlertKind = "over_cap" | "parked" | "seat_sweep_failed" | "tick_failure" | "fence";
 /** Structured, canonical fields only; `unrecognised` stands for any value outside the allowlists. */
 export type TickAlert =
   | Readonly<{ kind: "over_cap"; intent: string }>
   | Readonly<{ kind: "parked"; intent: string; code: string }>
   | Readonly<{ kind: "seat_sweep_failed"; count: string }>
-  | Readonly<{ kind: "tick_failure"; reason: string }>;
+  | Readonly<{ kind: "tick_failure"; reason: string }>
+  | Readonly<{ kind: "fence"; reason: string }>;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const PARK_CODES: ReadonlySet<string> = new Set([
@@ -30,8 +31,18 @@ const PARK_CODES: ReadonlySet<string> = new Set([
   "replacement_rebroadcast_role_hook_set", "cancel_replacement_rebroadcast_role_hook_set",
 ]);
 const FAILURE_REASONS: ReadonlySet<string> = new Set([
+  "mode_invalid", "allowlist_invalid", "allowlist_in_scheduled",
   "rpc_url_in_env", ...RPC_FILE_CODES, "no_budget", "bad_event_locks", "signer_refused", "unexpected", "systemd_failed",
 ]);
+/**
+ * Why the host guard (deployment/ops/kj-guard.sh) fenced the key job's egress (VPS plan v6). The guard writes these
+ * slots itself, in shell, because the Docker daemon may be what is stuck.
+ */
+export const FENCE_REASONS: readonly string[] = Object.freeze([
+  "fence_unknown_quiescence", "fence_query_failed", "fence_stop_hung", "fence_live_permit_left",
+  "fence_install_failed", "fence_verify_failed", "fence_marker_failed",
+]);
+const FENCE_REASON_SET: ReadonlySet<string> = new Set(FENCE_REASONS);
 const UNRECOGNISED = "unrecognised";
 const uuid = (value: unknown) => typeof value === "string" && UUID.test(value) ? value : UNRECOGNISED;
 const oneOf = (value: unknown, allowed: ReadonlySet<string>) => typeof value === "string" && allowed.has(value) ? value : UNRECOGNISED;
@@ -51,6 +62,7 @@ export function canonicalAlert(value: unknown): TickAlert {
     case "parked": return { kind: "parked", intent: uuid(record.intent), code: oneOf(record.code, PARK_CODES) };
     case "seat_sweep_failed": return { kind: "seat_sweep_failed", count: count(record.count) };
     case "tick_failure": return { kind: "tick_failure", reason: oneOf(record.reason, FAILURE_REASONS) };
+    case "fence": return { kind: "fence", reason: oneOf(record.reason, FENCE_REASON_SET) };
     default: return { kind: "tick_failure", reason: UNRECOGNISED };
   }
 }
@@ -63,6 +75,7 @@ export function alertDetail(alert: TickAlert): string {
     case "parked": return `intent ${canonical.intent}: ${canonical.code}`;
     case "seat_sweep_failed": return `count ${canonical.count}`;
     case "tick_failure": return `reason ${canonical.reason}`;
+    case "fence": return `reason ${canonical.reason}`;
   }
 }
 
@@ -130,12 +143,14 @@ const subjects: Record<TickAlertKind, string> = {
   parked: "Key grant waiting for a person",
   seat_sweep_failed: "Seat release failed",
   tick_failure: "Key-grant tick failed",
+  fence: "Key job fenced: its network is cut",
 };
 const actions: Record<TickAlertKind, string> = {
   over_cap: "Turn live dispatch off and settle each one with the one-shot command (KEY-GRANTS.md, \"Over-cap alert and recovery\").",
   parked: "Check each intent's code in the admin and resolve it (KEY-GRANTS.md, \"Checks\").",
   seat_sweep_failed: "The next tick retries. If this repeats, check the seat sweep (KEY-GRANTS.md, \"Checks\").",
   tick_failure: "Fix the cause the reason names (KEY-GRANTS.md, \"Checks\"); systemd_failed means the run failed or timed out.",
+  fence: "No key job can start until the fence is released by hand (KEY-GRANTS.md, \"Emergency stop and the egress fence\").",
 };
 
 export type TickAlertEmail = Readonly<{ subject: string; text: string }>;

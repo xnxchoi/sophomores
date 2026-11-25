@@ -60,18 +60,23 @@ function script(src: string) {
   });
 }
 
-/** Their runtime, their chunks, then our one module (990001). Our catalogue goes in first: their modules read it once. */
+/** How long their code may take to load and register before the page gives up on the scene and shows its list. */
+const READY_MS = 20000;
+
+/** Their runtime, their chunks, then our one module (990001). Our catalogue goes in first: their modules read it once.
+ * Fails (and the page shows its plain list) when a chunk doesn't load, our module's imports throw, or nothing is ready
+ * within READY_MS (a chunk that loads but never registers). */
 function load(books: unknown[], featured: number) {
-  loaded ??= (async () => {
+  loaded ??= Promise.race([(async () => {
     const global = window as unknown as Record<string, unknown>;
     global.SPTURBOPACK_CHUNK_BASE_PATH = BASE;
     global.__SPBOOKS = books; global.__SPFEATURED = featured;
     await script(DIR + RUNTIME);
     await Promise.all(CHUNKS.map((file) => script(DIR + file)));
-    return new Promise<Vendored>((resolve) => {
+    return new Promise<Vendored>((resolve, reject) => {
       const queue = global.SPTURBOPACK as { push: (item: unknown) => void };
       const entry = "static/immutable/chunks/sophomores-entry.js";
-      queue.push([entry, 990001, (context: Context) => {
+      queue.push([entry, 990001, (context: Context) => { try {
         const jsx = context.i(91398) as { jsx: (type: unknown, props: Props) => unknown };
         const dom = context.i(57647) as { createRoot: (element: HTMLElement) => { render: (node: unknown) => void; unmount: () => void } };
         const stack = context.i(76489) as { I: unknown };
@@ -84,10 +89,10 @@ function load(books: unknown[], featured: number) {
           catalogue: context.i(67168) as SceneCatalogue, router: context.i(11743) as SceneRouter, seats: context.i(2449) as SceneSeats,
           motion: context.i(72646) as SceneMotion,
         });
-      }]);
+      } catch (error) { reject(error); } }]);
       queue.push([entry, { otherChunks: [], runtimeModuleIds: [990001] }]);
     });
-  })();
+  })(), new Promise<never>((_, reject) => { window.setTimeout(() => reject(new Error("vendored scene not ready in " + READY_MS + " ms")), READY_MS); })]);
   return loaded;
 }
 

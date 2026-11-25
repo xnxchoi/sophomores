@@ -76,7 +76,7 @@ export function useShelfCatch(hub: SceneHub, catalogue: SceneCatalogue, source: 
       glide = requestAnimationFrame(step);
     };
 
-    // Their lock is the html attribute (their touch momentum yields to it); globals.css hides the overflow under it.
+    // Their lock is the html attribute (their touch momentum yields to it); the root layout's classes hide the overflow under it.
     const unlock = () => {
       lockedAt = -1; inertia = false; root.removeAttribute("data-shelf-scroll-lock");
     };

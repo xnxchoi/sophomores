@@ -471,11 +471,6 @@
     @apply font-sans font-normal;
   }
 
-  /* The shop shelf's scroll catch (shop/use-shelf-catch.ts) holds the page with this attribute while it glides. */
-  html[data-shelf-scroll-lock] {
-    @apply overflow-hidden [scrollbar-gutter:stable];
-  }
-
   /* Heading weights, as The Hideaway's base layer (thehideaway src/styles/globals.css:124-146): h1 medium, the rest
      normal. Weights only; sizes stay with each page. */
   h1 {

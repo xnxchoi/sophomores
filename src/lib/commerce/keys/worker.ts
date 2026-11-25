@@ -58,9 +58,10 @@ import type { KeyGrantTarget, RebroadcastInput } from "./contracts";
  * being reconciled (and replaced).
  */
 
-type Pass = { payload: Payload; adapter: KeyGrantAdapter; limit?: number; now?: () => Date };
+/** `log`: where fixed alert lines go (stderr by default; the tick writes them synchronously and spools them). */
+type Pass = { payload: Payload; adapter: KeyGrantAdapter; limit?: number; now?: () => Date; log?: (line: string) => void };
 /** reconcileKeyGrants only: told each intent whose receipt is beyond the ancestry cap (default: logOverCap to stderr). */
-type ReconcilePass = Pass & { onOverCap?: (intentID: string) => void };
+type ReconcilePass = Pass & { onOverCap?: (intentID: string) => void; /** No new row is started after this time (ms); the rest come first next tick. */ deadline?: number };
 type CancelPass = { payload: Payload; adapter: KeyCancelAdapter; limit?: number; now?: () => Date };
 const INTENTS = "commerce-key-grant-intents";
 const PAGE = 25;
@@ -380,12 +381,12 @@ async function finishGrantBroadcast<Skip>(payload: Payload, intentID: string, pr
   });
 }
 
-async function recordUnsentGrant(payload: Payload, intentID: string, attemptID: string, now: Date, outcome: Sent<never>): Promise<void> {
+async function recordUnsentGrant(payload: Payload, intentID: string, attemptID: string, now: Date, outcome: Sent<never>, log?: (line: string) => void): Promise<void> {
   if (outcome.kind !== "notSent") return;
   await inIntent(payload, intentID, async (req, intent) => {
     if (intent.attemptID !== attemptID || intent.state !== "submitted" || intent.txHash) return;
     await updateCommerce(req, INTENTS, intentID, notSentData(outcome.code, intent.attempts, now));
-    if (parked(outcome.code)) logParked(intentID, outcome.code);
+    if (parked(outcome.code)) logParked(intentID, outcome.code, log);
   });
 }
 
@@ -423,7 +424,7 @@ async function requeueRetryable(payload: Payload, now: () => Date): Promise<void
 }
 
 /** Dispatch up to `limit` pending intents. Returns how many were dispatched. */
-export async function dispatchKeyGrants({ payload, adapter, limit = 10, now = () => new Date() }: Pass): Promise<number> {
+export async function dispatchKeyGrants({ payload, adapter, limit = 10, now = () => new Date(), log }: Pass): Promise<number> {
   await sweepInterruptedClaims(payload, now);
   await requeueRetryable(payload, now);
   // Behind a nonce stopped for a person, later nonces could never mine: hold new grants in pending.
@@ -443,7 +444,7 @@ export async function dispatchKeyGrants({ payload, adapter, limit = 10, now = ()
     (prepared) => finishGrantBroadcast(payload, row.id, prepared,
       intent => intent.attemptID === claimed.attemptID && intent.state === "submitted" && intent.txHash === prepared.txHash
         && sameLatestSend(intent, "sends", 1, prepared.txHash), input => adapter.broadcast(input), true));
-    await recordUnsentGrant(payload, row.id, claimed.attemptID, now(), outcome);
+    await recordUnsentGrant(payload, row.id, claimed.attemptID, now(), outcome, log);
   }
   return dispatched;
 }
@@ -453,10 +454,11 @@ export async function dispatchKeyGrants({ payload, adapter, limit = 10, now = ()
  * sends. Only one transaction per nonce can mine: a confirmed hash grants the
  * key, and a reverted one proves the nonce consumed without a key.
  */
-export async function reconcileKeyGrants({ payload, adapter, limit = 10, now = () => new Date(), onOverCap = (intentID) => logOverCap(intentID) }: ReconcilePass): Promise<number> {
+export async function reconcileKeyGrants({ payload, adapter, limit = 10, now = () => new Date(), onOverCap = (intentID) => logOverCap(intentID), deadline }: ReconcilePass): Promise<number> {
   let settled = 0;
   for await (const row of due(payload, { and: [{ state: { in: ["submitted", "ambiguous"] } }, { txHash: { exists: true } }] }, now)) {
     if (settled >= limit) break;
+    if (deadline !== undefined && now().getTime() > deadline) break; // not started: keeps its due time, so it comes first next tick
     const hashes = [...new Set([String(row.txHash), ...recordedSends(row).map((send) => send.txHash)])];
     // A confirmed suppression applies only to the last send, not older hashes.
     if (row.lastErrorCode === grantBroadcastSuppressed) {
@@ -654,7 +656,7 @@ type Replacer = {
  * Only accepted sends count toward MAX_REPLACEMENTS. Nothing here ever moves the
  * operation to a new nonce: an earlier transaction may still mine.
  */
-async function replaceStuck(payload: Payload, operation: Operation, chain: Replacer, now: () => Date, limit: number): Promise<number> {
+async function replaceStuck(payload: Payload, operation: Operation, chain: Replacer, now: () => Date, limit: number, log?: (line: string) => void): Promise<number> {
   const { fields, prefix } = operation;
   const recheck = new Date(now().getTime() - REBROADCAST_AFTER_MS).toISOString();
   const rows = await findAll(payload, { and: [
@@ -686,7 +688,7 @@ async function replaceStuck(payload: Payload, operation: Operation, chain: Repla
       if (!answer || answer.kind === "unavailable") continue; // nothing sent; next tick tries again
       // Recorded bytes that fail the adapter's checks are never sent: stopped for a person (Review-A, 24 Nov).
       if (answer.kind === "refused") {
-        if (answer.code === "role_hook_set") logParked(row.id, `${prefix}rebroadcast_${answer.code}`);
+        if (answer.code === "role_hook_set") logParked(row.id, `${prefix}rebroadcast_${answer.code}`, log);
         await markAttempt(payload, operation, row, operation.stop(`${prefix}rebroadcast_refused`)); continue;
       }
       const sentAt = now().toISOString();
@@ -736,7 +738,7 @@ async function replaceStuck(payload: Payload, operation: Operation, chain: Repla
       // A ceiling or an unrecordable replacement waits for a person; anything else is tried again later.
       const stopped = { fee_ceiling_reached: "fee_ceiling", write_ahead_failed: "write_ahead_failed" }[outcome.code];
       // A role hook on the lock waits for a person; the pending send stays reconciled and is retried after.
-      if (outcome.code === "role_hook_set") logParked(row.id, `${prefix}${outcome.code}`);
+      if (outcome.code === "role_hook_set") logParked(row.id, `${prefix}${outcome.code}`, log);
       await markAttempt(payload, operation, row, stopped ? operation.stop(`${prefix}${stopped}`) : { lastErrorCode: code(`${prefix}${outcome.code}`) });
       continue;
     }
@@ -758,14 +760,14 @@ async function replaceStuck(payload: Payload, operation: Operation, chain: Repla
  * Selected by `lastSentAt`, not by reconcile's `nextAttemptAt`. Returns how many
  * fee-raised replacements the node accepted.
  */
-export async function replaceStuckKeyGrants({ payload, adapter, limit = 10, now = () => new Date() }: Pass): Promise<number> {
+export async function replaceStuckKeyGrants({ payload, adapter, limit = 10, now = () => new Date(), log }: Pass): Promise<number> {
   return replaceStuck(payload, grantOperation, {
     signer: adapter.signer,
     replace: (row, nonce, previous) => adapter.prepareReplacement({ intentID: row.id, target: parseKeyGrantTarget(row.target), nonce, previous }),
     rebroadcast: (input) => adapter.rebroadcast(input),
     broadcast: (input) => adapter.broadcast(input),
     release: (input) => adapter.release(input),
-  }, now, limit);
+  }, now, limit, log);
 }
 
 /* ADR-0009: cancel a granted key on chain with the lock-manager authority. */

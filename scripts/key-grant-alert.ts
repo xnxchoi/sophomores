@@ -1,38 +1,52 @@
-import { hostname } from "node:os";
-import { createInterface } from "node:readline";
 import { writeSync } from "node:fs";
 
 /*
- * Reads the key-grant tick's journal lines on stdin and emails the owner (src/lib/commerce/keys/tick-alerts.ts):
+ * Key-grant alert mail (src/lib/commerce/keys/tick-alerts.ts; owner, 25 Nov: "email alerts via Zoho is fine").
  *
- *   journalctl -f -n 0 -o cat -u key-grant-tick.service | node --import tsx scripts/key-grant-alert.ts
+ *   node --import tsx scripts/key-grant-alert.ts deliver          (key-grant-alert-mail.service, its own user, every minute)
+ *   node --import tsx scripts/key-grant-alert.ts systemd-failed   (key-grant-tick-failed.service, OnFailure of the tick)
  *
- * (deployment/ops/key-grant-alert.service). Mail goes through the existing Zoho ZeptoMail account
- * (MEMBER_AUTH_MAIL_MODE=smtp and MEMBER_AUTH_SMTP_*, validated by the member-auth loader) to KEY_GRANT_ALERT_TO.
- * It refuses to start without both. Its own problems are one fixed stderr line each; never a credential.
+ * deliver: one pass over the spool (KEY_GRANT_ALERT_SPOOL) with state in KEY_GRANT_ALERT_STATE. It mails through the
+ * existing ZeptoMail account with the member mailer's settings (memberSmtpSettings: TLS required, step timeouts) and
+ * a 30 s bound on the whole send, to KEY_GRANT_ALERT_TO. It reads no journal.
+ * systemd-failed: spools {"outcome":"failure","reason":"systemd_failed"} for a tick run that failed or timed out.
+ * Prints one fixed JSON line; never a credential, an address or an error's message.
  */
-async function main() {
-  const [{ loadMemberMailConfig, isMemberMailAddress }, { createTickAlerter, tickAlertFromLine }, nodemailer] = await Promise.all([
-    import("../src/lib/member-auth/mail-config"), import("../src/lib/commerce/keys/tick-alerts"), import("nodemailer"),
+async function run(): Promise<Record<string, unknown>> {
+  const mode = process.argv[2];
+  const alerts = await import("../src/lib/commerce/keys/tick-alerts");
+  const dir = alerts.alertSpoolDir();
+  if (!dir || process.argv.length !== 3) return { outcome: "refused", reason: "bad_args_or_spool" };
+  if (mode === "systemd-failed") {
+    const ok = await alerts.spoolTickAlert(dir, { kind: "tick_failure", detail: "reason systemd_failed" });
+    return { outcome: ok ? "spooled" : "spool_failed" };
+  }
+  if (mode !== "deliver") return { outcome: "refused", reason: "bad_args_or_spool" };
+  const statePath = process.env.KEY_GRANT_ALERT_STATE;
+  if (!statePath || !/^\/[A-Za-z0-9_./-]{1,200}$/.test(statePath) || statePath.includes("..")) return { outcome: "refused", reason: "no_state_path" };
+  const [{ loadMemberMailConfig, isMemberMailAddress }, { memberSmtpSettings, createSmtpConnectionTransport }] = await Promise.all([
+    import("../src/lib/member-auth/mail-config"), import("../src/lib/member-auth/mail"),
   ]);
   let mail: ReturnType<typeof loadMemberMailConfig>;
   try { mail = loadMemberMailConfig(process.env); } catch { mail = null; }
   const to = process.env.KEY_GRANT_ALERT_TO;
-  if (!mail || !isMemberMailAddress(to)) { writeSync(2, JSON.stringify({ event: "alert_refused", reason: "mail_not_configured" }) + "\n"); process.exit(1); }
-  const transport = nodemailer.createTransport({ host: mail.host, port: mail.port, secure: mail.port === 465, auth: { user: mail.username, pass: mail.password } });
-  const alerter = createTickAlerter({
-    host: hostname(),
+  if (!mail || !isMemberMailAddress(to)) return { outcome: "refused", reason: "mail_not_configured" };
+  const config = mail;
+  const result = await alerts.deliverTickAlerts({
+    dir, statePath,
     send: async ({ subject, text }) => {
-      try { await transport.sendMail({ from: mail.from, to, subject, text }); }
-      catch (error) { writeSync(2, JSON.stringify({ event: "alert_send_failed" }) + "\n"); throw error; }
+      const transport = createSmtpConnectionTransport(memberSmtpSettings(config));
+      try {
+        await alerts.boundedSend(transport.sendMail({
+          from: { name: "Sophomores", address: config.from }, to: { address: to }, envelope: { from: config.from, to: [to] },
+          subject, text, disableFileAccess: true, disableUrlAccess: true, xMailer: false,
+        }), 30_000);
+      } finally { transport.close(); }
     },
   });
-  setInterval(() => void alerter.flush(), 60_000).unref();
-  for await (const line of createInterface({ input: process.stdin, crlfDelay: Infinity })) {
-    const alert = tickAlertFromLine(line);
-    if (alert) await alerter.push(alert);
-  }
-  await alerter.flush();
+  return { outcome: "delivered", ...result };
 }
 
-void main().then(() => process.exit(0), () => { writeSync(2, JSON.stringify({ event: "alert_refused", reason: "unexpected" }) + "\n"); process.exit(1); });
+void run().then(
+  (result) => { writeSync(1, JSON.stringify(result) + "\n"); process.exit(result.outcome === "refused" || result.outcome === "spool_failed" ? 1 : 0); },
+  () => { writeSync(1, JSON.stringify({ outcome: "refused", reason: "unexpected" }) + "\n"); process.exit(1); });

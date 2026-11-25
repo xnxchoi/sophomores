@@ -1,0 +1,17 @@
+# OnFailure of key-grant-tick.service: spools {"kind":"tick_failure","detail":"reason systemd_failed"} for the mailer.
+[Unit]
+Description=Spool an alert for a failed or timed-out key-grant tick
+
+[Service]
+Type=oneshot
+User=<runner>
+WorkingDirectory=<release>
+Environment=KEY_GRANT_ALERT_SPOOL=/var/lib/sophomores-key-grant-alerts/spool
+ExecStart=/usr/bin/env node --import tsx scripts/key-grant-alert.ts systemd-failed
+TimeoutStartSec=60
+UMask=0007
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/var/lib/sophomores-key-grant-alerts/spool

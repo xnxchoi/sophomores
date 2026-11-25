@@ -62,7 +62,9 @@ The code is `src/lib/commerce/keys/` (worker passes, `grant-catch-up.ts`, `unloc
   finalized block. The tick then never settles it. It alerts twice, both written synchronously before the tick exits:
   the intent IDs in its result line (`"overCap":["<id>"]`), and one stderr line per intent,
   `{"event":"key_grant_over_cap","intent":"<id>"}`. An unanswered reconcile is pushed back 2 minutes, so the alert
-  repeats each time the row comes due (about every 2 minutes), not on every tick. Point an alert at either. A person
+  repeats each time the row comes due (about every 2 minutes), not on every tick. On the server the tick also
+  writes each alert into a durable spool, and `key-grant-alert-mail` (its own user, once a minute) emails it to the
+  owner, at most once per kind per hour (deployment/ops/; `scripts/key-grant-alert.ts`). A person
   recovers each one:
   1. **Turn live dispatch off first:** unset `KEY_GRANT_POLYGON_LIVE` for the scheduled tick. The command holds the
      tick's global run lock for its whole run, up to 20,000 sequential RPC calls, so no tick runs meanwhile; with the

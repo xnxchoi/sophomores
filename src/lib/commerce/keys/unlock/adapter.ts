@@ -47,20 +47,21 @@ export type UnlockKeyGrantAdapterOptions = {
   polygon?: PolygonPins;
   /** Receipt ancestry walk budget (transactions.ts); only the one-shot recovery reconcile raises it. */
   ancestryCap?: bigint;
+  walkBudgetMs?: number;
 };
 
 const notSent = (code: string): PrepareOutcome & ReplaceOutcome => ({ kind: "definitelyNotSent", code });
 const unknown: ReconcileOutcome = { kind: "unknown" };
 export const reverted = (error: unknown): boolean => error instanceof BaseError && error.walk((cause) => cause instanceof ContractFunctionRevertedError) instanceof ContractFunctionRevertedError;
 
-export function createUnlockKeyGrantAdapter({ chainID, account, transport, now = () => new Date(), holdMs = 60_000, env, polygon = polygonPins, ancestryCap }: UnlockKeyGrantAdapterOptions): UnlockKeyGrantAdapter {
+export function createUnlockKeyGrantAdapter({ chainID, account, transport, now = () => new Date(), holdMs = 60_000, env, polygon = polygonPins, ancestryCap, walkBudgetMs }: UnlockKeyGrantAdapterOptions): UnlockKeyGrantAdapter {
   // Polygon grants come only from the pinned grant signer: any other account is refused before a transport is built.
   if (chainID === POLYGON_CHAIN_ID && !isAddressEqual(account.address, polygon.granter)) {
     throw new Error("Unlock grants on Polygon (137) are refused: the signer is not the pinned key granter");
   }
   // The pinned event locks come from config (validated here, at start-up), unless the caller pinned them itself.
   const pins: PolygonPins = chainID === POLYGON_CHAIN_ID ? { ...polygon, eventLocks: polygon.eventLocks ?? polygonEventLocks(env) } : polygon;
-  const chain = createSignerTransactions({ chainID, account, transport, holdMs, env, ancestryCap });
+  const chain = createSignerTransactions({ chainID, account, transport, holdMs, env, ancestryCap, walkBudgetMs });
   const { client } = chain;
 
   /** The target, only if it is well formed, on this adapter's chain, and (on Polygon) on the pinned lock. */

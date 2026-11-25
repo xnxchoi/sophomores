@@ -21,9 +21,14 @@ class TickRefusal extends Error {
   constructor(readonly reason: "rpc_url_in_env" | RpcFileCode | "no_budget" | "bad_event_locks" | "signer_refused") { super(reason); }
 }
 
+const loadAlerts = () => import("../src/lib/commerce/keys/tick-alerts"); // only after the switch check: off loads nothing
+let alertLog: { log: (line: string) => void; settled: () => Promise<unknown> } = { log: (line) => writeSync(2, line + "\n"), settled: async () => {} };
+
 async function tick() {
   const polygon = await import("../src/lib/commerce/keys/unlock/polygon");
   if (!polygon.polygonKeyGrantsLive(process.env)) return { outcome: "off" };
+  const alerts = await loadAlerts();
+  alertLog = alerts.createTickAlertLog(alerts.alertSpoolDir(), (line) => writeSync(2, line + "\n"));
   if (process.env.PAYLOAD_DROP_DATABASE || process.env.PAYLOAD_MIGRATING) throw new Error("Unexpected database mode");
   // The RPC URL (it carries the provider key) comes only from the owner-only file, through the checked loader; never
   // from the environment or a sourced shell file (Review-A, 25 Nov).
@@ -65,15 +70,19 @@ async function tick() {
         try { await client.query("SELECT pg_advisory_unlock(hashtext($1))", [RUN_LOCK]); } finally { client.release(); }
       };
     };
-    // Alert lines are written synchronously, like the result line, so none is lost when the process exits.
-    return await runKeyGrantTick({ payload, grant, acquire, log: (line) => writeSync(2, line + "\n") });
+    // Alert lines go to stderr synchronously and into the durable alert spool (KEY_GRANT_ALERT_SPOOL), which the
+    // separate mailer delivers; the spool writes finish before the result is printed (Review-A, 25 Nov).
+    try { return await runKeyGrantTick({ payload, grant, acquire, log: alertLog.log }); } finally { await alertLog.settled(); }
   } finally {
     await payload.destroy();
   }
 }
 
 void tick().then(result => { writeSync(1, JSON.stringify(result) + "\n"); process.exit(0); },
-  (error: unknown) => {
-    writeSync(1, JSON.stringify({ outcome: "failure", reason: error instanceof TickRefusal ? error.reason : "unexpected" }) + "\n");
+  async (error: unknown) => {
+    const line = JSON.stringify({ outcome: "failure", reason: error instanceof TickRefusal ? error.reason : "unexpected" });
+    writeSync(1, line + "\n");
+    // A failure is also an alert: spooled (when configured) before the process exits.
+    try { const alerts = await loadAlerts(); const alert = alerts.tickAlertFromLine(line); const dir = alerts.alertSpoolDir(); if (alert && dir) await alerts.spoolTickAlert(dir, alert); } catch { /* stderr and exit code remain */ }
     process.exit(1);
   });

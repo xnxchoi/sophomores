@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -10,7 +10,7 @@ import { runKeyGrantTick } from "@/lib/commerce/keys/grant-catch-up";
 import { createUnlockKeyGrantAdapter } from "@/lib/commerce/keys/unlock/adapter";
 import { fakePayload, type Row } from "./support/fake-payload";
 import { overCapTick } from "./support/over-cap-tick";
-import { address, healthyChain, lockAddress, lockCalls, mockChain, recipient, uint, uintArray } from "./support/mock-chain";
+import { address, healthyChain, lockAddress, lockCalls, mockChain, receipt, recipient, transferLog, uint, uintArray } from "./support/mock-chain";
 
 // The key-grant tick (owner, 24 Nov: "automatic catchup it is"; coordinator: wire the cancel runner, OFF until go-live).
 // Fake Payload and the scripted mock chain only: no RPC, no real key, no broadcast.
@@ -169,8 +169,8 @@ test("an over-cap grant is reported in the tick's result line and as one alert l
   const { run, rows, methods } = overCapTick();
   const lines: string[] = [];
   const result = await run((line) => lines.push(line));
-  assert.deepEqual(result, { outcome: "ran", reconciled: 0, replaced: 0, dispatched: 0, cancelled: 0, seatsReleased: 0, seatSweepFailures: 0, overCap: ["i9"] });
-  assert.deepEqual(lines, ['{"event":"key_grant_over_cap","intent":"i9"}']);
+  assert.deepEqual(result, { outcome: "ran", reconciled: 0, replaced: 0, dispatched: 0, cancelled: 0, seatsReleased: 0, seatSweepFailures: 0, overCap: ["00000000-0000-4000-8000-0000000000a1"] });
+  assert.deepEqual(lines, ['{"event":"key_grant_over_cap","intent":"00000000-0000-4000-8000-0000000000a1"}']);
   assert.equal(rows["commerce-key-grant-intents"][0].state, "submitted");
   assert.equal(methods().includes("eth_getBlockByHash"), false);
 });
@@ -184,14 +184,53 @@ test("under a cron-style redirect and under pipes, both over-cap lines reach the
     const cron = spawnSync("sh", ["-c", `node --import tsx "${fixture}" >> "${log}" 2>&1`], { encoding: "utf8", timeout: 60_000 });
     assert.equal(cron.status, 0);
     const logged = readFileSync(log, "utf8").trim().split("\n");
-    assert.ok(logged.includes('{"event":"key_grant_over_cap","intent":"i9"}'), "stderr alert line in the log");
-    assert.ok(logged.some((line) => line.startsWith("{\"outcome\":\"ran\"") && JSON.parse(line).overCap[0] === "i9"), "result line with overCap");
+    assert.ok(logged.includes('{"event":"key_grant_over_cap","intent":"00000000-0000-4000-8000-0000000000a1"}'), "stderr alert line in the log");
+    assert.ok(logged.some((line) => line.startsWith("{\"outcome\":\"ran\"") && JSON.parse(line).overCap[0] === "00000000-0000-4000-8000-0000000000a1"), "result line with overCap");
     // Pipes, as a systemd service's stdout and stderr (not proven on systemd itself here: macOS).
     const piped = spawnSync("node", ["--import", "tsx", fixture], { encoding: "utf8", timeout: 60_000 });
     assert.equal(piped.status, 0);
-    assert.deepEqual(JSON.parse(piped.stdout.trim()).overCap, ["i9"]);
-    assert.ok(piped.stderr.includes('{"event":"key_grant_over_cap","intent":"i9"}'));
+    assert.deepEqual(JSON.parse(piped.stdout.trim()).overCap, ["00000000-0000-4000-8000-0000000000a1"]);
+    assert.ok(piped.stderr.includes('{"event":"key_grant_over_cap","intent":"00000000-0000-4000-8000-0000000000a1"}'));
   } finally {
     rmSync(folder, { recursive: true, force: true });
   }
 });
+
+test("with KEY_GRANT_ALERT_SPOOL set, the exit edge also leaves the over-cap alert in the durable spool", () => {
+  const fixture = join("tests", "commerce", "keys", "support", "over-cap-tick-exit.ts");
+  const folder = mkdtempSync(join(tmpdir(), "over-cap-spool-"));
+  try {
+    const run = spawnSync("node", ["--import", "tsx", fixture], { encoding: "utf8", timeout: 60_000, env: { ...process.env, KEY_GRANT_ALERT_SPOOL: folder } });
+    assert.equal(run.status, 0);
+    const files = readdirSync(folder).filter((name) => name.endsWith(".alert.json"));
+    assert.equal(files.length, 1);
+    assert.deepEqual(JSON.parse(readFileSync(join(folder, files[0]), "utf8")), { kind: "over_cap", detail: "intent 00000000-0000-4000-8000-0000000000a1" });
+  } finally {
+    rmSync(folder, { recursive: true, force: true });
+  }
+});
+
+// Review-A, 25 Nov: a tick must end inside its unit timeout. Reconcile starts no row after its deadline; rows not
+// reached keep their due time and settle on the next tick.
+test("past the reconcile deadline no row is started, and the next tick settles it", async () => {
+  const { grant, payload, rows } = settlingTick();
+  const stopped = await runKeyGrantTick({ payload, grant, acquire: runLock().acquire, env: live, now, reconcileBudgetMs: -1 });
+  assert.equal(stopped.outcome === "ran" && stopped.reconciled, 0);
+  assert.equal(rows["commerce-key-grant-intents"][0].state, "submitted");
+  assert.equal(rows["commerce-key-grant-intents"][0].nextAttemptAt, undefined, "not deferred: first in line next tick");
+  const next = await runKeyGrantTick({ payload, grant, acquire: runLock().acquire, env: live, now });
+  assert.equal(next.outcome === "ran" && next.reconciled, 1);
+  assert.equal(rows["commerce-key-grant-intents"][0].state, "granted");
+});
+
+function settlingTick() {
+  const account = privateKeyToAccount(generatePrivateKey());
+  const chain = mockChain(healthyChain({
+    eth_chainId: () => numberToHex(137),
+    eth_getTransactionReceipt: () => receipt("0x1", [transferLog(42n)]),
+    eth_blockNumber: () => numberToHex(101),
+  }));
+  const grant = createUnlockKeyGrantAdapter({ chainID: 137, account, transport: chain.transport, now, env: live, polygon: { lock: lockAddress, granter: account.address } });
+  const { payload, rows } = fakePayload([{ id: "00000000-0000-4000-8000-0000000000a1", operationKey: "unlock-grant:v1:order-d:1", entitlement: "adm", state: "submitted", attempts: 1, attemptID: "a1", txHash: `0x${"c".repeat(64)}`, target }]);
+  return { grant, payload, rows };
+}

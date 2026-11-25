@@ -1,0 +1,11 @@
+# One alert delivery pass a minute. The spool is durable, so a stopped or restarted mailer loses nothing.
+[Unit]
+Description=Deliver key-grant alerts every minute
+
+[Timer]
+OnCalendar=*-*-* *:*:30
+AccuracySec=1s
+Persistent=false
+
+[Install]
+WantedBy=timers.target

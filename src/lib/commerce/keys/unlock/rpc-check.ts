@@ -13,8 +13,9 @@ import { readOwnerOnly, signerDirectory } from "./signer";
 /** Where the owner keeps the RPC URL on the tick host: KEY_GRANT_POLYGON_RPC_URL=https://..., mode 0600. */
 export const polygonRpcFile = join(signerDirectory, "polygon-rpc.env");
 
-export type RpcFileCode = "rpc_file_missing" | "rpc_file_symlink" | "rpc_file_not_regular" | "rpc_file_not_owner_only"
-  | "rpc_file_unparsable" | "rpc_url_not_allowed";
+export const RPC_FILE_CODES = ["rpc_file_missing", "rpc_file_symlink", "rpc_file_not_regular", "rpc_file_not_owner_only",
+  "rpc_file_unparsable", "rpc_url_not_allowed"] as const;
+export type RpcFileCode = (typeof RPC_FILE_CODES)[number];
 export class RpcFileError extends Error {
   override name = "RpcFileError";
   constructor(readonly code: RpcFileCode) { super(code); }

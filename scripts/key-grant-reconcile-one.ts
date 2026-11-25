@@ -51,7 +51,7 @@ async function run() {
   ]);
   const neverSigns = async (): Promise<never> => { throw new Error("The recovery reconcile never signs"); };
   const readOnly = toAccount({ address: polygon.POLYGON_KEY_GRANTER, signMessage: neverSigns, signTransaction: neverSigns, signTypedData: neverSigns });
-  const adapter = createUnlockKeyGrantAdapter({ chainID: polygon.POLYGON_CHAIN_ID, account: readOnly, env, ancestryCap: args.walk,
+  const adapter = createUnlockKeyGrantAdapter({ chainID: polygon.POLYGON_CHAIN_ID, account: readOnly, env, ancestryCap: args.walk, walkBudgetMs: 25 * 60_000,
     transport: rpcCheck.polygonRpcTransport(rpc) });
   const config = await canonical;
   const logger = { options: { level: "silent" } } satisfies Config["logger"];

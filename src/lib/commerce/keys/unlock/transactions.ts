@@ -48,6 +48,8 @@ export const ANCESTRY_CAP = 256n;
 export { beyondAncestryCap };
 /** The most a one-shot recovery reconcile may walk (scripts/key-grant-reconcile-one.ts): about 11 h on Polygon. */
 export const MAX_RECOVERY_WALK = 20_000n;
+/** A routine ancestry walk gives up (unknown, deferred) after this long, so one slow RPC cannot hold the tick. */
+export const WALK_BUDGET_MS = 120_000;
 
 /**
  * Highest `maxFeePerGas` (wei) any transaction of ours may carry, first sends
@@ -144,10 +146,12 @@ export type SignerTransactionsOptions = {
   /** How far below the settled block a receipt may be tied by parentHash links: ANCESTRY_CAP routinely; more only for
    * the one-shot recovery reconcile, never above MAX_RECOVERY_WALK. */
   ancestryCap?: bigint;
+  /** Time budget for one ancestry walk (default WALK_BUDGET_MS; the one-shot recovery passes a larger one). */
+  walkBudgetMs?: number;
 };
 
 /** One signer's transactions on one enabled chain. Throws for a chain that is not enabled (chainEnabled). */
-export function createSignerTransactions({ chainID, account, transport, holdMs = 60_000, env = process.env, ancestryCap = ANCESTRY_CAP }: SignerTransactionsOptions) {
+export function createSignerTransactions({ chainID, account, transport, holdMs = 60_000, env = process.env, ancestryCap = ANCESTRY_CAP, walkBudgetMs = WALK_BUDGET_MS }: SignerTransactionsOptions) {
   if (ancestryCap < 1n || ancestryCap > MAX_RECOVERY_WALK) throw new Error(`Unlock ancestry walks are bounded: 1 to ${MAX_RECOVERY_WALK} blocks`);
   const network = Object.hasOwn(networks, chainID) && chainEnabled(chainID, env) ? networks[chainID] : undefined;
   if (!network) throw new Error(`Unlock transactions are refused on chain ${chainID}: Base Sepolia (84532) is enabled, and Polygon (137) only while KEY_GRANT_POLYGON_LIVE=1`);
@@ -192,7 +196,9 @@ export function createSignerTransactions({ chainID, account, transport, holdMs =
   const ancestorAt = async (from: { number: bigint; hash: Hex }, height: bigint): Promise<Hex | null> => {
     if (height > from.number || from.number - height > ancestryCap) return null;
     let hash = from.hash;
+    const started = performance.now();
     for (let number = from.number; number > height; number--) {
+      if (performance.now() - started >= walkBudgetMs) return null; // too slow this time: unknown, retried later
       const block = await client.getBlock({ blockHash: hash });
       if (block.number !== number || !block.hash || !same(block.hash, hash)) return null;
       hash = block.parentHash;

@@ -25,6 +25,8 @@ import { dispatchKeyGrants, logOverCap, reconcileKeyGrants, reconcileOwnerCancel
  * exclusive run lock (the tick script uses a PostgreSQL advisory lock) or return null, and a busy tick does nothing.
  */
 export const KEY_GRANT_TICK_LIMIT = 10;
+/** Reconcile starts no new row after this long; each row's ancestry walk is itself time-bounded (transactions.ts). */
+export const RECONCILE_BUDGET_MS = 6 * 60_000;
 
 export type KeyGrantTickResult =
   | Readonly<{ outcome: "off" | "busy" }>
@@ -39,11 +41,12 @@ export type KeyGrantTick = {
   env?: Readonly<Record<string, string | undefined>>;
   limit?: number;
   now?: () => Date;
-  /** Where the fixed alert lines go (stderr by default; the tick script writes them synchronously). */
+  /** Where the fixed alert lines go (stderr by default; the tick script writes them synchronously and spools them). */
   log?: (line: string) => void;
+  reconcileBudgetMs?: number;
 };
 
-export async function runKeyGrantTick({ payload, grant, acquire, env = process.env, limit = KEY_GRANT_TICK_LIMIT, now, log = (line) => console.error(line) }: KeyGrantTick): Promise<KeyGrantTickResult> {
+export async function runKeyGrantTick({ payload, grant, acquire, env = process.env, limit = KEY_GRANT_TICK_LIMIT, now, log = (line) => console.error(line), reconcileBudgetMs = RECONCILE_BUDGET_MS }: KeyGrantTick): Promise<KeyGrantTickResult> {
   if (!polygonKeyGrantsLive(env)) return { outcome: "off" };
   const release = await acquire();
   if (!release) return { outcome: "busy" };
@@ -51,9 +54,12 @@ export async function runKeyGrantTick({ payload, grant, acquire, env = process.e
     // Over-cap grants are alerted twice: the fixed stderr line, and their intent IDs in the result line, which the tick
     // script writes synchronously before it exits (Review-A, 25 Nov: an alert must not be lost at exit).
     const overCap: string[] = [];
-    const reconciled = await reconcileKeyGrants({ payload, adapter: grant, limit, now, onOverCap: (intentID) => { overCap.push(intentID); logOverCap(intentID, log); } });
-    const replaced = await replaceStuckKeyGrants({ payload, adapter: grant, limit, now });
-    const dispatched = await dispatchKeyGrants({ payload, adapter: grant, limit, now });
+    // Reconcile starts no new row after RECONCILE_BUDGET_MS, so a tick with slow reads still ends well inside the
+    // unit's timeout; rows not reached keep their due time and come first next tick (Review-A, 25 Nov).
+    const deadline = (now?.() ?? new Date()).getTime() + reconcileBudgetMs;
+    const reconciled = await reconcileKeyGrants({ payload, adapter: grant, limit, now, deadline, onOverCap: (intentID) => { overCap.push(intentID); logOverCap(intentID, log); } });
+    const replaced = await replaceStuckKeyGrants({ payload, adapter: grant, limit, now, log });
+    const dispatched = await dispatchKeyGrants({ payload, adapter: grant, limit, now, log });
     const cancelled = await reconcileOwnerCancels({ payload, reader: grant, limit, now });
     let seatsReleased = 0, seatSweepFailures = 0;
     try {

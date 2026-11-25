@@ -376,3 +376,15 @@ test("the one-shot command cannot settle on forked or missing evidence, and refu
   assert.throws(() => recoveryAdapter(healthyChain(), MAX_RECOVERY_WALK + 1n), /bounded/);
   assert.throws(() => recoveryAdapter(healthyChain(), 0n), /bounded/);
 });
+
+// Review-A, 25 Nov: one slow RPC cannot hold the tick. A routine walk past its time budget is unknown (deferred).
+test("an ancestry walk past its time budget is unknown, never settled or reverted", async () => {
+  const [one, top] = [hashOf("1"), hashOf("5")];
+  const account = privateKeyToAccount(generatePrivateKey());
+  for (const [label, answer] of [["success", receipt("0x1", [transferLog(42n)])], ["revert", receipt("0x0", [])]] as const) {
+    const chain = mockChain(polygon({}, { eth_getTransactionReceipt: () => answer, eth_blockNumber: () => numberToHex(105), eth_getBlockByNumber: view([105, top], { 100: one, 105: top }) }));
+    const adapter = createUnlockKeyGrantAdapter({ chainID: 137, account, transport: chain.transport, env: live, polygon: { lock: lockAddress, granter: account.address }, walkBudgetMs: 0 });
+    assert.equal((await adapter.reconcile({ intentID: "i", txHash: hashOf("c"), target })).kind, "unknown", label);
+    assert.equal(chain.methods().includes("eth_getBlockByHash"), false, label);
+  }
+});

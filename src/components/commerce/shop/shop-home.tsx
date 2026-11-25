@@ -120,7 +120,7 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
   }, [geometry, hub, scroll, K]);
 
   // Scroll → progress on every scroll event (their readScroll): raw, locked and spine-row progress go to the scene's
-  // refs; React only hears the locked index (±0.65 hysteresis, then a 200 ms debounce), whether the shelf is up, and,
+  // refs; React only hears the locked index (±0.65 hysteresis; the rail at once, the rest after a 200 ms debounce), whether the shelf is up, and,
   // 100 ms after the scroll settles, the committed progress.
   // Loaded on a product's address: the scene's first frame already has that book open at its own index, as
   // theirs opens the deep link before its scene mounts (06w9:15177-15183); otherwise it would ease into the detail pose.
@@ -139,6 +139,8 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
   // down and the scene keeps the progress the detail pinned (theirs: readScroll and the idle timer skip detail).
   const held = useRef(landing != null);
   const [committed, setCommitted] = useState(landing ?? 0), [active, setActive] = useState(landing ?? 0), [onShelf, setOnShelf] = useState(false);
+  // The title rail follows the locked index at once (theirs uF); only the scene and its controls wait out the debounce (uK).
+  const [railIndex, setRailIndex] = useState(landing ?? 0);
   const listeners = useRef(new Set<() => void>());
   useEffect(() => {
     let settle = 0, debounce = 0, index = 0;
@@ -154,6 +156,7 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
       const centred = locked - offset;
       if (Math.abs(centred - index) > 0.65) index = Math.round(centred);
       const book = catalogue.a(index), next = book == null ? J : Math.max(0, Math.min(count - 1, book));
+      setRailIndex(next);
       window.clearTimeout(debounce); debounce = window.setTimeout(() => setActive(next), 200);
       setOnShelf(raw >= K - 0.5);
       window.clearTimeout(settle); settle = window.setTimeout(() => setCommitted(locked), 100);
@@ -318,6 +321,8 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
   // every 120 ms), one book down every 3 s, counted from the start of the last glide (1 s; 1.83 s into the shelf). A
   // wheel or touch stops the next glides but not the one in flight: theirs runs it to the end on its own token
   // (`lo`), which only opening a book bumps. Measured on stripe.press: first glide 5.9 s after load, 2.0 s pauses.
+  // An open look-inside stands it down too: theirs moves the address to /book/<id>/page/<n> and the timer only runs
+  // on "/" (14540-14552); ours keeps /shop, so it reads the open pages instead (measured: theirs holds y while open).
   useEffect(() => {
     let timer = 0, stopped = false;
     const stop = () => { stopped = true; window.clearTimeout(timer); };
@@ -326,7 +331,7 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
       const from = window.scrollY, start = performance.now();
       gliding.current = { at: from };
       const step = (now: number) => {
-        if (held.current) { gliding.current = null; return; }
+        if (held.current || lookOpen.current) { gliding.current = null; return; }
         const t = Math.min(1, (now - start) / ms), y = from + (target - from) * (0.5 - 0.5 * Math.cos(Math.PI * t));
         gliding.current = { at: y };
         window.scrollTo(0, y);
@@ -339,7 +344,7 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
     const arm = (delay: number) => {
       timer = window.setTimeout(() => {
         if (stopped) return;
-        if (held.current) { arm(3000); return; }
+        if (held.current || lookOpen.current) { arm(3000); return; }
         const index = catalogue.a(Math.round(hub.scrollProgressDirectLiveRef.current as number));
         if (index == null || index >= catalogue.t) return;
         const move = motion.current;
@@ -454,7 +459,7 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
         <ArrowLeftIcon aria-hidden="true" className="mr-1.5 size-3.5" />{labels.toShelf}
       </button>
     </div>
-    <TitleRail railRef={titles} label={labels.titles} titles={items.map((entry) => entry.title)} refunds={items.map((entry) => entry.refund)} active={detail.open ?? selected ?? active}
+    <TitleRail railRef={titles} label={labels.titles} titles={items.map((entry) => entry.title)} refunds={items.map((entry) => entry.refund)} active={detail.open ?? selected ?? railIndex}
       fade={detail.open != null ? 0 : Math.max(0, Math.min(1, (committed - K - 0.2) / 0.3))} detail={detail.open != null && !detail.leaving}
       hidden={phoneDetail}
       onPick={(index) => detail.open != null ? openRef.current(index) : index < catalogue.t ? scrollTo(bookY(index), 1000) : scrollTo(shelfY(), 1833)} />

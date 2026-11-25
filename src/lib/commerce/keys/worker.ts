@@ -625,9 +625,12 @@ async function replaceStuck(payload: Payload, operation: Operation, chain: Repla
         ? await withSignerLock(payload, chain.signer, () => inGrant(payload, row.id, async (req, intent, held) =>
           await grantRecoveryAllowed(req, intent, held, row, sends.length, last.txHash) ? send() : null))
         : await send();
-      if (!answer) continue;
+      if (!answer || answer.kind === "unavailable") continue; // nothing sent; next tick tries again
       // Recorded bytes that fail the adapter's checks are never sent: stopped for a person (Review-A, 24 Nov).
-      if (answer.kind === "refused") { await markAttempt(payload, operation, row, operation.stop(`${prefix}rebroadcast_refused`)); continue; }
+      if (answer.kind === "refused") {
+        if (answer.code === "role_hook_set") logParked(row.id, `${prefix}rebroadcast_${answer.code}`);
+        await markAttempt(payload, operation, row, operation.stop(`${prefix}rebroadcast_refused`)); continue;
+      }
       const sentAt = now().toISOString();
       if (answer.kind === "accepted") await markSend(payload, operation, row, sends.length - 1, { accepted: true }, { [fields.lastSentAt]: sentAt });
       else if (answer.kind === "unknown") await markSend(payload, operation, row, sends.length - 1, { rebroadcasts: tries + 1 }, { [fields.lastSentAt]: sentAt, lastErrorCode: `${prefix}rebroadcast_unknown` });

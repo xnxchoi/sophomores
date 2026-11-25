@@ -104,7 +104,8 @@ export type ReplaceOutcome =
  */
 export type RebroadcastInput = { raw: string; txHash: string; nonce: number; target: KeyGrantTarget; tokenID?: string };
 
-export type RebroadcastOutcome = { kind: "accepted" } | { kind: "nonceConsumed" } | { kind: "unknown" } | { kind: "refused"; code: string };
+/** `unavailable`: a pre-send check could not be read (Polygon's role hook); nothing was sent, try again next tick. */
+export type RebroadcastOutcome = { kind: "accepted" } | { kind: "nonceConsumed" } | { kind: "unknown" } | { kind: "refused"; code: string } | { kind: "unavailable" };
 
 export type BroadcastOutcome =
   | { kind: "submitted" }

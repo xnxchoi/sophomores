@@ -4,7 +4,7 @@ import {
 } from "viem";
 import { baseSepolia, polygon } from "viem/chains";
 import { signerAccountID, type BroadcastOutcome, type RebroadcastInput, type RebroadcastOutcome, type TransactionFee } from "../contracts";
-import { POLYGON_CHAIN_ID, polygonKeyGrantsLive } from "./polygon";
+import { POLYGON_CHAIN_ID, polygonKeyGrantsLive, polygonRoleHookClear, roleHookSet } from "./polygon";
 
 /*
  * What the Unlock grant adapter and the cancel adapter share: one signer's
@@ -250,6 +250,12 @@ export function createSignerTransactions({ chainID, account, transport, holdMs =
       if (sent.type !== "eip1559" || sent.chainId !== chainID || !isAddressEqual(from, account.address) || !sent.to || (sent.value ?? 0n) !== 0n
         || !recorded({ to: sent.to, data: sent.data ?? "0x" }, record)) return { kind: "refused", code: "rebroadcast_mismatch" };
       if (overBudget(sent.gas, sent.maxFeePerGas)) return { kind: "refused", code: "fee_above_cap" };
+      // A v15 lock's role hook can change after signing (Review-A, 25 Nov): re-read it before every Polygon re-send.
+      // Set: refused for a person. Unreadable: nothing sent, try again next tick.
+      if (chainID === POLYGON_CHAIN_ID) {
+        try { if (!(await polygonRoleHookClear(client, sent.to))) return { kind: "refused", code: roleHookSet }; }
+        catch { return { kind: "unavailable" }; }
+      }
       const hash = keccak256(raw as Hex);
       try {
         const answered = await sendRaw(raw as Hex);
@@ -280,18 +286,24 @@ export function createSignerTransactions({ chainID, account, transport, holdMs =
     },
 
     /**
-     * The receipt of `txHash`, only once it is to `to` and buried at the chain's
-     * depth; `null` while that cannot be shown (not mined, too shallow, another
-     * chain, unreachable).
+     * The receipt of `txHash`, only once it is to `to`, buried at the chain's
+     * depth, and its block is the canonical block at that height (a receipt from
+     * a reorged-out block, or from a node on a stale fork, is not trusted:
+     * Review-A, 25 Nov); `null` while that cannot be shown (not mined, too
+     * shallow, not canonical, another chain, unreachable).
      */
     async buriedReceipt(txHash: Hex, to: Address): Promise<TransactionReceipt | null> {
       try { if (!(await onChain())) return null; } catch { return null; }
       const seen = await inspect(txHash);
       if (seen.status !== "mined" && seen.status !== "reverted") return null;
       if (!seen.receipt.to || !isAddressEqual(seen.receipt.to, to)) return null;
-      let head: bigint;
-      try { head = await client.getBlockNumber({ cacheTime: 0 }); } catch { return null; }
-      return head - seen.receipt.blockNumber + 1n < depth ? null : seen.receipt;
+      const height = seen.receipt.blockNumber;
+      try {
+        const head = await client.getBlockNumber({ cacheTime: 0 });
+        if (head - height + 1n < depth) return null;
+        const canonical = await client.getBlock({ blockNumber: height });
+        return canonical.number === height && !!canonical.hash && canonical.hash.toLowerCase() === seen.receipt.blockHash.toLowerCase() ? seen.receipt : null;
+      } catch { return null; }
     },
   };
 }

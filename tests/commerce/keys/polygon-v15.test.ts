@@ -3,13 +3,14 @@ import { readFile } from "node:fs/promises";
 import { test } from "node:test";
 import PublicLockV14 from "@unlock-protocol/contracts/dist/abis/PublicLock/PublicLockV14.json";
 import PublicLockV15 from "@unlock-protocol/contracts/dist/abis/PublicLock/PublicLockV15.json";
-import { decodeFunctionData, numberToHex, type Abi, type AbiFunction, type Hex } from "viem";
+import { decodeFunctionData, keccak256, numberToHex, parseTransaction, type Abi, type AbiFunction, type Hex, type LocalAccount } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { createUnlockKeyGrantAdapter } from "@/lib/commerce/keys/unlock/adapter";
 import { createUnlockKeyCancelAdapter } from "@/lib/commerce/keys/unlock/cancel";
 import { dispatchKeyGrants } from "@/lib/commerce/keys/worker";
 import { fakePayload } from "./support/fake-payload";
-import { address, healthyChain, lockAbi, lockAddress, lockCalls, mockChain, recipient, uint, uintArray } from "./support/mock-chain";
+import { confirmationDepth } from "@/lib/commerce/keys/unlock/transactions";
+import { address, cancelLog, hashOf, healthyChain, lockAbi, lockAddress, lockCalls, mockChain, receipt, recipient, transferLog, uint, uintArray } from "./support/mock-chain";
 
 // Owner, 24 Nov: "our lock is v15". The Signet lock reads publicLockVersion 15; Edition I reads 14. Our adapters
 // use the v14 ABI, so every fragment they call or decode must be identical in v15, and a v15 lock whose role hook
@@ -49,14 +50,14 @@ test("every PublicLock function, event and error our adapters use is identical i
   assert.equal((v15 as readonly AbiFunction[]).find((item) => item.name === "onHasRoleHook")?.outputs[0]?.type, "address");
 });
 
-const polygon = (calls: Record<string, () => Hex> = {}) => healthyChain({
+const polygon = (calls: Record<string, () => Hex> = {}, methods: Record<string, (params: unknown[]) => unknown> = {}) => healthyChain({
   eth_chainId: () => numberToHex(137),
   eth_call: lockCalls({ totalKeys: () => uint(0n), expirationDuration: () => uint(30n * 86_400n), grantKeys: () => uintArray([1n]),
     publicLockVersion: () => uint(15n), onHasRoleHook: () => address(zero), isLockManager: () => bool(true), ownerOf: () => address(recipient),
     isValidKey: () => bool(true), expireAndRefundFor: () => "0x", ...calls }),
+  ...methods,
 });
-function granter(handlers: ReturnType<typeof healthyChain>) {
-  const account = privateKeyToAccount(generatePrivateKey());
+function granter(handlers: ReturnType<typeof healthyChain>, account: LocalAccount = privateKeyToAccount(generatePrivateKey())) {
   const chain = mockChain(handlers);
   return { ...chain, adapter: createUnlockKeyGrantAdapter({ chainID: 137, account, transport: chain.transport, env: live, polygon: { lock: lockAddress, granter: account.address } }) };
 }
@@ -124,4 +125,60 @@ test("a grant parked on a role hook is loud: one fixed line, the intent stays pa
     console.error = original;
   }
   assert.deepEqual(lines.map((line) => JSON.parse(line)), [{ event: "key_grant_parked", intent: "i7", code: "role_hook_set" }]);
+});
+
+// Review-A, 25 Nov (r5): depth alone does not make a receipt canonical. A receipt whose block is not the canonical
+// block at its height (reorged out, or served by a node on a stale fork) settles nothing and triggers no retry.
+test("a buried receipt whose block is not the canonical block at its height stays unknown, success or revert", async () => {
+  const deep = () => numberToHex(100 + confirmationDepth[137] - 1);
+  const atHeight = (hash: Hex | null) => (params: unknown[]) => {
+    assert.equal(params[0], "0x64");
+    return hash === null ? null : { ...(healthyChain().eth_getBlockByNumber([]) as object), number: "0x64", hash };
+  };
+  const reorged = atHeight(hashOf("7"));
+  const grants: [string, unknown, (params: unknown[]) => unknown, string][] = [
+    ["canonical success", receipt("0x1", [transferLog(42n)]), atHeight(hashOf("1")), "confirmed"],
+    ["canonical revert", receipt("0x0", []), atHeight(hashOf("1")), "definitelyReverted"],
+    ["reorged success", receipt("0x1", [transferLog(42n)]), reorged, "unknown"],
+    ["reorged revert", receipt("0x0", []), reorged, "unknown"],
+    ["block unavailable", receipt("0x0", []), atHeight(null), "unknown"],
+    ["block read fails", receipt("0x0", []), () => { throw new Error("down"); }, "unknown"],
+  ];
+  for (const [label, answer, block, kind] of grants) {
+    const { adapter, methods } = granter(polygon({}, { eth_getTransactionReceipt: () => answer, eth_blockNumber: deep, eth_getBlockByNumber: block }));
+    assert.equal((await adapter.reconcile({ intentID: "i", txHash: hashOf("c"), target })).kind, kind, label);
+    assert.equal(methods().includes("eth_getBlockByNumber"), true, label);
+  }
+  for (const [label, block, kind] of [["canonical", atHeight(hashOf("1")), "confirmed"], ["reorged", reorged, "unknown"]] as const) {
+    const { adapter } = canceller(polygon({}, { eth_getTransactionReceipt: () => receipt("0x1", [cancelLog(5n)]), eth_blockNumber: deep, eth_getBlockByNumber: block }));
+    assert.equal((await adapter.reconcileCancel({ txHash: hashOf("c"), target, tokenID: "5" })).kind, kind, label);
+  }
+  for (const [label, block, kind] of [["canonical", atHeight(hashOf("1")), "definitelyReverted"], ["reorged", reorged, "unknown"]] as const) {
+    const { adapter } = canceller(polygon({}, { eth_getTransactionReceipt: () => receipt("0x0", []), eth_blockNumber: deep, eth_getBlockByNumber: block }));
+    assert.equal((await adapter.reconcileCancel({ txHash: hashOf("c"), target, tokenID: "5" })).kind, kind, label);
+  }
+});
+
+// Review-A, 25 Nov (r5): the hook can change between signing and a re-send of the recorded bytes.
+test("re-sending recorded bytes re-reads the role hook: set is refused, unreadable sends nothing, clear is sent", async () => {
+  const account = privateKeyToAccount(generatePrivateKey());
+  const first = granter(polygon(), account);
+  const prepared = await first.adapter.prepare({ intentID: "i", attemptID: "a", target, nonceFloor: 0 });
+  assert.equal(prepared.kind, "prepared");
+  const raw = (prepared as { raw: string }).raw as Hex;
+  first.adapter.release({ txHash: keccak256(raw) });
+  const record = { raw, txHash: keccak256(raw), nonce: parseTransaction(raw).nonce!, target };
+  const down = (): Hex => { throw new Error("down"); };
+  const cases: [string, Record<string, () => Hex>, string][] = [
+    ["hook set", { onHasRoleHook: () => address(hook) }, "refused"],
+    ["hook unreadable", { onHasRoleHook: down }, "unavailable"],
+    ["version unreadable", { publicLockVersion: down }, "unavailable"],
+    ["hook clear", {}, "accepted"],
+  ];
+  for (const [label, calls, kind] of cases) {
+    const { adapter, methods } = granter(polygon(calls, { eth_sendRawTransaction: (params) => keccak256(params[0] as Hex) }), account);
+    const answer = await adapter.rebroadcast(record);
+    assert.deepEqual(answer, kind === "refused" ? { kind, code: "role_hook_set" } : { kind }, label);
+    assert.equal(methods().includes("eth_sendRawTransaction"), kind === "accepted", label);
+  }
 });

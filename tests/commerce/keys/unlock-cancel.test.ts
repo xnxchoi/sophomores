@@ -96,7 +96,7 @@ test("a token held by someone other than the intent's recipient, a malformed tok
 });
 
 test("reconcile confirms only one CancelKey for this token from the lock, with no refund, at depth", async () => {
-  const at = (answer: unknown, head = deep) => cancellerOn({ eth_getTransactionReceipt: () => answer, eth_blockNumber: head }).adapter;
+  const at = (answer: unknown, head = deep) => cancellerOn({ eth_getTransactionReceipt: () => answer, eth_blockNumber: head, eth_getBlockByNumber: healthyChain().eth_getBlockByNumber }).adapter;
   const reconcile = (answer: unknown, head = deep) => at(answer, head).reconcileCancel({ txHash: `0x${"c".repeat(64)}`, target, tokenID: "5" });
   assert.deepEqual(await reconcile(receipt("0x1", [cancelLog(5n)])), { kind: "confirmed" });
   assert.deepEqual(await reconcile(receipt("0x0", [])), { kind: "definitelyReverted", code: "tx_reverted" });

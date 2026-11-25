@@ -19,6 +19,11 @@ The code is `src/lib/commerce/keys/` (worker passes, `grant-catch-up.ts`, `unloc
   first reads `publicLockVersion()` and, on v15, `onHasRoleHook()`. A non-zero hook parks the operation with
   `role_hook_set`. A replacement logs `replacement_role_hook_set`, while the pending send stays reconciled. Nothing
   is signed until a person clears the hook or confirms it. A failed read retries; it does not park.
+  A re-send of recorded bytes re-reads the hook first: a set hook stops it (`rebroadcast_refused`, logged as
+  `rebroadcast_role_hook_set`); an unreadable hook sends nothing and tries again next tick.
+- **Canonical receipts:** a receipt settles a grant or cancel, or counts as a revert, only once it is at the chain's
+  depth *and* its block hash equals the canonical block at that height. A reorged-out or stale-fork receipt stays
+  pending until the chain shows the transaction in a canonical block.
 - **Off** (the default): it prints `{"outcome":"off"}` before loading anything.
 - **What the tick never does:**
   - It never retries an `ambiguous` grant; that waits for reconcile and a person.

@@ -102,12 +102,12 @@ test("a lock with non-expiring keys grants a non-expiring key", async () => {
 });
 
 test("reconcile confirms a successful receipt with the minted token ID", async () => {
-  const { adapter } = adapterOn({ eth_getTransactionReceipt: () => receipt("0x1", [transferLog(42n)]), eth_blockNumber: deep });
+  const { adapter } = adapterOn({ eth_getTransactionReceipt: () => receipt("0x1", [transferLog(42n)]), eth_blockNumber: deep, eth_getBlockByNumber: healthyChain().eth_getBlockByNumber });
   assert.deepEqual(await adapter.reconcile({ intentID: "intent-1", txHash: hashOf("c"), target }), { kind: "confirmed", tokenID: "42" });
 });
 
 test("reconcile reports a reverted receipt as definitely reverted", async () => {
-  const { adapter } = adapterOn({ eth_getTransactionReceipt: () => receipt("0x0", []), eth_blockNumber: deep });
+  const { adapter } = adapterOn({ eth_getTransactionReceipt: () => receipt("0x0", []), eth_blockNumber: deep, eth_getBlockByNumber: healthyChain().eth_getBlockByNumber });
   assert.deepEqual(await adapter.reconcile({ intentID: "intent-1", txHash: hashOf("c"), target }), { kind: "definitelyReverted", code: "tx_reverted" });
 });
 

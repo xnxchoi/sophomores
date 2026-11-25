@@ -8,7 +8,9 @@ import { Link } from "@/components/core/Link/Link";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { PageInset } from "@/components/core/PageInset/PageInset";
 import { cn } from "@/lib/utils";
-import { PurchaseNotOpen, RefundNotice } from "../book-offer";
+import { PurchaseNotOpen } from "../book-offer";
+import { RefundTerms } from "../refund-terms";
+import { editionRefundTerms } from "@/lib/commerce/refund-policy";
 import { BookStage } from "../book3d/book-stage";
 import type { BookTextures } from "../book3d/book";
 import { FormatRow } from "./format-row";
@@ -64,11 +66,12 @@ export function ProductPage({ product, offer, content, shelf }: { product: Editi
 
       <section aria-label={t("formats")} className="mt-10">
         <PurchaseNotOpen priceKRW={offer.priceKRW} />
+        <RefundTerms terms={editionRefundTerms(offer.editionEntitlements)} className="mt-3" />
         {content.formats.length > 0 && <ul>
           {content.formats.map((format) => <FormatRow key={format.label} {...format} />)}
         </ul>}
         <p className="mt-3 text-xs leading-5 text-muted-foreground text-pretty">
-          {offer.editionEntitlements.membershipSignet ? t("includesBundle") : t("includesBookOnly")} <RefundNotice offer={offer} />
+          {offer.editionEntitlements.membershipSignet ? t("includesBundle") : t("includesBookOnly")}
           {offer.maximumQuantity === 1 && <> {t("onePerAccount")}.</>}
         </p>
       </section>

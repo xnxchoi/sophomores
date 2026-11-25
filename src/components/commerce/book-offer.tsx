@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { editionRefundable } from "@/lib/commerce/refund-policy";
+import { editionRefundTerms } from "@/lib/commerce/refund-policy";
+import { RefundTerms } from "./refund-terms";
 import type { CommerceEditionCatalogue, CommerceEditionOffer, CommerceEditionShop } from "@/lib/commerce/editions";
 import { Link } from "@/components/core/Link/Link";
 import { PageInset } from "@/components/core/PageInset/PageInset";
@@ -43,18 +44,9 @@ export function ProductFacts({ offer, className }: { offer: CommerceEditionOffer
   const locale = useLocale();
   return <ArcRoles><div className={className}>
     <p className="text-[15px] leading-[21px] tabular-nums">{new Intl.NumberFormat(locale, { style: "currency", currency: "KRW", maximumFractionDigits: 0 }).format(offer.priceKRW)}</p>
-    <p className="mt-2 max-w-prose text-xs leading-5 text-muted-foreground">{offer.editionEntitlements.membershipSignet ? t("includesBundle") : t("includesBookOnly")} <RefundNotice offer={offer} /></p>
+    <p className="mt-2 max-w-prose text-xs leading-5 text-muted-foreground">{offer.editionEntitlements.membershipSignet ? t("includesBundle") : t("includesBookOnly")}</p>
     {offer.maximumQuantity === 1 && <div className="mt-3"><Badge size="md">{t("onePerAccount")}</Badge></div>}
   </div></ArcRoles>;
-}
-
-/**
- * Told before the sale (owner, 25 Nov: personalised products may refuse refunds once the customer is notified before the
- * sale): an edition with membership is personalised and not refundable; the book-only edition is. Same rule as staff refunds.
- */
-export function RefundNotice({ offer }: { offer: Pick<CommerceEditionOffer, "editionEntitlements"> }) {
-  const t = useTranslations("Customer.components_commerce_book_offer");
-  return <>{editionRefundable(offer.editionEntitlements) ? t("refundable") : t("personalisedNoRefunds")}</>;
 }
 
 /** Checkout for a native product while purchase is not open: the product's facts and the not-open note, with no cart or Pay.
@@ -65,7 +57,8 @@ export function NativeCheckoutSummary({ title, offer }: { title: string; offer: 
       <h2 id="native-checkout-heading" className="text-[15px] leading-[21px] [overflow-wrap:anywhere]">{title}</h2>
       <ProductFacts offer={offer} className="mt-4" />
     </div>
-    <PurchaseNotOpen priceKRW={offer.priceKRW} />
+    {/* The refund rule beside the buy row, before any Pay (owner, 25 Nov; Review-B r2). */}
+    <div className="min-w-0"><PurchaseNotOpen priceKRW={offer.priceKRW} /><RefundTerms terms={editionRefundTerms(offer.editionEntitlements)} className="mt-3" /></div>
   </section>;
 }
 

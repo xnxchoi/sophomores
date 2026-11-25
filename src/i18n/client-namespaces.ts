@@ -50,6 +50,7 @@ const purchase = [
   "VerificationTrial",
   "Customer.components_commerce_checkout",
   "Customer.components_commerce_payment",
+  "Customer.components_commerce_refund_terms",
   "Customer.components_commerce_shipping_address",
   "Customer.components_tickets_ticket_selection",
   "Customer.navigation"

@@ -841,8 +841,6 @@
       "allProducts": "",
       "includesBundle": "",
       "includesBookOnly": "",
-      "refundable": "",
-      "personalisedNoRefunds": "",
       "onePerAccount": "",
       "description": "",
       "shelf": "",
@@ -1029,6 +1027,14 @@
       "noUnresolvedPaymentAttemptWasFoundForThisAccount": "이 계정에서 처리가 끝나지 않은 결제 시도를 찾지 못했어요.",
       "aPaymentAttemptIsSavedNothingWillReopenAutomatically": "결제 시도가 저장돼 있어요. 결제창은 자동으로 다시 열리지 않아요.",
       "checkingExistingPayments": "이전 결제 정보를 확인하고 있어요…"
+    },
+    "components_commerce_refund_terms": {
+      "personalisedNoRefunds": "",
+      "membershipNoRefunds": "",
+      "refundable": "",
+      "refundableUntil": "",
+      "refundsClosed": "",
+      "refundsClosedNoDate": ""
     },
     "components_commerce_shipping_address": {
       "deliveryAddress": "배송지 주소",
@@ -1358,7 +1364,6 @@
       "differentCart": "",
       "viewCart": "",
       "priceEach": "",
-      "refundableUntil": "",
       "total": "",
       "checkoutAddress": ""
     },

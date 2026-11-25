@@ -7,6 +7,7 @@ import { loadCommerceOffer } from "@/lib/commerce/catalogue";
 import { hasGuestSponsorMembership } from "@/lib/commerce/membership";
 import { GuestTicketPurchase } from "@/components/commerce/guest-ticket-purchase";
 import { PageFrame } from "@/components/commerce/page-frame";
+import { refundPolicy, refundTerms } from "@/lib/commerce/refund-policy";
 
 export const metadata = { robots: { index: false, follow: false }, referrer: "no-referrer" as const };
 
@@ -28,7 +29,9 @@ export default async function GuestInvitationsPage() {
       <GuestTicketPurchase customerID={String(user.id)} productID={offer.productID} title={offer.title}
         priceKRW={offer.priceKRW} available={Math.min(offer.maximumQuantity, offer.availableQuantity)}
         limit={offer.maximumQuantity} locale={await getLocale()}
-        offerTicketEmailConsent={process.env.UNLOCK_TICKET_EMAIL_CONSENT_ENABLED === "1"} />
+        offerTicketEmailConsent={process.env.UNLOCK_TICKET_EMAIL_CONSENT_ENABLED === "1"}
+        // The same rule staff refunds apply to a guest ticket for this event, as of now (eventStartsAt is its Part I start).
+        refundTerms={refundTerms(refundPolicy({ version: 3, kind: "guest-ticket-v1", eventID: offer.event.id }), offer.event.eventStartsAt)} />
     </PageFrame>;
   } catch {
     return frame(t("unavailable"));

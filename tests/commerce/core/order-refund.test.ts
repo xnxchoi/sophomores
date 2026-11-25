@@ -107,3 +107,19 @@ test("the pre-sale notice and staff refunds read the same edition rule", async (
     assert.equal(editionRefundable(included), recorded.refundable, JSON.stringify(included));
   }
 });
+
+test("refund terms: guest tickets open while now < cutoff and closed from it; editions and membership need no event", async () => {
+  const { refundTerms, refundCutoff, editionRefundTerms } = await import("../../../src/lib/commerce/refund-policy");
+  const start = "2026-12-11T10:00:00.000Z";
+  const cutoff = refundCutoff(start)!;
+  const cutoffAt = new Date(cutoff).toISOString();
+  assert.equal(cutoffAt, "2026-12-08T10:00:00.000Z");
+  const guest = { refundable: true, cutoff: "event" } as const;
+  assert.deepEqual(refundTerms(guest, start, cutoff - 1), { kind: "until", cutoffAt });
+  assert.deepEqual(refundTerms(guest, start, cutoff), { kind: "closed", cutoffAt });
+  assert.deepEqual(refundTerms(guest, "not a date", 0), { kind: "closed", cutoffAt: null });
+  assert.deepEqual(refundTerms({ refundable: true, cutoff: "none" }, null, 0), { kind: "refundable" });
+  assert.deepEqual(refundTerms({ refundable: false, reason: "not-refundable-product" }, start, 0), { kind: "none", reason: "not-refundable-product" });
+  assert.deepEqual(editionRefundTerms({ membershipSignet: false, freeLaunchTicket: false }), { kind: "refundable" });
+  assert.deepEqual(editionRefundTerms({ membershipSignet: true, freeLaunchTicket: true }), { kind: "none", reason: "personalised-edition" });
+});

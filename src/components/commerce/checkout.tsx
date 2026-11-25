@@ -13,6 +13,8 @@ import type { CommerceOffer } from "@/lib/commerce/catalogue";
 import { shippingAddressSchema, type ShippingAddress } from "@/lib/commerce/contracts";
 import { z } from "zod";
 import { CommercePayment } from "./payment";
+import { RefundTerms } from "./refund-terms";
+import type { RefundTerms as Terms } from "@/lib/commerce/refund-policy";
 import { ShippingAddressForm } from "./shipping-address";
 import { ReviewCustomerNotice } from "./review-customer-notice";
 import { ArcRoles } from "./arc-roles";
@@ -262,7 +264,8 @@ export function CommerceIdentityBoundary({ children, verified, onSessionExpired,
 export type PurchaseAllowance = Readonly<{ source: "server"; perAccount: number; singleMembershipToken: boolean; includesAdmission: boolean }>;
 
 /** One server offer is the only identity, price and allowance source: each edition is its own product. */
-export function CommerceCheckout({ offer, allowance, orderDetails, progress = false }: { offer: CommerceOffer; allowance: PurchaseAllowance; orderDetails?: ReactNode; progress?: boolean }) {
+/** `refundTerms` comes from the server and is shown directly before Pay (owner, 25 Nov; Review-B r2). */
+export function CommerceCheckout({ offer, allowance, orderDetails, refundTerms, progress = false }: { offer: CommerceOffer; allowance: PurchaseAllowance; orderDetails?: ReactNode; refundTerms: Terms; progress?: boolean }) {
   const t = useTranslations('Customer.components_commerce_checkout');
   const { cart, addItem, removeItem, isLoading } = useCart();
   const { user } = useEcommerce();
@@ -330,6 +333,7 @@ export function CommerceCheckout({ offer, allowance, orderDetails, progress = fa
     <div className="min-w-0 space-y-5">
       {orderDetails}
       <div className="flex flex-wrap justify-between gap-3 border-t border-border pt-5 text-lg"><span>{t('total')}</span><span className="tabular-nums">{totalLabel}</span></div>
+      <RefundTerms terms={refundTerms} />
       <CommercePayment productID={offer.productID} shippingAddress={shippingAddress} disabled={paymentDisabled} onBusyChange={setPaymentBusy} onAttemptChange={setPaymentLocked} />
     </div>
   </div>;
@@ -347,7 +351,7 @@ export function CommerceCheckout({ offer, allowance, orderDetails, progress = fa
         <p role="status" className="min-h-5 text-sm text-muted-foreground empty:hidden">{status}</p>
       </section>
       <section><ShippingAddressForm value={shippingAddress} onChange={setShippingAddress} disabled={busy || paymentBusy || paymentLocked || !user || addressClosed} /></section>
-      <section className="max-w-2xl"><CommercePayment productID={offer.productID} shippingAddress={shippingAddress} disabled={paymentDisabled} onBusyChange={setPaymentBusy} onAttemptChange={setPaymentLocked} /></section>
+      <section className="max-w-2xl space-y-6"><RefundTerms terms={refundTerms} /><CommercePayment productID={offer.productID} shippingAddress={shippingAddress} disabled={paymentDisabled} onBusyChange={setPaymentBusy} onAttemptChange={setPaymentLocked} /></section>
     </div>
   </div>;
 }

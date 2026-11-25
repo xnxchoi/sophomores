@@ -4,6 +4,7 @@ import { assertCommerceBrowserRead } from '../access'
 import { hasUnresolvedPaidReview, loadOwnPaidReviewAttempts } from './review'
 import { isClosedByVerifiedCancellation } from './accounting'
 import { paymentIdFromOrderId, providerPaymentId } from '../../tickets/portone/payment-id'
+import { refundPolicy, refundTerms, type RefundTerms } from '../refund-policy'
 
 const uuid = z.uuid().transform((value) => value.toLowerCase())
 const relation = z.union([uuid, z.object({ id: uuid })]).transform((value) => typeof value === 'string' ? value : value.id)
@@ -15,7 +16,8 @@ const attemptSchema = z.object({ id: uuid, customer: relation, cart: relation, p
   items: z.array(z.object({ product: relation, quantity: z.int().min(1).max(3) })).length(1),
   // The order name frozen in the attempt's own snapshot, so recovery rows can name what was being bought.
   portone: z.object({ paymentID: providerPaymentId, snapshotHash: z.string().regex(/^[a-f0-9]{64}$/),
-    snapshot: z.object({ orderName: z.string().max(200).nullish() }).nullish() }),
+    // Loose: the refund terms read the snapshot's own product facts; the snapshot itself never leaves.
+    snapshot: z.looseObject({ orderName: z.string().max(200).nullish() }).nullish() }),
 })
 const querySchema = z.strictObject({ productID: uuid.optional() })
 const json = (status: number, data: unknown) => Response.json(data, { status,
@@ -47,6 +49,19 @@ export function createPendingEndpoint(authorize: (req: PayloadRequest) => Promis
           status: true, commerceReviewHold: true, commerceResolutionConflict: true, items: true, portone: { paymentID: true, snapshotHash: true, snapshot: true } } })
       // Never silently select one attempt or omit a hidden overflow tail.
       if (found.docs.length > 100) throw new APIError('Too many attempts require review', 503)
+      // The refund terms each attempt was bought under, from its frozen snapshot (owner, 25 Nov: told before the sale,
+      // including before a resumed payment). SERVER: only the event's start is read, once per event, and only the
+      // derived terms leave; an unreadable event gives "closed", as staff refunds decide.
+      const now = Date.now()
+      const starts = new Map<string, Promise<unknown>>()
+      const termsOf = async (snapshot: unknown): Promise<RefundTerms> => {
+        const policy = refundPolicy(snapshot)
+        if (!policy.refundable || policy.cutoff === 'none') return refundTerms(policy, null, now)
+        const eventID = String((snapshot as { eventID?: unknown }).eventID)
+        if (!starts.has(eventID)) starts.set(eventID, req.payload.findByID({ collection: 'commerce-events', id: eventID, depth: 0,
+          overrideAccess: true, select: { partIStartsAt: true }, req }).then((event) => (event as { partIStartsAt?: unknown }).partIStartsAt, () => null))
+        return refundTerms(policy, await starts.get(eventID), now)
+      }
       const ordinaryAttempts = []
       for (const document of found.docs) {
         const row = attemptSchema.parse(document)
@@ -62,7 +77,7 @@ export function createPendingEndpoint(authorize: (req: PayloadRequest) => Promis
           customerID, cartID: row.cart, snapshotHash: row.portone.snapshotHash }, row.commerceResolutionConflict === true)) continue
         ordinaryAttempts.push({ transactionID: row.id, paymentID: row.portone.paymentID, cartID: row.cart, productID: item.product,
           quantity: item.quantity, totalAmount: row.amount, currency: row.currency, status: row.status, orderName: row.portone.snapshot?.orderName?.trim() || null,
-          reviewHold: row.commerceReviewHold === true, resolutionConflict: row.commerceResolutionConflict === true })
+          refundTerms: await termsOf(row.portone.snapshot), reviewHold: row.commerceReviewHold === true, resolutionConflict: row.commerceResolutionConflict === true })
       }
       const attempts = new Map(ordinaryAttempts.map(attempt => [attempt.transactionID, attempt]))
       for (const row of await loadOwnPaidReviewAttempts(req, customerID)) {
@@ -70,7 +85,7 @@ export function createPendingEndpoint(authorize: (req: PayloadRequest) => Promis
         if (!await hasUnresolvedPaidReview(req, row)) continue
         attempts.set(row.id, { transactionID: row.id, paymentID: row.portone.paymentID, cartID: snapshot.cartID,
           productID: snapshot.productID, quantity: snapshot.quantity, totalAmount: row.amount, currency: row.currency,
-          status: row.status, orderName: snapshot.orderName?.trim() || null, reviewHold: true, resolutionConflict: row.commerceResolutionConflict })
+          status: row.status, orderName: snapshot.orderName?.trim() || null, refundTerms: await termsOf(snapshot), reviewHold: true, resolutionConflict: row.commerceResolutionConflict })
       }
       if (attempts.size > 100) throw new APIError('Too many attempts require review', 503)
       return json(200, { attempts: [...attempts.values()] })

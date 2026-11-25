@@ -33,9 +33,8 @@ test("the shop lists three separate products, each linking to its own page, with
   assert.match(html, /₩35,000/); assert.match(html, /₩82,000/); assert.match(html, /₩329,000/);
   assert.match(html, /The book only\. No membership token or ticket\./);
   assert.equal((html.match(/Includes the book, one membership token and one free Member Ticket\./g) ?? []).length, 2);
-  // Told before the sale (owner, 25 Nov): membership editions are personalised and not refundable; the book only is.
-  assert.match(html, /No membership token or ticket\. Refundable\./);
-  assert.equal((html.match(/Personalised with your membership\. No refunds\./g) ?? []).length, 2);
+  // The refund rule is told on the product page and at checkout, beside the buy row, not in the list (Review-B r2).
+  assert.doesNotMatch(html, /Refundable|No refunds/);
   assert.doesNotMatch(html, /<select\b|<input\b|role="radio|coin|Editions/i);
 });
 
@@ -47,7 +46,8 @@ test("a product page shows one product, its facts and that purchase is not open,
   assert.match(html, /One per account/);
   assert.match(html, /Release pending/);
   assert.match(html, /href="\/shop"/);
-  assert.match(html, /Personalised with your membership\. No refunds\./);
+  // Its own body-size line in the foreground colour, right after the buy row (owner, 25 Nov; Review-B r2).
+  assert.match(html, /Release pending[\s\S]*?<p data-refund-terms="none" class="[^"]*\btext-sm\b[^"]*\btext-foreground\b[^"]*">Personalised with your membership\. No refunds\.<\/p>/);
   assert.doesNotMatch(html, /Refundable\./);
   // The only button is the 3D book's own Look inside control; nothing buys, carts or pays.
   assert.deepEqual(html.match(/<button\b[^>]*>/g)?.map((tag) => tag.includes("data-book-ui")), [true]);
@@ -106,9 +106,9 @@ test("checkout states the refund rule before payment: book only refundable, memb
   const book = products.find(({ product }) => product.productID === "book")!;
   const personal = products.find(({ product }) => product.productID === "personal")!;
   const bookHTML = render(<NativeCheckoutSummary title={book.product.title} offer={book.offer} />);
-  assert.match(bookHTML, /Refundable\./);
+  assert.match(bookHTML, /Release pending[\s\S]*?<p data-refund-terms="refundable" class="[^"]*\btext-sm\b[^"]*\btext-foreground\b[^"]*">Refundable\.<\/p>/);
   assert.doesNotMatch(bookHTML, /No refunds/);
   const personalHTML = render(<NativeCheckoutSummary title={personal.product.title} offer={personal.offer} />);
-  assert.match(personalHTML, /Personalised with your membership\. No refunds\./);
+  assert.match(personalHTML, /Release pending[\s\S]*?<p data-refund-terms="none"[^>]*>Personalised with your membership\. No refunds\.<\/p>/);
   assert.doesNotMatch(personalHTML, /Refundable\./);
 });

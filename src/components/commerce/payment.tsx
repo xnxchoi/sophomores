@@ -16,6 +16,8 @@ import { providerPaymentId } from "@/lib/tickets/portone/payment-id";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { ActionButton, CopyButton } from "@/components/core/ArcFocus/ArcFocus";
 import { commercePaymentIntentPrefix } from "@/lib/member-auth/browser-copies";
+import { refundTermsSchema } from "@/lib/commerce/refund-policy";
+import { RefundTerms } from "./refund-terms";
 
 const identifier = z.string().min(1).max(128);
 /** Thrown after every Pay press so the action button returns to idle rather than showing success. */
@@ -35,7 +37,10 @@ const terminalSchema = z.object({ outcome: z.literal("local-terminal"), status: 
 const pendingSchema = z.object({ attempts: z.array(z.object({ transactionID: z.uuid(), paymentID: providerPaymentId,
   cartID: identifier, productID: identifier, quantity: z.int().min(1).max(3), totalAmount: z.int().positive(), currency: z.literal("KRW"),
   status: z.string().max(40), reviewHold: z.boolean(), resolutionConflict: z.boolean().default(false),
-  orderName: z.string().max(200).nullable().default(null) })).max(100) });
+  orderName: z.string().max(200).nullable().default(null),
+  // The refund rule the attempt was bought under, derived by the server from its frozen snapshot. Required: an attempt
+  // without it can't be resumed (owner, 25 Nov: told before the sale; Review-B r2).
+  refundTerms: refundTermsSchema })).max(100) });
 type PaymentIntent = z.infer<typeof intentSchema>;
 
 type CommercePaymentProps = {
@@ -198,6 +203,9 @@ function PaymentPanel({ shippingAddress, disabled = false, onBusyChange, onAttem
       return;
     }
     if (resumed.outcome !== "resumable" || !resumed.paymentRequest) { fail(t('thisAttemptCannotBeReopenedCheckPaymentStatusOr')); return; }
+    // Never reopen the payment window for an attempt whose refund terms weren't on screen (Review-B r2). Check and Cancel
+    // never open it, so they stay available.
+    if (!discovery.attempts.some((attempt) => attempt.transactionID === intent.transactionID)) { fail(t('thisAttemptCannotBeReopenedCheckPaymentStatusOr')); return; }
     await openSDK(intent, resumed.paymentRequest);
   }
   async function preparePayment() {
@@ -273,6 +281,8 @@ function PaymentPanel({ shippingAddress, disabled = false, onBusyChange, onAttem
   }
   const retained = Boolean(intent?.transactionID);
   const reviewHold = discovery.attempts.some((attempt) => attempt.transactionID === intent?.transactionID && (attempt.reviewHold || attempt.resolutionConflict));
+  // Resume can open the payment window, so the saved attempt's refund terms show beside it first.
+  const retainedTerms = discovery.attempts.find((attempt) => attempt.transactionID === intent?.transactionID)?.refundTerms;
   const unavailable = busy || !user || stored === undefined || stored === null || Boolean(stored && !intent) || Boolean(orderID);
   return <section aria-label={t('payment')} className="space-y-6 text-foreground">
     <header className="border-b border-border pb-4"><h2 className="text-xl">{t('payment')}</h2></header>
@@ -281,7 +291,7 @@ function PaymentPanel({ shippingAddress, disabled = false, onBusyChange, onAttem
       {discovery.attempts.map((attempt) => <button key={attempt.transactionID} type="button" disabled={unavailable}
         onClick={() => { try { saveIntent({ version: 1, cartID: attempt.cartID, transactionID: attempt.transactionID, paymentID: attempt.paymentID }); setMessage(""); } catch { fail(t('paymentNeedsBrowserStorageEnableItAndReload')); } }}
         className="grid min-h-12 w-full grid-cols-1 items-center gap-x-4 gap-y-2 border-t border-border py-4 last:border-b sm:grid-cols-[minmax(0,1fr)_auto] text-left text-sm transition-colors hover:bg-muted focus-visible:bg-muted disabled:opacity-40">
-        <span className="min-w-0 tabular-nums">{attempt.orderName && <span className="mb-1 block font-medium wrap-anywhere">{attempt.orderName}</span>}{attempt.totalAmount.toLocaleString("ko-KR")} KRW <span className="mt-1 block wrap-anywhere text-xs text-muted-foreground">{t('referenceEnding')}{attempt.paymentID.slice(-6)}</span></span><span className="font-medium">{attempt.reviewHold || attempt.resolutionConflict ? t('reviewNeeded') : t('viewAttempt')}</span>
+        <span className="min-w-0 tabular-nums">{attempt.orderName && <span className="mb-1 block font-medium wrap-anywhere">{attempt.orderName}</span>}{attempt.totalAmount.toLocaleString("ko-KR")} KRW <RefundTerms as="span" terms={attempt.refundTerms} className="mt-1" /><span className="mt-1 block wrap-anywhere text-xs text-muted-foreground">{t('referenceEnding')}{attempt.paymentID.slice(-6)}</span></span><span className="font-medium">{attempt.reviewHold || attempt.resolutionConflict ? t('reviewNeeded') : t('viewAttempt')}</span>
       </button>)}
     </div>}
     {offerTicketEmailConsent && !recovery && !retained && !orderID && <label className="flex min-h-11 items-center gap-3 text-sm">
@@ -294,9 +304,10 @@ function PaymentPanel({ shippingAddress, disabled = false, onBusyChange, onAttem
       disabled={(unavailable && !busy) || disabled || !cartID || discovery.state !== "ready" || discovery.attempts.length > 0}
       onAction={async () => { await run("start"); throw settled; }} onActionError={() => {}} />}
     {retained && !orderID && <div className="grid gap-3">
+      {retainedTerms && <RefundTerms terms={retainedTerms} />}
       <button type="button" disabled={unavailable} onClick={() => void run("check")} className="h-10 rounded-full border border-foreground bg-transparent px-5 text-[13px] uppercase tracking-[0.04em] text-foreground outline-offset-4 transition-colors hover:bg-foreground hover:text-background focus-visible:outline-2 focus-visible:outline-foreground disabled:opacity-40 pointer-coarse:h-11">{busy ? t('checking') : t('checkPayment')}</button>
 
-      <button type="button" disabled={unavailable || reviewHold} onClick={() => void run("resume")} className="group/focus inline-flex min-h-11 items-center text-xs uppercase tracking-[0.04em] underline decoration-dotted underline-offset-4 hover:decoration-solid disabled:opacity-40"><FocusShape className="outline-offset-4">{t('resumeSamePayment')}</FocusShape></button>
+      <button type="button" disabled={unavailable || reviewHold || discovery.state !== "ready"} onClick={() => void run("resume")} className="group/focus inline-flex min-h-11 items-center text-xs uppercase tracking-[0.04em] underline decoration-dotted underline-offset-4 hover:decoration-solid disabled:opacity-40"><FocusShape className="outline-offset-4">{t('resumeSamePayment')}</FocusShape></button>
       {/* Cancelling retires the attempt for good, so it asks first and offers no undo. Its own row, so the question has room. */}
       {retirableTransactionID === intent?.transactionID && <ConfirmMorph className="justify-self-start" label={t('cancelThisAttempt')} prompt={t('cancelThisAttemptQuestion')} confirmLabel={t('cancelAttempt')}
         cancelLabel={t('keepAttempt')} pendingLabel={t('cancellingAttempt')} doneLabel={t('attemptCancelled')} errorLabel={t('couldNotCancelAttempt')} retryLabel={t('tryAgain')}

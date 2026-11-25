@@ -8,6 +8,8 @@
  * - Anything else (the membership product): not refundable here.
  * Pure, so the admin button and the server decide alike; the server's check is the one that counts.
  */
+import { z } from "zod";
+
 export type RefundPolicy =
   | { refundable: true; cutoff: "event" | "none" }
   | { refundable: false; reason: "personalised-edition" | "not-refundable-product" };
@@ -26,4 +28,42 @@ export function refundPolicy(snapshot: unknown): RefundPolicy {
     return bookOnly ? { refundable: true, cutoff: "none" } : { refundable: false, reason: "personalised-edition" };
   }
   return { refundable: false, reason: "not-refundable-product" };
+}
+
+/**
+ * Owner, 24 Nov (relayed): "Refund is only possible 3 days prior." Staff refunds close this long before the event's
+ * Part I start. A cancellation made in PortOne's console after it is still reconciled (S1): it has happened.
+ */
+export const REFUND_CUTOFF_DAYS = 3;
+const dayMs = 24 * 60 * 60 * 1000;
+/** When staff refunds for an event close; null when the start time is unreadable (then refunds stay closed). */
+export function refundCutoff(partIStartsAt: unknown): number | null {
+  const start = new Date(String(partIStartsAt)).getTime();
+  return Number.isFinite(start) ? start - REFUND_CUTOFF_DAYS * dayMs : null;
+}
+
+/**
+ * What the customer is told before paying or resuming a payment (owner, 25 Nov: personalised products may refuse refunds
+ * once the customer is told before the sale). Derived on the server from the same policy and cutoff staff refunds use,
+ * so a page only renders it: refundable while now < cutoff, as the server decides.
+ */
+export const refundTermsSchema = z.discriminatedUnion("kind", [
+  z.strictObject({ kind: z.literal("refundable") }),
+  z.strictObject({ kind: z.literal("until"), cutoffAt: z.iso.datetime() }),
+  z.strictObject({ kind: z.literal("closed"), cutoffAt: z.iso.datetime().nullable() }),
+  z.strictObject({ kind: z.literal("none"), reason: z.enum(["personalised-edition", "not-refundable-product"]) })
+]);
+export type RefundTerms = z.infer<typeof refundTermsSchema>;
+
+export function refundTerms(policy: RefundPolicy, partIStartsAt: unknown, now = Date.now()): RefundTerms {
+  if (!policy.refundable) return { kind: "none", reason: policy.reason };
+  if (policy.cutoff === "none") return { kind: "refundable" };
+  const cutoff = refundCutoff(partIStartsAt);
+  if (cutoff === null) return { kind: "closed", cutoffAt: null };
+  return now < cutoff ? { kind: "until", cutoffAt: new Date(cutoff).toISOString() } : { kind: "closed", cutoffAt: new Date(cutoff).toISOString() };
+}
+
+/** An edition offer's terms, before any order exists. */
+export function editionRefundTerms(included: Readonly<{ membershipSignet: boolean; freeLaunchTicket: boolean }>): RefundTerms {
+  return editionRefundable(included) ? { kind: "refundable" } : { kind: "none", reason: "personalised-edition" };
 }

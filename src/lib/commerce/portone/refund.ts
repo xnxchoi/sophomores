@@ -3,7 +3,8 @@ import { z } from 'zod'
 import { isCmsSuperAdmin } from '../../auth/access'
 import { withCommerceWrite } from '../access'
 import { refundableOrderStatuses } from '../order-refund'
-import { refundPolicy } from '../refund-policy'
+import { refundCutoff, refundPolicy } from '../refund-policy'
+export { REFUND_CUTOFF_DAYS, refundCutoff } from '../refund-policy'
 import { createCommerce, findCommerce, inCommerceTransaction, lockCommerce, readCommerce, relationshipID } from '../_shared/transaction'
 import { adapterConfig, parsePortOneTransaction, type AdapterDependencies } from './adapter'
 import type { PortOneConfig } from '../../tickets/portone/config'
@@ -20,18 +21,6 @@ export const refundRequestSchema = z.strictObject({
   orderID: z.string().min(1).max(128), transactionID: z.uuid(), paymentID: z.string().min(1).max(128),
   amount: z.int().positive(), reason: z.string().min(1).max(200), requestedBy: z.string().min(1).max(128), requestedAt: z.iso.datetime(),
 })
-
-/**
- * Owner, 24 Nov (relayed): "Refund is only possible 3 days prior." Staff refunds close this long before the event's
- * Part I start. A cancellation made in PortOne's console after it is still reconciled (S1): it has happened.
- */
-export const REFUND_CUTOFF_DAYS = 3
-const dayMs = 24 * 60 * 60 * 1000
-/** When staff refunds for an event close; null when the start time is unreadable (then refunds stay closed). */
-export function refundCutoff(partIStartsAt: unknown): number | null {
-  const start = new Date(String(partIStartsAt)).getTime()
-  return Number.isFinite(start) ? start - REFUND_CUTOFF_DAYS * dayMs : null
-}
 
 export type RefundOutcome =
   | { outcome: 'requested' | 'already-cancelled' | 'refunded' | 'unknown' }

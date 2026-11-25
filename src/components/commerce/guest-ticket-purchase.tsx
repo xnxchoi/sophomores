@@ -10,8 +10,12 @@ import { shippingAddressSchema, type ShippingAddress } from "@/lib/commerce/cont
 import { CommerceIdentityBoundary, CommerceProvider } from "./checkout";
 import { CommercePayment } from "./payment";
 import { ShippingAddressForm } from "./shipping-address";
+import { RefundTerms } from "./refund-terms";
+import type { RefundTerms as Terms } from "@/lib/commerce/refund-policy";
 
-type GuestOffer = { customerID: string; productID: string; title: string; priceKRW: number; available: number; limit: number; locale: string; offerTicketEmailConsent?: boolean };
+type GuestOffer = { customerID: string; productID: string; title: string; priceKRW: number; available: number; limit: number; locale: string; offerTicketEmailConsent?: boolean;
+  /** From the server, for this event now: until the cutoff, or closed (Review-B r2). */
+  refundTerms: Terms };
 
 export function GuestTicketPurchase(props: GuestOffer) {
   return <CommerceProvider>
@@ -21,7 +25,7 @@ export function GuestTicketPurchase(props: GuestOffer) {
   </CommerceProvider>;
 }
 
-function PurchaseForm({ customerID, productID, title, priceKRW, available, limit, locale, offerTicketEmailConsent }: GuestOffer) {
+function PurchaseForm({ customerID, productID, title, priceKRW, available, limit, locale, offerTicketEmailConsent, refundTerms }: GuestOffer) {
   const t = useTranslations("Customer.app_site_shop_invitations_page");
   const { cart, isLoading, refreshCart } = useCart();
   const { user, onLogin } = useEcommerce();
@@ -69,7 +73,6 @@ function PurchaseForm({ customerID, productID, title, priceKRW, available, limit
     <h2 className="text-xl">{title}</h2>
     <p>{t("memberLimit", { limit })}</p>
     <p>{t("priceEach", { price: price.format(priceKRW) })}</p>
-    <p>{t("refundableUntil")}</p>
     {!compatible ? <p>{t("differentCart")} <Link href="/shop/cart" className="underline">{t("viewCart")}</Link></p> : (
       <div className="flex flex-wrap items-end gap-4">
         <label className="grid gap-2">
@@ -89,6 +92,7 @@ function PurchaseForm({ customerID, productID, title, priceKRW, available, limit
       <ShippingAddressForm value={address} onChange={setAddress} disabled={disabled} />
       <div className="flex justify-between gap-4 border-t border-border pt-4"><span>{t("total")}</span><span>{price.format(priceKRW * savedQuantity)}</span></div>
     </>}
+    <RefundTerms terms={refundTerms} />
     <CommercePayment productID={productID} shippingAddress={address}
       offerTicketEmailConsent={offerTicketEmailConsent && orderReady}
       guestQuote={orderReady ? { productID, quantity: savedQuantity, totalAmount: priceKRW * savedQuantity } : undefined}

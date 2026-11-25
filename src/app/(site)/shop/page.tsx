@@ -12,6 +12,7 @@ import { loadPublicMemberCapabilities } from "@/lib/member-auth/public-capabilit
 import { CommerceAccountGate, CommerceCheckout, type PurchaseAllowance } from "@/components/commerce/checkout";
 import { legacyPurchaseAllowance } from "../_commerce/purchase-allowance";
 import { CommerceOfferView } from "@/components/commerce/offer";
+import { refundPolicy, refundTerms } from "@/lib/commerce/refund-policy";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("PageMetadata");
@@ -50,7 +51,7 @@ export default async function ShopPage() {
         <CommerceOfferView offer={offer}>
           {offer && (
             <CommerceAccountGate signInOffInReview={isReviewCopyRequest()} initialCapabilities={await loadPublicMemberCapabilities()}>
-              {allowance && <CommerceCheckout offer={offer} allowance={allowance} />}
+              {allowance && <CommerceCheckout offer={offer} allowance={allowance} refundTerms={refundTerms(refundPolicy({ version: 1 }), null)} />}
             </CommerceAccountGate>
           )}
         </CommerceOfferView>

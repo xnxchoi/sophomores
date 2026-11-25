@@ -116,6 +116,19 @@ function Home({ vendored, items, labels }: { vendored: Vendored; items: Item[]; 
     };
     requestAnimationFrame(step);
   };
+  // Any input of the visitor's takes the scroll back at once (their scroll owner, 62178: wheel, touch, pointer and the
+  // scroll keys release it), so a drive (the idle advance, a title click) never fights a hand on the page. Capture, so
+  // it runs before the gesture router, whose own step may start a new drive.
+  useEffect(() => {
+    const keys = ["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " ", "Spacebar"];
+    const release = (event: Event) => {
+      if (event instanceof KeyboardEvent && !keys.includes(event.key)) return;
+      drive.current.token += 1; drive.current.active = false;
+    };
+    const events = ["wheel", "touchstart", "pointerdown", "keydown"] as const;
+    events.forEach((event) => window.addEventListener(event, release, { passive: true, capture: true }));
+    return () => events.forEach((event) => window.removeEventListener(event, release, { capture: true }));
+  }, []);
   const bookY = (index: number) => {
     const { starts, extents, offset } = geo.current, segment = catalogue.D(index);
     const at = index === 0 || index === J ? 0 : Math.max(0.01, Math.min(0.99, offset));

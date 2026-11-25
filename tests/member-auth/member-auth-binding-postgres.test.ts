@@ -10,6 +10,10 @@ import { digest } from "@/lib/phone-verification/server/crypto";
 import { PgPhoneVerificationRepository } from "@/lib/phone-verification/server/postgres";
 import { SESSION_COOKIE } from "@/lib/phone-verification/server/http";
 
+// The SKT pilot's proofs bind only in local mode (src/lib/member-auth/phone-policies.ts); this suite runs as local.
+process.env.PHONE_VERIFICATION_MODE ??= "local";
+process.env.MEMBER_AUTH_MODE ??= "local";
+
 const url = process.env.MEMBER_AUTH_TEST_DATABASE_URL;
 function requireDisposable(value: string) {
   const candidate = new URL(value);

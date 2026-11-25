@@ -96,7 +96,7 @@ test("a token held by someone other than the intent's recipient, a malformed tok
 });
 
 test("reconcile confirms only one CancelKey for this token from the lock, with no refund, at depth", async () => {
-  const at = (answer: unknown, head = deep) => cancellerOn({ eth_getTransactionReceipt: () => answer, eth_blockNumber: head }).adapter;
+  const at = (answer: unknown, head = deep) => cancellerOn({ eth_getTransactionReceipt: () => answer, eth_blockNumber: head, eth_getBlockByNumber: healthyChain().eth_getBlockByNumber }).adapter;
   const reconcile = (answer: unknown, head = deep) => at(answer, head).reconcileCancel({ txHash: `0x${"c".repeat(64)}`, target, tokenID: "5" });
   assert.deepEqual(await reconcile(receipt("0x1", [cancelLog(5n)])), { kind: "confirmed" });
   assert.deepEqual(await reconcile(receipt("0x0", [])), { kind: "definitelyReverted", code: "tx_reverted" });
@@ -156,5 +156,7 @@ test("a cancel replacement re-signs expireAndRefundFor(token, 0) at the same non
   assert.deepEqual(decodeFunctionData({ abi: lockAbi, data: sent.data! }).args, [5n, 0n]);
   counts.latest = 3;
   assert.deepEqual(await adapter.prepareCancelReplacement({ intentID: "intent-1", target, tokenID: "5", nonce: 2, previous }), { kind: "nonceConsumed" });
-  assert.deepEqual(await adapter.rebroadcast({ raw }), { kind: "accepted" });
+  // Bound to its record: the same hash, nonce, lock and token (Review-A, 24 Nov).
+  assert.deepEqual(await adapter.rebroadcast({ raw, txHash, nonce: 2, target, tokenID: "5" }), { kind: "accepted" });
+  assert.deepEqual(await adapter.rebroadcast({ raw, txHash, nonce: 2, target, tokenID: "6" }), { kind: "refused", code: "rebroadcast_mismatch" }, "another token");
 });

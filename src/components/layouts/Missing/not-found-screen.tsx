@@ -18,11 +18,12 @@ export function NotFoundPage() {
           <LinkUnderlined className="inline-flex min-h-12 items-center bg-transparent hover:text-red-500" href="/">
             {t("returnHome")}
           </LinkUnderlined>
-          <LinkUnderlined className="inline-flex min-h-12 items-center bg-transparent hover:text-red-500" href="/shop">
-            {t("notFoundShop")}
-          </LinkUnderlined>
         </nav>
       </div>
+      {/* Everything above is fixed, so the page had no height of its own and the pinned footer (FooterGate) showed at
+          once, across the top of the screen (live check, 25 Nov). One screen of page keeps it under the page until a
+          scroll reveals it, as everywhere else. */}
+      <div aria-hidden="true" className="h-dvh" />
     </>
   );
 }

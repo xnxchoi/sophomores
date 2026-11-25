@@ -21,10 +21,18 @@ export const CommerceEvents: CollectionConfig = {
     if (event.checkInAuthority != null && event.checkInAuthority !== "unlock-events") throw new Error("Unknown event entry authority");
     if (event.checkInAuthority === "unlock-events") {
       const config = unlockEventTicketConfiguration.parse(event.unlockTicketConfiguration);
+      if (config.guestLock && config.guestLock === process.env.MEMBER_WALLET_LOCK_ADDRESS?.trim().toLowerCase()) {
+        throw new Error("Guest lock must differ from Signet");
+      }
       if (current?.checkInAuthority === "unlock-events") {
         const before = unlockEventTicketConfiguration.parse(current.unlockTicketConfiguration);
-        if (before.chainID !== config.chainID || before.memberLock !== config.memberLock ||
-          before.guestLock !== config.guestLock || (before.guestProductID && before.guestProductID !== config.guestProductID)) {
+        const { guestProductID: previousOffer, guestLock: previousGuestLock, ...previousTarget } = before;
+        const { guestProductID: nextOffer, guestLock: nextGuestLock, ...nextTarget } = config;
+        // Adding a Guest lock preserves the original sale target. Once set, both locks stay pinned.
+        const firstSharedGuestLock = "mode" in before && "mode" in config &&
+          previousGuestLock === undefined && nextGuestLock !== undefined;
+        const guestLockPreserved = previousGuestLock === nextGuestLock || firstSharedGuestLock;
+        if (!guestLockPreserved || JSON.stringify(previousTarget) !== JSON.stringify(nextTarget) || (previousOffer && previousOffer !== nextOffer)) {
           throw new Error("Configured event ticket targets are immutable");
         }
       }

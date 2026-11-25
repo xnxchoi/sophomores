@@ -3,13 +3,15 @@
 import { useTranslations } from "next-intl";
 import * as m from "motion/react-m";
 import { ArrowRight, Search as SearchIcon, X } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
+import { useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode, type RefObject } from "react";
 import { Drawer } from "vaul";
 import { Link } from "@/components/core/Link/Link";
 import { siteLayer } from "@/constants/site-layers";
 import { useRPStore } from "@/providers/RP_Pro";
 import { DISCOVER, START } from "../header-panels";
+import { useAccountSheetTrigger } from "@/components/auth/use-account-sheet";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
+import { reachableHref } from "@/lib/content/essays";
 
 type SearchPost = { slug: string; title: string; dek: string };
 
@@ -84,6 +86,8 @@ function SheetBody({ posts, onClose }: { posts: SearchPost[]; onClose: () => voi
     if (!needle) return [];
     return posts.filter((post) => `${post.title} ${post.dek}`.toLowerCase().includes(needle)).slice(0, 10);
   }, [posts, query]);
+  // Results lead to essays; none show while the site has them switched off (src/lib/content/essays.ts).
+  const reachableResults = results.filter((post) => reachableHref(`/essays/${post.slug}`) !== undefined);
 
   return (
     <>
@@ -125,13 +129,13 @@ function SheetBody({ posts, onClose }: { posts: SearchPost[]; onClose: () => voi
             </Section>
             <Section label={t("getStarted")}>
               {START.map((row) => (
-                <Row key={row.title} href={row.href} title={rows(row.title)} subtitle={row.hint ? rows(row.hint) : undefined} onSelect={onClose} />
+                <StartRow key={row.title} flow={row.flow} title={rows(row.title)} subtitle={"hint" in row ? rows(row.hint) : undefined} onSelect={onClose} />
               ))}
             </Section>
           </>
-        ) : results.length > 0 ? (
+        ) : reachableResults.length > 0 ? (
           <Section label={t("results")}>
-            {results.map((post) => (
+            {reachableResults.map((post) => (
               <Row key={post.slug} href={`/essays/${post.slug}`} title={post.title} subtitle={post.dek} onSelect={onClose} trailing />
             ))}
           </Section>
@@ -158,24 +162,32 @@ function Section({ label, children }: { label: string; children: ReactNode }) {
 }
 
 /** A row is a link (The Hideaway's rows are buttons that push the route); choosing one closes the sheet. */
+/** A START row: the sign-in page's href for no-JS and modifier-click, the in-place sheet on a plain click. */
+function StartRow({ flow, title, subtitle, onSelect }: { flow: "login" | "signup"; title: string; subtitle?: string; onSelect: () => void }) {
+  const signIn = useAccountSheetTrigger(flow);
+  return <Row href={signIn.href} onClick={signIn.onClick} title={title} subtitle={subtitle} onSelect={onSelect} />;
+}
+
 function Row({
   href,
   title,
   subtitle,
   trailing,
-  onSelect
+  onSelect,
+  onClick
 }: {
   href: string;
   title: string;
   subtitle?: string;
   trailing?: boolean;
   onSelect: () => void;
+  onClick?: (event: MouseEvent<HTMLElement>) => void;
 }) {
   return (
     <li>
       <Link
         href={href}
-        onClick={onSelect}
+        onClick={(event: MouseEvent<HTMLElement>) => { onClick?.(event); onSelect(); }}
         className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left touch-manipulation transition-colors focus-visible:bg-foreground/[0.05] active:bg-foreground/[0.05]"
       >
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">

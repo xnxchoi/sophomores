@@ -233,7 +233,10 @@ export function Missing() {
       {is404 && (
         <m.div
           ref={curt}
-          className="curtains-canvas"
+          // The scene sizes its text texture from this element when it starts, so it must already span
+          // the viewport: unsized, it was only as tall as the renderer's default canvas (about 155px at
+          // 1440 wide), so the text was fitted to that height and landed in the left fifth.
+          className="curtains-canvas fixed inset-0"
           initial={{ opacity: 0, visibility: "hidden" }}
           animate={{
             opacity: 1,

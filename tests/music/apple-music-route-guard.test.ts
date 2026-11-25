@@ -5,9 +5,9 @@ import { after, before, beforeEach, test } from "node:test";
 // Apple Music routes spend the shared Apple quota. The caller is the principal
 // Payload's own auth returns: a curator is a verified CMS staff principal
 // (developer-token, playlist, setlist apple-token); search needs an activated
-// member account. Each account is limited per route; an address is counted only
-// for refused requests. Provider and Payload are stubbed; handlers and the
-// limiter run as shipped.
+// member account. Each account is limited per route; an address is counted for
+// refused requests and, on the three Apple routes, separately for admitted ones.
+// Provider and Payload are stubbed; handlers and the limiter run as shipped.
 type Actor = Record<string, unknown> & { id: string };
 const member: Actor = { id: "member-1", collection: "users", email: "member@example.test", emailVerified: true };
 const unverifiedMember: Actor = { id: "member-2", collection: "users", email: "new@example.test" };
@@ -16,7 +16,7 @@ const staff: Actor = { id: "staff-1", collection: "admins", role: "staff", _stra
 // Curator authority is the super-admin-set grant on the admins row, not a role.
 const ungrantedAdmin: Actor = { ...staff, id: "admin-1", role: "admin", setlistCurator: false };
 const curator: Actor = { ...staff, id: "curator-1", setlistCurator: true };
-const state = { user: null as Actor | null, providerCalls: 0, searchArgs: [] as unknown[][], syncError: null as Error | null };
+const state = { user: null as Actor | null, providerCalls: 0, searchArgs: [] as unknown[][], playlistArgs: [] as unknown[][], syncError: null as Error | null, providerError: null as Error | null };
 const key = "__sphmrsAppleMusicGuard";
 const target = `globalThis.${key}`;
 const moduleUrl = (source: string) => `data:text/javascript,${encodeURIComponent(source)}`;
@@ -34,8 +34,9 @@ const harness = {
   },
   provider(kind: string, ...args: unknown[]) {
     state.providerCalls++;
+    if (state.providerError) throw state.providerError;
     if (kind === "search") { state.searchArgs.push(args); return []; }
-    if (kind === "playlist") return { id: "p.synthetic", tracks: [] };
+    if (kind === "playlist") { state.playlistArgs.push(args); return { id: "pl.synthetic", tracks: [] }; }
     return "synthetic-developer-token";
   }
 };
@@ -87,7 +88,7 @@ before(async () => {
   ({ GET: appleTokenGET } = await import("@/app/api/setlists/[slug]/apple-token/route"));
   ({ POST: syncPOST } = await import("@/app/api/setlists/[slug]/sync/route"));
 });
-beforeEach(() => { state.user = null; state.providerCalls = 0; state.searchArgs = []; state.syncError = null; process.env = { ...originalEnvironment, SETLIST_SYNC_SECRET: syncSecret }; });
+beforeEach(() => { state.user = null; state.providerCalls = 0; state.searchArgs = []; state.playlistArgs = []; state.syncError = null; state.providerError = null; process.env = { ...originalEnvironment, SETLIST_SYNC_SECRET: syncSecret }; });
 after(() => {
   hooks.deregister();
   process.env = originalEnvironment;
@@ -234,4 +235,66 @@ test("setlist sync: a failure answers a generic 500 without the error text", asy
   assert.equal(response.status, 500);
   assert.equal((await response.text()).includes("synthetic-internal-detail"), false);
   assert.equal(response.headers.get("cache-control"), "private, no-store");
+});
+
+// The three routes that spend Apple quota directly, with their admitted-per-address ceilings.
+const appleRoutes = routes.filter((route) => ["developer-token", "playlist", "search"].includes(route.name));
+const admittedCeiling: Record<string, number> = { "developer-token": 30, playlist: 60, search: 600 };
+
+for (const route of appleRoutes) {
+  test(`${route.name}: an upstream failure answers a fixed 500 without the error or configuration detail`, async (t) => {
+    t.mock.method(console, "error", () => {});
+    state.user = allowedActor(route.role, `${route.name}-upstream`);
+    state.providerError = new Error("Apple said 401: synthetic-internal-detail key=synthetic-key-id team=synthetic-team");
+    const response = await route.call(freshIp());
+    assert.equal(response.status, 500);
+    assert.equal(response.headers.get("cache-control"), "private, no-store");
+    const body = await response.text();
+    for (const detail of ["synthetic-internal-detail", "synthetic-key-id", "synthetic-team", "Apple said"])
+      assert.equal(body.includes(detail), false, detail);
+    assert.deepEqual(Object.keys(JSON.parse(body)), ["error"]);
+  });
+
+  test(`${route.name}: many valid accounts behind one address meet the admitted ceiling; other addresses and refusals are untouched`, async () => {
+    const ip = freshIp();
+    let admitted = 0;
+    let last: Response | undefined;
+    for (let attempt = 0; attempt < 1000; attempt++) {
+      // A new account each time, so only the address window can stop it.
+      state.user = allowedActor(route.role, `${route.name}-crowd-${ip}-${attempt}`);
+      last = await route.call(ip);
+      if (last.status !== 200) break;
+      admitted++;
+    }
+    assert.equal(last?.status, 429);
+    assert.match(last?.headers.get("retry-after") ?? "", /^[1-9]\d*$/);
+    assert.equal(admitted, admittedCeiling[route.name]);
+    const calls = state.providerCalls;
+    state.user = allowedActor(route.role, `${route.name}-crowd-late`);
+    assert.equal((await route.call(ip)).status, 429);
+    assert.equal(state.providerCalls, calls, "a limited request must not reach Apple");
+    assert.equal((await route.call(freshIp())).status, 200, "another address keeps its own window");
+    state.user = null;
+    assert.equal((await route.call(ip)).status, 401, "the admitted window never spends the refusal window");
+  });
+
+  test(`${route.name}: one account across many addresses still meets its account limit`, async () => {
+    state.user = allowedActor(route.role, `${route.name}-roaming`);
+    let status = 200;
+    let admitted = 0;
+    for (let attempt = 0; attempt < 200 && status === 200; attempt++) {
+      status = (await route.call(freshIp())).status;
+      if (status === 200) admitted++;
+    }
+    assert.equal(status, 429);
+    assert.ok(admitted < admittedCeiling[route.name], "the account limit binds before any address ceiling");
+  });
+}
+
+test("playlist: only public catalog playlists are read; the library path is never requested", async () => {
+  state.user = curator;
+  assert.equal((await playlist(get("/api/music/apple/playlist?id=p.library-synthetic", freshIp()))).status, 200);
+  assert.deepEqual(state.playlistArgs.at(-1), ["p.library-synthetic", undefined, { catalogOnly: true }]);
+  assert.equal((await playlist(get("/api/music/apple/playlist?url=https%3A%2F%2Fmusic.apple.com%2Fus%2Fplaylist%2Fx%2Fpl.synthetic", freshIp()))).status, 200);
+  assert.deepEqual(state.playlistArgs.at(-1)?.[2], { catalogOnly: true });
 });

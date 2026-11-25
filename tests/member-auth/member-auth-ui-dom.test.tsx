@@ -2,6 +2,7 @@ import messages from "../../messages/en.json";
 import { codeCell, codeCells, enteredCode, firstCodeCell, replaceCode } from "../fixtures/code-input";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { readFileSync } from "node:fs";
 import { after, afterEach, before, test } from "node:test";
 import { JSDOM } from "jsdom";
 import { untilAsserted } from "../support/dom-state";
@@ -11,6 +12,9 @@ let MemberAuthProviders: typeof import("./fixtures/providers").MemberAuthProvide
 let dom: JSDOM;
 let ui: typeof import("@testing-library/react/pure");
 let Study: typeof import("@/components/Authentication/member-auth/account-study").MemberAccountStudy;
+let SignIn: typeof import("@/components/Authentication/member-auth/account-study").MemberAccountPage;
+let Sheet: typeof import("@/components/auth/account-sheet");
+let SheetHooks: typeof import("@/components/auth/use-account-sheet");
 let View: typeof import("@/components/Authentication/member-auth/account-view").MemberAccountView;
 let Phone: typeof import("@/components/Authentication/member-auth/phone-step").MemberPhoneStep;
 const previous = new Map<string, PropertyDescriptor | undefined>();
@@ -101,6 +105,9 @@ before(async () => {
   ui = await import("@testing-library/react/pure");
   Study = (await import("@/components/Authentication/member-auth/account-study"))
     .MemberAccountStudy;
+  SignIn = (await import("@/components/Authentication/member-auth/account-study")).MemberAccountPage;
+  Sheet = await import("@/components/auth/account-sheet");
+  SheetHooks = await import("@/components/auth/use-account-sheet");
   View = (await import("@/components/Authentication/member-auth/account-view")).MemberAccountView;
   Phone = (await import("@/components/Authentication/member-auth/phone-step"))
     .MemberPhoneStep;
@@ -288,6 +295,275 @@ test("provider return defaults to an explicit setup gate, not automatic phone ve
     ui.screen.queryByRole("textbox", { name: "Phone number" }),
     null
   );
+});
+
+test("account sign-in: Enter in the email field does what the visible primary button does, once; typing fires nothing", async () => {
+  // Owner, 24 Nov: Enter must submit. jsdom has no keyboard implicit submission, so Enter is its native effect:
+  // requestSubmit() on the field's own form, whose submit button is the visible primary button.
+  const c = client();
+  const lookups: string[] = [];
+  c.value.lookupEmail = async (email) => { lookups.push(email); return { account: "existing" }; };
+  await choose("Sign in", c);
+  const email = ui.screen.getByLabelText("Email address") as HTMLInputElement;
+  email.focus();
+  ui.fireEvent.change(email, { target: { value: "enter@example.com" } });
+  assert.deepEqual(lookups, [], "typing looks nothing up");
+  const primary = document.querySelector<HTMLButtonElement>("[data-phase-action=submit]")!;
+  assert.equal(primary.type, "submit");
+  assert.equal(primary.form === email.form, true);
+  ui.act(() => email.form!.requestSubmit());
+  await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Send sign-in code" }));
+  assert.deepEqual(lookups, ["enter@example.com"], "the first Enter looks the email up once");
+  assert.deepEqual(c.calls.filter(([name]) => name === "code"), [], "no code before the second explicit submit");
+  assert.equal(document.activeElement === email, true, "focus stays in the field, so the next Enter reaches the form");
+  ui.act(() => email.form!.requestSubmit());
+  await untilAsserted(ui, () => assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code)));
+  assert.deepEqual(c.calls.filter(([name]) => name === "code"), [["code", "enter@example.com"]], "the second Enter sends the code once");
+});
+
+test("once an email is in, the other ways in become one row of icon-only buttons; clearing brings the labels back", async () => {
+  // Owner, 24 Nov: "Once email is in, we make the passkey and others compact-1 row of 3 smaller buttons, each with
+  // icons only". The accessible names stay; the visible labels go; nothing is looked up or sent while typing.
+  const c = client();
+  const lookups: string[] = [];
+  c.value.lookupEmail = async (email) => { lookups.push(email); return { account: "existing" }; };
+  await choose("Sign in", c);
+  const row = () => document.querySelector<HTMLElement>("[data-account-entry-alternatives]")!;
+  const alternatives = () => [...row().querySelectorAll<HTMLButtonElement>("button")];
+  await untilAsserted(ui, () => assert.ok(alternatives().length >= 2));
+  assert.equal(row().dataset.compact, "false", "empty field: the labelled stack");
+  const labelled = alternatives().map((button) => [button.getAttribute("aria-label"), button.textContent?.trim()]);
+  for (const [name, text] of labelled) assert.ok(name && text && text.length > 0, `${name} shows its label`);
+  const email = ui.screen.getByLabelText("Email address") as HTMLInputElement;
+  ui.fireEvent.change(email, { target: { value: "member@example.com" } });
+  await untilAsserted(ui, () => assert.equal(row().dataset.compact, "true"));
+  // Arc's button crossfades its label out; wait for the exit to finish.
+  await untilAsserted(ui, () => {
+    for (const button of alternatives()) {
+      assert.ok(button.getAttribute("aria-label"), "each icon button keeps its accessible name");
+      assert.equal(button.textContent?.trim(), "", `${button.getAttribute("aria-label")} shows its icon only`);
+    }
+  });
+  assert.deepEqual(alternatives().map((button) => button.getAttribute("aria-label")), labelled.map(([name]) => name), "same buttons, same order");
+  assert.deepEqual(lookups, [], "typing looks nothing up");
+  // Review-B: the clip must not cut the 2px outline + 2px offset focus ring, and Arc's .lg padding must not squeeze
+  // the icons (its unlayered padding-inline needs the important utility).
+  const shell = row().closest<HTMLElement>("[data-account-alternatives-shell]")!;
+  assert.equal(shell.classList.contains("-m-1") && row().classList.contains("p-1"), true, "4px ring clearance inside the clip");
+  assert.equal(alternatives().every((button) => button.classList.contains("px-0!")), true, "icon buttons drop Arc's padding");
+  ui.fireEvent.change(email, { target: { value: "" } });
+  await untilAsserted(ui, () => assert.equal(row().dataset.compact, "false"));
+  await untilAsserted(ui, () => assert.deepEqual(alternatives().map((button) => [button.getAttribute("aria-label"), button.textContent?.trim()]), labelled, "the labels come back"));
+});
+
+test("the sign-in page renders the chooser and flow inline, never a sheet, and leaves for next once a member", async () => {
+  // Owner, 24 Nov: a signed-out /account redirects to /sign-in; no modal. Sign-in returns to where they were.
+  const c = client();
+  c.value.verifyEmailCode = async (...args) => { c.calls.push(["verify", ...args]); c.setStatus(active); };
+  const visited: string[] = [];
+  ui.render(<SignIn next="/me/orders" client={c.value} navigate={(url) => visited.push(url)} />, { wrapper: MemberAuthProviders });
+  assert.ok(ui.screen.getByRole("heading", { name: "Welcome" }));
+  assert.equal(document.querySelector("[data-vaul-drawer], [role=dialog]") === null, true, "no sheet or dialog");
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign in" }));
+  const email = await untilAsserted(ui, () => {
+    const field = ui.screen.getByLabelText("Email address") as HTMLInputElement;
+    assert.equal(field.disabled, false);
+    return field;
+  });
+  assert.equal(document.querySelector("[data-vaul-drawer], [role=dialog]") === null, true, "the flow is inline too");
+  ui.fireEvent.change(email, { target: { value: "member@example.com" } });
+  ui.fireEvent.submit(email.closest("form")!);
+  ui.fireEvent.click(await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Send sign-in code" })));
+  await untilAsserted(ui, () => assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code)));
+  assert.deepEqual(visited, [], "nothing leaves before the member is confirmed");
+  ui.fireEvent.change(firstCodeCell(ui.screen), { target: { value: "A1B2C3" } });
+  await untilAsserted(ui, () => assert.deepEqual(visited, ["/me/orders"]));
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  assert.deepEqual(visited, ["/me/orders"], "it leaves once");
+});
+
+test("a signed-in /account is a normal page: the member's account inline, no sheet, no navigation away", async () => {
+  // Owner, 24 Nov: "OBVIOUSLY it should be the normal page".
+  const c = client();
+  c.setStatus(active);
+  const visited: string[] = [];
+  ui.render(<SignIn initialFlow="login" client={c.value} navigate={(url) => visited.push(url)} authenticatedAction={<a href="/me">Account home</a>} />, { wrapper: MemberAuthProviders });
+  await untilAsserted(ui, () => ui.screen.getByRole("link", { name: "Account home" }));
+  assert.equal(document.querySelector("[data-vaul-drawer], [role=dialog]") === null, true);
+  assert.equal(document.querySelector("[data-member-account-page]") !== null, true);
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  assert.deepEqual(visited, [], "the account page has no next: it never navigates away");
+});
+
+test("a sign-in button opens the in-place sheet on a plain click and keeps its sign-in page href", async () => {
+  // Owner, 24 Nov: "Sign-in buttons should in general be modal-togglers"; only a typed or navigated URL gets the page.
+  const { AccountSheetProvider } = Sheet;
+  const { useAccountSheetTrigger, useAccountSheetSubmit } = SheetHooks;
+  function Trigger() { const signIn = useAccountSheetTrigger(); return <a href={signIn.href} onClick={signIn.onClick}>Log in</a>; }
+  function TapForm() { const open = useAccountSheetSubmit(); return <form method="get" action="/sign-in" onSubmit={open}><button type="submit">Sign in here</button></form>; }
+  ui.render(<AccountSheetProvider><Trigger /><TapForm /></AccountSheetProvider>, { wrapper: MemberAuthProviders });
+  const link = ui.screen.getByRole("link", { name: "Log in" });
+  assert.equal(link.getAttribute("href")?.startsWith("/sign-in?next="), true, "the no-JS and modifier-click path is the sign-in page");
+  assert.equal(document.querySelector("[data-vaul-drawer]") === null, true, "closed until asked");
+  const modified = new dom.window.MouseEvent("click", { bubbles: true, cancelable: true, metaKey: true });
+  link.dispatchEvent(modified);
+  assert.equal(modified.defaultPrevented, false, "a modifier-click follows the link");
+  const plain = new dom.window.MouseEvent("click", { bubbles: true, cancelable: true, button: 0 });
+  ui.act(() => { link.dispatchEvent(plain); });
+  assert.equal(plain.defaultPrevented, true, "a plain click stays on the page");
+  await untilAsserted(ui, () => assert.ok(document.querySelector("[data-vaul-drawer]")));
+  // The chooser is dismissible; closing it returns to the page without leaving it.
+  ui.fireEvent.click(await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Close account options" })));
+  await untilAsserted(ui, () => assert.equal(document.querySelector("[data-vaul-drawer][data-state=open]") === null, true));
+  const submitted = new dom.window.Event("submit", { bubbles: true, cancelable: true });
+  ui.act(() => { ui.screen.getByRole("button", { name: "Sign in here" }).closest("form")!.dispatchEvent(submitted); });
+  assert.equal(submitted.defaultPrevented, true, "the NFC form opens the sheet instead of leaving");
+  await untilAsserted(ui, () => assert.ok(document.querySelector("[data-vaul-drawer][data-state=open]")));
+});
+
+test("the in-place sheet closes and refreshes the page once the member is confirmed", async () => {
+  const { AccountSheetProvider } = Sheet;
+  const { useAccountSheetTrigger } = SheetHooks;
+  const { AppRouterContext } = await import("next/dist/shared/lib/app-router-context.shared-runtime");
+  let refreshes = 0;
+  const router = { back() {}, forward() {}, refresh() { refreshes += 1; }, push() {}, replace() {}, prefetch() {}, bfcacheId: "sheet-test" };
+  const c = client();
+  c.value.verifyEmailCode = async (...args) => { c.calls.push(["verify", ...args]); c.setStatus(active); };
+  function Trigger() { const signIn = useAccountSheetTrigger(); return <a href={signIn.href} onClick={signIn.onClick}>Log in</a>; }
+  ui.render(<AppRouterContext.Provider value={router as never}><AccountSheetProvider client={c.value}><Trigger /></AccountSheetProvider></AppRouterContext.Provider>, { wrapper: MemberAuthProviders });
+  ui.fireEvent.click(ui.screen.getByRole("link", { name: "Log in" }));
+  ui.fireEvent.click(await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Sign in" })));
+  const email = await untilAsserted(ui, () => {
+    const field = ui.screen.getByLabelText("Email address") as HTMLInputElement;
+    assert.equal(field.disabled, false);
+    return field;
+  });
+  ui.fireEvent.change(email, { target: { value: "member@example.com" } });
+  ui.fireEvent.submit(email.closest("form")!);
+  ui.fireEvent.click(await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Send sign-in code" })));
+  await untilAsserted(ui, () => assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code)));
+  assert.equal(refreshes, 0, "nothing refreshes before the member is confirmed");
+  ui.fireEvent.change(firstCodeCell(ui.screen), { target: { value: "A1B2C3" } });
+  await untilAsserted(ui, () => assert.equal(refreshes, 1));
+  await untilAsserted(ui, () => assert.equal(document.querySelector("[data-vaul-drawer][data-state=open]") === null, true));
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  assert.equal(refreshes, 1, "once");
+});
+
+// Review-A, 24 Nov: the layout's sheet follows the page it opened over (pagehide, private-page rechecks, navigation),
+// and the NFC tap asks for a new tap after a sign-in instead of promising to continue.
+function SheetTrigger() {
+  const signIn = SheetHooks.useAccountSheetTrigger();
+  return <a href={signIn.href} onClick={signIn.onClick}>Log in</a>;
+}
+async function openSheetEmail(): Promise<HTMLInputElement> {
+  ui.fireEvent.click(ui.screen.getByRole("link", { name: "Log in" }));
+  ui.fireEvent.click(await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Sign in" })));
+  return untilAsserted(ui, () => {
+    const field = ui.screen.getByLabelText("Email address") as HTMLInputElement;
+    assert.equal(field.disabled, false);
+    return field;
+  });
+}
+const typedEmailShown = () => [...document.querySelectorAll("input")].some((input) => input.value === "member@example.com");
+const sheetOpen = () => document.querySelector("[data-vaul-drawer][data-state=open]") !== null;
+
+test("pagehide disposes the open sheet, so nothing typed into it is kept for a back-forward restore", async () => {
+  const c = client();
+  ui.render(<Sheet.AccountSheetProvider client={c.value}><SheetTrigger /></Sheet.AccountSheetProvider>, { wrapper: MemberAuthProviders });
+  ui.fireEvent.change(await openSheetEmail(), { target: { value: "member@example.com" } });
+  assert.equal(typedEmailShown(), true);
+  ui.act(() => { dom.window.dispatchEvent(new dom.window.Event("pagehide")); });
+  assert.equal(sheetOpen(), false, "closed at once");
+  assert.equal(typedEmailShown(), false, "and the typed email is gone");
+  const reopened = await openSheetEmail();
+  assert.equal(reopened.value, "", "reopening starts empty");
+});
+
+test("on a private page the sheet joins the page's concealment: hidden while a recheck is pending, shown again for the same member, kept hidden for a different member", async () => {
+  const { PrivatePageGuard } = await import("@/components/auth/private-page-guard");
+  const c = client();
+  let answer: (value: string | null) => void = () => {};
+  let reloads = 0;
+  const readPrincipal = () => new Promise<string | null | undefined>((resolve) => { answer = resolve; });
+  ui.render(<Sheet.AccountSheetProvider client={c.value}>
+    <PrivatePageGuard principal="member-a" reload={() => { reloads += 1; }} readPrincipal={readPrincipal}><SheetTrigger /></PrivatePageGuard>
+  </Sheet.AccountSheetProvider>, { wrapper: MemberAuthProviders });
+  const email = await openSheetEmail();
+  ui.fireEvent.change(email, { target: { value: "member@example.com" } });
+  const page = document.querySelector("[data-private-page]")!;
+  const concealed = () => page.hasAttribute("data-concealed") && page.hasAttribute("inert");
+  assert.equal(document.querySelector("[data-private-portal-host]")!.contains(email), true, "the sheet portals into the page's host");
+  // The same member: hidden while the answer is pending, then shown again as it was.
+  ui.act(() => { dom.window.dispatchEvent(new dom.window.Event("focus")); });
+  await untilAsserted(ui, () => assert.equal(concealed(), true));
+  assert.equal(page.contains(email), true, "hidden and blocked with the page while the answer is pending");
+  await ui.act(async () => { answer("member-a"); });
+  await untilAsserted(ui, () => assert.equal(concealed(), false));
+  assert.equal(email.isConnected && email.value === "member@example.com", true, "the same member gets the sheet back as it was");
+  assert.equal(reloads, 0);
+  // A different member: kept hidden and reloaded.
+  ui.act(() => { dom.window.dispatchEvent(new dom.window.Event("focus")); });
+  await untilAsserted(ui, () => assert.equal(concealed(), true));
+  await ui.act(async () => { answer("member-b"); });
+  await untilAsserted(ui, () => assert.equal(reloads, 1));
+  assert.equal(concealed(), true, "a different member never sees it");
+});
+
+test("a navigation disposes the open sheet", async () => {
+  const { PathnameContext } = await import("next/dist/shared/lib/hooks-client-context.shared-runtime");
+  const c = client();
+  function At({ path }: { path: string }) {
+    return <PathnameContext.Provider value={path}><Sheet.AccountSheetProvider client={c.value}><SheetTrigger /></Sheet.AccountSheetProvider></PathnameContext.Provider>;
+  }
+  const view = ui.render(<At path="/shop" />, { wrapper: MemberAuthProviders });
+  ui.fireEvent.change(await openSheetEmail(), { target: { value: "member@example.com" } });
+  view.rerender(<At path="/me/orders" />);
+  await untilAsserted(ui, () => assert.equal(sheetOpen(), false));
+  assert.equal(typedEmailShown(), false);
+});
+
+test("the NFC tap: signing in through the sheet asks for a new tap and does not refresh", async () => {
+  const { TapConfirm } = await import("@/app/(nfc)/nfc/_tap/tap-confirm");
+  const { AppRouterContext } = await import("next/dist/shared/lib/app-router-context.shared-runtime");
+  let refreshes = 0;
+  const router = { back() {}, forward() {}, refresh() { refreshes += 1; }, push() {}, replace() {}, prefetch() {}, bfcacheId: "tap-test" };
+  const c = client();
+  c.value.verifyEmailCode = async (...args) => { c.calls.push(["verify", ...args]); c.setStatus(active); };
+  ui.render(<AppRouterContext.Provider value={router as never}><Sheet.AccountSheetProvider client={c.value}>
+    <TapConfirm view={{ state: "signed-out" }} />
+  </Sheet.AccountSheetProvider></AppRouterContext.Provider>, { wrapper: MemberAuthProviders });
+  const tap = messages.Customer.app_site_nfc_tap;
+  assert.ok(ui.screen.getByRole("heading", { name: tap.signedOut.title }));
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: tap.signIn }));
+  ui.fireEvent.click(await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Sign in" })));
+  const email = await untilAsserted(ui, () => {
+    const field = ui.screen.getByLabelText("Email address") as HTMLInputElement;
+    assert.equal(field.disabled, false);
+    return field;
+  });
+  ui.fireEvent.change(email, { target: { value: "member@example.com" } });
+  ui.fireEvent.submit(email.closest("form")!);
+  ui.fireEvent.click(await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Send sign-in code" })));
+  await untilAsserted(ui, () => assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code)));
+  ui.fireEvent.change(firstCodeCell(ui.screen), { target: { value: "A1B2C3" } });
+  await untilAsserted(ui, () => assert.ok(ui.screen.getByRole("heading", { name: tap.signedIn.title })));
+  assert.ok(ui.screen.getByText(tap.signedIn.line));
+  assert.equal(ui.screen.queryByRole("button", { name: tap.signIn }), null, "no sign-in left to press");
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  assert.equal(refreshes, 0, "the tap can't continue in place, so nothing refreshes");
+});
+
+test("the sign-in page keeps an account still in setup on its setup step, inline, without leaving", async () => {
+  // A new social member returns to /sign-in signed in but not yet a member: the server opens the login flow, which
+  // shows the explicit setup gate (as the account sheet does after a provider return), and next is kept for later.
+  const c = client();
+  c.setStatus({ ...anonymous, phoneBindingAuth: "ready", authenticated: true, emailVerified: true });
+  const visited: string[] = [];
+  ui.render(<SignIn next="/me" initialFlow="login" client={c.value} navigate={(url) => visited.push(url)} />, { wrapper: MemberAuthProviders });
+  await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Continue registration" }));
+  assert.equal(document.querySelector("[data-vaul-drawer], [role=dialog]") === null, true);
+  assert.deepEqual(visited, []);
 });
 
 test("Switch account clears the confirmed sign-in identity and retains only the same-address resend cooldown", async () => {

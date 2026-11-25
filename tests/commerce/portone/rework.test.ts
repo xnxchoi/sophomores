@@ -6,6 +6,7 @@ import { admissionFixture } from './admission-fixture'
 import { admitReconciliation, debitProviderGet, endReconciliation, accountedProviderGet } from '../../../src/lib/commerce/portone/accounting'
 import { runReconciliation } from '../../../src/lib/commerce/portone/admission'
 import { commerceSnapshotHash } from '../../../src/lib/commerce/snapshot-hash'
+import { purchaseSnapshotSchema } from '../../../src/lib/commerce/purchase-snapshot'
 import { createAdapterEndpoints } from '../../../src/lib/commerce/portone/endpoints'
 import { inPaymentEndpoint } from '../../../src/lib/commerce/_shared/transaction'
 import { CommerceReconciliations } from '../../../src/payload/collections/commerce-reconciliations'
@@ -562,12 +563,61 @@ test('in-flight resume and retire cannot use stale provider proof after authenti
         customer: { id: f.identity.customerID }, currency: 'KRW', amount: { total: 100, paid: 0, cancelled: 0 }, disputes: [] }
     } }
     const handler = createAdapterEndpoints(deps, async () => f.identity.customerID).find(e => e.path === '/' + kind)!
-    f.req.data = f.input
+    // Resume carries the refund terms the page showed (Review-B r3), so this reaches the provider read.
+    const { currentRefundTerms } = await import('../../../src/lib/commerce/portone/refund-terms')
+    f.req.data = kind === 'resume' ? { ...f.input, refundTerms: await currentRefundTerms(f.req, f.row.portone.snapshot) } : f.input
     const res = await handler.handler(f.req)
     assert.equal(res.status, 409)
     assert.deepEqual(await res.json(), { outcome: 'review-required' })
     assert.equal(f.row.status, 'pending')
     assert.equal(f.attempt().ordinaryUsed, 1)
+    assert.equal(f.counts().finalized, 0)
+  }
+})
+
+test('resume re-checks a guest ticket\'s refund terms at the decision to reopen: an event moved during the provider read opens nothing', async () => {
+  const { currentRefundTerms } = await import('../../../src/lib/commerce/portone/refund-terms')
+  for (const moveDuringRead of [true, false]) {
+    const f = await fixture()
+    const guest = { version: 3 as const, kind: 'guest-ticket-v1' as const, customerID: f.identity.customerID, cartID: f.identity.cartID,
+      productID: 'guest-product', releaseID: 'guest-product', eventID: 'event', quantity: 1, accountLimit: 2, currency: 'KRW' as const,
+      unitAmount: 100, shippingAmount: 0, totalAmount: 100, orderName: 'Guest ticket', productVersion: 'v1', eventVersion: 'v1',
+      shippingAddress: { country: 'KR' as const, recipientName: 'Recipient', phone: '01012345678', postalCode: '01234', addressLine1: 'Address' },
+      ticketTarget: { chainID: 84532, lock: '0x' + 'b'.repeat(40) } }
+    // Parsed as the real snapshot contract, so the hash and the reads see a valid guest snapshot.
+    f.identity.snapshotHash = commerceSnapshotHash(purchaseSnapshotSchema.parse(guest))
+    Object.assign(f.row.portone, { snapshot: guest, snapshotHash: f.identity.snapshotHash })
+    f.row.items = [{ product: guest.productID, quantity: 1 }]
+    // The fixture's reservation stands for its own snapshot; this one stands for the guest snapshot.
+    const find = f.req.payload.find
+    f.req.payload.find = (async (args: Parameters<typeof find>[0]) => args.collection === 'commerce-reservations'
+      ? { docs: [{ id: 'reservation', attemptID: f.row.id, state: 'reserved', snapshotHash: f.identity.snapshotHash, customer: guest.customerID,
+        product: guest.productID, event: guest.eventID, releaseID: guest.releaseID, quantity: 1, ticketTarget: guest.ticketTarget }], totalDocs: 1 }
+      : find(args)) as typeof find
+    let partIStartsAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+    const findByID = f.req.payload.findByID
+    f.req.payload.findByID = (async (args: { collection: string }) => args.collection === 'commerce-events'
+      ? { id: 'event', partIStartsAt } : findByID(args as never)) as typeof f.req.payload.findByID
+    const shown = await currentRefundTerms(f.req, guest)
+    let reads = 0
+    const deps = { ...f.deps, getPayment: async () => {
+      reads++
+      // The event's start moves while PortOne is being asked (after the early check passed).
+      if (moveDuringRead) partIStartsAt = new Date(Date.parse(partIStartsAt) + 24 * 60 * 60 * 1000).toISOString()
+      return { type: 'PAYMENT_NOT_FOUND' }
+    } }
+    const handler = createAdapterEndpoints(deps, async () => f.identity.customerID).find(e => e.path === '/resume')!
+    f.req.data = { ...f.input, refundTerms: shown }
+    const res = await handler.handler(f.req)
+    const body = await res.json() as { outcome?: string; refundTerms?: unknown; paymentRequest?: unknown }
+    assert.equal(reads, 1)
+    if (moveDuringRead) {
+      assert.equal(res.status, 200)
+      assert.equal(body.outcome, 'terms-changed')
+      assert.deepEqual(body.refundTerms, await currentRefundTerms(f.req, guest))
+      assert.notDeepEqual(body.refundTerms, shown)
+      assert.equal('paymentRequest' in body, false)
+    } else assert.notEqual(body.outcome, 'terms-changed') // unchanged terms pass the late check (this stand-in stops after it)
     assert.equal(f.counts().finalized, 0)
   }
 })

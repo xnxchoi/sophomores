@@ -2,9 +2,9 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { decodeFunctionData, keccak256, maxUint256, numberToHex, parseTransaction, type Hex } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
-import type { KeyGrantAdapter } from "@/lib/commerce/keys/contracts";
+import type { KeyGrantAdapter, KeyGrantTarget } from "@/lib/commerce/keys/contracts";
 import { createUnlockKeyGrantAdapter } from "@/lib/commerce/keys/unlock/adapter";
-import { confirmationDepth, maxFeeCeiling } from "@/lib/commerce/keys/unlock/transactions";
+import { confirmationDepth, finalizedTagChains, maxFeeCeiling } from "@/lib/commerce/keys/unlock/transactions";
 import { dispatchKeyGrants } from "@/lib/commerce/keys/worker";
 import { fakePayload } from "./support/fake-payload";
 import { hashOf, healthyChain, lockAbi, lockAddress, lockCalls, mockChain, receipt, recipient, revertNotGranter, RpcFailure, target, transferLog, uint, uintArray } from "./support/mock-chain";
@@ -21,7 +21,7 @@ const adapterOn = (handlers: ReturnType<typeof healthyChain>, options: { holdMs?
   return { ...chain, adapter: createUnlockKeyGrantAdapter({ chainID: 84532, account: privateKeyToAccount(generatePrivateKey()), transport: chain.transport, now, ...options }) };
 };
 /** One dispatch as the worker runs it: prepare, (hash made durable), broadcast. */
-async function submit(adapter: KeyGrantAdapter, grant: typeof input = input) {
+async function submit(adapter: KeyGrantAdapter, grant: Omit<typeof input, "target"> & { target: KeyGrantTarget } = input) {
   const prepared = await adapter.prepare(grant);
   if (prepared.kind !== "prepared") return prepared;
   return { ...(await adapter.broadcast({ intentID: grant.intentID, txHash: prepared.txHash })), txHash: prepared.txHash };
@@ -102,18 +102,18 @@ test("a lock with non-expiring keys grants a non-expiring key", async () => {
 });
 
 test("reconcile confirms a successful receipt with the minted token ID", async () => {
-  const { adapter } = adapterOn({ eth_getTransactionReceipt: () => receipt("0x1", [transferLog(42n)]), eth_blockNumber: deep });
+  const { adapter } = adapterOn({ eth_getTransactionReceipt: () => receipt("0x1", [transferLog(42n)]), eth_blockNumber: deep, eth_getBlockByNumber: healthyChain().eth_getBlockByNumber });
   assert.deepEqual(await adapter.reconcile({ intentID: "intent-1", txHash: hashOf("c"), target }), { kind: "confirmed", tokenID: "42" });
 });
 
 test("reconcile reports a reverted receipt as definitely reverted", async () => {
-  const { adapter } = adapterOn({ eth_getTransactionReceipt: () => receipt("0x0", []), eth_blockNumber: deep });
+  const { adapter } = adapterOn({ eth_getTransactionReceipt: () => receipt("0x0", []), eth_blockNumber: deep, eth_getBlockByNumber: healthyChain().eth_getBlockByNumber });
   assert.deepEqual(await adapter.reconcile({ intentID: "intent-1", txHash: hashOf("c"), target }), { kind: "definitelyReverted", code: "tx_reverted" });
 });
 
-test("confirmation depth is a per-chain setting, conservative for Polygon", () => {
+test("confirmation is a per-chain rule: a block count on Base Sepolia, finality on Polygon", () => {
   assert.ok(confirmationDepth[84532] >= 2, "Base Sepolia waits beyond inclusion");
-  assert.ok(confirmationDepth[137] > 157, "Polygon waits past its largest publicly reported reorg (157 blocks)");
+  assert.ok(finalizedTagChains.has(137) && confirmationDepth[137] === undefined, "Polygon waits for its finalized block, not a block count");
 });
 
 test("a receipt one block short of the chain's depth stays unknown, whether it succeeded or reverted", async () => {
@@ -294,3 +294,18 @@ test("a hanging send times out as unknown, not definitely not sent", async (t) =
     t.mock.timers.reset();
   }
 });
+
+for (const tiers of [["member", "guest"], ["guest", "member"]] as const) {
+  test(`shared event issuance permits ${tiers.join(" then ")} on the same holder`, async () => {
+    let held = 0n;
+    const { adapter } = adapterOn(healthyChain({
+      eth_call: lockCalls({ totalKeys: () => uint(held), expirationDuration: () => uint(1n), grantKeys: () => uintArray([held + 1n]) }),
+      eth_sendRawTransaction: ([raw]) => { held++; return keccak256(raw as Hex); },
+    }));
+    for (const ticketTier of tiers) {
+      assert.equal((await submit(adapter, { ...input, target: { ...target, ticketTier, ticketMode: "shared" } })).kind, "submitted");
+    }
+    assert.equal(held, 2n);
+    assert.deepEqual(await submit(adapter), { kind: "definitelyNotSent", code: "recipient_has_key" });
+  });
+}

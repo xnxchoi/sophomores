@@ -13,6 +13,7 @@ const previous = new Map<string, PropertyDescriptor | undefined>()
 let actions: Record<string, unknown>[] = []
 let claimed = false
 let admissionsUnavailable = false
+let sharedTickets = false
 let claimResponse: Promise<Response> | undefined
 let requests: { path: string; method: string; credentials?: RequestCredentials; cache?: RequestCache; headers: Headers }[] = []
 const capabilities = { emailOtp: true, magicLink: false, google: false, passkey: false }
@@ -36,6 +37,16 @@ before(async () => {
     if (path === '/api/member/status') return Response.json({ success: true, data: { authenticated: true, phoneBindingAuth: 'ready', emailVerified: true, phoneBound: true, member: true, capabilities } })
     if (path === '/api/users/me') return Response.json({ user: { id: 'guest-member', collection: 'users', cart: { docs: [] } } })
     if (path === '/api/addresses') return Response.json({ docs: [] })
+    if (path.endsWith('/wallet-pass/android')) {
+      assert.equal(new Headers(options?.headers).get("accept"), "application/json")
+      return Response.json({ passObjectUrl: "https://pay.google.com/gp/v/save/one.two.three" })
+    }
+    if (path.endsWith('/admissions') && sharedTickets) return Response.json([admissionID, admissionID.slice(0, -1) + "3"].map((id, i) => ({
+      admissionID: id, unit: i + 1, name: "", status: "available",
+      claimed: false, reviewRequired: false, ticketTier: "guest",
+      applePassURL: `/api/commerce/orders/${orderID}/admissions/${id}/wallet-pass/ios`,
+      androidPassURL: `/api/commerce/orders/${orderID}/admissions/${id}/wallet-pass/android`,
+    })))
     if (path.endsWith('/admissions')) return admissionsUnavailable ? Response.json({}, { status: 503 }) : Response.json([{ admissionID, unit: 1, name: 'Guest', status: claimed ? 'claimed' : 'available', claimed, reviewRequired: false }])
     if (path === '/api/commerce/guest-operations') {
       const action = JSON.parse(String(options?.body)); actions.push(action)
@@ -55,7 +66,7 @@ before(async () => {
   MemberAuthProviders = (await import('../../member-auth/fixtures/providers')).MemberAuthProviders
 })
 afterEach(() => {
-  ui.cleanup(); actions = []; requests = []; claimed = false; admissionsUnavailable = false; claimResponse = undefined
+  ui.cleanup(); actions = []; requests = []; claimed = false; admissionsUnavailable = false; sharedTickets = false; claimResponse = undefined
   dom.window.sessionStorage.clear(); dom.window.localStorage.clear()
   dom.window.history.replaceState(null, '', '/shop/orders/' + orderID)
 })
@@ -198,3 +209,28 @@ for (const fragment of ['', '#token=invalid', '#token=' + token + '&extra=value'
     assert.equal(dom.window.location.hash, '')
   })
 }
+
+test("each shared Guest ticket exposes its own buyer hop; sharing copies Google, not the hop", async t => {
+  sharedTickets = true
+  ui.render(<EnglishMessages><Admissions orderID={orderID} /></EnglishMessages>)
+  const apple = await ui.screen.findAllByRole("link", { name: "Add to Apple Wallet" })
+  const google = ui.screen.getAllByRole("link", { name: "Google Wallet pass" })
+  const ids = [admissionID, admissionID.slice(0, -1) + "3"]
+  assert.deepEqual(apple.map(link => link.getAttribute("href")?.split("/").slice(-3)), ids.map(id => [id, "wallet-pass", "ios"]))
+  assert.deepEqual(google.map(link => link.getAttribute("href")?.split("/").slice(-3)), ids.map(id => [id, "wallet-pass", "android"]))
+  assert.ok([...apple, ...google].every(link => link.getAttribute("referrerpolicy") === "no-referrer"))
+  const copied: string[] = []
+  Object.defineProperty(dom.window.navigator, "clipboard", { configurable: true, value: { writeText: async (value: string) => { copied.push(value) } } })
+  t.after(() => Reflect.deleteProperty(dom.window.navigator, "clipboard"))
+  assert.equal(requests.some(r => r.path.endsWith("/wallet-pass/android")), false)
+  ui.fireEvent.click(ui.screen.getAllByRole("button", { name: "Get a shareable Google Wallet link" })[1])
+  ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Copy Google Wallet link" }))
+  await ui.waitFor(() => assert.deepEqual(copied, ["https://pay.google.com/gp/v/save/one.two.three"]))
+  assert.ok(requests.some(r => r.path.endsWith(ids[1] + "/wallet-pass/android")))
+  await ui.waitFor(() => assert.equal(ui.screen.getByRole("button", { name: "Copy Google Wallet link" }).getAttribute("data-copy-state"), "copied"))
+  assert.equal(ui.screen.queryByRole("button", { name: "Create private claim link" }) === null, true)
+  assert.equal(ui.screen.queryByRole("textbox", { name: "Guest name for admission 1" }) === null, true)
+  assert.equal(actions.length, 0)
+  ui.cleanup()
+  await ui.act(() => new Promise(resolve => setTimeout(resolve, 80)))
+})

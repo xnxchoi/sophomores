@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { authMode, getPreviewConfig } from "@/lib/preview-auth/runtime";
 import { cookieToken, verifySession } from "@/lib/preview-auth/session";
 import { nfcProxy } from "@/lib/nfc/page-request";
+import { APPLE_CALLBACK_PATH } from "@/lib/auth/social-providers";
 import { isNoStorePagePath, privatePageCacheControl } from "@/lib/member-auth/private-pages";
 
 const previewHost = "preview.sophomores.co";
@@ -66,6 +67,37 @@ function isDocument(request: NextRequest): boolean {
   );
 }
 
+/**
+ * Apple's sign-in return (`APPLE_CALLBACK_PATH`): Apple answers with a cross-site form POST, and the preview cookie is
+ * SameSite=Lax, so the browser leaves it off and the gate would answer 401. Exactly this POST is let through, with no
+ * query, no other method and no prefix. Better Auth's handler only turns it into a same-site GET of the same path
+ * (better-auth api/routes/callback: POST merges body and query, then redirects), and that GET carries the cookie and
+ * stays behind the gate; it is there that the state and Apple's id_token are checked.
+ */
+function isAppleCallback(request: NextRequest): boolean {
+  return (
+    request.method === "POST" &&
+    request.nextUrl.pathname === APPLE_CALLBACK_PATH &&
+    !request.nextUrl.search &&
+    !isRsc(request)
+  );
+}
+
+/**
+ * PortOne's server-to-server webhook (the commerce plugin's endpoint `/payments/portone/webhooks` under Payload's
+ * `/api`). PortOne sends no preview cookie, so behind the gate payments would never settle or refund. Exactly this
+ * POST is let through, with no query, no other method and no prefix: the handler proves it came from PortOne by
+ * verifying the signature over the raw body (createAdapterEndpoints, `/webhooks`) and answers 409 otherwise.
+ */
+function isPortOneWebhook(request: NextRequest): boolean {
+  return (
+    request.method === "POST" &&
+    request.nextUrl.pathname === "/api/payments/portone/webhooks" &&
+    !request.nextUrl.search &&
+    !isRsc(request)
+  );
+}
+
 // A member's own pages, and public pages that vary by session (src/lib/member-auth/private-pages.ts), are never stored by a browser or shared cache, as
 // documents or as RSC payloads. Only Cache-Control: these pages keep their referrer for the payment provider.
 function privatePageResponse(request: NextRequest, response: Response): Response {
@@ -95,6 +127,8 @@ export function proxy(request: NextRequest): Response {
     }
     if (isCompiledStylesheet(request))
       return privateResponse(NextResponse.next());
+    if (isPortOneWebhook(request)) return privateResponse(NextResponse.next());
+    if (isAppleCallback(request)) return privateResponse(NextResponse.next());
     if (
       verifySession(
         config,

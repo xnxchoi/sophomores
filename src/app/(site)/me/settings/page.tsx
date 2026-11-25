@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { currentUser, getDeviceSessions } from "@/lib/auth/server";
 import type { User } from "@/payload-types";
 import SettingsHubClient from "./page.client";
+import { memberSignInHref } from "@/lib/member-auth/paths";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("PageMetadata");
@@ -15,7 +16,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function SettingsHubPage() {
   const user = (await currentUser()) as User | null;
   if (!user) {
-    return redirect("/account?next=/me/settings");
+    return redirect(memberSignInHref("/me/settings"));
   }
 
   const sessions = await getDeviceSessions();

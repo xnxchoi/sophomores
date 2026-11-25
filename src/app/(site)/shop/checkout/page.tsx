@@ -15,6 +15,7 @@ import { NativeCheckoutSummary } from "@/components/commerce/book-offer";
 import { loadCommerceOffer, type CommerceOffer } from "@/lib/commerce/catalogue";
 import { loadPublicMemberCapabilities } from "@/lib/member-auth/public-capabilities.server";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
+import { refundPolicy, refundTerms } from "@/lib/commerce/refund-policy";
 
 export const metadata = {
   title: messages.PageMetadata.checkout,
@@ -75,7 +76,8 @@ export default async function CheckoutPage({ searchParams }: { searchParams?: Pr
       {offer.availableQuantity > 0 ? <section aria-label={t("accountAndOrder")} className="min-w-0">
         <CommerceAccountGate progress signInOffInReview={signInOffInReview} initialCapabilities={await loadPublicMemberCapabilities()}
           accountIntroduction={<SummaryCard>{orderDetails}</SummaryCard>} identityCheckDetails={<SummaryCard>{orderDetails}</SummaryCard>}>
-          {allowance && <CommerceCheckout progress offer={offer} allowance={allowance} orderDetails={orderRows} />}
+          {/* The legacy offer freezes a version-1 (membership) snapshot: the same rule staff refunds read. */}
+          {allowance && <CommerceCheckout progress offer={offer} allowance={allowance} orderDetails={orderRows} refundTerms={refundTerms(refundPolicy({ version: 1 }), null)} />}
         </CommerceAccountGate>
       </section> : <p role="status" className="border-t border-border pt-5 text-sm leading-relaxed text-muted-foreground">{offerCopy("unavailable")}</p>}
       {(offer.availableQuantity <= 0 || signInOffInReview) && <SummaryCard className="mt-6">{orderDetails}</SummaryCard>}

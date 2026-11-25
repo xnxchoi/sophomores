@@ -16,8 +16,11 @@ import { inClaimTransaction, inCommerceTransaction } from "./_shared/transaction
 import { guestClaimRejectionSchema } from "./contracts";
 import { readCommerceJSON } from "./_shared/request-body";
 import { assignGuestName, buyerAdmissions, checkInGuest, claimGuestAdmission, guestManifest, issueGuestClaim, redeemGuestBenefit } from "./guests";
+import { createEventPassEndpoint } from "./keys/event-pass-endpoint";
+import { doorTicketLabelEndpoint } from "./keys/door-ticket-label";
 import { updateOrderFulfillment } from "./fulfillment";
 import { acceptUnitReturns, disposeReturnedUnits } from "./returns";
+import { requestOrderRefund } from "./portone/refund";
 
 const id = z.string().trim().min(1).max(128);
 const claimTokenSchema = z.string().regex(/^[A-Za-z0-9_-]{43}$/);
@@ -34,6 +37,7 @@ const operationSchema = z.discriminatedUnion("action", [
   z.strictObject({ action: z.literal("redeem"), admissionID: id, kind: z.enum(["part-i-drink", "shared-transfer"]), actionID: z.string().regex(/^[A-Za-z0-9_-]{16,128}$/) }),
   z.strictObject({ action: z.literal("fulfillment"), orderID: id, status: z.enum(["pending", "packed", "shipped", "delivered", "return-requested", "returned"]), carrier: z.string().max(100).optional(), trackingNumber: z.string().max(120).optional(), actionID: z.string().regex(/^[A-Za-z0-9_-]{16,128}$/) }),
   z.strictObject({ action: z.literal("accept-unit-return"), orderID: id, units: z.array(z.int().min(1).max(3)).min(1).max(3), evidenceID: z.string().trim().min(1).max(200), usedBenefitsReviewed: z.boolean().optional() }),
+  z.strictObject({ action: z.literal("refund"), orderID: id, reason: z.string().trim().min(1).max(200) }),
   z.strictObject({ action: z.literal("return-disposition"), orderID: id, units: z.array(z.int().min(1).max(3)).min(1).max(3), disposition: z.enum(["restock", "do-not-restock"]) }),
 ]);
 
@@ -71,6 +75,11 @@ export function createGuestOperationsEndpoint(dependencies: GuestOperationsDepen
       if ((!previous && operationRates.size >= 1024) || (previous && previous.count >= 60)) return Response.json({ error: "Please wait" }, { status: 429 });
       operationRates.set(key, { count: (previous?.count ?? 0) + 1, until: previous?.until ?? now + 60_000 });
       const operation = operationSchema.parse(await readCommerceJSON(req));
+      // A full refund commits its request record, then asks PortOne, so it runs outside the shared transaction.
+      if (operation.action === "refund") {
+        if (!isCmsSuperAdmin(req.user)) return Response.json({ error: "Forbidden" }, { status: 403 });
+        return Response.json(await requestOrderRefund({ req, orderID: operation.orderID, reason: operation.reason }), { headers: { "Cache-Control": "no-store" } });
+      }
       isClaimOperation = operation.action === "claim";
       const transact = isClaimOperation ? inClaimTransaction : inCommerceTransaction;
       const result = await transact(req, async () => {
@@ -154,5 +163,5 @@ const buyerAdmissionsEndpoint: Endpoint = {
 export const commerceDomainPlugin: Plugin = (config) => ({
   ...config,
   collections: [...(config.collections ?? []), CommerceEvents, CommerceReservations, CommerceAllowances, CommerceAdmissions, CommerceClaims, CommerceRedemptions, CommerceReconciliations, CommerceKeyGrantIntents],
-  endpoints: [...(config.endpoints ?? []), operationEndpoint, manifestEndpoint, buyerAdmissionsEndpoint],
+  endpoints: [...(config.endpoints ?? []), operationEndpoint, manifestEndpoint, buyerAdmissionsEndpoint, doorTicketLabelEndpoint, createEventPassEndpoint()],
 });

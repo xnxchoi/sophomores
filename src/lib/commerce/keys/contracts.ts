@@ -32,14 +32,27 @@ export function canTransition(from: KeyGrantState, to: KeyGrantState): boolean {
 }
 
 /** Identity fields fixed at creation; never rewritten by replay or workers. */
-export const keyGrantIdentityFields = ["operationKey", "order", "payment", "entitlement", "beneficiaryUser", "recipientMode"] as const;
+export const keyGrantIdentityFields = ["operationKey", "order", "payment", "entitlement", "beneficiaryUser", "recipientMode", "purpose"] as const;
 
 export function keyGrantOperationKey(orderID: string, unit: number): string {
   if (!orderID || !Number.isSafeInteger(unit) || unit < 1) throw new Error("Invalid key-grant entitlement");
   return `unlock-grant:v1:${orderID}:${unit}`;
 }
 
-export type KeyGrantTarget = { chainID: number; lock: string; recipient: string; ticketTier?: "guest" };
+export type KeyGrantTarget = {
+  chainID: number; lock: string; recipient: string; ticketTier?: "member" | "guest"; ticketMode?: "shared";
+};
+export const MEMBER_EVENT_GRANT = "member-event" as const;
+
+export function memberEventGrantOperationKey(orderID: string, unit: number): string {
+  return `${keyGrantOperationKey(orderID, unit)}:member-event`;
+}
+
+export function ticketTokenIdentity(chainID: number, lock: string, tokenID: unknown): string | null {
+  if (!keyGrantChains.some((chain) => chain === chainID) || !addressPattern.test(lock) || BigInt(lock) <= 1n ||
+    typeof tokenID !== "string" || !/^[1-9][0-9]{0,77}$/.test(tokenID) || BigInt(tokenID) >= 1n << 256n) return null;
+  return `${chainID}:${lock.toLowerCase()}:${tokenID}`;
+}
 
 /** A signer on one chain, as a CAIP-10 account ID: `eip155:<chainID>:<lowercase address>`. Nonces and the signer lock are per account. */
 export function signerAccountID(chainID: number, address: string): string {
@@ -84,24 +97,36 @@ export type ReplaceOutcome =
  * Re-sending recorded bytes: `accepted` when the node answers with the hash or
  * already holds it; `nonceConsumed` when the node says the nonce is used.
  */
-export type RebroadcastOutcome = { kind: "accepted" } | { kind: "nonceConsumed" } | { kind: "unknown" };
+/** `refused`: the recorded bytes failed a check (chain, sender, lock, operation or fee budget) and were not sent. */
+/**
+ * A re-send names the dispatch record it belongs to: the bytes must hash to that record's transaction, carry its
+ * nonce, and be its own operation (Review-A, 24 Nov). `tokenID` is the cancelled key's, for a cancel.
+ */
+export type RebroadcastInput = { raw: string; txHash: string; nonce: number; target: KeyGrantTarget; tokenID?: string };
+
+/** `unavailable`: a pre-send check could not be read (Polygon's role hook); nothing was sent, try again next tick. */
+export type RebroadcastOutcome = { kind: "accepted" } | { kind: "nonceConsumed" } | { kind: "unknown" } | { kind: "refused"; code: string } | { kind: "unavailable" };
 
 export type BroadcastOutcome =
   | { kind: "submitted" }
   | { kind: "definitelyNotSent"; code: string }
   | { kind: "unknown" };
 
+/** A receipt whose block sits further below the settled block than this process may walk: deferred, and alerted. */
+export const beyondAncestryCap = "beyond_ancestry_cap" as const;
+
 export type ReconcileOutcome =
   | { kind: "confirmed"; tokenID: string }
   | { kind: "definitelyReverted"; code: string }
-  | { kind: "unknown" };
+  /** `beyond_ancestry_cap`: mined, but too far below the settled block for this process to tie it there (deferred). */
+  | { kind: "unknown"; code?: "beyond_ancestry_cap" };
 
 /**
  * Not-sent codes that retrying cannot fix until someone acts (a chain enabled,
  * a target corrected, an existing key resolved). The worker parks these in
  * `failed_retryable` with the code instead of retrying them.
  */
-export const parkedGrantCodes = ["chain_not_enabled", "invalid_target", "recipient_has_key"] as const;
+export const parkedGrantCodes = ["chain_not_enabled", "lock_not_enabled", "invalid_target", "recipient_has_key", "role_hook_set"] as const;
 
 /**
  * Codes that end automatic replacement of a stuck grant; it stays `ambiguous`
@@ -112,9 +137,10 @@ export const grantBroadcastSuppressed = "grant_broadcast_suppressed";
 export const grantRecoveryHeld = "grant_recovery_held";
 export const grantBroadcastStops = [grantBroadcastPending, grantBroadcastSuppressed, grantRecoveryHeld] as const;
 
-export const replacementStopCodes = ["replacement_exhausted", "replacement_fee_ceiling", "replacement_write_ahead_failed", "replacement_rebroadcast_failed", ...grantBroadcastStops] as const;
+export const ticketTokenConflict = "ticket_token_conflict";
+export const replacementStopCodes = [ticketTokenConflict, "replacement_exhausted", "replacement_fee_ceiling", "replacement_write_ahead_failed", "replacement_rebroadcast_failed", "replacement_rebroadcast_refused", ...grantBroadcastStops] as const;
 /** The same stop codes for a cancel; its key stays granted (and reconciled), and the manager's new cancels are held. */
-export const cancelReplacementStopCodes = ["cancel_replacement_exhausted", "cancel_replacement_fee_ceiling", "cancel_replacement_write_ahead_failed", "cancel_replacement_rebroadcast_failed"] as const;
+export const cancelReplacementStopCodes = ["cancel_replacement_exhausted", "cancel_replacement_fee_ceiling", "cancel_replacement_write_ahead_failed", "cancel_replacement_rebroadcast_failed", "cancel_replacement_rebroadcast_refused"] as const;
 
 export interface KeyGrantAdapter {
   /** The grant signer's CAIP-10 account; the worker's signer lock and nonce floor are per account. */
@@ -131,8 +157,8 @@ export interface KeyGrantAdapter {
   broadcast(input: { intentID: string; txHash: string }): Promise<BroadcastOutcome>;
   /** Abandons a prepared grant that will never be broadcast, freeing its signer. */
   release(input: { txHash: string }): void;
-  /** Re-sends recorded signed bytes unchanged (same hash, same nonce). */
-  rebroadcast(input: { raw: string }): Promise<RebroadcastOutcome>;
+  /** Re-sends recorded signed bytes unchanged (same hash, same nonce), only if they match their dispatch record. */
+  rebroadcast(input: RebroadcastInput): Promise<RebroadcastOutcome>;
   reconcile(input: { intentID: string; txHash: string; target: KeyGrantTarget }): Promise<ReconcileOutcome>;
 }
 
@@ -151,7 +177,7 @@ export type CancelReconcileOutcome =
   | { kind: "unknown" };
 
 /** Cancel codes that wait for a person; the worker never retries them. */
-export const parkedCancelCodes = ["chain_not_enabled", "invalid_target", "invalid_token", "token_mismatch", "not_lock_manager", "cancel_signer_is_granter", "cancel_reverted"] as const;
+export const parkedCancelCodes = ["chain_not_enabled", "lock_not_enabled", "invalid_target", "invalid_token", "token_mismatch", "not_lock_manager", "cancel_signer_is_granter", "cancel_reverted", "role_hook_set"] as const;
 
 /**
  * The separate lock-manager authority (ADR-0008); never the grant signer. Same
@@ -165,7 +191,7 @@ export interface KeyCancelAdapter {
   prepareCancelReplacement(input: { intentID: string; target: KeyGrantTarget; tokenID: string; nonce: number; previous: TransactionFee }): Promise<ReplaceOutcome>;
   broadcast(input: { intentID: string; txHash: string }): Promise<BroadcastOutcome>;
   release(input: { txHash: string }): void;
-  rebroadcast(input: { raw: string }): Promise<RebroadcastOutcome>;
+  rebroadcast(input: RebroadcastInput): Promise<RebroadcastOutcome>;
   reconcileCancel(input: { txHash: string; target: KeyGrantTarget; tokenID: string }): Promise<CancelReconcileOutcome>;
 }
 
@@ -181,9 +207,12 @@ export function parseKeyGrantTarget(value: unknown): KeyGrantTarget {
   if (!target || typeof target !== "object" || !keyGrantChains.includes(target.chainID as never)
     || typeof target.lock !== "string" || !addressPattern.test(target.lock)
     || typeof target.recipient !== "string" || !addressPattern.test(target.recipient)
-    || (target.ticketTier !== undefined && target.ticketTier !== "guest")) throw new Error("Invalid key-grant target");
+    || (target.ticketMode !== undefined && target.ticketMode !== "shared") ||
+    (target.ticketMode === "shared" ? target.ticketTier !== "guest" && target.ticketTier !== "member"
+      : target.ticketTier !== undefined && target.ticketTier !== "guest")) throw new Error("Invalid key-grant target");
   return { chainID: target.chainID as number, lock: target.lock, recipient: target.recipient,
-    ...(target.ticketTier === "guest" ? { ticketTier: target.ticketTier } : {}) };
+    ...(target.ticketTier ? { ticketTier: target.ticketTier } : {}),
+    ...(target.ticketMode ? { ticketMode: target.ticketMode } : {}) };
 }
 
 /** Page-facing key states; internals (targets, hashes, errors) never leave the server. */

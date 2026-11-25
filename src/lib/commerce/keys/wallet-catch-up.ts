@@ -79,6 +79,8 @@ export async function catchUpKeyGrantTargets(payload: Payload): Promise<WalletCa
     MEMBER_WALLET_CHAIN_ID: String(configuration.wallet.chainID),
     MEMBER_WALLET_OWNER_ADDRESS: configuration.wallet.ownerAddress,
     MEMBER_WALLET_LOCK_ADDRESS: configuration.lock,
+    UNLOCK_SHARED_TICKET_EVENT_ID: process.env.UNLOCK_SHARED_TICKET_EVENT_ID,
+    KEY_GRANT_POLYGON_EVENT_LOCKS: process.env.KEY_GRANT_POLYGON_EVENT_LOCKS,
   });
   const fingerprint = createHash("sha256").update(JSON.stringify(env)).digest("hex");
   const req = { payload, context: {} } as PayloadRequest;

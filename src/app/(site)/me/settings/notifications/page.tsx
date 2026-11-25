@@ -5,6 +5,7 @@ import { Link } from "@/components/core/Link/Link";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { SubRouteHeader } from "@/components/settings/SubRouteHeader";
 import { currentUser } from "@/lib/auth/server";
+import { memberSignInHref } from "@/lib/member-auth/paths";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("PageMetadata");
@@ -15,7 +16,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function NotificationsSettingsPage() {
-  if (!(await currentUser())) redirect("/account?next=/me/settings");
+  if (!(await currentUser())) redirect(memberSignInHref("/me/settings/notifications"));
   const t = await getTranslations("Customer.app_site_me_settings_notifications_page");
 
   return (

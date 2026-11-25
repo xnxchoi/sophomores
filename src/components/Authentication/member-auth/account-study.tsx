@@ -33,6 +33,9 @@ import {
   type MemberSnapshot
 } from "./_shared/session";
 import { Link } from "@/components/core/Link/Link";
+import { ArcRoles } from "@/components/commerce/arc-roles";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
+import { ChevronLeft } from "lucide-react";
 
 const noSubscription = () => () => {};
 /**
@@ -85,7 +88,7 @@ export function MemberAccountStudy({
 
 /** Caller-owned surface: closing disposes private flow, not the caller or Vaul root. */
 export function MemberAccountDialog({
-  open, onOpenChange, returnFocusRef, client, initialFlow, initialCapabilities, completionAction, authenticatedAction
+  open, onOpenChange, returnFocusRef, client, initialFlow, initialCapabilities, completionAction, authenticatedAction, onSnapshot
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -95,6 +98,8 @@ export function MemberAccountDialog({
   initialCapabilities?: Readonly<MemberCapabilities>;
   completionAction?: ReactNode;
   authenticatedAction?: ReactNode;
+  /** Every session snapshot of the open flow (an in-place sheet closes once the member is confirmed). */
+  onSnapshot?: (snapshot: MemberSnapshot) => void;
 }) {
   const t = useTranslations("MemberAuth");
   const [entry, setEntry] = useState<{ open: boolean; choice: "chooser" | "login" | "signup" | null }>({ open, choice: null });
@@ -188,6 +193,7 @@ export function MemberAccountDialog({
               flow={step}
               completionAction={completionAction}
               authenticatedAction={authenticatedAction}
+              onSnapshot={onSnapshot}
               onChooser={() => {
                 setEntry({ open, choice: "chooser" });
               }}
@@ -195,6 +201,106 @@ export function MemberAccountDialog({
             />
           ))}
       </VerificationTray>
+  );
+}
+
+/**
+ * The account and sign-in pages (owner, 24 Nov: a signed-out /account redirects to /sign-in, no modal; "OBVIOUSLY it
+ * should be the normal page" signed in). The sheet's chooser and flow, laid out on the page. With `next` (the sign-in
+ * page) social sign-in returns to the page (pinned server-side) and a confirmed member leaves for `next`; an account
+ * still in setup finishes it here first. The sheet (MemberAccountDialog) stays for buttons that open it in place.
+ */
+export function MemberAccountPage({
+  next,
+  client,
+  initialFlow,
+  initialCapabilities,
+  completionAction,
+  authenticatedAction,
+  navigate = (url) => window.location.replace(url)
+}: {
+  /** The sign-in page's validated return; absent on the account page itself. */
+  next?: string;
+  client?: MemberClient;
+  /** "login" for a signed-in account (and one still in setup); the chooser otherwise. */
+  initialFlow?: "login" | "signup";
+  initialCapabilities?: Readonly<MemberCapabilities>;
+  completionAction?: ReactNode;
+  authenticatedAction?: ReactNode;
+  /** A full navigation, so the next page renders on the server for the signed-in member. */
+  navigate?: (url: string) => void;
+}) {
+  const t = useTranslations("MemberAuth");
+  const providerReturnFlow = useProviderReturnFlow();
+  const [choice, setChoice] = useState<"chooser" | "login" | "signup" | null>(null);
+  const step = choice ?? initialFlow ?? providerReturnFlow ?? "chooser";
+  const resolvedClient = useMemo(() => client ?? (next === undefined ? createMemberClient() : createMemberClient(undefined, undefined, "sign-in", next)), [client, next]);
+  const id = useId();
+  const headingId = `${id}-${step}`;
+  const login = useRef<HTMLButtonElement>(null);
+  const signup = useRef<HTMLButtonElement>(null);
+  const lastChoice = useRef<"login" | "signup" | null>(null);
+  const left = useRef(false);
+  const flow = useRef<{ requestCancel: () => void } | null>(null);
+  const [signedIn, setSignedIn] = useState(false);
+  useEffect(() => {
+    // Back from a flow, focus returns to the choice that opened it.
+    if (step === "chooser" && lastChoice.current) (lastChoice.current === "login" ? login : signup).current?.focus({ preventScroll: true });
+  }, [step]);
+  function choose(flow: "login" | "signup") {
+    lastChoice.current = flow;
+    setChoice(flow);
+  }
+  function leaveWhenMember(snapshot: MemberSnapshot) {
+    if (Boolean(snapshot.status?.authenticated) !== signedIn) setSignedIn(Boolean(snapshot.status?.authenticated));
+    if (next === undefined || left.current || !snapshot.status?.member) return;
+    left.current = true;
+    navigate(next);
+  }
+  return (
+    <main data-member-account-page="" className="mx-auto w-full max-w-md px-6 pt-10 pb-16 text-foreground">
+      <ArcRoles>
+        {step === "chooser" ? (
+          <section data-member-account-chooser="" aria-labelledby={headingId} className="[font-family:system-ui]">
+            <Heading id={headingId} tabIndex={-1} className="mt-0 mb-2 text-[24px] leading-[30px] font-medium tracking-[-0.025em]">
+              {t("welcome")}
+            </Heading>
+            <Description className="mb-6 text-[14px] leading-5">{t("logInOrCreateAnAccount")}</Description>
+            <PrimaryButton ref={login} type="button" className="mt-0! h-12 min-h-12 justify-center px-5 py-0 text-center text-[15px] leading-5 font-medium" onClick={() => choose("login")}>
+              {t("logIn")}
+            </PrimaryButton>
+            <SecondaryButton ref={signup} type="button" className="mt-3 mb-0 h-12 min-h-12 justify-center px-5 py-0 text-center text-[15px] leading-5 font-medium" onClick={() => choose("signup")}>
+              {t("signUp")}
+            </SecondaryButton>
+          </section>
+        ) : (
+          <>
+            {/* Back to the chooser, on the left (the sheet's Cancel); signed in, there is nothing to go back to. */}
+            {!signedIn && (
+              <button type="button" onClick={() => flow.current?.requestCancel()} className="group/focus -ml-1 mb-4 inline-flex min-h-11 items-center gap-1 px-1 text-[14px] leading-5 text-muted-foreground transition-colors duration-150 hover:text-foreground">
+                <FocusShape className="inline-flex items-center gap-1 group-focus-visible/focus:outline-current">
+                  <ChevronLeft aria-hidden="true" className="size-4" strokeWidth={1.5} />
+                  {t("cancel")}
+                </FocusShape>
+              </button>
+            )}
+          <MemberAccountFlow
+            key={step}
+            ref={flow}
+            client={resolvedClient}
+            initialCapabilities={initialCapabilities}
+            headingId={headingId}
+            flow={step}
+            completionAction={completionAction}
+            authenticatedAction={authenticatedAction}
+            onSnapshot={leaveWhenMember}
+            onChooser={() => setChoice("chooser")}
+            onExit={() => setChoice("chooser")}
+          />
+          </>
+        )}
+      </ArcRoles>
+    </main>
   );
 }
 

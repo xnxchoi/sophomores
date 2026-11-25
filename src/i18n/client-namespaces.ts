@@ -9,6 +9,8 @@
  * InlineRetry control (the setlist pages mount it; any page may).
  */
 export const shellNamespaces = [
+  // The in-place sign-in sheet (src/components/auth/account-sheet.tsx) opens over any page (owner, 24 Nov).
+  "AuthPhase",
   "Common",
   "InlineRetry",
   "Interface",
@@ -21,8 +23,13 @@ export const shellNamespaces = [
   "Customer.menuButton",
   "Customer.navigation",
   "Customer.panelRows",
-  "Customer.themeControl"
+  "Customer.themeControl",
+  "Verification",
+  "VerificationTrial"
 ] as const;
+
+/** The in-place sign-in sheet's own copy, for layouts outside the site shell (the NFC tap). */
+export const accountSheetNamespaces = ["AuthPhase", "Common", "Interface", "MemberAuth", "Verification", "VerificationTrial"] as const;
 
 /** The home page's Warp tuning and sequence panels, which only mount in development. */
 export const developmentNamespaces = ["Developer"] as const;
@@ -43,6 +50,7 @@ const purchase = [
   "VerificationTrial",
   "Customer.components_commerce_checkout",
   "Customer.components_commerce_payment",
+  "Customer.components_commerce_refund_terms",
   "Customer.components_commerce_shipping_address",
   "Customer.components_tickets_ticket_selection",
   "Customer.navigation"
@@ -56,6 +64,8 @@ export const segmentNamespaces = {
     "Customer.app_site_me_settings_page_client",
     "Customer.components_tickets_ticket_account_entry"
   ],
+  // The standalone sign-in page: the account flow inline (owner, 24 Nov).
+  "sign-in": [...purchase],
   essays: [
     "Interface",
     "Customer.components_reading_article_hero",
@@ -87,6 +97,7 @@ export const segmentNamespaces = {
     ...purchase,
     // A failed shop or checkout read retries in place (CommerceLoadRetry).
     "InlineRetry",
+    "Customer.app_site_shop_invitations_page",
     "Customer.components_commerce_book_offer",
     "Customer.components_commerce_cart",
     "Customer.components_commerce_invitation_claim",

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { isReviewEditorProfile, reviewEditorOrigin, staffAuthOrigin } from "@/lib/auth/review-editor-policy";
-import { loadPaymentMode, loadPortOneConfig } from "@/lib/tickets/portone/config";
+import { isPinnedSandboxChannel, loadPaymentMode, loadPortOneConfig } from "@/lib/tickets/portone/config";
 
 // Configuration belongs to Payload; use installed Zod validation directly, not
 // a parallel environment parser or a shared utility with unrelated consumers.
@@ -22,6 +22,32 @@ export const payloadEnvironmentSchema = z.looseObject({
     for (const key of ["MEMBER_AUTH_MODE", "PHONE_VERIFICATION_MODE", "PORTONE_PAYMENT_MODE"]) {
       if (env[key] !== undefined && env[key] !== "disabled") {
         context.addIssue({ code: "custom", path: [key], message: "Review copy cannot enable customer providers" });
+      }
+    }
+  }
+  // The sandbox runtime (preview host, real customer flows) fails closed: the exact value, no review
+  // owner and a complete PortOne test configuration, never live payments.
+  if (env.PREVIEW_RUNTIME !== undefined) {
+    if (env.PREVIEW_RUNTIME !== "sandbox") {
+      context.addIssue({ code: "custom", path: ["PREVIEW_RUNTIME"], message: "PREVIEW_RUNTIME accepts only sandbox" });
+    } else {
+      if (env.REVIEW_OWNER_EMAIL !== undefined) {
+        context.addIssue({ code: "custom", path: ["REVIEW_OWNER_EMAIL"], message: "The sandbox runtime cannot have a review owner" });
+      }
+      // Admin access on the preview host comes from a separately approved grant, never the bootstrap address.
+      if (env.PAYLOAD_BOOTSTRAP_SUPERADMIN_EMAIL !== undefined) {
+        context.addIssue({ code: "custom", path: ["PAYLOAD_BOOTSTRAP_SUPERADMIN_EMAIL"], message: "The sandbox runtime never bootstraps a super admin" });
+      }
+      let testMode = false;
+      try {
+        testMode = loadPaymentMode(env) === "test" && loadPortOneConfig(env) !== null;
+      } catch { /* reported below */ }
+      if (!testMode) {
+        context.addIssue({ code: "custom", path: ["PORTONE_PAYMENT_MODE"], message: "The sandbox runtime requires a complete PortOne test configuration" });
+      }
+      if (!isPinnedSandboxChannel({ storeId: env.PORTONE_STORE_ID, channelKey: env.PORTONE_CHANNEL_KEY }, env)) {
+        context.addIssue({ code: "custom", path: ["PORTONE_SANDBOX_TEST_CHANNEL_KEY"],
+          message: "The sandbox runtime requires the store and channel to equal the pinned TEST store and channel" });
       }
     }
   }

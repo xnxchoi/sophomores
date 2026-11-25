@@ -11,19 +11,22 @@ import { commerceEditionProductSchema } from "./editions";
 import { Orders } from "../../payload/collections/orders";
 import { assertCommerceBrowserMutation, commerceAdmin, commerceAdminField, commerceAttemptCreate, commerceOwnerRead, commerceServerField, commerceServerWrite } from "./access";
 import { commerceProductSchema, commercePublicationSchema, loadCommerceCatalogue } from "./catalogue";
-import { MEMBERSHIP_ACCOUNT_LIMIT, shippingAddressSchema } from "./contracts";
+import { guestCheckoutQuoteSchema, shippingAddressSchema, ticketEmailConsentSchema } from "./contracts";
 import { CART_EXPECTED_MEMBER_HEADER, cartRefusalData, cartRefusalMessage } from "./cart-refusal";
+import { cartQuantityError, SHARED_GUEST_CART_KIND } from "./cart-quantity";
+import { sharedTicketMode } from "./event-tickets";
 import { purchaseSnapshotSchema } from "./purchase-snapshot";
 import { preserveNativeCheckoutHold } from "./_shared/native-checkout-hold";
 import { readCommerceJSON } from "./_shared/request-body";
 import { inPaymentEndpoint, lockCommerce, readCommerce, relationshipID } from "./_shared/transaction";
 import { accountAllowanceAdmits, settleReservation } from "./reservations";
 import { grantOrderAdmissions } from "./guests";
-import { grantMembershipOnPayment } from "./membership";
+import { assertGuestSponsorMembership, grantMembershipOnPayment } from "./membership";
 import { recordSettlementWalletGrants } from "./keys/wallet-attachment";
 import { assertPrincipalUnchanged, attemptReadStop, portonePaymentAdapter } from "./portone/adapter";
 import { isVerifiedCommerceWebhook } from "./portone/endpoints";
 import { isVerifiedPaymentCancellation } from "./portone/review";
+import { isVerifiedOrderRefund, refundableOrderStatuses } from "./order-refund";
 import { runReconciliation, settleIfProviderPaid } from "./portone/admission";
 
 const deny = () => false;
@@ -85,18 +88,27 @@ export const createSecureCart = (authorizeMutation: (req: PayloadRequest) => Pro
   if (!internal && ((data.purchasedAt != null && data.purchasedAt !== current?.purchasedAt)
     || (data.secret != null && data.secret !== current?.secret))) throw new APIError("Cart field is server owned", 403);
   if (data.currency && data.currency !== "KRW") throw new APIError("Unsupported currency", 400);
-  const items = z.array(z.object({ id: z.string().optional(), product: z.union([z.string().min(1), z.object({ id: z.string().min(1) })]), quantity: z.int().min(1), variant: z.nullish(z.unknown()) })).max(1).parse(data.items ?? current?.items ?? []);
-  if (items.some((item) => item.quantity > MEMBERSHIP_ACCOUNT_LIMIT)) throw new APIError("Only one unit per purchase", 400);
+  const items = z.array(z.object({ id: z.string().optional(), product: z.union([z.string().min(1), z.object({ id: z.string().min(1) })]), quantity: z.int().min(1), variant: z.nullish(z.unknown()), ticketKind: z.unknown().optional() })).max(1).parse(data.items ?? current?.items ?? []);
   let subtotal = 0;
   for (const item of items) {
+    const productID = relationshipID(item.product);
+    const quantityError = cartQuantityError({ ...item, productID });
+    if (quantityError) throw new APIError(quantityError, 400);
     if (item.variant != null) throw new APIError("Variants unavailable", 409);
-    const offer = await loadCommerceCatalogue({ req, productID: relationshipID(item.product) });
-    if (!offer || item.quantity > offer.availableQuantity) throw new APIError(cartRefusalMessage("offer-unavailable"), 409, cartRefusalData("offer-unavailable"));
+    const offer = await loadCommerceCatalogue({ req, productID });
+    if (!offer || (item.ticketKind != null && (item.ticketKind !== SHARED_GUEST_CART_KIND || !offer.ticketTarget)) ||
+      item.quantity > offer.availableQuantity || item.quantity > offer.maximumQuantity) throw new APIError(cartRefusalMessage("offer-unavailable"), 409, cartRefusalData("offer-unavailable"));
     // A browser line that is new or larger is refused early at the account limit. Removing or clearing is never blocked.
     const previous = (current?.items ?? []).find((line: { product?: unknown }) => relationshipID(line.product) === offer.productID);
-    if (!internal && item.quantity > (previous?.quantity ?? 0) && !await accountAllowanceAdmits(req, { customerID: String(owner),
-      productID: offer.productID, eventID: offer.event.id, quantity: item.quantity, accountLimit: MEMBERSHIP_ACCOUNT_LIMIT })) {
-      throw new APIError(cartRefusalMessage("limit-reached"), 409, cartRefusalData("limit-reached"));
+    if (!internal && sharedTicketMode(offer.ticketTarget) && current?.items?.length && !previous) {
+      throw new APIError(cartRefusalMessage("cart-locked"), 409, cartRefusalData("cart-locked"));
+    }
+    if (item.quantity > (previous?.quantity ?? 0)) {
+      if (sharedTicketMode(offer.ticketTarget)) await assertGuestSponsorMembership(req, String(owner));
+      if (!internal && !await accountAllowanceAdmits(req, { customerID: String(owner), productID: offer.productID,
+        eventID: offer.event.id, quantity: item.quantity, accountLimit: offer.maximumQuantity, guest: Boolean(offer.ticketTarget) })) {
+        throw new APIError(cartRefusalMessage("limit-reached"), 409, cartRefusalData("limit-reached"));
+      }
     }
     subtotal += offer.priceKRW * item.quantity;
   }
@@ -112,6 +124,13 @@ const commerceOrderFields: Field[] = [
     { name: "carrier", type: "text" }, { name: "trackingNumber", type: "text" },
     { name: "shippedAt", type: "date" }, { name: "deliveredAt", type: "date" },
     { name: "returnDisposition", type: "select", options: [{ label: english.Staff.schema.pendingInspection, value: "pending-inspection" }, { label: english.Staff.schema.restock, value: "restock" }, { label: english.Staff.schema.doNotRestock, value: "do-not-restock" }] },
+  ] },
+  // Written once, only by recordOrderRefund (order-refund.ts) when PortOne confirms a full cancellation.
+  { name: "commerceRefund", type: "group", admin: { description: english.Staff.schema.orderRefundRecord }, fields: [
+    { name: "refundedAt", type: "date", admin: { date: { pickerAppearance: "dayAndTime" } } },
+    { name: "source", type: "select", options: [{ label: english.Staff.schema.refundSourceProvider, value: "provider" }, { label: english.Staff.schema.refundSourceAdmin, value: "admin" }] },
+    { name: "providerEventID", type: "text" },
+    { name: "transactionID", type: "text" },
   ] },
 ];
 
@@ -146,8 +165,11 @@ function ordersOverride(defaultCollection: CollectionConfig): CollectionConfig {
         if (data.amount !== snapshot.totalAmount || data.currency !== snapshot.currency || relationshipID(data.customer) !== snapshot.customerID || data.status !== "processing") throw new APIError("Order snapshot mismatch", 409);
         return { ...data, id: randomUUID(), commerceSnapshot: snapshot };
       }
-      // Financial snapshots and identity never change during fulfillment workflows.
-      if (Object.keys(data).some((key) => !["fulfillment", "updatedAt"].includes(key) && JSON.stringify(data[key]) !== JSON.stringify(originalDoc[key]))) throw new APIError("Financial order fields are immutable", 403);
+      // Financial snapshots and identity never change during fulfillment workflows. The one exception is a verified
+      // full cancellation on this request (order-refund.ts): it may move a paid order to refunded and record how, once.
+      const refund = isVerifiedOrderRefund(req, String(originalDoc.id)) && refundableOrderStatuses.includes(originalDoc.status) && data.status === "refunded";
+      const changeable = refund ? ["status", "commerceRefund", "updatedAt"] : ["fulfillment", "updatedAt"];
+      if (Object.keys(data).some((key) => !changeable.includes(key) && JSON.stringify(data[key]) !== JSON.stringify(originalDoc[key]))) throw new APIError("Financial order fields are immutable", 403);
       return data;
     }] },
   };
@@ -256,7 +278,7 @@ function productsOverride(defaultCollection: CollectionConfig): CollectionConfig
 }
 
 const paymentBase = { cartID: z.uuid(), currency: z.literal("KRW").optional(), secret: z.null().optional() };
-const initiateInput = z.strictObject({ ...paymentBase, attemptID: z.uuid(), shippingAddress: shippingAddressSchema });
+const initiateInput = z.strictObject({ ...paymentBase, attemptID: z.uuid(), shippingAddress: shippingAddressSchema, guestQuote: guestCheckoutQuoteSchema.optional(), ticketEmailConsent: ticketEmailConsentSchema });
 const confirmInput = z.strictObject({ ...paymentBase, transactionID: z.uuid(), paymentID: z.string().regex(/^[a-f0-9]{32}$/) });
 
 /** Wrap generated browser endpoints without replacing official cart/payment operations. */
@@ -342,7 +364,9 @@ export const commercePlugin: Plugin = async (config) => {
     inventory: true, products: { variants: false, productsCollectionOverride: ({ defaultCollection }) => productsOverride(defaultCollection) },
     carts: { allowGuestCarts: false, cartsCollectionOverride: ({ defaultCollection }) => ({ ...defaultCollection,
       access: { ...defaultCollection.access, admin: commerceAdmin, delete: deny },
-      fields: withNativeSKU(defaultCollection.fields).map((field): Field => (field.type === "text" || field.type === "date" || field.type === "relationship")
+      fields: withNativeSKU(defaultCollection.fields).map((field): Field => field.type === "array" && field.name === "items"
+        ? { ...field, fields: [...field.fields, { name: "ticketKind", type: "text", admin: { hidden: true } }] }
+        : (field.type === "text" || field.type === "date" || field.type === "relationship")
         && ["secret", "purchasedAt", "customer"].includes(field.name) ? { ...field, access: { ...field.access,
           create: field.name === "secret" ? deny : commerceServerField, update: field.name === "secret" ? deny : commerceServerField } } : field),
       endpoints: (Array.isArray(defaultCollection.endpoints) ? defaultCollection.endpoints : []).filter((endpoint) => !endpoint.path.includes("merge")).map(secureEndpoint),

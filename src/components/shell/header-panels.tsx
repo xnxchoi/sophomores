@@ -8,13 +8,15 @@ import { useTheme, useThemeLocked } from "@/providers/Theme";
 import { AnimatePresence, useIsPresent } from "motion/react";
 import * as m from "motion/react-m";
 import { Link } from "@/components/core/Link/Link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useAccountSheetTrigger } from "@/components/auth/use-account-sheet";
+import { type MouseEvent, useEffect, useMemo, useRef, useState } from "react";
 import { FloatingFocusManager, useFloating } from "@floating-ui/react";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
+import { reachableHref } from "@/lib/content/essays";
 
-function PanelRow({ href, title, hint, onClose }: { href: string; title: string; hint?: string; onClose: () => void }) {
+function PanelRow({ href, title, hint, onClose, onClick }: { href: string; title: string; hint?: string; onClose: () => void; onClick?: (event: MouseEvent<HTMLElement>) => void }) {
   return (
-    <Link href={href} className="flex min-h-11 w-full items-center py-2 pr-8 pl-4 text-sm leading-4 text-faded-fg/90 outline-none transition-colors duration-200 hover:text-faded-bg focus-visible:underline focus-visible:underline-offset-4" onClick={onClose}>
+    <Link href={href} className="flex min-h-11 w-full items-center py-2 pr-8 pl-4 text-sm leading-4 text-faded-fg/90 outline-none transition-colors duration-200 hover:text-faded-bg focus-visible:underline focus-visible:underline-offset-4" onClick={(event: MouseEvent<HTMLElement>) => { onClick?.(event); onClose(); }}>
       <span className="flex-1 truncate">{title}</span>
       {hint ? <span className="ml-3 text-xs opacity-60">{hint}</span> : null}
     </Link>
@@ -83,7 +85,16 @@ export function NotificationPanel({
             <m.p key="empty" className="flex h-40 items-center justify-center text-sm font-medium" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               {t('youAreAllCaughtUp')}</m.p>
           ) : (
-            visible.map((item) => (
+            visible.map((item) => {
+              // A row whose link leads into a section the site has switched off (src/lib/content/essays.ts) shows as text.
+              const href = reachableHref(item.href ?? "/essays");
+              const copy = (
+                <>
+                  <p className="text-base">{item.title}</p>
+                  <p className="port-copy text-[oklch(from_var(--port-shade)_l_c_h_/_0.72)] mt-1 text-sm">{item.body}</p>
+                </>
+              );
+              return (
               <m.article
                 key={item.id}
                 className="relative overflow-hidden rounded-lg p-4"
@@ -95,10 +106,13 @@ export function NotificationPanel({
                 }}
                 exit={{ translateX: "-100%" }}
               >
-                <Link href={item.href ?? "/essays"} onClick={onClose} className="block pr-8 focus-visible:underline focus-visible:underline-offset-4">
-                  <p className="text-base">{item.title}</p>
-                  <p className="port-copy text-[oklch(from_var(--port-shade)_l_c_h_/_0.72)] mt-1 text-sm">{item.body}</p>
-                </Link>
+                {href ? (
+                  <Link href={href} onClick={onClose} className="block pr-8 focus-visible:underline focus-visible:underline-offset-4">
+                    {copy}
+                  </Link>
+                ) : (
+                  <div className="block pr-8">{copy}</div>
+                )}
                 <button
                   type="button"
                   className="group/focus absolute top-0 right-0 flex size-11 items-center justify-center text-xs"
@@ -113,11 +127,12 @@ export function NotificationPanel({
                   <FocusShape className="group-focus-visible/focus:outline-current">×</FocusShape>
                 </button>
               </m.article>
-            ))
+              );
+            })
           )}
         </AnimatePresence>
       </div>
-      {visible.length > 0 ? (
+      {visible.length > 0 && reachableHref("/essays") ? (
         <m.div initial={{ opacity: 0, translateY: "50%" }} animate={{ opacity: 1, translateY: "0%" }} transition={{ duration: 0.15, ease: "easeOut" }}>
           <Link href="/essays" className="group/focus mt-3 flex min-h-11 w-full items-center justify-center py-1 text-sm" onClick={onClose}>
             <FocusShape className="group-focus-visible/focus:outline-current">{t('seeAll')}</FocusShape></Link>
@@ -163,11 +178,18 @@ export function AccountPanel({ onClose }: { onClose: () => void }) {
 export const DISCOVER = [
   { href: "/essays", title: "reading", hint: "essays" },
   { href: "/", title: "reception", hint: "home" }
-];
+].filter((row) => reachableHref(row.href) !== undefined);
+/** Sign in and Create account open the in-place sign-in sheet on that flow (owner, 24 Nov: sign-in buttons toggle it). */
 export const START = [
-  { href: "/account", title: "signIn" },
-  { href: "/account", title: "createAccount", hint: "getStarted" }
-];
+  { flow: "login", title: "signIn" },
+  { flow: "signup", title: "createAccount", hint: "getStarted" }
+] as const;
+
+/** A START row: the sign-in page's href for no-JS and modifier-click, the sheet on a plain click. */
+function StartPanelRow({ flow, title, hint, onClose }: { flow: "login" | "signup"; title: string; hint?: string; onClose: () => void }) {
+  const signIn = useAccountSheetTrigger(flow);
+  return <PanelRow href={signIn.href} onClick={signIn.onClick} title={title} hint={hint} onClose={onClose} />;
+}
 
 export function SearchPanel({
   onClose,
@@ -190,6 +212,10 @@ export function SearchPanel({
     if (!needle) return [];
     return posts.filter((post) => `${post.title} ${post.dek}`.toLowerCase().includes(needle));
   }, [posts, query]);
+  // Results lead to essays; none show while the site has them switched off (src/lib/content/essays.ts).
+  const resultRows = results
+    .map((post) => ({ href: `/essays/${post.slug}`, title: post.title, hint: post.dek }))
+    .filter((row) => reachableHref(row.href) !== undefined);
 
   const present = useIsPresent();
   // Search is modal: Floating UI's focus manager makes the rest of the page inert (live regions excepted)
@@ -221,7 +247,12 @@ export function SearchPanel({
           {query.trim() === "" ? (
             <>
               <SearchGroup heading={t('discover')} rows={DISCOVER.map((row) => ({ ...row, title: rowT(row.title), hint: rowT(row.hint) }))} onClose={onClose} />
-              <SearchGroup heading={t('getStarted')} rows={START.map((row) => ({ ...row, title: rowT(row.title), hint: row.hint ? rowT(row.hint) : undefined }))} onClose={onClose} />
+              <div className="mt-2">
+                <p className="px-3 py-1 text-xs tracking-[0.08em] uppercase opacity-60">{t('getStarted')}</p>
+                {START.map((row) => (
+                  <StartPanelRow key={row.title} flow={row.flow} title={rowT(row.title)} hint={"hint" in row ? rowT(row.hint) : undefined} onClose={onClose} />
+                ))}
+              </div>
               {!locked && <div className="mt-2">
                 <p className="px-3 py-1 text-xs tracking-[0.08em] uppercase opacity-60">{t('quickActions')}</p>
                 <button
@@ -235,8 +266,8 @@ export function SearchPanel({
                   {theme === 'light' ? t('switchToDarkMode') : t('switchToLightMode')}</button>
               </div>}
             </>
-          ) : results.length > 0 ? (
-            <SearchGroup heading={t('results')} rows={results.map((post) => ({ href: `/essays/${post.slug}`, title: post.title, hint: post.dek }))} onClose={onClose} />
+          ) : resultRows.length > 0 ? (
+            <SearchGroup heading={t('results')} rows={resultRows} onClose={onClose} />
           ) : (
             <p className="px-4 py-10 text-center text-sm opacity-60">{t('nothingFoundForQuery', { query: query.trim() })}</p>
           )}

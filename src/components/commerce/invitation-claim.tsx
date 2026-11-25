@@ -11,10 +11,13 @@ import { Button } from "@/components/ui/button";
 import type { MemberCapabilities } from "@/lib/member-auth/contracts";
 import { motionTokens } from "@/lib/motion-tokens";
 import { CommerceAccountGate } from "./checkout";
+import { useAccountSheetTrigger } from "@/components/auth/use-account-sheet";
 
 /** Fragment-only bearer: strip it before any account interaction; retain only mounted memory. */
 export function InvitationClaim({ initialCapabilities, signInOffInReview }: { initialCapabilities: Readonly<MemberCapabilities>; signInOffInReview?: boolean }) {
   const t = useTranslations('Customer.components_commerce_invitation_claim');
+  // Sign in opens the in-place sheet; the href is the no-JS and modifier-click path (owner, 24 Nov).
+  const signIn = useAccountSheetTrigger();
   const [token, setToken] = useState<string | null | undefined>(undefined);
   const [claimed, setClaimed] = useState(false);
   const read = useRef(false);
@@ -37,7 +40,7 @@ export function InvitationClaim({ initialCapabilities, signInOffInReview }: { in
       <div className="mb-6 space-y-4 rounded-2xl border border-border bg-card p-5 text-card-foreground sm:p-6">
         <p className="max-w-prose text-sm leading-6 text-muted-foreground">{t('existingAccountSignIn')}</p>
         <p className="max-w-prose text-sm leading-6 text-muted-foreground">{t('socialSignUpReturn')}</p>
-        <Link href="/account" prefetch={false} className="inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-border bg-background px-5 py-3 text-center text-sm font-medium text-foreground transition-colors duration-200 hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-foreground sm:w-auto">{t('openAccountOptions')}</Link>
+        <Link href={signIn.href} onClick={signIn.onClick} prefetch={false} className="inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-border bg-background px-5 py-3 text-center text-sm font-medium text-foreground transition-colors duration-200 hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-foreground sm:w-auto">{t('openAccountOptions')}</Link>
       </div>
     }><ClaimInvitation token={token} onClaimed={() => { setToken(null); setClaimed(true); }} /></CommerceAccountGate>
   </div>;

@@ -28,6 +28,11 @@ import * as migration_20261123_030000_nfc_tap_handoffs from './20261123_030000_n
 import * as migration_20261123_040000_event_ticket_targets from './20261123_040000_event_ticket_targets';
 import * as migration_20261123_045913_product_page_fields from './20261123_045913_product_page_fields';
 
+import * as migration_20261124_120000_shared_event_ticket_binding from './20261124_120000_shared_event_ticket_binding';
+import * as migration_20261124_121000_shared_guest_cart_kind from './20261124_121000_shared_guest_cart_kind';
+import * as migration_20261124_130000_home_entry from './20261124_130000_home_entry';
+import * as migration_20261124_140000_order_refund from './20261124_140000_order_refund';
+
 export const migrations = [
   {
     up: migration_20261026_071140.up,
@@ -168,5 +173,25 @@ export const migrations = [
     up: migration_20261123_045913_product_page_fields.up,
     down: migration_20261123_045913_product_page_fields.down,
     name: '20261123_045913_product_page_fields',
+  },
+  {
+    up: migration_20261124_120000_shared_event_ticket_binding.up,
+    down: migration_20261124_120000_shared_event_ticket_binding.down,
+    name: '20261124_120000_shared_event_ticket_binding',
+  },
+  {
+    up: migration_20261124_121000_shared_guest_cart_kind.up,
+    down: migration_20261124_121000_shared_guest_cart_kind.down,
+    name: '20261124_121000_shared_guest_cart_kind',
+  },
+  {
+    up: migration_20261124_130000_home_entry.up,
+    down: migration_20261124_130000_home_entry.down,
+    name: '20261124_130000_home_entry',
+  },
+  {
+    up: migration_20261124_140000_order_refund.up,
+    down: migration_20261124_140000_order_refund.down,
+    name: '20261124_140000_order_refund',
   },
 ];

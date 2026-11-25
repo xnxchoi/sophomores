@@ -6,6 +6,8 @@
 export const privatePagePrefixes = [
   "/account",
   "/me",
+  // Sign-in (owner, 24 Nov): the email form and inline setup; signed in, the server sends it on to next.
+  "/sign-in",
   "/shop/cart",
   "/shop/checkout",
   "/shop/invitations",

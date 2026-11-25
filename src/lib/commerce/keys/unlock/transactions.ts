@@ -1,14 +1,16 @@
 import {
-  BaseError, createPublicClient, createWalletClient, isAddressEqual, keccak256, parseTransaction, TransactionNotFoundError, TransactionReceiptNotFoundError, withTimeout,
+  BaseError, createPublicClient, createWalletClient, isAddressEqual, keccak256, parseTransaction, recoverTransactionAddress, TransactionNotFoundError, TransactionReceiptNotFoundError, withTimeout,
   type Address, type Hex, type LocalAccount, type TransactionReceipt, type Transport,
 } from "viem";
-import { baseSepolia } from "viem/chains";
-import { signerAccountID, type BroadcastOutcome, type RebroadcastOutcome, type TransactionFee } from "../contracts";
+import { baseSepolia, polygon } from "viem/chains";
+import { beyondAncestryCap, signerAccountID, type BroadcastOutcome, type RebroadcastInput, type RebroadcastOutcome, type TransactionFee } from "../contracts";
+import { POLYGON_CHAIN_ID, polygonKeyGrantsLive, polygonRoleHookClear, roleHookSet } from "./polygon";
 
 /*
  * What the Unlock grant adapter and the cancel adapter share: one signer's
- * transactions on one chain. Only Base Sepolia (84532) is enabled; every other
- * chain is refused until an owner-approved slice enables it (ADR-0010).
+ * transactions on one chain. Base Sepolia (84532) is enabled; Polygon (137) is
+ * enabled only while the owner's go-live switch is on (KEY_GRANT_POLYGON_LIVE=1,
+ * ./polygon); every other chain is refused (ADR-0010).
  *
  * Nonces: one lane per signer account in this process. A signed transaction
  * holds the lane until it is broadcast or released (or `holdMs` passes, after
@@ -24,16 +26,30 @@ import { signerAccountID, type BroadcastOutcome, type RebroadcastOutcome, type T
 const SEND_RPC_TIMEOUT_MS = 5_000;
 
 /**
- * Blocks a receipt must be buried under (its own block counts as one) before
- * it is trusted, success or revert. Per chain, because reorg depth differs.
- * - 84532 Base Sepolia: OP-stack sequencer ordering; reorgs are rare and shallow.
- *   10 blocks is about 20 s.
- * - 137 Polygon PoS: set ahead of enablement (refused below). Polygon has
- *   reorged far deeper than Base: the largest publicly reported was 157 blocks
- *   (February 2023). 256 blocks (about 9 min at ~2 s) clears that with margin.
- *   The cost is a longer "key pending" after payment; the payment is unaffected.
+ * When a receipt is trusted (success or revert), per chain. In both cases its
+ * block must also be the canonical block at its height (buriedReceipt).
+ * - 84532 Base Sepolia: buried under 10 blocks (its own block counts as one).
+ *   OP-stack sequencer ordering; reorgs are rare and shallow. About 20 s.
+ * - 137 Polygon PoS: at or below the node's `finalized` block (owner, 25 Nov;
+ *   replaces a fixed 256-block wait, about 9 min). Polygon's milestones make a
+ *   block final within seconds; a finalized block cannot be reorged without
+ *   breaking consensus. The 157-block reorg of February 2023 predates
+ *   milestones. A node that cannot report `finalized` proves nothing: the
+ *   receipt stays pending (fail closed).
  */
-export const confirmationDepth: Readonly<Record<number, number>> = { 84532: 10, 137: 256 };
+export const confirmationDepth: Readonly<Record<number, number>> = { 84532: 10 };
+export const finalizedTagChains: ReadonlySet<number> = new Set([137]);
+/**
+ * How far below the settled block a receipt's block may sit and still be tied to it by parentHash links (one read per
+ * block). 256 blocks is about 8.5 min on Polygon and 8.5 min on Base Sepolia: the tick sees a receipt long before.
+ * A receipt further down stays pending for a person (deployment/KEY-GRANTS.md), never settled or reverted.
+ */
+export const ANCESTRY_CAP = 256n;
+export { beyondAncestryCap };
+/** The most a one-shot recovery reconcile may walk (scripts/key-grant-reconcile-one.ts): about 11 h on Polygon. */
+export const MAX_RECOVERY_WALK = 20_000n;
+/** A routine ancestry walk gives up (unknown, deferred) after this long, so one slow RPC cannot hold the tick. */
+export const WALK_BUDGET_MS = 120_000;
 
 /**
  * Highest `maxFeePerGas` (wei) any transaction of ours may carry, first sends
@@ -41,13 +57,46 @@ export const confirmationDepth: Readonly<Record<number, number>> = { 84532: 10, 
  * - 84532 Base Sepolia: 0.05 gwei, ten times its floor base fee of 0.005 gwei
  *   (flat at 5,000,000 wei in every block sampled on 2026-11-16). A grant's gas
  *   at the ceiling costs about 0.00001 ETH, within the throwaway signer's means.
- * Polygon (137) gets its own value with its enablement slice.
+ * - 137 Polygon PoS: 3,000 gwei. The USD 0.10 cap per transaction (ADR-0026)
+ *   divided by a grant's gas: the owner's grant used 168,913 gas (Base Sepolia's
+ *   proof the same), so at the ceiling a grant costs at most about 0.51 POL, USD
+ *   0.04 at POL USD 0.076 (24 Nov quote), and stays under USD 0.10 until POL
+ *   passes about USD 0.19. Polygon's usual base fee is tens to a few hundred
+ *   gwei, so this leaves room for spikes without letting one cost run away; a
+ *   grant above the ceiling is refused unsent (`fee_above_ceiling`). Recheck it
+ *   if POL's price moves far.
  */
-export const maxFeeCeiling: Readonly<Record<number, bigint>> = { 84532: 50_000_000n };
+export const maxFeeCeiling: Readonly<Record<number, bigint>> = { 84532: 50_000_000n, 137: 3_000_000_000_000n };
 
+// Typed as Base Sepolia's chain: both are plain EIP-1559 chains, and viem's chain union does not narrow for signing.
 const networks: Readonly<Record<number, { chain: typeof baseSepolia }>> = {
   [baseSepolia.id]: { chain: baseSepolia },
+  [polygon.id]: { chain: polygon as unknown as typeof baseSepolia },
 };
+
+/**
+ * ADR-0026: the worst case of one transaction (its gas limit times its max fee per gas, in wei) may not pass the
+ * approved budget; a transaction over it is not signed (or not re-sent) and is parked for a person.
+ * - 84532 Base Sepolia: 0.00005 ETH, a million gas at its ceiling (test funds).
+ * - 137 Polygon: the owner's approved POL budget, KEY_GRANT_POLYGON_MAX_COST_WEI, converted from USD 0.10 at approval
+ *   time (deployment/KEY-GRANTS.md). Required while Polygon is on, a positive integer no larger than 5 POL; without
+ *   it no Polygon transaction is built.
+ */
+export const MAX_POLYGON_COST_WEI = 5n * 10n ** 18n;
+export function maxCostWei(chainID: number, env: Readonly<Record<string, string | undefined>> = process.env): bigint | null {
+  if (chainID === baseSepolia.id) return 50_000_000_000_000n;
+  if (chainID !== POLYGON_CHAIN_ID) return null;
+  const value = env.KEY_GRANT_POLYGON_MAX_COST_WEI;
+  if (!value || !/^[1-9][0-9]{0,30}$/.test(value)) return null;
+  const budget = BigInt(value);
+  return budget <= MAX_POLYGON_COST_WEI ? budget : null;
+}
+
+/** Whether this process may transact on `chainID` now: Base Sepolia always; Polygon only while the switch is on. */
+export function chainEnabled(chainID: number, env: Readonly<Record<string, string | undefined>> = process.env): boolean {
+  if (chainID === POLYGON_CHAIN_ID) return polygonKeyGrantsLive(env);
+  return chainID === baseSepolia.id;
+}
 
 export type Inspection =
   | { status: "mined" | "reverted"; receipt: TransactionReceipt }
@@ -87,13 +136,80 @@ export function replacementFee(previous: TransactionFee, estimate: Fees, ceiling
   return raised(maxFeePerGas, before.maxFeePerGas) && raised(maxPriorityFeePerGas, before.maxPriorityFeePerGas) ? { maxFeePerGas, maxPriorityFeePerGas } : null;
 }
 
-export type SignerTransactionsOptions = { chainID: number; account: LocalAccount; transport?: Transport; holdMs?: number };
+/** The adapter's check that recorded bytes are the record's own operation (its lock, function and arguments). */
+export type RecordedOperation = (transaction: { to: Address; data: Hex }, record: RebroadcastInput) => boolean;
 
-/** One signer's transactions on one enabled chain. Throws for any chain but Base Sepolia. */
-export function createSignerTransactions({ chainID, account, transport, holdMs = 60_000 }: SignerTransactionsOptions) {
-  const network = Object.hasOwn(networks, chainID) ? networks[chainID] : undefined;
-  if (!network) throw new Error(`Unlock transactions are refused on chain ${chainID}: only Base Sepolia (84532) is enabled until an owner-approved slice enables more`);
-  const depth = BigInt(confirmationDepth[chainID]);
+export type SignerTransactionsOptions = {
+  chainID: number; account: LocalAccount; transport?: Transport; holdMs?: number;
+  /** Where the go-live switch is read (default: process.env). */
+  env?: Readonly<Record<string, string | undefined>>;
+  /** How far below the settled block a receipt may be tied by parentHash links: ANCESTRY_CAP routinely; more only for
+   * the one-shot recovery reconcile, never above MAX_RECOVERY_WALK. */
+  ancestryCap?: bigint;
+  /** Time budget for one ancestry walk (default WALK_BUDGET_MS; the one-shot recovery passes a larger one). */
+  walkBudgetMs?: number;
+};
+
+/** One signer's transactions on one enabled chain. Throws for a chain that is not enabled (chainEnabled). */
+export function createSignerTransactions({ chainID, account, transport, holdMs = 60_000, env = process.env, ancestryCap = ANCESTRY_CAP, walkBudgetMs = WALK_BUDGET_MS }: SignerTransactionsOptions) {
+  if (ancestryCap < 1n || ancestryCap > MAX_RECOVERY_WALK) throw new Error(`Unlock ancestry walks are bounded: 1 to ${MAX_RECOVERY_WALK} blocks`);
+  const network = Object.hasOwn(networks, chainID) && chainEnabled(chainID, env) ? networks[chainID] : undefined;
+  if (!network) throw new Error(`Unlock transactions are refused on chain ${chainID}: Base Sepolia (84532) is enabled, and Polygon (137) only while KEY_GRANT_POLYGON_LIVE=1`);
+  const budget = maxCostWei(chainID, env);
+  if (budget === null) throw new Error(`Unlock transactions are refused on chain ${chainID}: no approved fee budget (KEY_GRANT_POLYGON_MAX_COST_WEI)`);
+  const overBudget = (gas: bigint | undefined, maxFeePerGas: bigint | undefined) =>
+    gas === undefined || maxFeePerGas === undefined || maxFeePerGas > ceiling || gas * maxFeePerGas > budget;
+  const byFinality = finalizedTagChains.has(chainID);
+  const depth = BigInt(confirmationDepth[chainID] ?? 0);
+  if (!byFinality && depth < 1n) throw new Error(`Unlock transactions are refused on chain ${chainID}: no confirmation rule`);
+  const same = (a: Hex, b: Hex) => a.toLowerCase() === b.toLowerCase();
+  /** The hash of the block this node numbers `number`; null if the answer names another height or no hash. */
+  const numbered = async (number: bigint): Promise<Hex | null> => {
+    const block = await client.getBlock({ blockNumber: number });
+    return block.number === number && block.hash ? block.hash : null;
+  };
+  /**
+   * The highest block whose receipts are trusted now: the finalized block, or the head less the depth; null if none.
+   * On Polygon the `finalized` checkpoint must also be the block the node numbers at that height (Review-A, 25 Nov):
+   * a node whose finality and numbering disagree proves nothing. This catches an inconsistent RPC, not a consistently
+   * dishonest one (deployment/KEY-GRANTS.md).
+   */
+  const settledBlock = async (): Promise<{ number: bigint; hash: Hex } | null> => {
+    if (byFinality) {
+      const final = await client.getBlock({ blockTag: "finalized" });
+      if (final.number === null || !final.hash) return null;
+      const head = await client.getBlockNumber({ cacheTime: 0 });
+      if (final.number > head) return null; // a finalized block past the head is not believed
+      const atHeight = await numbered(final.number);
+      return atHeight && same(atHeight, final.hash) ? { number: final.number, hash: final.hash } : null;
+    }
+    const head = await client.getBlockNumber({ cacheTime: 0 });
+    if (head + 1n < depth) return null;
+    const hash = await numbered(head - depth + 1n);
+    return hash ? { number: head - depth + 1n, hash } : null;
+  };
+  /**
+   * The hash of the settled block's ancestor at `height`, found by walking `parentHash` links down from the settled
+   * block itself (Review-A, 25 Nov): a lower block a mixed-backend RPC serves from a fork is not on that path. Each
+   * step must name the expected height and hash. Null when the gap exceeds the cap or any link fails.
+   */
+  const ancestorAt = async (from: { number: bigint; hash: Hex }, height: bigint): Promise<Hex | null> => {
+    if (height > from.number || from.number - height > ancestryCap) return null;
+    let hash = from.hash;
+    const started = performance.now();
+    for (let number = from.number; number > height; number--) {
+      if (performance.now() - started >= walkBudgetMs) return null; // too slow this time: unknown, retried later
+      const block = await client.getBlock({ blockHash: hash });
+      if (block.number !== number || !block.hash || !same(block.hash, hash)) return null;
+      hash = block.parentHash;
+    }
+    return hash;
+  };
+  /** Whether the numbered block at the settled height is still the settled block after the other reads. */
+  const stillSettled = async (settled: { number: bigint; hash: Hex }) => {
+    const hash = await numbered(settled.number);
+    return !!hash && same(hash, settled.hash);
+  };
   const ceiling = maxFeeCeiling[chainID];
   if (!transport) throw new Error("Unlock requires an explicit transport");
   const rpc: Transport = options => transport({ ...options, timeout: SEND_RPC_TIMEOUT_MS });
@@ -153,7 +269,7 @@ export function createSignerTransactions({ chainID, account, transport, holdMs =
      */
     async sign(release: () => void, request: { to: Address; data: Hex; nonce: number; fees?: Fees }): Promise<{ txHash: Hex; raw: Hex; nonce: number; fee: TransactionFee } | "fee_above_ceiling"> {
       const prepared = await wallet.prepareTransactionRequest({ to: request.to, data: request.data, nonce: request.nonce, ...request.fees });
-      if ((prepared.maxFeePerGas ?? prepared.gasPrice ?? 0n) > ceiling) return "fee_above_ceiling";
+      if (overBudget(prepared.gas, prepared.maxFeePerGas ?? prepared.gasPrice)) return "fee_above_ceiling";
       const signed = await wallet.signTransaction(prepared);
       const sent = parseTransaction(signed);
       const txHash = keccak256(signed);
@@ -189,7 +305,27 @@ export function createSignerTransactions({ chainID, account, transport, holdMs =
      * so it can never become a second transaction. A node that already holds it
      * answers "already known"; one that has mined the nonce answers "nonce too low".
      */
-    async rebroadcast({ raw }: { raw: string }): Promise<RebroadcastOutcome> {
+    async rebroadcast(record: RebroadcastInput, recorded: RecordedOperation): Promise<RebroadcastOutcome> {
+      const { raw } = record;
+      // Fail closed before any RPC (Review-A, 24 Nov): only our own signer's transaction, on this chain, of the
+      // adapter's own operation, within the fee budget, is ever re-sent.
+      let sent: ReturnType<typeof parseTransaction>;
+      let from: Address;
+      try {
+        sent = parseTransaction(raw as Hex);
+        from = await recoverTransactionAddress({ serializedTransaction: raw as Parameters<typeof recoverTransactionAddress>[0]["serializedTransaction"] });
+      } catch { return { kind: "refused", code: "rebroadcast_unreadable" }; }
+      // Bound to its dispatch record: the bytes hash to the record's transaction and carry its nonce.
+      if (keccak256(raw as Hex).toLowerCase() !== record.txHash.toLowerCase() || sent.nonce !== record.nonce) return { kind: "refused", code: "rebroadcast_mismatch" };
+      if (sent.type !== "eip1559" || sent.chainId !== chainID || !isAddressEqual(from, account.address) || !sent.to || (sent.value ?? 0n) !== 0n
+        || !recorded({ to: sent.to, data: sent.data ?? "0x" }, record)) return { kind: "refused", code: "rebroadcast_mismatch" };
+      if (overBudget(sent.gas, sent.maxFeePerGas)) return { kind: "refused", code: "fee_above_cap" };
+      // A v15 lock's role hook can change after signing (Review-A, 25 Nov): re-read it before every Polygon re-send.
+      // Set: refused for a person. Unreadable: nothing sent, try again next tick.
+      if (chainID === POLYGON_CHAIN_ID) {
+        try { if (!(await polygonRoleHookClear(client, sent.to))) return { kind: "refused", code: roleHookSet }; }
+        catch { return { kind: "unavailable" }; }
+      }
       const hash = keccak256(raw as Hex);
       try {
         const answered = await sendRaw(raw as Hex);
@@ -211,27 +347,35 @@ export function createSignerTransactions({ chainID, account, transport, holdMs =
       transaction.release();
     },
 
-    /** Canonical reads at this hash satisfy the same depth as a settled receipt. */
+    /** Canonical reads at this hash satisfy the same rule as a settled receipt (finalized on Polygon, depth elsewhere). */
     async buriedBlockHash(): Promise<Hex | null> {
-      const head = await client.getBlockNumber({ cacheTime: 0 });
-      if (head + 1n < depth) return null;
-      const block = await client.getBlock({ blockNumber: head - depth + 1n });
-      return block.number === head - depth + 1n ? block.hash : null;
+      return (await settledBlock())?.hash ?? null;
     },
 
     /**
-     * The receipt of `txHash`, only once it is to `to` and buried at the chain's
-     * depth; `null` while that cannot be shown (not mined, too shallow, another
-     * chain, unreachable).
+     * The receipt of `txHash`, only once it is to `to`, settled by the chain's
+     * rule (finalized on Polygon, depth on Base Sepolia), and its block is the canonical block at that height (a receipt from
+     * a reorged-out block, or from a node on a stale fork, is not trusted:
+     * Review-A, 25 Nov); `null` while that cannot be shown (not mined, too
+     * shallow, not canonical, another chain, unreachable).
      */
-    async buriedReceipt(txHash: Hex, to: Address): Promise<TransactionReceipt | null> {
+    async buriedReceipt(txHash: Hex, to: Address): Promise<TransactionReceipt | null | typeof beyondAncestryCap> {
       try { if (!(await onChain())) return null; } catch { return null; }
       const seen = await inspect(txHash);
       if (seen.status !== "mined" && seen.status !== "reverted") return null;
       if (!seen.receipt.to || !isAddressEqual(seen.receipt.to, to)) return null;
-      let head: bigint;
-      try { head = await client.getBlockNumber({ cacheTime: 0 }); } catch { return null; }
-      return head - seen.receipt.blockNumber + 1n < depth ? null : seen.receipt;
+      const height = seen.receipt.blockNumber;
+      try {
+        const settled = await settledBlock();
+        if (!settled || height > settled.number) return null;
+        // The receipt's block must be the settled block or its ancestor (parentHash links, at most the cap), and
+        // the numbered block at the settled height is re-read unchanged afterwards. Any mismatch or an over-cap gap is
+        // unknown (deferred), never settled and never a revert.
+        if (settled.number - height > ancestryCap) return beyondAncestryCap; // deferred: alerted, recovered one-shot
+        const ancestor = await ancestorAt(settled, height);
+        if (!ancestor || !same(ancestor, seen.receipt.blockHash)) return null;
+        return await stillSettled(settled) ? seen.receipt : null;
+      } catch { return null; }
     },
   };
 }

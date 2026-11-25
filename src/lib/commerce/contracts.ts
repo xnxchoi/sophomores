@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { refundTermsSchema } from "./refund-policy";
 
 const identifier = z.string().trim().min(1).max(128);
 const amount = z.int().min(0).max(Number.MAX_SAFE_INTEGER);
@@ -43,6 +44,21 @@ export const shippingAddressSchema = z.strictObject({
   deliveryInstructions: z.string().trim().max(500).optional(),
 });
 export type ShippingAddress = Readonly<z.infer<typeof shippingAddressSchema>>;
+
+/** The displayed Guest quote is a precondition, never a source of price or cart authority. */
+export const guestCheckoutQuoteSchema = z.strictObject({
+  productID: z.uuid(),
+  quantity: z.int().min(1).max(MAX_ORDER_UNITS),
+  totalAmount: amount.positive(),
+  // The refund terms shown beside Pay; the server re-derives them and refuses a stale quote (Review-B r3).
+  refundTerms: refundTermsSchema,
+});
+export type GuestCheckoutQuote = Readonly<z.infer<typeof guestCheckoutQuoteSchema>>;
+
+// Version the disclosure without duplicating the checkout email in a snapshot.
+export const TICKET_EMAIL_CONSENT = "unlock-ticket-email-v1";
+export const ticketEmailConsentSchema = z.literal(TICKET_EMAIL_CONSENT).optional();
+
 
 export const purchaseChargeFields = {
   customerID: identifier, cartID: identifier, productID: identifier, eventID: identifier,

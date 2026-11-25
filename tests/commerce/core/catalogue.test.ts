@@ -28,7 +28,7 @@ test("native prepare is held before catalogue I/O even with a pre-existing varia
   } }), error => error instanceof APIError && error.status === 409 && error.message === "Variants unavailable");
 });
 
-test("CMS quote uses admission capacity and canonical price, never submitted subtotal", async () => {
+test("CMS quote uses admission capacity and canonical price, never submitted subtotal", async t => {
   const policy = { effectiveDate: "2020-01-01", sections: [{ heading: "Test policy", paragraphs: ["Test fixture, not approved public policy."] }] };
   const publication = { _status: "published", publicationApproved: true, physicalProductApproved: true, fulfillmentReady: true,
     addressRetentionApproved: true, shippingCountries: ["KR"], disclosure: { seller: { name: "Test seller", registrationNumber: "123-45-67890", representative: "Test", address: "Test address", phone: "02-1234-5678" }, policies: { terms: policy, privacy: policy, refund: policy } } };
@@ -48,6 +48,14 @@ test("CMS quote uses admission capacity and canonical price, never submitted sub
   assert.equal(snapshot.unitAmount, 1000);
   assert.equal(snapshot.eventVersion, "v2");
   assert.equal(snapshot.accountLimit, offer?.maximumQuantity);
+  // Even an exact preflight match cannot turn a canonical membership offer into a Guest offer.
+  for (const [key, value] of Object.entries({ UNLOCK_SHARED_TICKET_EVENT_ID: "e", UNLOCK_SHARED_TICKET_GUEST_PRODUCT_ID: "p" })) {
+    const previous = process.env[key];
+    t.after(() => { if (previous === undefined) delete process.env[key]; else process.env[key] = previous; });
+    process.env[key] = value;
+  }
+  await assert.rejects(buildCommerceSnapshot({ req, cart: { ...cart, items: [{ product: "p", quantity: 2, ticketKind: "shared-event-guest" }] },
+    shippingAddress: snapshot.shippingAddress }), /Offer is not available/);
   await assert.rejects(buildCommerceSnapshot({ req, cart: { ...cart, customer: "other" }, shippingAddress: snapshot.shippingAddress }));
   await assert.rejects(buildCommerceSnapshot({ req, cart: { ...cart, items: [{ product: "p", quantity: 2 }] },
     shippingAddress: snapshot.shippingAddress }), /Only one unit/);

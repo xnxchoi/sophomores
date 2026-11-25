@@ -57,6 +57,14 @@ TDD/coverage/test-only, blanket isolation and project-level proposal-approval ho
   aggregate ceiling. Browser/MCP/container memory is outside the child process
   group: account for it separately and do not start extra browser instances or
   concurrent agent workloads to bypass the lock.
+- **Memory pressure (owner rule, 2026-11-24).** Owner's choice, verbatim: "Allow
+  light runs at WARNING". The guard reads `kern.memorystatus_vm_pressure_level`:
+  at NORMAL (1) every run proceeds as before; at WARNING (2) only light runs
+  (`--max-gib` 4 or less: tests, type checks, previews) proceed, and only while
+  at least 12 GiB is available; builds wait for NORMAL; at CRITICAL (4) every run
+  is refused, or stopped within a second if already running. A preview must pass
+  `--max-gib 4` or less to qualify at WARNING. The 10 GiB headroom floor and the
+  other limits are unchanged.
 - Completed agents can leave MCP/repl servers alive outside the job supervisor.
   Audit the full Codex CLI descendant tree after delegation, not just the preview
   and browser. Reuse agents where practical and retire only verified idle,

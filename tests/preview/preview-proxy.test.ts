@@ -5,6 +5,8 @@ import { join } from "node:path";
 import { test } from "node:test";
 import { NextRequest } from "next/server";
 import { proxy } from "../../src/proxy";
+import type { PayloadRequest } from "payload";
+import { createAdapterEndpoints } from "@/lib/commerce/portone/endpoints";
 import { COOKIE_NAME, issueSession, validateConfig } from "@/lib/preview-auth/session";
 
 const config = validateConfig({ origin: "https://preview.sophomores.co", username: "team", passwordSalt: "ab".repeat(16), passwordHash: "cd".repeat(64), signingSecret: "ef".repeat(32) });
@@ -114,6 +116,75 @@ test("private proxy fails closed across documents, APIs, compiled assets and spo
       const document = call(path, { accept: "text/html" });
       assert.equal(document.status, 303, path);
       assert.equal(document.headers.get("location"), `${config.origin}/login`);
+    }
+  });
+  await t.test("PortOne's webhook POST passes the gate without a cookie; nothing else near it does", async () => {
+    // Launch blocker (coordinator, 24 Nov): PortOne's server-to-server webhook carries no preview cookie.
+    const webhook = "/api/payments/portone/webhooks";
+    const passed = call(webhook, { "content-type": "application/json" }, "POST");
+    assert.equal(passed.headers.get("x-middleware-next"), "1", "reaches the handler");
+    assert.match(passed.headers.get("cache-control") ?? "", /no-store/);
+    for (const method of ["GET", "HEAD", "PUT", "PATCH", "DELETE", "OPTIONS"]) {
+      assert.equal(call(webhook, {}, method).status, 401, `${method} ${webhook}`);
+    }
+    for (const path of [
+      "/api/payments/portone/webhooks/", "/api/payments/portone/webhooks/x", "/api/payments/portone/webhook",
+      "/api/payments/portone/webhooksx", "/api/payments/portone/WEBHOOKS", "/api/payments/portone/%77ebhooks",
+      "/api/payments/portone/webhooks?x=1", "/api/payments/portone/confirm-order", "/api/payments/portone/initiate",
+      "/api/payments/portone", "/payments/portone/webhooks", "/api/users"
+    ]) {
+      assert.equal(call(path, {}, "POST").status, 401, `POST ${path}`);
+    }
+    assert.equal(call(webhook, { rsc: "1" }, "POST").status, 401, "an RSC request is not a webhook");
+    // Past the gate, only a PortOne signature counts: an unsigned POST is refused by the handler itself.
+    const handler = createAdapterEndpoints({ config: { mode: "test", origin: "https://preview.sophomores.co", storeId: "store",
+      channelKey: "channel", apiSecret: "api", webhookSecret: "webhook", localKpnTestCheckout: true } })
+      .find((endpoint) => endpoint.path === "/webhooks" && endpoint.method === "post");
+    assert.ok(handler);
+    const unsigned = Object.assign(new Request(`https://preview.sophomores.co${webhook}`, { method: "POST",
+      headers: { "content-type": "application/json" }, body: "{}" }), { payload: {} }) as unknown as PayloadRequest;
+    assert.equal((await handler.handler(unsigned)).status, 409);
+    const forged = Object.assign(new Request(`https://preview.sophomores.co${webhook}`, { method: "POST",
+      headers: { "content-type": "application/json", "webhook-id": "x", "webhook-timestamp": String(Math.floor(Date.now() / 1000)),
+        "webhook-signature": "v1,AAAA" }, body: "{}" }), { payload: {} }) as unknown as PayloadRequest;
+    assert.equal((await handler.handler(forged)).status, 409, "a forged signature is refused by the installed SDK");
+  });
+  await t.test("Apple's form POST return passes the gate without a cookie; nothing else near it does", async () => {
+    // 2am blocker (coordinator, 24 Nov): Apple returns by cross-site form POST, which leaves off the Lax preview cookie.
+    const callback = "/api/auth/callback/apple";
+    const passed = call(callback, { "content-type": "application/x-www-form-urlencoded" }, "POST");
+    assert.equal(passed.headers.get("x-middleware-next"), "1", "reaches the handler");
+    assert.match(passed.headers.get("cache-control") ?? "", /no-store/);
+    // The GET it turns into stays behind the gate (the browser sends the cookie on that same-site navigation).
+    for (const method of ["GET", "HEAD", "PUT", "PATCH", "DELETE", "OPTIONS"]) {
+      assert.equal(call(callback, {}, method).status, 401, `${method} ${callback}`);
+    }
+    for (const path of [
+      "/api/auth/callback/apple/", "/api/auth/callback/apple/x", "/api/auth/callback/applex", "/api/auth/callback/APPLE",
+      "/api/auth/callback/%61pple", "/api/auth/callback/apple?state=x", "/api/auth/callback/google", "/api/auth/callback/kakao",
+      "/api/auth/callback", "/api/auth/sign-in/social", "/auth/callback/apple"
+    ]) {
+      assert.equal(call(path, {}, "POST").status, 401, `POST ${path}`);
+    }
+    assert.equal(call(callback, { rsc: "1" }, "POST").status, 401, "an RSC request is not Apple's return");
+    // Past the gate, Better Auth's own handler: the POST only redirects to the GET, and the GET refuses a missing or
+    // unknown state before any token exchange.
+    const { betterAuth } = await import("better-auth");
+    const { memoryAdapter } = await import("better-auth/adapters/memory");
+    const auth = betterAuth({ baseURL: "https://preview.sophomores.co", secret: "ab".repeat(32), logger: { disabled: true },
+      database: memoryAdapter({ user: [], session: [], account: [], verification: [] }),
+      socialProviders: { apple: { clientId: "co.sophomores.test", clientSecret: "secret" } } });
+    const form = (body: string) => auth.handler(new Request(`https://preview.sophomores.co${callback}`, { method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded", origin: "https://appleid.apple.com" }, body }));
+    const redirected = await form("state=unknown&code=c");
+    assert.equal(redirected.status, 302);
+    const next = new URL(redirected.headers.get("location") ?? "");
+    assert.deepEqual([next.pathname, next.searchParams.get("state"), next.searchParams.get("code")], [callback, "unknown", "c"]);
+    const back = (query: string) => auth.handler(new Request(`https://preview.sophomores.co${callback}?${query}`));
+    for (const [query, error] of [["state=unknown&code=c", "state_mismatch"], ["code=c", "state_not_found"]] as const) {
+      const refused = await back(query);
+      assert.equal(refused.status, 302, query);
+      assert.equal(new URL(refused.headers.get("location") ?? "", "https://preview.sophomores.co").searchParams.get("error"), error, query);
     }
   });
   await t.test("forged trust and middleware headers do not confer authentication", () => {

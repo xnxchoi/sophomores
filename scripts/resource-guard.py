@@ -22,6 +22,8 @@ import tempfile
 import time
 
 GIB = 1024**3
+LIGHT_MAX_BYTES = 4 * GIB
+WARNING_LIGHT_MIN_AVAILABLE = 12 * GIB
 ROOT = Path(__file__).resolve().parent.parent
 PROBE_TIMEOUT = 2.0
 
@@ -79,12 +81,18 @@ def parse_vm_stat(value):
                       for name in ('free', 'inactive', 'speculative'))
 
 
-def available_memory(run_probe=probe):
+def available_memory(run_probe=probe, light=False):
     if sys.platform == 'darwin':
         # Kernel pressure level: normal=1, warning=2, critical=4.
-        if int(run_probe('memory_pressure', ['sysctl', '-n', 'kern.memorystatus_vm_pressure_level']).strip()) != 1:
-            return 0
-        return parse_vm_stat(run_probe('available_memory', ['vm_stat']))
+        level = int(run_probe('memory_pressure', ['sysctl', '-n', 'kern.memorystatus_vm_pressure_level']).strip())
+        if level == 1:
+            return parse_vm_stat(run_probe('available_memory', ['vm_stat']))
+        # Owner, 2026-11-24: 'Allow light runs at WARNING'. A light run (cap <= 4 GiB) may
+        # continue at WARNING while at least 12 GiB is available; builds and CRITICAL stop.
+        if level == 2 and light:
+            available = parse_vm_stat(run_probe('available_memory', ['vm_stat']))
+            return available if available >= WARNING_LIGHT_MIN_AVAILABLE else 0
+        return 0
     if sys.platform.startswith('linux'):
         value = Path('/proc/meminfo').read_text()
         return int(re.search(r'^MemAvailable:\s+(\d+)', value, re.M)[1]) * 1024
@@ -301,16 +309,16 @@ def monitor(command, log, limit, floor, timeout, output_limit, snapshot, headroo
             raise SamplingStopped('timeout', 124)
         return remaining_time
 
-    def sample(reader, default, phase):
+    def sample(reader, default, phase, **options):
         if reader is not default:
             return reader()
-        return reader(lambda label, cmd: probes.run(phase, label, cmd, before_retry=check_stop))
+        return reader(lambda label, cmd: probes.run(phase, label, cmd, before_retry=check_stop), **options)
 
     def read_processes(phase):
         return sample(snapshot, process_snapshot, phase)
 
     def read_headroom(phase):
-        return sample(headroom, available_memory, phase)
+        return sample(headroom, available_memory, phase, light=limit <= LIGHT_MAX_BYTES)
 
     # mkstemp uses O_EXCL and 0600. --log is a prefix, never an overwrite target.
     fd, actual = tempfile.mkstemp(prefix=log.name + '.', suffix='.log', dir=log.parent)

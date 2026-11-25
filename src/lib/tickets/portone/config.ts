@@ -19,6 +19,16 @@ export const reviewedTestChannel: ReviewedTestChannel | null = Object.freeze({
   channelKey: 'channel-key-23c1cd59-1efd-42b7-b3ec-192f1c7bd221',
 })
 
+/**
+ * The sandbox runtime (PREVIEW_RUNTIME set) pays only on the TEST store and channel pinned separately in
+ * PORTONE_SANDBOX_TEST_STORE_ID and PORTONE_SANDBOX_TEST_CHANNEL_KEY: the configured pair must equal them.
+ */
+export function isPinnedSandboxChannel(channel: { storeId?: string; channelKey?: string }, env: Environment = process.env): boolean {
+  const storeId = env.PORTONE_SANDBOX_TEST_STORE_ID
+  const channelKey = env.PORTONE_SANDBOX_TEST_CHANNEL_KEY
+  return Boolean(storeId && channelKey) && channel.storeId === storeId && channel.channelKey === channelKey
+}
+
 /** Unset/`disabled` is off; the legacy `sandbox` value means `test`. Unknown values throw. */
 export function loadPaymentMode(env: Environment = process.env): PaymentMode | null {
   const value = env.PORTONE_PAYMENT_MODE

@@ -1,0 +1,238 @@
+import assert from "node:assert/strict";
+import { registerHooks } from "node:module";
+import { after, before, test } from "node:test";
+import type { MemberAuthConfig } from "@/lib/member-auth/config";
+
+// Review-A, 24 Nov: Better Auth's OAuth failure redirect appends the provider's error and error_description verbatim
+// to the pinned callback URL. The FIRST Location that leaves the server must already be clean, on both handler paths.
+const origin = "http://localhost:3240";
+const diagnostic = "Upstream said member@example.invalid at db.internal";
+const secret = "t".repeat(64);
+// A synthetic Apple first-time profile (Apple sends it once, as JSON, with the first authorization).
+const profile = JSON.stringify({ name: { firstName: "Synthetic", lastName: "Member" }, email: "synthetic.member@example.invalid" });
+const names = JSON.stringify({ name: { firstName: "Synthetic", lastName: "Member" } });
+const key = "__authCallbackRedirectTest";
+const state = globalThis as unknown as Record<string, { handler: (request: Request) => Promise<Response> } | undefined>;
+const moduleUrl = (source: string) => `data:text/javascript,${encodeURIComponent(source)}`;
+let hooks: { deregister(): void } | undefined;
+let route: typeof import("@/app/api/auth/[...all]/route");
+let local: typeof import("@/lib/member-auth/server");
+
+function providerFailure(location: string): Response {
+  const headers = new Headers({ location });
+  headers.append("set-cookie", "better-auth.state=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax");
+  headers.append("set-cookie", "better-auth.pkce=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax");
+  return new Response(null, { status: 302, headers });
+}
+const failure = (base: string, error: string) =>
+  `${base}${base.includes("?") ? "&" : "?"}${new URLSearchParams({ error, error_description: diagnostic })}`;
+const callback = () => new Request(`${origin}/api/auth/callback/google?code=provider-code&state=s`, { headers: { host: "localhost:3240" } });
+
+const options = { baseURL: origin, secret: secret as string | undefined };
+
+before(async () => {
+  (globalThis as unknown as Record<string, unknown>)[`${key}Options`] = options;
+  hooks = registerHooks({
+    resolve(specifier, context, nextResolve) {
+      if (specifier === "server-only") return { url: moduleUrl("export {};"), shortCircuit: true };
+      if ((context.parentURL ?? "").includes("/app/api/auth/")) {
+        if (specifier === "@/payload") return { url: moduleUrl(`export async function getPayload(){ return { betterAuth: globalThis.${key} }; }`), shortCircuit: true };
+        if (specifier === "@/lib/auth/options") return { url: moduleUrl(`export const betterAuthOptions = globalThis.${key}Options;`), shortCircuit: true };
+      }
+      return nextResolve(specifier, context);
+    },
+    load(url, context, nextLoad) {
+      if (url.startsWith("data:text/javascript,")) return { format: "module", source: decodeURIComponent(url.slice("data:text/javascript,".length)), shortCircuit: true };
+      return nextLoad(url, context);
+    }
+  });
+  route = await import("@/app/api/auth/[...all]/route");
+  local = await import("@/lib/member-auth/server");
+});
+after(() => { hooks?.deregister(); delete state[key]; delete (globalThis as unknown as Record<string, unknown>)[`${key}Options`]; });
+
+const config: MemberAuthConfig = { mode: "local", origin, databaseUrl: "postgres://localhost/sophomores_verification_test_auth",
+  secret: "b".repeat(64), verificationSecret: "a".repeat(64), rpId: "localhost", google: null, mail: null };
+const paths = {
+  payload: async (response: Response) => { state[key] = { handler: async () => response }; return route.GET(callback()); },
+  local: async (response: Response) => local.handleMemberAuthRequest({ handler: async () => response }, config, callback())
+};
+
+for (const [name, handle] of Object.entries(paths)) {
+  test(`${name} handler: the first Location keeps only a listed next and a recognised code, with status and cookies`, async () => {
+    for (const [pinned, error, expected] of [
+      ["/sign-in?next=/me/orders", "access_denied", "/sign-in?next=/me/orders&error=access_denied"],
+      ["/sign-in?next=/me/orders", "provider exploded", "/sign-in?next=/me/orders&error=unknown"],
+      [`${origin}/sign-in?next=/me`, "access_denied", `${origin}/sign-in?next=/me&error=access_denied`],
+      ["/account", "unable_to_link_account", "/account?error=unable_to_link_account"],
+      ["/tickets", "access_denied", "/tickets?error=access_denied"],
+      // Null-prototype cleanup: these keys are ordinary keys and are dropped (Review-A LOW).
+      ["/sign-in?next=/me&__proto__=x&constructor=y", "access_denied", "/sign-in?next=/me&error=access_denied"]
+    ] as const) {
+      const response = await handle(providerFailure(failure(pinned, error)));
+      assert.equal(response.status, 302, pinned);
+      const location = response.headers.get("location") ?? "";
+      assert.equal(location, expected, pinned);
+      assert.equal(/member@example|db\.internal|error_description|Upstream|__proto__|constructor/.test(location), false, location);
+      assert.equal(response.headers.getSetCookie().length, 2, "every Set-Cookie survives");
+    }
+  });
+
+  test(`${name} handler: success, provider and already-clean redirects are left exactly as they are`, async () => {
+    for (const location of ["/sign-in?next=/me", "/account/continue", "/tickets", "https://accounts.google.com/o/oauth2/v2/auth?client_id=x&state=s",
+      "/api/auth/error?error=state_mismatch"]) {
+      const response = await handle(providerFailure(location));
+      assert.equal(response.headers.get("location"), location);
+      assert.equal(response.headers.getSetCookie().length, 2);
+    }
+  });
+}
+
+// Review-A, 24 Nov: Apple's form_post. Better Auth first turns the POST into a same-origin GET to our own
+// /api/auth/callback/apple, copying every field (error_description included) into that Location.
+test("a redirect to our own provider callback keeps only what Better Auth reads, with the error as a recognised code", async () => {
+  const hop = `${origin}/api/auth/callback/apple?${new URLSearchParams({ code: "c", state: "s", user: '{"name":{"firstName":"A"}}', iss: "https://appleid.apple.com",
+    error: "user_cancelled_authorize", error_description: diagnostic })}&__proto__=x&constructor=y`;
+  for (const handle of Object.values(paths)) {
+    const response = await handle(providerFailure(hop));
+    const location = new URL(response.headers.get("location") ?? "", origin);
+    assert.equal(response.status, 302);
+    assert.equal(location.pathname, "/api/auth/callback/apple");
+    // Apple's profile never stays in a URL, even on an error (Review-A, 24 Nov).
+    assert.deepEqual([...location.searchParams.keys()].sort(), ["code", "error", "iss", "state"]);
+    assert.equal(location.searchParams.get("error"), "user_cancelled_authorize");
+    assert.equal(location.searchParams.get("state"), "s");
+    assert.equal(/member@example|db\.internal|error_description|__proto__|constructor/.test(location.href), false, location.href);
+    assert.equal(response.headers.getSetCookie().length, 2);
+  }
+  const clean = `${origin}/api/auth/callback/apple?code=c&state=s`;
+  assert.equal((await paths.local(providerFailure(clean))).headers.get("location"), clean, "a clean hop is untouched");
+});
+
+test("payload handler: Better Auth's real form_post conversion leaves without the provider's description", async () => {
+  const { betterAuth } = await import("better-auth");
+  const { memoryAdapter } = await import("better-auth/adapters/memory");
+  const auth = betterAuth({
+    baseURL: origin, secret: "s".repeat(64), database: memoryAdapter({ user: [], session: [], account: [], verification: [] }),
+    trustedOrigins: [origin, "https://appleid.apple.com"], socialProviders: { apple: { clientId: "fixture", clientSecret: "fixture" } }
+  });
+  state[key] = { handler: auth.handler };
+  for (const [error, expected] of [["user_cancelled_authorize", "user_cancelled_authorize"], ["invalid_request for member@example.invalid", "unknown"]] as const) {
+    const body = new URLSearchParams({ state: "opaque-state", error, error_description: diagnostic, user: profile });
+    const response = await route.POST(new Request(`${origin}/api/auth/callback/apple`, {
+      method: "POST", headers: { "content-type": "application/x-www-form-urlencoded", origin: "https://appleid.apple.com" }, body
+    }));
+    assert.equal(response.status, 302, error);
+    const location = new URL(response.headers.get("location") ?? "", origin);
+    assert.equal(location.pathname, "/api/auth/callback/apple", "the POST became Better Auth's own GET hop");
+    assert.equal(location.searchParams.get("error"), expected);
+    assert.equal(location.searchParams.get("state"), "opaque-state");
+    assert.equal(location.searchParams.has("error_description"), false);
+    assert.equal(location.searchParams.has("user"), false, "an error drops the profile");
+    assert.equal(response.headers.getSetCookie().some((cookie) => cookie.startsWith("sphmrs-apple-profile=")), false, "and stashes nothing");
+    assert.equal(/member@example|db\.internal|Upstream|Synthetic/.test(location.href), false, location.href);
+  }
+});
+
+test("payload handler: a successful Apple form_post moves the profile into a sealed cookie, and the GET hands it back to Better Auth", async () => {
+  const { betterAuth } = await import("better-auth");
+  const { memoryAdapter } = await import("better-auth/adapters/memory");
+  state[key] = { handler: betterAuth({
+    baseURL: origin, secret: "s".repeat(64), database: memoryAdapter({ user: [], session: [], account: [], verification: [] }),
+    trustedOrigins: [origin, "https://appleid.apple.com"], socialProviders: { apple: { clientId: "fixture", clientSecret: "fixture" } }
+  }).handler };
+  const posted = await route.POST(new Request(`${origin}/api/auth/callback/apple`, {
+    method: "POST", headers: { "content-type": "application/x-www-form-urlencoded", origin: "https://appleid.apple.com" },
+    body: new URLSearchParams({ state: "opaque-state", code: "authorization-code", user: profile })
+  }));
+  assert.equal(posted.status, 302);
+  const hop = new URL(posted.headers.get("location") ?? "", origin);
+  assert.equal(hop.pathname, "/api/auth/callback/apple");
+  assert.deepEqual([...hop.searchParams.keys()].sort(), ["code", "state"], "the profile left the URL");
+  assert.equal(/Synthetic|example\.invalid/.test(hop.href), false);
+  const stash = posted.headers.getSetCookie().find((cookie) => cookie.startsWith("sphmrs-apple-profile="));
+  assert.ok(stash, "the profile is stashed");
+  assert.match(stash, /; Path=\/api\/auth\/callback\/apple; Max-Age=600; HttpOnly; SameSite=Lax/);
+  assert.equal(posted.headers.get("cache-control"), "private, no-store");
+  assert.equal(/Synthetic|example\.invalid|firstName/.test(stash), false, "sealed, not readable");
+  const sealed = stash.split(";")[0];
+
+  // The GET hop: Better Auth sees the profile on the request the route builds; the browser's URL never had it.
+  let seen: URL | undefined;
+  state[key] = { handler: async (request) => { seen = new URL(request.url); return new Response(null, { status: 302, headers: { location: "/sign-in?next=/me" } }); } };
+  const got = await route.GET(new Request(hop, { headers: { cookie: sealed } }));
+  assert.equal(seen?.searchParams.get("user"), names, "Apple sign-up names are not lost, and only the names are kept");
+  assert.equal(seen?.searchParams.get("state"), "opaque-state");
+  assert.equal(got.headers.get("location"), "/sign-in?next=/me");
+  assert.ok(got.headers.getSetCookie().some((cookie) => cookie.startsWith("sphmrs-apple-profile=;") && cookie.includes("Max-Age=0")), "the stash is cleared");
+  assert.equal(got.headers.get("cache-control"), "private, no-store");
+
+  // Bound to its state and sealed: another state, a tampered value, or an error hop restores nothing (and clears it).
+  for (const [url, cookie] of [[`${origin}/api/auth/callback/apple?code=c&state=another-state`, sealed],
+    [hop.href, `${sealed.slice(0, -4)}AAAA`], [`${hop.href}&error=access_denied`, sealed]] as const) {
+    seen = undefined;
+    const response = await route.GET(new Request(url, { headers: { cookie } }));
+    assert.equal((seen as URL | undefined)?.searchParams.has("user"), false, url);
+    assert.ok(response.headers.getSetCookie().some((value) => value.startsWith("sphmrs-apple-profile=;")), "cleared");
+  }
+});
+
+// Review-A r7: only the bounded name is sealed, the cookie is capped, and the stash is cleared on every path.
+async function postApple(user: string): Promise<Response> {
+  state[key] = { handler: async () => new Response(null, { status: 302,
+    headers: { location: `/api/auth/callback/apple?${new URLSearchParams({ code: "authorization-code", state: "opaque-state", user })}` } }) };
+  return route.POST(new Request(`${origin}/api/auth/callback/apple`, { method: "POST" }));
+}
+async function restoredUser(response: Response): Promise<string | null | undefined> {
+  const sealed = response.headers.getSetCookie().find((cookie) => cookie.startsWith("sphmrs-apple-profile="))?.split(";")[0];
+  if (!sealed) return undefined;
+  let seen: string | null = null;
+  state[key] = { handler: async (request) => { seen = new URL(request.url).searchParams.get("user"); return new Response(null, { status: 302, headers: { location: "/shop" } }); } };
+  await route.GET(new Request(`${origin}/api/auth/callback/apple?code=authorization-code&state=opaque-state`, { headers: { cookie: sealed } }));
+  return seen;
+}
+
+test("payload handler: the stash keeps only the first and last name, each capped at 64 characters", async () => {
+  const long = JSON.stringify({ name: { firstName: "A".repeat(200), lastName: 7 }, email: "synthetic.member@example.invalid", extra: "x".repeat(4000) });
+  const response = await postApple(long);
+  const stash = response.headers.getSetCookie().find((cookie) => cookie.startsWith("sphmrs-apple-profile="));
+  assert.ok(stash && stash.length <= 1024, "a small cookie, however large Apple's JSON");
+  assert.equal(await restoredUser(response), JSON.stringify({ name: { firstName: "A".repeat(64), lastName: "" } }));
+});
+
+test("payload handler: no usable name, or a cookie over 1 KB, stashes nothing and sign-in goes on without the name", async () => {
+  const control = "\u0001".repeat(64);
+  for (const user of ["{", JSON.stringify({ email: "synthetic.member@example.invalid" }), JSON.stringify({ name: { firstName: " " } }),
+    JSON.stringify({ name: { firstName: control, lastName: control } })]) {
+    const response = await postApple(user);
+    const location = new URL(response.headers.get("location") ?? "", origin);
+    assert.equal(response.status, 302, user);
+    assert.deepEqual([...location.searchParams.keys()].sort(), ["code", "state"], "the hop goes on, without the profile");
+    assert.equal(response.headers.getSetCookie().some((cookie) => cookie.startsWith("sphmrs-apple-profile=")), false, user.slice(0, 40));
+  }
+});
+
+test("payload handler: a GET carrying the stash clears it, private and no-store, on failure, without a handler and without a secret", async () => {
+  const get = () => route.GET(new Request(`${origin}/api/auth/callback/apple?code=c&state=opaque-state`, { headers: { cookie: "sphmrs-apple-profile=x.y" } }));
+  const cleared = (response: Response) => {
+    assert.ok(response.headers.getSetCookie().some((cookie) => cookie.startsWith("sphmrs-apple-profile=;") && cookie.includes("Max-Age=0")), "cleared");
+    assert.equal(response.headers.get("cache-control"), "private, no-store");
+  };
+  state[key] = { handler: async () => { throw new Error("init failed for member@example.invalid"); } };
+  cleared(await get());
+  delete state[key];
+  cleared(await get());
+  options.secret = undefined;
+  try {
+    let seen: string | null = "unset";
+    state[key] = { handler: async (request) => { seen = new URL(request.url).searchParams.get("user"); return new Response(null, { status: 302, headers: { location: "/shop" } }); } };
+    cleared(await get());
+    assert.equal(seen, null, "nothing is restored without a secret");
+  } finally {
+    options.secret = secret;
+  }
+  // A request without the stash is left alone.
+  state[key] = { handler: async () => new Response(null, { status: 302, headers: { location: "/shop" } }) };
+  const plain = await route.GET(new Request(`${origin}/api/auth/callback/apple?code=c&state=opaque-state`));
+  assert.equal(plain.headers.getSetCookie().length, 0);
+});

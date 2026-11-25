@@ -13,6 +13,7 @@ import type { Notification } from "@/lib/content/slots";
 import { cn } from "@/lib/utils";
 import { useRPStore } from "@/providers/RP_Pro";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
+import { reachableHref } from "@/lib/content/essays";
 
 // The Hideaway's per-view stagger (Controlbar/views.tsx, SideDrawer/index.tsx). Low and quick: the drawer
 // itself carries the larger opening motion.
@@ -103,13 +104,11 @@ export function NotificationsView({ notifications }: { notifications: Notificati
         </m.div>
       ) : (
         <m.ul className="flex-1 overflow-y-auto px-3 pb-4">
-          {items.map((item) => (
-            <m.li key={item.id} variants={itemVariants} className="flex items-start">
-              <Link
-                href={item.href || "/essays"}
-                onClick={close}
-                className="flex min-w-0 flex-1 items-start gap-3 rounded-xl px-3 py-3 touch-manipulation transition-colors focus-visible:bg-foreground/[0.05] active:bg-foreground/[0.05]"
-              >
+          {items.map((item) => {
+            // A row whose link leads into a section the site has switched off (src/lib/content/essays.ts) shows as text.
+            const href = reachableHref(item.href || "/essays");
+            const copy = (
+              <>
                 <span
                   aria-hidden="true"
                   className={cn("mt-2 inline-block size-2 flex-none rounded-full", item.read ? "bg-foreground/15" : "bg-foreground")}
@@ -120,7 +119,21 @@ export function NotificationsView({ notifications }: { notifications: Notificati
                     <span className="line-clamp-2 font-sans text-[13px] leading-snug text-foreground/65">{item.body}</span>
                   )}
                 </span>
-              </Link>
+              </>
+            );
+            return (
+            <m.li key={item.id} variants={itemVariants} className="flex items-start">
+              {href ? (
+                <Link
+                  href={href}
+                  onClick={close}
+                  className="flex min-w-0 flex-1 items-start gap-3 rounded-xl px-3 py-3 touch-manipulation transition-colors focus-visible:bg-foreground/[0.05] active:bg-foreground/[0.05]"
+                >
+                  {copy}
+                </Link>
+              ) : (
+                <div className="flex min-w-0 flex-1 items-start gap-3 px-3 py-3">{copy}</div>
+              )}
               {/* The site inbox marks one at a time (as the header's list does); The Hideaway's Mark all has
                   no counterpart there. */}
               {inbox.connected && !item.read && (
@@ -134,14 +147,17 @@ export function NotificationsView({ notifications }: { notifications: Notificati
                 </button>
               )}
             </m.li>
-          ))}
+            );
+          })}
         </m.ul>
       )}
 
-      <m.div variants={itemVariants} className="px-3 pb-3">
-        {/* Where the header's list sends See All today. */}
-        <MoreLink href="/essays" label={t("seeAll")} onSelect={close} />
-      </m.div>
+      {/* Where the header's list sends See All today; hidden while that section is switched off. */}
+      {reachableHref("/essays") && (
+        <m.div variants={itemVariants} className="px-3 pb-3">
+          <MoreLink href="/essays" label={t("seeAll")} onSelect={close} />
+        </m.div>
+      )}
     </m.div>
   );
 }

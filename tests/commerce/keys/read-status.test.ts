@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { PayloadRequest } from "payload";
-import { readMemberKeyStatus } from "../../../src/lib/commerce/keys/read";
+import { readMemberGrantStatus } from "../../../src/lib/commerce/keys/read";
 
 // S0c-2 (Review-A HARDEN): the beneficiary comes from the verified principal on req, never an argument.
 function fixture(user: unknown) {
@@ -15,14 +15,14 @@ function fixture(user: unknown) {
 
 test("key status is read for the signed-in member only, state field only", async () => {
   const { req, filters } = fixture({ id: "member-a", collection: "users" });
-  await readMemberKeyStatus(req);
+  await readMemberGrantStatus(req);
   assert.deepEqual(filters, [[{ beneficiaryUser: { equals: "member-a" } }, { state: true }]]);
 });
 
 test("no verified users principal, no read", async () => {
   for (const user of [undefined, { id: "staff", collection: "admins" }]) {
     const { req, filters } = fixture(user);
-    await assert.rejects(readMemberKeyStatus(req), /Member required/);
+    await assert.rejects(readMemberGrantStatus(req), /Member required/);
     assert.deepEqual(filters, []);
   }
 });

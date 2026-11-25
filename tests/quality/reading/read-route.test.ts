@@ -12,7 +12,8 @@ test('generated reading, notification and search links target essays without ren
     assert.ok(!/["'`]\/read(?:ing)?(?:[\/"'`])/.test(read(file)), file);
   }
   const panels = read('src/components/shell/header-panels.tsx');
-  assert.match(panels, /href=\{item\.href \?\? "\/essays"\}/);
+  // Through the essays switch (src/lib/content/essays.ts): the link shows only while essays are on.
+  assert.match(panels, /reachableHref\(item\.href \?\? "\/essays"\)/);
   assert.match(panels, /<Link href="\/essays"[^>]*>[\s\S]*?t\('seeAll'\)/);
   assert.equal(messages.Customer.components_shell_header_panels.seeAll, 'See All');
   assert.match(panels, /\{ href: "\/essays", title: "reading", hint: "essays" \}/);

@@ -1,13 +1,17 @@
 import { APIError, type PayloadRequest } from 'payload'
 import { relationshipID, paymentTransactionOutcome } from '../_shared/transaction'
 import { adapterConfig, assertPrincipalUnchanged, readOwnedPortOneTransaction, readPortOneTransaction, readSettlementProof, type AdapterDependencies } from './adapter'
-import { admitReconciliation, endReconciliation, hasReconciliationOwner, recordReconciliationEvent, readReconciliationStart, recordPaidReviewCase, hasPaidReviewCase, isPaidReplayBeforeCancellation, type ReconciliationKind } from './accounting'
+import { admitReconciliation, endReconciliation, hasReconciliationOwner, recordReconciliationEvent, readReconciliationStart, recordPaidReviewCase, hasPaidReviewCase, isPaidReplayBeforeCancellation, isClosedByVerifiedCancellation, type ReconciliationKind } from './accounting'
 import { isVerifiedCommerceWebhook, verifiedCommerceEvent } from './endpoints'
 import { assertPaymentRiskReviewed, flushDeferredPaymentRisk, PaymentReviewRequired } from './review'
 import { projectLocalResult } from './result'
 import { reconciliationPolicy } from './policy'
 import { optionalRelationshipID } from '../purchase-snapshot'
 
+/** The financial outcome may have committed but its completion is unrecorded: PortOne must redeliver (503, never 409). */
+export class ReconciliationCompletionUnknown extends APIError {
+  constructor() { super('Reconciliation completion unknown', 503) }
+}
 const reply = (outcome: string, status = 202, extra = {}) => Response.json({ outcome, ...extra }, { status,
   headers: { 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff' } })
 
@@ -76,6 +80,8 @@ async function reconcile(req: PayloadRequest, input: ReconciliationInput, kind: 
     || (!isVerifiedCommerceWebhook(req) && (reservation.state !== 'reserved' || reservation.order || row.order))) throw new Error('Reservation integrity')
   const identity = paidIdentity ?? { ...tuple, startedAt: await readReconciliationStart(req, row.id) }
   if (event && !paid) await recordReconciliationEvent(req, identity, event)
+  // A redelivered cancellation of an attempt already closed by a verified full cancellation changes nothing.
+  if (await cancellationVerified(req, input.paymentID, tuple, event)) return reply('already-cancelled', 200)
   if (paid) {
     const terminal = ['failed', 'cancelled', 'refunded'].includes(row.status) || reservation.state === 'released'
     if (row.commerceResolutionConflict || (row.commerceReviewHold && !terminal)) return reply('payment-quarantined', 200)
@@ -129,7 +135,8 @@ async function reconcile(req: PayloadRequest, input: ReconciliationInput, kind: 
       try { completionUnknown = await endReconciliation(req, outcome) === 'unknown' }
       catch { completionUnknown = true }
       if (paid) await recordPaidReviewCase(req, identity, event.id, completionUnknown ? 'ownership-unknown' : 'review-required')
-      if (completionUnknown) throw new APIError('Reconciliation completion unknown', 503)
+      if (completionUnknown) throw new ReconciliationCompletionUnknown()
+      if (error instanceof PaymentReviewRequired && await cancellationVerified(req, input.paymentID, tuple, event)) return reply('cancellation-verified', 200)
       throw error
     }
   }
@@ -178,4 +185,15 @@ async function replaySettlement(req: PayloadRequest, row: Awaited<ReturnType<typ
     }
   } catch { /* Incomplete or inconsistent linkage is not a replay receipt. */ }
   return reply('review-required', 409)
+}
+
+/**
+ * A verified full cancellation is terminal, so PortOne is answered 200 for it and for its redeliveries: retrying cannot
+ * change it (coordinator, 24 Nov). Unverified, partial or ambiguous cancellations keep their non-2xx answer.
+ */
+async function cancellationVerified(req: PayloadRequest, paymentID: string, tuple: Parameters<typeof isClosedByVerifiedCancellation>[1],
+  event: ReturnType<typeof verifiedCommerceEvent>): Promise<boolean> {
+  if (event?.type !== 'Transaction.Cancelled') return false
+  const current = await readPortOneTransaction(req, paymentID)
+  return ['cancelled', 'failed'].includes(current.status) && await isClosedByVerifiedCancellation(req, tuple, current.commerceResolutionConflict)
 }

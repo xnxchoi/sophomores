@@ -3,7 +3,7 @@ import { createHash, randomUUID } from 'node:crypto'
 import { APIError, type PayloadRequest, type GroupField, type CollectionSlug } from 'payload'
 import type { PaymentAdapter } from '@payloadcms/plugin-ecommerce/types'
 import { z } from 'zod'
-import { shippingAddressSchema } from '../contracts'
+import { guestCheckoutQuoteSchema, shippingAddressSchema, ticketEmailConsentSchema } from '../contracts'
 import { optionalRelationshipID, purchaseSnapshotSchema } from '../purchase-snapshot'
 import { commerceSnapshotHash } from '../snapshot-hash'
 import { buildCommerceSnapshot } from '../catalogue'
@@ -11,12 +11,14 @@ import { commerceServerField, withCommerceWrite } from '../access'
 import { serverChosenIDContext } from '../../../payload/server-chosen-ids'
 import { lockReservationContext, reservePurchase } from '../reservations'
 import { counter, lockCommerce, relationshipID, requirePaymentTransaction } from '../_shared/transaction'
-import { loadPortOneConfig, type PortOneConfig } from '../../tickets/portone/config'
+import { isPinnedSandboxChannel, loadPortOneConfig, type PortOneConfig } from '../../tickets/portone/config'
 import { orderIdFromPaymentId, paymentIdFromOrderId, providerPaymentId } from '../../tickets/portone/payment-id'
 import { classifyReconciliationPayment, minimalPaymentRiskProof } from './proof'
 import { createAdapterEndpoints } from './endpoints'
 import { accountedProviderGet, assertReconciliationFence, appendSettlementObservation, assertOrdinaryReconciliation, retainReconciliationRisk, readUnresolvedSettlementProof, paidReviewCustomerLock } from './accounting'
 import { assertPurchaseWithoutPaidReview, deferPaymentRisk } from './review'
+import { currentRefundTerms, noteRefundTermsChange, sameRefundTerms } from './refund-terms'
+import { RefundTermsChanged } from '../refund-policy'
 export { isVerifiedCommerceWebhook } from './endpoints'
 
 const uuid = z.uuid()
@@ -45,6 +47,10 @@ export function adapterConfig(deps: AdapterDependencies): PortOneConfig {
   const config = deps.config === undefined ? loadPortOneConfig() : deps.config
   // The env-configured channel of the validated mode is authoritative; disabled throws.
   if (!config || (config.mode !== 'test' && config.mode !== 'live')) throw new Error('Payment channel unavailable')
+  // The sandbox runtime re-checks its pinned TEST store and channel before every PortOne use, checkout initiation included.
+  if (process.env.PREVIEW_RUNTIME !== undefined && (config.mode !== 'test' || !isPinnedSandboxChannel(config))) {
+    throw new Error('Payment channel unavailable')
+  }
   return config
 }
 
@@ -245,7 +251,25 @@ export function createPortOneAdapter(deps: AdapterDependencies = {}): PaymentAda
               || row.portone.channelKey !== config.channelKey) throw new Error('Payment attempt cannot be rebound')
             return { message: 'Existing payment attempt', transactionID: row.id, paymentID: row.portone.paymentID, outcome: 'status-only' }
           }
-          const snapshot = await buildCommerceSnapshot({ req, cart, shippingAddress, allowNativeEditions: deps.allowNativeEditions })
+          const purchase = await buildCommerceSnapshot({ req, cart, shippingAddress, allowNativeEditions: deps.allowNativeEditions })
+          const consent = ticketEmailConsentSchema.parse(req.data?.ticketEmailConsent)
+          // Capture only fresh event-ticket consent, never infer it from an existing attempt.
+          const snapshot = consent && process.env.UNLOCK_TICKET_EMAIL_CONSENT_ENABLED === '1' &&
+            (purchase.version === 3 || (purchase.version === 2 && purchase.memberTicketTarget))
+            ? { ...purchase, ticketEmailConsent: consent } : purchase
+          const expected = guestCheckoutQuoteSchema.optional().parse(req.data?.guestQuote)
+          // A fresh Guest charge needs the reviewed quote. Do not return a payment request or
+          // write an attempt/reservation on mismatch; replay above still uses its saved attempt.
+          if (snapshot.version === 3
+            ? !expected || expected.productID !== snapshot.productID || expected.quantity !== snapshot.quantity || expected.totalAmount !== snapshot.totalAmount
+            : expected) return { message: 'Guest quote changed', outcome: 'guest-quote-changed' }
+          // The refund terms beside Pay must still be the ones that apply: re-derived now, against the event's current
+          // start (Review-B r3). A change (the cutoff passed, the start moved) opens nothing; the page shows the new
+          // terms and waits for a new press.
+          if (snapshot.version === 3) {
+            const terms = await currentRefundTerms(req, snapshot)
+            if (!sameRefundTerms(expected?.refundTerms, terms)) return { message: 'Guest quote changed', outcome: 'guest-quote-changed', refundTerms: terms }
+          }
           const variant = snapshot.version === 2 ? { variantID: snapshot.variantID,
             productVersion: snapshot.productVersion, variantVersion: snapshot.variantVersion } : undefined
           if (snapshot.customerID !== String(req.user!.id) || snapshot.cartID !== String(data.cart.id)) throw new Error('Snapshot owner mismatch')
@@ -262,11 +286,18 @@ export function createPortOneAdapter(deps: AdapterDependencies = {}): PaymentAda
               amount: snapshot.totalAmount, currency: snapshot.currency, status: 'pending', paymentMethod: 'portone',
               items: [{ product: snapshot.productID, quantity: snapshot.quantity, ...(variant ? { variant: variant.variantID } : {}) }], portone: { paymentID, prepareKey,
                 snapshot, snapshotHash: commerceSnapshotHash(snapshot), storeID: config.storeId, channelKey: config.channelKey } } as never })
+          try {
           await reservePurchase({ req, attemptID: id, customerID: snapshot.customerID, releaseID: snapshot.releaseID,
+            ...(snapshot.version === 3 ? { refundTerms: expected?.refundTerms } : {}),
             productID: snapshot.productID, eventID: snapshot.eventID, quantity: snapshot.quantity,
             accountLimit: snapshot.version === 2 ? snapshot.maximumQuantity : snapshot.accountLimit,
-            ...(snapshot.version === 3 ? { ticketTarget: snapshot.ticketTarget } : {}),
+            ...(snapshot.version === 3 ? { ticketTarget: snapshot.ticketTarget } : snapshot.version === 2 ? { memberTicketTarget: snapshot.memberTicketTarget } : {}),
             snapshotHash: commerceSnapshotHash(snapshot), ...variant })
+          } catch (error) {
+            // Changed under the event lock: note the new terms and throw, so nothing written here survives.
+            if (error instanceof RefundTermsChanged) noteRefundTermsChange(req, error.terms)
+            throw error
+          }
           const row = await readPortOneTransaction(req, paymentID, transactionsSlug)
           const request = paymentRequest(config, row, { email: req.user!.email, name: req.user!.name })
           return { message: 'Payment prepared', transactionID: id, paymentID, paymentRequest: request, outcome: 'prepared' }
@@ -302,7 +333,7 @@ export function createPortOneAdapter(deps: AdapterDependencies = {}): PaymentAda
         productID: snapshot.productID, eventID: snapshot.eventID, quantity: snapshot.quantity,
         accountLimit: snapshot.version === 2 ? snapshot.maximumQuantity : snapshot.accountLimit,
         snapshotHash: row.portone.snapshotHash, ...(snapshot.version === 2 ? { variantID: snapshot.variantID } : {}),
-        ...(snapshot.version === 3 ? { ticketTarget: snapshot.ticketTarget } : {}) })
+        ...(snapshot.version === 3 ? { ticketTarget: snapshot.ticketTarget } : snapshot.version === 2 ? { memberTicketTarget: snapshot.memberTicketTarget } : {}) })
       if (locked.status === 'pending') {
         const stock = snapshot.version === 2
           ? await req.payload.findByID({ collection: 'variants', id: snapshot.variantID, depth: 0, overrideAccess: true, req })

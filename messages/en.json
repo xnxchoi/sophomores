@@ -513,7 +513,17 @@
       "correctReturnReviewDetails": "Correct return review details",
       "prepareNextDrink": "Prepare next drink",
       "continueAdmissionOperations": "Continue admission operations",
-      "reloadSavedEditor": "Reload saved editor"
+      "reloadSavedEditor": "Reload saved editor",
+      "refundRequested": "PortOne accepted the refund. The order shows Refunded once PortOne confirms it.",
+      "refundAlreadyCancelled": "PortOne has already cancelled this payment. The order updates when its confirmation arrives.",
+      "refundAlreadyRefunded": "This order is already refunded.",
+      "refundUnknown": "PortOne didn't answer. Check the payment in the PortOne console before trying again.",
+      "refundRefused": "PortOne refused the refund ({type}).",
+      "refundClosed": "Refunds for this event closed {cutoff} (Seoul time).",
+      "refundClosedNoDate": "Refunds for this event are closed: its start time can't be read.",
+      "refundRefusedPersonalised": "Personalised edition: no refunds. Nothing was sent to PortOne.",
+      "refundRefusedProduct": "This product can't be refunded here. Nothing was sent to PortOne.",
+      "refundRefusedOtherChannel": "Paid through another PortOne store or channel. Nothing was sent to PortOne."
     },
     "orderControls": {
       "savedFulfillmentStatus": "Saved fulfillment: {status}",
@@ -533,7 +543,13 @@
       "iManuallyReviewedAnyUsedAttendanceOrBenefits": "I manually reviewed any used attendance or benefits for these units",
       "acceptPhysicalReturn": "Accept physical return",
       "finalStockDisposition": "Final stock disposition",
-      "confirmFinalDisposition": "Confirm final disposition"
+      "confirmFinalDisposition": "Confirm final disposition",
+      "refundInFull": "Refund in full",
+      "refundInFullExplainer": "Cancels the whole payment in PortOne. When PortOne confirms, the order shows Refunded, unused tickets and seats are released, and keys are cancelled.",
+      "refundReason": "Reason (sent to PortOne)",
+      "refundConfirm": "I confirm a full refund of {amount, number} KRW.",
+      "refundButton": "Refund {amount, number} KRW",
+      "noRefundsPersonalisedEdition": "Personalised edition: no refunds."
     },
     "recoveryReview": {
       "expectedRevision": "Expected revision:",
@@ -652,6 +668,9 @@
       "paidConfirmed": "Paid & Confirmed",
       "cancelled": "Cancelled",
       "refunded": "Refunded",
+      "orderRefundRecord": "Set once, when PortOne confirms a full cancellation.",
+      "refundSourceProvider": "PortOne",
+      "refundSourceAdmin": "Admin",
       "heldForPaymentReview": "Held for Payment Review",
       "portOneTossPaymentsKRWKakaoPayNaverPay": "PortOne / Toss Payments (KRW, KakaoPay, NaverPay)",
       "stripeInternationalCreditCards": "Stripe (International Credit Cards)",
@@ -794,7 +813,19 @@
       "productBookGlitterTile": "Glitter tile",
       "productBookPages": "Inside pages",
       "productBookPageFront": "Front",
-      "productBookPageBack": "Back"
+      "productBookPageBack": "Back",
+      "homeEntry": "Home entry",
+      "homeEntryDescription": "When the Warp home shows at /. Outside the window, and without an entry link, visitors go to the default home.",
+      "warpWindowStart": "Warp starts",
+      "warpWindowEnd": "Warp ends",
+      "warpWindowDescription": "Seoul time. The Warp shows to everyone while both are set and now is between them.",
+      "warpWindowOrder": "The end must come after the start.",
+      "entryLinks": "Entry links",
+      "entryLinksDescription": "A link to /w/ followed by a code opens the Warp for 6 hours from the first visit. Delete a row to stop its link.",
+      "entryLinkCode": "Code",
+      "entryLinkCodeLength": "This code was not made here. Remove the row and add a new one.",
+      "entryLinkCodeDescription": "Made by the server when you save. Copy it after saving.",
+      "entryLinkNote": "Note"
     }
   },
   "Customer": {
@@ -915,6 +946,12 @@
     "components_commerce_order_admissions": {
       "guestAdmissions": "Guest admissions",
       "guestTicketShare": "Part I standing admission. Share the pass with your guest. It can be used once.",
+      "forwardGuestQR": "Send this ticket privately. Open its Wallet pass to share the QR image, or copy the Google Wallet link for a guest on Android.",
+      "googleWalletPass": "Google Wallet pass",
+      "copyGoogleWalletPass": "Copy Google Wallet link",
+      "getGoogleWalletPass": "Get a shareable Google Wallet link",
+      "gettingGoogleWalletPass": "Getting the link...",
+      "googleWalletPassFailed": "We couldn't get the Google Wallet link. Try again.",
       "appleWalletPass": "Add to Apple Wallet",
       "walletPassUnavailable": "A Wallet pass is not available yet.",
       "purchaseIncludesOneAdmissionAddTheGuest": "This purchase includes one admission. Add the guest’s name here. Registration is optional and is not required to attend.",
@@ -944,6 +981,8 @@
       "privateLinkExpiry": "Expires {date} KST. Anyone with this link can attempt to claim it."
     },
     "components_commerce_payment": {
+      "ticketEmailConsent": "Share my checkout email with Unlock so they can send my tickets when email delivery is available.",
+      "guestQuoteChanged": "Your guest ticket selection or price changed. Reload and review the total before paying.",
     "copyOrderReference": "Copy order reference",
       "viewOrder": "View order",
       "paymentConfirmedYourOrderHasBeenReceived": "Payment confirmed. Your order has been received.",
@@ -993,6 +1032,17 @@
       "noUnresolvedPaymentAttemptWasFoundForThisAccount": "No unresolved payment attempt was found for this account.",
       "aPaymentAttemptIsSavedNothingWillReopenAutomatically": "A payment attempt is saved. Nothing will reopen automatically.",
       "checkingExistingPayments": "Checking existing payments…"
+    },
+    "components_commerce_refund_terms": {
+      "personalisedNoRefunds": "Personalised with your membership. No refunds.",
+      "membershipNoRefunds": "Membership is personalised. No refunds.",
+      "refundable": "Refundable.",
+      "refundableUntil": "Refundable until {cutoff} (Seoul time).",
+      "refundsClosed": "Refunds for this event closed {cutoff} (Seoul time).",
+      "refundsClosedNoDate": "Refunds for this event have closed.",
+      "changedBeforePay": "The refund terms changed. Check them, then pay again.",
+      "changedBeforeResume": "The refund terms changed. Check them, then resume again.",
+      "unconfirmed": "This attempt's refund terms can't be confirmed, so it can't be resumed. Check payment status instead."
     },
     "components_commerce_shipping_address": {
       "deliveryAddress": "Delivery address",
@@ -1309,6 +1359,21 @@
       "yourPayment": "Your payment",
       "aReturnFromThePaymentWindowIsNotA": "A return from the payment window is not a payment confirmation. Check the saved attempt below.",
       "backToShop": "Back to shop"
+    },
+    "app_site_shop_invitations_page": {
+      "title": "Guest tickets",
+      "unavailable": "Guest tickets are not available right now.",
+      "membersOnly": "Guest tickets are available to approved members.",
+      "memberLimit": "You can buy up to {limit} guest tickets for this event. Each guest needs their own QR.",
+      "selectQuantity": "Guest tickets",
+      "saveSelection": "Save ticket selection",
+      "cartSaved": "Ticket selection saved.",
+      "cartNotSaved": "The ticket selection could not be saved. Check your cart and try again.",
+      "differentCart": "Your cart contains a different item. Resolve that cart before buying guest tickets.",
+      "viewCart": "View your cart",
+      "priceEach": "{price} per guest",
+      "total": "Total",
+      "checkoutAddress": "Checkout still asks for an address. Your guest tickets will not be shipped."
     },
     "app_site_shop_invitations_claim_page": {
       "yourGuestInvitation": "Your guest invitation"
@@ -1653,6 +1718,10 @@
         "title": "Sign in first",
         "line": "Then tap your card again."
       },
+      "signedIn": {
+        "title": "Signed in",
+        "line": "Now tap your card again."
+      },
       "ready": {
         "title": "Your card",
         "line": "Confirm it's you to continue."
@@ -1716,7 +1785,6 @@
     "closeInvitation": "Close invitation",
     "closeWithSymbol": "Close ×",
     "notFoundNavigation": "Page recovery",
-    "notFoundShop": "Visit the shop",
     "routeErrorTitle": "This page could not load.",
     "routeErrorDescription": "An unexpected error interrupted this page. Open Help for support, or return home.",
     "routeErrorHelp": "Open Help",

@@ -5,6 +5,10 @@ import type { Pool } from "pg";
 import { PgMemberRepository } from "@/lib/member-auth/repository";
 import { MemberError, type BindRecord } from "@/lib/member-auth/contracts";
 
+// The SKT pilot's proofs bind only in local mode (src/lib/member-auth/phone-policies.ts); this suite runs as local.
+process.env.PHONE_VERIFICATION_MODE ??= "local";
+process.env.MEMBER_AUTH_MODE ??= "local";
+
 const now = new Date("2040-01-01T12:00:00Z");
 const input: BindRecord = { userId: "member-1", challengeId: randomUUID(), phoneHash: "a".repeat(64), sessionHash: "b".repeat(64), sessionCreatedAt: new Date(now.getTime() - 60_000), now };
 const challenge = { id: input.challengeId, state: "verified", created_at: new Date(now.getTime() - 30_000), expires_at: new Date(now.getTime() + 60_000), policy_version: "local-skt-zoho-arc-v1" };
@@ -109,4 +113,32 @@ test("repository safe lookups return only member facts and filter unverified use
   assert.equal(await repository.isActiveMember(input.userId), true);
   assert.deepEqual(await repository.findBoundUserByPhoneHash(input.phoneHash), { userId: input.userId, email: "member@example.invalid", name: "Member" });
   assert.ok(db.calls.filter(c => /JOIN/.test(c.sql)).every(c => c.sql.includes('"emailVerified"')));
+});
+
+test("a preview-trial proof never binds outside the preview authority, and a pilot proof never binds in production", async () => {
+  const trial = database({ challenge: { ...challenge, policy_version: "preview-trial-zoho-arc-v1" } });
+  await assert.rejects(new PgMemberRepository(trial.pool).bind(input), { code: "INVALID_PHONE_PROOF" });
+  assert.equal(trial.calls.some(c => c.sql.includes("INSERT INTO member_auth.phone_bindings")), false);
+  const saved = { phone: process.env.PHONE_VERIFICATION_MODE, member: process.env.MEMBER_AUTH_MODE };
+  process.env.PHONE_VERIFICATION_MODE = "production"; process.env.MEMBER_AUTH_MODE = "production";
+  try {
+    const pilot = database();
+    await assert.rejects(new PgMemberRepository(pilot.pool).bind(input), { code: "INVALID_PHONE_PROOF" });
+    assert.equal(pilot.calls.some(c => c.sql.includes("INSERT INTO member_auth.phone_bindings")), false);
+  } finally { process.env.PHONE_VERIFICATION_MODE = saved.phone; process.env.MEMBER_AUTH_MODE = saved.member; }
+});
+
+test("in production a pilot binding is neither membership nor a phone lookup", async () => {
+  const saved = { phone: process.env.PHONE_VERIFICATION_MODE, member: process.env.MEMBER_AUTH_MODE };
+  process.env.PHONE_VERIFICATION_MODE = "production"; process.env.MEMBER_AUTH_MODE = "production";
+  try {
+    const db = database({ bindings: [binding] });
+    const repository = new PgMemberRepository(db.pool);
+    await repository.isActiveMember(input.userId);
+    await repository.findBoundUserByPhoneHash(input.phoneHash);
+    const lookups = db.calls.filter(c => /policy_version=ANY/.test(c.sql));
+    assert.equal(lookups.length, 2);
+    for (const call of lookups) assert.deepEqual(call.values?.[1], []);
+    await assert.rejects(repository.bind(input), { code: "PHONE_CONFLICT" });
+  } finally { process.env.PHONE_VERIFICATION_MODE = saved.phone; process.env.MEMBER_AUTH_MODE = saved.member; }
 });

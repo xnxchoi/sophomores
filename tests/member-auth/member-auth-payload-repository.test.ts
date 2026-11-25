@@ -4,6 +4,10 @@ import type { Pool } from "pg";
 import { PgPayloadMemberRepository } from "@/lib/member-auth/payload-repository";
 import { MemberError } from "@/lib/member-auth/contracts";
 
+// The SKT pilot's proofs bind only in local mode (src/lib/member-auth/phone-policies.ts); this suite runs as local.
+process.env.PHONE_VERIFICATION_MODE ??= "local";
+process.env.MEMBER_AUTH_MODE ??= "local";
+
 const now = new Date();
 const userId = "9e7947d3-2241-432b-a84b-21226aa40bfd";
 const sessionId = "f6b138b3-912e-4b54-806d-36efb9eb907b";

@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { editionRefundTerms } from "@/lib/commerce/refund-policy";
+import { RefundTerms } from "./refund-terms";
 import type { CommerceEditionOffer, CommerceEditionShop } from "@/lib/commerce/editions";
 import { Link } from "@/components/core/Link/Link";
 import { PageInset } from "@/components/core/PageInset/PageInset";
@@ -59,7 +61,8 @@ export function NativeCheckoutSummary({ title, offer }: { title: string; offer: 
       <h2 id="native-checkout-heading" className="text-[15px] leading-[21px] [overflow-wrap:anywhere]">{title}</h2>
       <ProductFacts offer={offer} className="mt-4" />
     </div>
-    <PurchaseNotOpen priceKRW={offer.priceKRW} />
+    {/* The refund rule beside the buy row, before any Pay (owner, 25 Nov; Review-B r2). */}
+    <div className="min-w-0"><PurchaseNotOpen priceKRW={offer.priceKRW} /><RefundTerms terms={editionRefundTerms(offer.editionEntitlements)} className="mt-3" /></div>
   </section>;
 }
 

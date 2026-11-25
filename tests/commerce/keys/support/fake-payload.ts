@@ -13,6 +13,8 @@ export function fakePayload(intents: Row[], admissions: Row[] = [{ id: "adm", st
     "commerce-key-grant-intents": intents.map(intent => ({ order: "order", payment: "payment", ...intent })),
     "commerce-admissions": admissions.map(admission => ({ order: "order", transaction: "payment", ...admission })),
     transactions,
+    // The seat sweep's durable cursor (seat-release.ts) lives in the reconciliation ledger.
+    "commerce-reconciliations": [],
   };
   const events: string[] = [];
   const hooks: { onLock?: (key: string) => void | Promise<void> } = {};
@@ -46,6 +48,11 @@ export function fakePayload(intents: Row[], admissions: Row[] = [{ id: "adm", st
       return { docs: structuredClone(docs), totalDocs: all.length, hasNextPage: page * limit < all.length };
     },
     findByID: async ({ collection, id }: { collection: string; id: string }) => structuredClone(rows[collection].find((doc) => doc.id === id)!),
+    create: async ({ collection, data }: { collection: string; data: Record<string, unknown> }) => {
+      const doc = { id: `${collection}-${++sequence}`, ...data } as Row;
+      rows[collection].push(doc);
+      return structuredClone(doc);
+    },
     update: async ({ collection, id, data }: { collection: string; id: string; data: Row }) => {
       const doc = rows[collection].find((entry) => entry.id === id)!;
       Object.assign(doc, data);

@@ -17,6 +17,7 @@ import {
 } from "@phosphor-icons/react";
 import type { AudioPreviewState } from "./use-audio-preview";
 import type { SlotStateItem, UserSlotState } from "@/lib/music/types";
+import { useAccountSheetTrigger } from "@/components/auth/use-account-sheet";
 
 interface SlotManagerProps {
   userSlotState: UserSlotState | null;
@@ -38,6 +39,8 @@ export function SlotManager({
   isPastDeadline
 }: SlotManagerProps) {
   const t = useTranslations("Interface.radio");
+  // Sign in opens the in-place sheet; the href is the no-JS and modifier-click path (owner, 24 Nov).
+  const signIn = useAccountSheetTrigger();
   const [editingNoteSlot, setEditingNoteSlot] = useState<number | null>(null);
   const [noteDraft, setNoteDraft] = useState("");
   const [isSavingNote, setIsSavingNote] = useState(false);
@@ -61,7 +64,8 @@ export function SlotManager({
           </div>
 
           <Link
-            href="/account"
+            href={signIn.href}
+            onClick={signIn.onClick}
             className="inline-flex h-11 shrink-0 items-center justify-center rounded-xl bg-white px-5 text-xs font-medium text-black transition-colors hover:bg-neutral-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
           >
             Sign in to nominate

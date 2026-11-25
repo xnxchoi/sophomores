@@ -85,7 +85,8 @@ test("SlotManager displays sign-in prompt for unauthenticated users", () => {
 
   assert.match(html, /Attendee nominations/);
   assert.match(html, /Sign in to nominate/);
-  assert.match(html, /href="\/account"/);
+  // Sign in opens the in-place sheet; its href is the sign-in page for no-JS and modifier-click (owner, 24 Nov).
+  assert.match(html, /href="\/sign-in\?next=\/shop"/);
 });
 
 test("SlotManager displays verification required prompt for ineligible users", () => {

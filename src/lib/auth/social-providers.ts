@@ -21,7 +21,7 @@ type MemberProviderOptions = {
 
 /** Apple answers the callback with a cross-site form_post from this origin. */
 const APPLE_FORM_POST_ORIGIN = "https://appleid.apple.com";
-const APPLE_CALLBACK_PATH = "/api/auth/callback/apple";
+export const APPLE_CALLBACK_PATH = "/api/auth/callback/apple";
 /**
  * Apple's client secret lives a day, well under Apple's six-month limit. It is
  * re-signed in the background once half its life has passed, and an hourly

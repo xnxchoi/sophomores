@@ -13,6 +13,7 @@ import { useIsMobile } from "@/providers/MiddleMan";
 import { cn } from "@/lib/utils";
 import { AnimatePresence } from "motion/react";
 import { Link } from "@/components/core/Link/Link";
+import { useAccountSheetTrigger } from "@/components/auth/use-account-sheet";
 import { usePathname } from "next/navigation";
 import { ShoppingBagIcon, UserIcon } from "@phosphor-icons/react";
 import { Suspense, use, type MouseEvent, type ReactNode } from "react";
@@ -51,6 +52,8 @@ export function ReadingAccountButton({ bar = false, signedIn = false, setup = fa
   // A plain click closes the menu as the page changes, like the menu's own items and the header links, so
   // the page it opens isn't inert behind an open menu.
   const closeMenu = useCloseMenuOnNavigate();
+  // Signed out, Log in opens the in-place sign-in sheet (owner, 24 Nov); signed in, the link goes to the account.
+  const signIn = useAccountSheetTrigger();
   const svgRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
@@ -115,9 +118,9 @@ export function ReadingAccountButton({ bar = false, signedIn = false, setup = fa
     <HitArea className={cn(bar && "group h-(--bar-target) min-w-(--bar-target) touch-manipulation [&>*]:translate-y-[calc((var(--bar-target)_-_var(--frame-bottom))/2)]")}>
     <Link
       id="checker"
-      onClick={closeMenu}
+      onClick={(event: MouseEvent<HTMLAnchorElement>) => { if (!signedIn) signIn.onClick(event); closeMenu(event); }}
       aria-label={label}
-      href={signedIn && !setup ? "/me" : "/account"}
+      href={!signedIn ? signIn.href : setup ? "/account" : "/me"}
       className={cn("rp_btn relative flex h-6 m-0 px-4 items-center justify-center border border-transparent rounded-full bg-[var(--button-background)] text-[oklch(from_var(--faded-fg)_l_c_h_/_0.9)] text-xs font-[350] leading-none tracking-[-0.01em] text-center no-underline overflow-hidden backdrop-blur-[var(--header-button-blur,24px)] outline-none transition-[border-color] duration-200 hover:border-[oklch(from_var(--faded-fg)_l_c_h_/_0.8)] gap-2", open && "border-current", bar && "h-auto! border-0! bg-transparent! px-1! text-foreground/75! backdrop-blur-none! transition-opacity group-active:opacity-60")}
     >
       <svg ref={svgRef} width={14} height={14} viewBox="0 0 24 24" aria-hidden="true">
@@ -417,13 +420,13 @@ export function useCloseMenuOnNavigate() {
   };
 }
 
-function HeaderLink({ href, label, icon, className }: { href: string; label: string; icon?: ReactNode; className?: string }) {
+function HeaderLink({ href, label, icon, className, onClick }: { href: string; label: string; icon?: ReactNode; className?: string; onClick?: (event: MouseEvent<HTMLElement>) => void }) {
   const open = useRPStore((state) => state.navIsOpen);
   const closeMenu = useCloseMenuOnNavigate();
   return (
     <Link
       href={href}
-      onClick={closeMenu}
+      onClick={(event: MouseEvent<HTMLAnchorElement>) => { onClick?.(event); closeMenu(event); }}
       className={cn("relative flex h-6 max-md:h-8 phone:h-7 m-0 px-3 gap-1.5 items-center justify-center border border-transparent rounded-full bg-[var(--button-background)] text-[oklch(from_var(--faded-fg)_l_c_h_/_0.9)] text-xs font-[350] leading-none tracking-[-0.01em] text-center no-underline backdrop-blur-[var(--header-button-blur,24px)] transition-[border-color] duration-200 hover:border-[oklch(from_var(--faded-fg)_l_c_h_/_0.8)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current after:absolute after:-inset-y-[11px] after:inset-x-0 after:content-[''] max-md:after:-inset-[6px] phone:after:-inset-x-[3px] phone:after:-inset-y-[9px]", icon && "max-md:w-8 max-md:px-0 phone:w-10", open && "border-current", className)}
     >
       {icon}
@@ -442,9 +445,11 @@ function AccountEntry({ member }: { member: Promise<HeaderMemberState> }) {
   const nav = useTranslations("Customer.navigation");
   const t = useTranslations("Customer.components_shell_header_actions");
   const state = use(member);
+  // Log in opens the in-place sign-in sheet; the href is the no-JS and modifier-click path (owner, 24 Nov).
+  const signIn = useAccountSheetTrigger();
   const icon = <UserIcon aria-hidden="true" className="size-3.5 shrink-0" />;
   return state.state === "signed-out"
-    ? <HeaderLink href="/account" label={t("logIn")} icon={icon} />
+    ? <HeaderLink href={signIn.href} onClick={signIn.onClick} label={t("logIn")} icon={icon} />
     : <HeaderLink href="/me" label={nav("account")} icon={icon} />;
 }
 

@@ -1,13 +1,16 @@
 import { randomUUID } from "node:crypto";
 import type { Payload, PayloadRequest, Where } from "payload";
 import { withCommerceWrite } from "../access";
-import { sameTicketTarget } from "../event-tickets";
-import { inCommerceTransaction, lockCommerce, readCommerce, relationshipID, updateCommerce, type CommerceDocument } from "../_shared/transaction";
+import { matchesFrozenEventTicket, sameTicketTarget, sharedEventTicketsEnabled, sharedTicketTarget } from "../event-tickets";
+import { purchaseSnapshotSchema } from "../purchase-snapshot";
+import { releaseInvalidatedSeats, releaseInvalidatedSeatsSweep } from "../seat-release";
+import { findCommerce, inCommerceTransaction, lockCommerce, readCommerce, relationshipID, updateCommerce, type CommerceDocument } from "../_shared/transaction";
 import {
-  cancelReplacementStopCodes, grantBroadcastPending, grantBroadcastStops, grantBroadcastSuppressed, grantRecoveryHeld, parkedCancelCodes, parkedGrantCodes, parseKeyGrantTarget, replacementStopCodes,
+  beyondAncestryCap, cancelReplacementStopCodes, grantBroadcastPending, grantBroadcastStops, grantBroadcastSuppressed, grantRecoveryHeld, parkedCancelCodes, parkedGrantCodes, parseKeyGrantTarget, replacementStopCodes, ticketTokenConflict, ticketTokenIdentity, MEMBER_EVENT_GRANT,
   type BroadcastOutcome, type CancelReconcileOutcome, type KeyCancelAdapter, type KeyGrantAdapter, type RebroadcastOutcome, type ReconcileOutcome, type RecordedSend,
   type ReplaceOutcome, type TransactionFee,
 } from "./contracts";
+import type { KeyGrantTarget, RebroadcastInput } from "./contracts";
 
 /*
  * ADR-0004 worker. Explicitly invoked (no scheduler yet) with a chain adapter.
@@ -55,7 +58,13 @@ import {
  * being reconciled (and replaced).
  */
 
-type Pass = { payload: Payload; adapter: KeyGrantAdapter; limit?: number; now?: () => Date };
+/** `log`: where fixed alert lines go (stderr by default; the tick writes them synchronously and spools them). */
+type Pass = { payload: Payload; adapter: KeyGrantAdapter; limit?: number; now?: () => Date; log?: (line: string) => void;
+  /** The tick's shared deadline (ms): no new row, hash or step starts after it; unfinished work stays due (Review-A, 25 Nov). */
+  deadline?: number };
+const pastDeadline = (deadline: number | undefined, now: () => Date) => deadline !== undefined && now().getTime() > deadline;
+/** reconcileKeyGrants only: told each intent whose receipt is beyond the ancestry cap (default: logOverCap to stderr). */
+type ReconcilePass = Pass & { onOverCap?: (intentID: string) => void };
 type CancelPass = { payload: Payload; adapter: KeyCancelAdapter; limit?: number; now?: () => Date };
 const INTENTS = "commerce-key-grant-intents";
 const PAGE = 25;
@@ -81,7 +90,7 @@ const later = (now: Date, ms: number): string => new Date(now.getTime() + ms).to
  * looks at either changes state or is pushed to the back of the due order, so
  * successive passes rotate through the whole queue however many rows are held.
  */
-async function* due(payload: Payload, state: Record<string, unknown>, now: () => Date): AsyncGenerator<CommerceDocument> {
+async function* due(payload: Payload, state: Record<string, unknown>, now: () => Date, deadline?: number): AsyncGenerator<CommerceDocument> {
   const seen = new Set<string>();
   const phases = [
     { where: { and: [state, { nextAttemptAt: { exists: false } }] }, sort: "createdAt" },
@@ -89,6 +98,7 @@ async function* due(payload: Payload, state: Record<string, unknown>, now: () =>
   ];
   for (const phase of phases) {
     while (seen.size < MAX_ROWS) {
+      if (pastDeadline(deadline, now)) return; // no new page query after the tick's deadline
       const where = typeof phase.where === "function" ? phase.where() : phase.where;
       const found = await payload.find({ collection: "commerce-key-grant-intents" as never, where: where as never, sort: phase.sort, limit: PAGE, depth: 0, overrideAccess: true });
       const fresh = (found.docs as unknown as CommerceDocument[]).filter((doc) => !seen.has(doc.id));
@@ -125,6 +135,19 @@ async function inIntent<T>(payload: Payload, intentID: string, work: (req: Paylo
   });
 }
 
+/**
+ * After a key is authoritatively cancelled, its refunded Unlock seat may be released (seat-release.ts). A separate
+ * transaction after the intent's commit, taking the reservation locks first like settlement; a failure is logged and
+ * never undoes the cancel. The release is idempotent, so the next cancel or refund for the order catches up.
+ */
+async function releaseSeatsAfterCancel(payload: Payload, intent: CommerceDocument): Promise<void> {
+  if (intent.order == null) return;
+  const orderID = relationshipID(intent.order);
+  const req = requestFor(payload);
+  try { await inCommerceTransaction(req, () => withCommerceWrite(req, () => releaseInvalidatedSeats({ req, orderID }))); }
+  catch { payload.logger?.error({ msg: "Seat release after key cancellation failed", orderID }); }
+}
+
 /** The benefit writers take order/admission locks before the intent; match that order. */
 async function inGrant<T>(payload: Payload, intentID: string,
   work: (req: PayloadRequest, intent: CommerceDocument, held: boolean) => Promise<T>): Promise<T> {
@@ -139,19 +162,38 @@ async function inGrant<T>(payload: Payload, intentID: string,
     const intent = await readCommerce(req, INTENTS, intentID);
     const admission = await readCommerce(req, "commerce-admissions", admissionID);
     const payment = await readCommerce(req, "transactions", relationshipID(intent.payment));
-    const ticketTarget = typeof intent.target === "object" && intent.target ? intent.target as { chainID?: unknown; lock?: unknown; ticketTier?: unknown } : null;
-    const pinnedTicket = admission.ticketTier != null || admission.ticketTarget != null || ticketTarget?.ticketTier != null;
+    const ticketTarget = typeof intent.target === "object" && intent.target ? intent.target as { chainID?: unknown; lock?: unknown; ticketTier?: unknown; ticketMode?: unknown } : null;
+    const shared = sharedTicketTarget.safeParse(admission.ticketTarget);
+    const memberEvent = intent.purpose === MEMBER_EVENT_GRANT;
+    const sharedSignet = shared.success && admission.ticketTier === "member" && !memberEvent;
+    const pinnedTicket = !sharedSignet && (admission.ticketTier != null || admission.ticketTarget != null || ticketTarget?.ticketTier != null);
+    const sharedMismatch = shared.success && !sharedSignet && (ticketTarget?.ticketMode !== "shared" ||
+      ticketTarget?.ticketTier !== admission.ticketTier || !sharedEventTicketsEnabled(relationshipID(admission.event), shared.data));
+    const modeMismatch = (!shared.success && ticketTarget?.ticketMode != null) || (memberEvent && (!shared.success || admission.ticketTier !== "member"));
+    const signetMismatch = sharedSignet && (!ticketTarget || ticketTarget.ticketTier != null || ticketTarget.ticketMode != null ||
+      typeof ticketTarget.lock !== "string" || ticketTarget.lock.toLowerCase() === shared.data.lock);
     const ticketMismatch = pinnedTicket && (!ticketTarget || typeof ticketTarget.chainID !== "number" || typeof ticketTarget.lock !== "string"
       || (admission.ticketTier !== "guest" && admission.ticketTier !== "member")
       || (ticketTarget.ticketTier === "guest") !== (admission.ticketTier === "guest")
-      || !sameTicketTarget(admission.ticketTarget, { chainID: ticketTarget.chainID, lock: ticketTarget.lock }));
-    const held = ticketMismatch || relationshipID(intent.order) !== orderID || relationshipID(intent.entitlement) !== admissionID
+      || !sameTicketTarget(admission.ticketTarget, { chainID: ticketTarget.chainID, lock: ticketTarget.lock, ...(ticketTarget.ticketMode === "shared" ? { mode: "shared" as const } : {}) }));
+    const frozenGuestMismatch = shared.success && admission.ticketTier === "guest" && !sharedMismatch && !ticketMismatch &&
+      !(await matchesGuestOrder(req, orderID, admission, shared.data));
+    const held = sharedMismatch || modeMismatch || signetMismatch || ticketMismatch || frozenGuestMismatch || relationshipID(intent.order) !== orderID || relationshipID(intent.entitlement) !== admissionID
       || relationshipID(admission.order) !== orderID || relationshipID(admission.transaction) !== payment.id
       || relationshipID(payment.order) !== orderID || payment.status !== "succeeded"
-      || payment.commerceReviewHold === true || intent.cancelRequested === true
+      || payment.commerceReviewHold === true || payment.commerceResolutionConflict === true || intent.cancelRequested === true
       || admission.benefitReview === true || admission.status === "revoked" || Boolean(admission.returnAcceptedAt);
     return withCommerceWrite(req, () => work(req, intent, held));
   });
+}
+
+async function matchesGuestOrder(req: PayloadRequest, orderID: string, admission: CommerceDocument, target: ReturnType<typeof sharedTicketTarget.parse>) {
+  const order = await readCommerce(req, "orders", orderID);
+  const snapshot = purchaseSnapshotSchema.safeParse(order.commerceSnapshot);
+  const eventID = relationshipID(admission.event);
+  if (!snapshot.success || snapshot.data.version !== 3 || snapshot.data.eventID !== eventID ||
+    snapshot.data.customerID !== relationshipID(admission.buyer) || !sameTicketTarget(snapshot.data.ticketTarget, target)) return false;
+  return matchesFrozenEventTicket(await readCommerce(req, "commerce-events", eventID), "guest", snapshot.data.productID, target);
 }
 
 async function claim(payload: Payload, intentID: string, now: Date): Promise<{ attemptID: string; intent: CommerceDocument } | null> {
@@ -171,6 +213,14 @@ async function claim(payload: Payload, intentID: string, now: Date): Promise<{ a
 
 const parked = (errorCode: string): boolean => (parkedGrantCodes as readonly string[]).includes(errorCode);
 
+/**
+ * A parked grant waits for a person, so it is never silent (coordinator, 24 Nov): one fixed-format line on stderr
+ * per park, with the intent's ID and the code only (no address, order or customer data).
+ */
+export function logParked(intentID: string, errorCode: string, log: (line: string) => void = (line) => console.error(line)): void {
+  log(JSON.stringify({ event: "key_grant_parked", intent: String(intentID), code: code(errorCode) }));
+}
+
 /** Proven non-execution: retryable after a backoff, unless retrying cannot help. */
 const notSentData = (errorCode: string, attempts: unknown, now: Date) => ({
   state: "failed_retryable", lastErrorCode: code(errorCode),
@@ -181,9 +231,10 @@ const signerLockKey = (signer: string) => `key-signer:${signer}`;
 const nonceLockKey = (signer: string) => `key-signer-nonce:${signer}`;
 
 /** Every row matching `where`, a page at a time, bounded by MAX_ROWS. With `req`, read inside its transaction. */
-async function findAll(payload: Payload, where: Where, req?: PayloadRequest, sort?: string): Promise<CommerceDocument[]> {
+async function findAll(payload: Payload, where: Where, req?: PayloadRequest, sort?: string, stop?: () => boolean): Promise<CommerceDocument[]> {
   const docs: CommerceDocument[] = [];
   for (let page = 1; docs.length < MAX_ROWS; page++) {
+    if (stop?.()) break; // a work list only (never a safety read): no new page after the tick's deadline
     const found = await payload.find({ collection: INTENTS as never, where, sort, limit: 100, page, depth: 0, overrideAccess: true, req });
     docs.push(...(found.docs as unknown as CommerceDocument[]));
     if (!found.hasNextPage) break;
@@ -335,11 +386,12 @@ async function finishGrantBroadcast<Skip>(payload: Payload, intentID: string, pr
   });
 }
 
-async function recordUnsentGrant(payload: Payload, intentID: string, attemptID: string, now: Date, outcome: Sent<never>): Promise<void> {
+async function recordUnsentGrant(payload: Payload, intentID: string, attemptID: string, now: Date, outcome: Sent<never>, log?: (line: string) => void): Promise<void> {
   if (outcome.kind !== "notSent") return;
   await inIntent(payload, intentID, async (req, intent) => {
     if (intent.attemptID !== attemptID || intent.state !== "submitted" || intent.txHash) return;
     await updateCommerce(req, INTENTS, intentID, notSentData(outcome.code, intent.attempts, now));
+    if (parked(outcome.code)) logParked(intentID, outcome.code, log);
   });
 }
 
@@ -347,9 +399,11 @@ async function recordUnsentGrant(payload: Payload, intentID: string, attemptID: 
  * A claim with no hash after CLAIM_STALE_MS was interrupted before broadcast
  * (the hash always commits first), so it is proven unsent and retried.
  */
-async function sweepInterruptedClaims(payload: Payload, now: () => Date): Promise<void> {
+async function sweepInterruptedClaims(payload: Payload, now: () => Date, deadline?: number): Promise<void> {
+  if (pastDeadline(deadline, now)) return;
   const cutoff = new Date(now().getTime() - CLAIM_STALE_MS).toISOString();
-  for await (const row of due(payload, { and: [{ state: { equals: "submitted" } }, { txHash: { exists: false } }, { dispatchStartedAt: { less_than_equal: cutoff } }] }, now)) {
+  for await (const row of due(payload, { and: [{ state: { equals: "submitted" } }, { txHash: { exists: false } }, { dispatchStartedAt: { less_than_equal: cutoff } }] }, now, deadline)) {
+    if (pastDeadline(deadline, now)) break;
     await inIntent(payload, row.id, async (req, intent) => {
       if (intent.state !== "submitted" || intent.txHash || intent.attemptID !== row.attemptID) return;
       await updateCommerce(req, "commerce-key-grant-intents", row.id, notSentData("dispatch_interrupted", intent.attempts, now()));
@@ -362,28 +416,34 @@ async function sweepInterruptedClaims(payload: Payload, now: () => Date): Promis
  * to pending as a fresh attempt, clearing the previous attempt's hash so the old
  * transaction's result can never be applied to the new one.
  */
-async function requeueRetryable(payload: Payload, now: () => Date): Promise<void> {
+async function requeueRetryable(payload: Payload, now: () => Date, deadline?: number): Promise<void> {
+  if (pastDeadline(deadline, now)) return;
   const retryable = { and: [{ state: { equals: "failed_retryable" } }, { or: [{ lastErrorCode: { exists: false } }, { lastErrorCode: { not_in: [...parkedGrantCodes] } }] }] };
-  for await (const row of due(payload, retryable, now)) {
+  for await (const row of due(payload, retryable, now, deadline)) {
+    if (pastDeadline(deadline, now)) break;
     await inIntent(payload, row.id, async (req, intent) => {
       if (intent.state !== "failed_retryable" || parked(String(intent.lastErrorCode ?? ""))) return;
       // A refunded key that never went out stays cancelled rather than retrying.
       const data = intent.cancelRequested === true ? { state: "cancelled", cancelledAt: now().toISOString() }
         : { state: "pending", txHash: null, tokenID: null, submittedAt: null, attemptID: null, nextAttemptAt: null, signer: null, nonce: null, sends: null, lastSentAt: null, settledTxHash: null };
       await updateCommerce(req, "commerce-key-grant-intents", row.id, data);
-    });
+      return data.state === "cancelled" ? intent : null;
+    }).then((cancelled) => cancelled && releaseSeatsAfterCancel(payload, cancelled));
   }
 }
 
 /** Dispatch up to `limit` pending intents. Returns how many were dispatched. */
-export async function dispatchKeyGrants({ payload, adapter, limit = 10, now = () => new Date() }: Pass): Promise<number> {
-  await sweepInterruptedClaims(payload, now);
-  await requeueRetryable(payload, now);
+export async function dispatchKeyGrants({ payload, adapter, limit = 10, now = () => new Date(), log, deadline }: Pass): Promise<number> {
+  if (pastDeadline(deadline, now)) return 0;
+  await sweepInterruptedClaims(payload, now, deadline);
+  await requeueRetryable(payload, now, deadline);
+  if (pastDeadline(deadline, now)) return 0;
   // Behind a nonce stopped for a person, later nonces could never mine: hold new grants in pending.
   if (await signerHeld(payload, adapter.signer)) return 0;
   let dispatched = 0;
-  for await (const row of due(payload, { state: { equals: "pending" } }, now)) {
-    if (dispatched >= limit || await signerHeld(payload, adapter.signer)) break;
+  for await (const row of due(payload, { state: { equals: "pending" } }, now, deadline)) {
+    if (dispatched >= limit || pastDeadline(deadline, now) || await signerHeld(payload, adapter.signer)) break;
+    if (pastDeadline(deadline, now)) break; // the signer-held read may itself have crossed the deadline: no claim
     const claimed = await claim(payload, row.id, now());
     if (!claimed) continue;
     dispatched++;
@@ -396,7 +456,7 @@ export async function dispatchKeyGrants({ payload, adapter, limit = 10, now = ()
     (prepared) => finishGrantBroadcast(payload, row.id, prepared,
       intent => intent.attemptID === claimed.attemptID && intent.state === "submitted" && intent.txHash === prepared.txHash
         && sameLatestSend(intent, "sends", 1, prepared.txHash), input => adapter.broadcast(input), true));
-    await recordUnsentGrant(payload, row.id, claimed.attemptID, now(), outcome);
+    await recordUnsentGrant(payload, row.id, claimed.attemptID, now(), outcome, log);
   }
   return dispatched;
 }
@@ -406,10 +466,12 @@ export async function dispatchKeyGrants({ payload, adapter, limit = 10, now = ()
  * sends. Only one transaction per nonce can mine: a confirmed hash grants the
  * key, and a reverted one proves the nonce consumed without a key.
  */
-export async function reconcileKeyGrants({ payload, adapter, limit = 10, now = () => new Date() }: Pass): Promise<number> {
+export async function reconcileKeyGrants({ payload, adapter, limit = 10, now = () => new Date(), onOverCap = (intentID) => logOverCap(intentID), deadline }: ReconcilePass): Promise<number> {
+  if (pastDeadline(deadline, now)) return 0;
   let settled = 0;
-  for await (const row of due(payload, { and: [{ state: { in: ["submitted", "ambiguous"] } }, { txHash: { exists: true } }] }, now)) {
+  for await (const row of due(payload, { and: [{ state: { in: ["submitted", "ambiguous"] } }, { txHash: { exists: true } }] }, now, deadline)) {
     if (settled >= limit) break;
+    if (pastDeadline(deadline, now)) break; // not started: keeps its due time, so it comes first next tick
     const hashes = [...new Set([String(row.txHash), ...recordedSends(row).map((send) => send.txHash)])];
     // A confirmed suppression applies only to the last send, not older hashes.
     if (row.lastErrorCode === grantBroadcastSuppressed) {
@@ -422,25 +484,87 @@ export async function reconcileKeyGrants({ payload, adapter, limit = 10, now = (
       }
     }
     const outcomes: { txHash: string; outcome: ReconcileOutcome }[] = [];
+    let unfinished = false;
     for (const txHash of hashes) {
+      if (pastDeadline(deadline, now)) { unfinished = true; break; }
       let outcome: ReconcileOutcome;
       try { outcome = await adapter.reconcile({ intentID: row.id, txHash, target: parseKeyGrantTarget(row.target) }); }
       catch { outcome = { kind: "unknown" }; }
       outcomes.push({ txHash, outcome });
     }
-    const result = outcomes.find((entry) => entry.outcome.kind === "confirmed") ?? outcomes.find((entry) => entry.outcome.kind === "definitelyReverted");
-    if (!result) { await deferOrSurface(payload, row, now()); continue; }
-    await inIntent(payload, row.id, async (req, intent) => {
-      // Fenced by attempt and hash: a result for an older attempt never lands on a newer one.
-      if (!["submitted", "ambiguous"].includes(String(intent.state)) || intent.txHash !== row.txHash || intent.attemptID !== row.attemptID) return;
-      const { outcome, txHash } = result;
-      const data = outcome.kind === "confirmed" ? { state: "granted", tokenID: outcome.tokenID, grantedAt: now().toISOString(), nextAttemptAt: null, settledTxHash: txHash }
-        : { state: "failed_retryable", lastErrorCode: code(outcome.kind === "definitelyReverted" ? outcome.code : "tx_reverted"), settledTxHash: txHash, nextAttemptAt: later(now(), RETRY_BACKOFF_MS * Math.max(1, Number(intent.attempts))) };
-      await updateCommerce(req, INTENTS, row.id, data);
-      settled++;
-    });
+    const confirmed = outcomes.find((entry) => entry.outcome.kind === "confirmed");
+    // A hash left unread could be the one that mined: without a confirmation, an unfinished row is left exactly as it
+    // was (still due, not deferred, never reverted) for the next tick (Review-A, 25 Nov).
+    if (unfinished && !confirmed) break;
+    const result = confirmed ?? outcomes.find((entry) => entry.outcome.kind === "definitelyReverted");
+    if (!result) {
+      if (outcomes.some((entry) => entry.outcome.kind === "unknown" && entry.outcome.code === beyondAncestryCap)) onOverCap(String(row.id));
+      await deferOrSurface(payload, row, now());
+      continue;
+    }
+    if (await settleReconciled(payload, row, result, now)) settled++;
   }
   return settled;
+}
+
+/**
+ * One fixed stderr line for a grant whose receipt sits further below the finalized block than the tick walks
+ * (ANCESTRY_CAP): it stays pending until a person runs the one-shot reconcile (deployment/KEY-GRANTS.md). Printed each
+ * time the row comes due, not every tick: an unanswered reconcile is deferred RECONCILE_RECHECK_MS (2 min). The tick
+ * also returns these IDs in its result line (grant-catch-up.ts). No address, order or customer data.
+ */
+export function logOverCap(intentID: string, log: (line: string) => void = (line) => console.error(line)): void {
+  log(JSON.stringify({ event: "key_grant_over_cap", intent: String(intentID) }));
+}
+
+/** Records a definitive reconcile result, fenced by attempt and hash: a result for an older attempt never lands on a newer one. */
+async function settleReconciled(payload: Payload, row: CommerceDocument, result: { txHash: string; outcome: ReconcileOutcome }, now: () => Date): Promise<boolean> {
+  return inIntent(payload, row.id, async (req, intent) => {
+    if (!["submitted", "ambiguous"].includes(String(intent.state)) || intent.txHash !== row.txHash || intent.attemptID !== row.attemptID) return false;
+    const { outcome, txHash } = result;
+    if (intent.lastErrorCode === ticketTokenConflict && outcome.kind !== "confirmed") return false;
+    let ticketTokenKey: string | undefined;
+    if (outcome.kind === "confirmed") {
+      const target = parseKeyGrantTarget(intent.target);
+      if (target.ticketMode === "shared") {
+        const key = ticketTokenIdentity(target.chainID, target.lock, outcome.tokenID);
+        if (key) await lockCommerce(req, [`event-token:${key}`]);
+        const previous = key && await findCommerce(req, INTENTS, "ticketTokenKey", key);
+        if (!key || (previous && previous.id !== intent.id)) {
+          await updateCommerce(req, INTENTS, row.id, { state: "ambiguous", lastErrorCode: ticketTokenConflict, nextAttemptAt: later(now(), HOLD_RECHECK_MS) });
+          return false;
+        }
+        ticketTokenKey = key;
+      }
+    }
+    const data = outcome.kind === "confirmed" ? { state: "granted", tokenID: outcome.tokenID, ...(ticketTokenKey ? { ticketTokenKey } : {}), grantedAt: now().toISOString(), nextAttemptAt: null, settledTxHash: txHash }
+      : { state: "failed_retryable", lastErrorCode: code(outcome.kind === "definitelyReverted" ? outcome.code : "tx_reverted"), settledTxHash: txHash, nextAttemptAt: later(now(), RETRY_BACKOFF_MS * Math.max(1, Number(intent.attempts))) };
+    await updateCommerce(req, INTENTS, row.id, data);
+    return true;
+  });
+}
+
+/**
+ * The one-shot recovery reconcile (scripts/key-grant-reconcile-one.ts): ONE named grant intent and ONE of its recorded
+ * hashes, read with the adapter it is given (a raised ancestry walk budget, the same canonical and ancestry checks).
+ * It only reads the chain and, on a definitive result, makes the same fenced write as the tick. It never signs,
+ * sends or replaces a transaction.
+ */
+export async function reconcileOneKeyGrant({ payload, adapter, intentID, txHash, now = () => new Date() }: { payload: Payload; adapter: KeyGrantAdapter; intentID: string; txHash: string; now?: () => Date }):
+  Promise<{ outcome: "settled"; state: string } | { outcome: "unknown"; code?: string } | { outcome: "refused"; reason: "not_found" | "not_in_flight" | "hash_not_recorded" }> {
+  let row: CommerceDocument | null;
+  try { row = await payload.findByID({ collection: INTENTS as never, id: intentID, depth: 0, overrideAccess: true, disableErrors: true }) as CommerceDocument | null; } catch { row = null; }
+  if (!row) return { outcome: "refused", reason: "not_found" };
+  if (!["submitted", "ambiguous"].includes(String(row.state)) || !row.txHash) return { outcome: "refused", reason: "not_in_flight" };
+  const suppressed = row.lastErrorCode === grantBroadcastSuppressed ? recordedSends(row).at(-1)?.txHash?.toLowerCase() : undefined;
+  const original = [String(row.txHash), ...recordedSends(row).map((send) => send.txHash)].find((value) => value.toLowerCase() === txHash.toLowerCase());
+  if (!original || original.toLowerCase() === suppressed) return { outcome: "refused", reason: "hash_not_recorded" };
+  let outcome: ReconcileOutcome;
+  try { outcome = await adapter.reconcile({ intentID: row.id, txHash: original, target: parseKeyGrantTarget(row.target) }); } catch { outcome = { kind: "unknown" }; }
+  if (outcome.kind === "unknown") return { outcome: "unknown", ...(outcome.code ? { code: outcome.code } : {}) };
+  if (!(await settleReconciled(payload, row, { txHash: original, outcome }, now))) return { outcome: "unknown", code: "not_written" }; // the row moved, or a shared-ticket conflict held it
+  const after = await payload.findByID({ collection: INTENTS as never, id: intentID, depth: 0, overrideAccess: true }) as CommerceDocument;
+  return { outcome: "settled", state: String(after.state) };
 }
 
 /**
@@ -537,7 +661,7 @@ async function grantRecoveryAllowed(req: PayloadRequest, intent: CommerceDocumen
 type Replacer = {
   signer: string;
   replace(row: CommerceDocument, nonce: number, previous: TransactionFee): Promise<ReplaceOutcome>;
-  rebroadcast(input: { raw: string }): Promise<RebroadcastOutcome>;
+  rebroadcast(input: RebroadcastInput): Promise<RebroadcastOutcome>;
   broadcast(input: { intentID: string; txHash: string }): Promise<BroadcastOutcome>;
   release(input: { txHash: string }): void;
 };
@@ -551,16 +675,17 @@ type Replacer = {
  * Only accepted sends count toward MAX_REPLACEMENTS. Nothing here ever moves the
  * operation to a new nonce: an earlier transaction may still mine.
  */
-async function replaceStuck(payload: Payload, operation: Operation, chain: Replacer, now: () => Date, limit: number): Promise<number> {
+async function replaceStuck(payload: Payload, operation: Operation, chain: Replacer, now: () => Date, limit: number, log?: (line: string) => void, deadline?: number): Promise<number> {
+  if (pastDeadline(deadline, now)) return 0; // before the replacement queries
   const { fields, prefix } = operation;
   const recheck = new Date(now().getTime() - REBROADCAST_AFTER_MS).toISOString();
   const rows = await findAll(payload, { and: [
     operation.inFlight(chain.signer), { [fields.lastSentAt]: { less_than_equal: recheck } },
     { or: [{ lastErrorCode: { exists: false } }, { lastErrorCode: { not_in: [...operation.stopCodes, ...operation.settledCodes] } }] },
-  ] }, undefined, fields.lastSentAt);
+  ] }, undefined, fields.lastSentAt, () => pastDeadline(deadline, now));
   let replaced = 0;
   for (const row of rows) {
-    if (replaced >= limit) break;
+    if (replaced >= limit || pastDeadline(deadline, now)) break;
     const sends = recordedSends(row, fields.sends);
     const last = sends.at(-1);
     if (!last || row[fields.nonce] == null) continue; // recorded before nonces were persisted: left to a person
@@ -571,13 +696,21 @@ async function replaceStuck(payload: Payload, operation: Operation, chain: Repla
       const tries = last.rebroadcasts ?? 0;
       if (tries >= MAX_REBROADCASTS) { await markAttempt(payload, operation, row, operation.stop(`${prefix}rebroadcast_failed`)); continue; }
       const send = async (): Promise<RebroadcastOutcome> => {
-        try { return await chain.rebroadcast({ raw: String(last.raw) }); } catch { return { kind: "unknown" }; }
+        try {
+          return await chain.rebroadcast({ raw: String(last.raw), txHash: last.txHash, nonce, target: parseKeyGrantTarget(row.target),
+            ...(row.tokenID != null ? { tokenID: String(row.tokenID) } : {}) });
+        } catch { return { kind: "unknown" }; }
       };
       const answer = operation === grantOperation
         ? await withSignerLock(payload, chain.signer, () => inGrant(payload, row.id, async (req, intent, held) =>
           await grantRecoveryAllowed(req, intent, held, row, sends.length, last.txHash) ? send() : null))
         : await send();
-      if (!answer) continue;
+      if (!answer || answer.kind === "unavailable") continue; // nothing sent; next tick tries again
+      // Recorded bytes that fail the adapter's checks are never sent: stopped for a person (Review-A, 24 Nov).
+      if (answer.kind === "refused") {
+        if (answer.code === "role_hook_set") logParked(row.id, `${prefix}rebroadcast_${answer.code}`, log);
+        await markAttempt(payload, operation, row, operation.stop(`${prefix}rebroadcast_refused`)); continue;
+      }
       const sentAt = now().toISOString();
       if (answer.kind === "accepted") await markSend(payload, operation, row, sends.length - 1, { accepted: true }, { [fields.lastSentAt]: sentAt });
       else if (answer.kind === "unknown") await markSend(payload, operation, row, sends.length - 1, { rebroadcasts: tries + 1 }, { [fields.lastSentAt]: sentAt, lastErrorCode: `${prefix}rebroadcast_unknown` });
@@ -624,6 +757,8 @@ async function replaceStuck(payload: Payload, operation: Operation, chain: Repla
     if (outcome.kind === "notSent") {
       // A ceiling or an unrecordable replacement waits for a person; anything else is tried again later.
       const stopped = { fee_ceiling_reached: "fee_ceiling", write_ahead_failed: "write_ahead_failed" }[outcome.code];
+      // A role hook on the lock waits for a person; the pending send stays reconciled and is retried after.
+      if (outcome.code === "role_hook_set") logParked(row.id, `${prefix}${outcome.code}`, log);
       await markAttempt(payload, operation, row, stopped ? operation.stop(`${prefix}${stopped}`) : { lastErrorCode: code(`${prefix}${outcome.code}`) });
       continue;
     }
@@ -645,14 +780,14 @@ async function replaceStuck(payload: Payload, operation: Operation, chain: Repla
  * Selected by `lastSentAt`, not by reconcile's `nextAttemptAt`. Returns how many
  * fee-raised replacements the node accepted.
  */
-export async function replaceStuckKeyGrants({ payload, adapter, limit = 10, now = () => new Date() }: Pass): Promise<number> {
+export async function replaceStuckKeyGrants({ payload, adapter, limit = 10, now = () => new Date(), log, deadline }: Pass): Promise<number> {
   return replaceStuck(payload, grantOperation, {
     signer: adapter.signer,
     replace: (row, nonce, previous) => adapter.prepareReplacement({ intentID: row.id, target: parseKeyGrantTarget(row.target), nonce, previous }),
     rebroadcast: (input) => adapter.rebroadcast(input),
     broadcast: (input) => adapter.broadcast(input),
     release: (input) => adapter.release(input),
-  }, now, limit);
+  }, now, limit, log, deadline);
 }
 
 /* ADR-0009: cancel a granted key on chain with the lock-manager authority. */
@@ -682,17 +817,22 @@ const sameCancelClaim = (cancelAttemptID: string) => (intent: CommerceDocument) 
 async function recordCancel(payload: Payload, intentID: string, cancelAttemptID: string, now: Date, outcome: Sent<"confirmedKeyInvalid">): Promise<void> {
   if (outcome.kind === "moved" || outcome.kind === "suppressed") return;
   if (outcome.kind === "sent" && outcome.answer.kind === "submitted") return acceptFirstSend(payload, intentID, sameCancelClaim(cancelAttemptID), "cancelSends", outcome.txHash);
-  await inIntent(payload, intentID, async (req, intent) => {
-    if (intent.cancelAttemptID !== cancelAttemptID || intent.state !== "granted") return;
+  const cancelled = await inIntent(payload, intentID, async (req, intent) => {
+    if (intent.cancelAttemptID !== cancelAttemptID || intent.state !== "granted") return null;
     let data: Record<string, unknown>;
     if (outcome.kind === "skipped") data = { state: "cancelled", cancelledAt: now.toISOString(), lastErrorCode: "key_not_valid", nextAttemptAt: null };
-    else if (outcome.kind === "notSent") data = cancelNotSentData(outcome.code, now);
+    else if (outcome.kind === "notSent") {
+      if (parkedCancel(outcome.code)) logParked(intentID, `cancel_${outcome.code}`);
+      data = cancelNotSentData(outcome.code, now);
+    }
     else if (outcome.answer.kind === "definitelyNotSent") {
       // Recorded, then proven unsent: the whole attempt is cleared together.
       data = { ...cancelNotSentData(outcome.answer.code, now), cancelTxHash: null, cancelNonce: null, cancelSigner: null, cancelSubmittedAt: null, cancelSends: null, cancelLastSentAt: null };
     } else data = { lastErrorCode: "cancel_outcome_unknown" };
     await updateCommerce(req, INTENTS, intentID, data);
+    return data.state === "cancelled" ? intent : null;
   });
+  if (cancelled) await releaseSeatsAfterCancel(payload, cancelled);
 }
 
 async function reconcileCancels(payload: Payload, adapter: KeyCancelAdapter, now: () => Date): Promise<void> {
@@ -705,8 +845,8 @@ async function reconcileCancels(payload: Payload, adapter: KeyCancelAdapter, now
       catch { outcomes.push({ kind: "unknown" }); }
     }
     const outcome = outcomes.find((entry) => entry.kind === "confirmed") ?? outcomes.find((entry) => entry.kind === "definitelyReverted") ?? { kind: "unknown" };
-    await inIntent(payload, row.id, async (req, intent) => {
-      if (intent.state !== "granted" || intent.cancelTxHash !== row.cancelTxHash) return;
+    const cancelled = await inIntent(payload, row.id, async (req, intent) => {
+      if (intent.state !== "granted" || intent.cancelTxHash !== row.cancelTxHash) return null;
       // A stopped replacement keeps its own code for the person who looks.
       const stopped = (cancelReplacementStopCodes as readonly string[]).includes(String(intent.lastErrorCode ?? ""));
       const overdue = !stopped && typeof intent.cancelSubmittedAt === "string" && now().getTime() - Date.parse(intent.cancelSubmittedAt) > GRANT_OVERDUE_MS;
@@ -714,7 +854,9 @@ async function reconcileCancels(payload: Payload, adapter: KeyCancelAdapter, now
         : outcome.kind === "definitelyReverted" ? { lastErrorCode: "cancel_reverted", nextAttemptAt: null }
           : { nextAttemptAt: later(now(), RECONCILE_RECHECK_MS), ...(overdue ? { lastErrorCode: "cancel_overdue" } : {}) };
       await updateCommerce(req, INTENTS, row.id, data);
+      return "state" in data && data.state === "cancelled" ? intent : null;
     });
+    if (cancelled) await releaseSeatsAfterCancel(payload, cancelled);
   }
 }
 
@@ -774,5 +916,36 @@ export async function cancelKeyGrants({ payload, adapter, limit = 10, now = () =
     }), adapter, row.id);
     await recordCancel(payload, row.id, claimed.cancelAttemptID, now(), outcome);
   }
+  // Durable catch-up for refunded Unlock seats whose keys are now all invalid (seat-release.ts); never fails the pass.
+  try { await releaseInvalidatedSeatsSweep({ req: requestFor(payload), limit, now: now().getTime() }); }
+  catch { payload.logger?.error({ msg: "Seat release sweep failed" }); }
   return dispatched;
+}
+
+/** What the owner-cancel reconcile reads: whether a key is no longer valid at the chain's depth (null: cannot tell yet). */
+export type KeyStateReader = { keyInvalidAtDepth(input: { target: KeyGrantTarget; tokenID: string }): Promise<boolean | null> };
+
+/**
+ * ADR-0008 and ADR-0011: refunded keys are cancelled by the owner's own wallet, the lock manager, never by a key on our
+ * host, so nothing here signs. Each granted intent with cancelRequested is marked cancelled once the chain shows its
+ * key no longer valid at confirmation depth (cancelled or expired), with the existing evidence code `key_not_valid`.
+ * A key still valid, or unreadable, is rechecked after RECONCILE_RECHECK_MS (nextAttemptAt), so every row is reached.
+ */
+export async function reconcileOwnerCancels({ payload, reader, limit = 10, now = () => new Date(), deadline }: { payload: Payload; reader: KeyStateReader; limit?: number; now?: () => Date; deadline?: number }): Promise<number> {
+  if (pastDeadline(deadline, now)) return 0;
+  let settled = 0;
+  for await (const row of due(payload, { and: [{ state: { equals: "granted" } }, { cancelRequested: { equals: true } }, { tokenID: { exists: true } }] }, now, deadline)) {
+    if (settled >= limit || pastDeadline(deadline, now)) break;
+    let invalid: boolean | null;
+    try { invalid = await reader.keyInvalidAtDepth({ target: parseKeyGrantTarget(row.target), tokenID: String(row.tokenID) }); } catch { invalid = null; }
+    const moved = await inIntent(payload, row.id, async (req, intent) => {
+      if (intent.state !== "granted" || intent.cancelRequested !== true || String(intent.tokenID) !== String(row.tokenID)) return false;
+      // Still valid, or unreadable: rechecked later, so the rows behind it are read too (no starvation; Review-A).
+      if (invalid !== true) { await updateCommerce(req, INTENTS, row.id, { nextAttemptAt: later(now(), RECONCILE_RECHECK_MS) }); return false; }
+      await updateCommerce(req, INTENTS, row.id, { state: "cancelled", cancelledAt: now().toISOString(), lastErrorCode: "key_not_valid", nextAttemptAt: null });
+      return true;
+    });
+    if (moved) settled++;
+  }
+  return settled;
 }

@@ -4,6 +4,7 @@ import { subscribeWithSelector } from "zustand/middleware";
 import { createStore } from "zustand/vanilla";
 
 import type { NudgeSpec, TargetMeta } from "./types";
+import { reachableHref } from "@/lib/content/essays";
 
 // ─── Registration Tour ────────────────────────────────────────────────────────
 
@@ -49,7 +50,7 @@ export type TourTarget = {
   action: string;
 };
 
-export const INTERFACE_TARGETS: TourTarget[] = [
+const ALL_INTERFACE_TARGETS: TourTarget[] = [
   { id: "reading", href: "/essays", label: "tour.reading.label",
     description: "tour.reading.description", action: "tour.reading.action" },
   { id: "music", href: "/music", label: "tour.music.label",
@@ -57,6 +58,8 @@ export const INTERFACE_TARGETS: TourTarget[] = [
   { id: "help", href: "/help", label: "tour.help.label",
     description: "tour.help.description", action: "tour.help.action" },
 ];
+/** The guide's stops, without any section the site has switched off (src/lib/content/essays.ts). */
+export const INTERFACE_TARGETS: TourTarget[] = ALL_INTERFACE_TARGETS.filter((target) => reachableHref(target.href) !== undefined);
 
 // ─── Store ────────────────────────────────────────────────────────────────────
 

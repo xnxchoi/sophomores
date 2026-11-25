@@ -5,6 +5,9 @@ import { withCommerceWrite } from '../access'
 import { purchaseAllowance, type PurchaseSnapshot } from '../purchase-snapshot'
 import { lockReservationContext, releaseReservation } from '../reservations'
 import { holdOrderBenefits, revokeOrderBenefits } from '../benefit-review'
+import { recordOrderRefund } from '../order-refund'
+import { releaseInvalidatedSeats } from '../seat-release'
+import { hasRefundRequest } from './refund'
 import { assertPaymentRollback, inPaymentTransaction, lockCommerce, paymentTransactionToken, relationshipID } from '../_shared/transaction'
 import { adapterConfig, parsePortOneTransaction, providerPayment, readPortOneTransaction, type AdapterDependencies } from './adapter'
 import { channelType, classifyPaymentRisk, minimalPaymentRiskProof, validatePaidPayment } from './proof'
@@ -91,9 +94,10 @@ export async function hasUnresolvedPaidReview(req: PayloadRequest, row: Awaited<
 
 /** Call under the customer lock through the final decision/commit. */
 export async function assertPurchaseWithoutPaidReview(req: PayloadRequest,
-  snapshot: Pick<PurchaseSnapshot, 'customerID' | 'productID' | 'cartID' | 'eventID'>, transactionsSlug?: string) {
+  snapshot: Pick<PurchaseSnapshot, 'customerID' | 'productID' | 'cartID' | 'eventID' | 'version'>, transactionsSlug?: string) {
+  const allowance = purchaseAllowance(snapshot)
   const related = (prior: PurchaseSnapshot) =>
-    prior.cartID === snapshot.cartID || purchaseAllowance(prior) === purchaseAllowance(snapshot) || prior.productID === snapshot.productID
+    prior.cartID === snapshot.cartID || purchaseAllowance(prior) === allowance
   const attempts = await loadPaidReviewAttempts(req, snapshot.customerID, transactionsSlug)
   for (const row of attempts) {
     // All Signet-bearing releases share one account allowance.
@@ -241,8 +245,15 @@ async function reviewPaymentEvidence(req: PayloadRequest, input: ReviewInput, ev
         // This releases account/event reservations or commitments; the domain
         // deliberately does NOT restock physical products automatically.
         await releaseReservation({ req, attemptID: row.id, verifiedReason: 'confirmed-cancel', providerEventID: evidenceID })
-        if (current.order != null) await revokeOrderBenefits({ req, orderID: relationshipID(current.order),
-          providerEventID: evidenceID, reason: 'verified-full-cancellation' })
+        if (current.order != null) {
+          await revokeOrderBenefits({ req, orderID: relationshipID(current.order),
+            providerEventID: evidenceID, reason: 'verified-full-cancellation' })
+          // The order itself: refunded once, with its record. Membership granted by the payment is not reversed.
+          await recordOrderRefund({ req, orderID: relationshipID(current.order), transactionID: row.id,
+            providerEventID: evidenceID, source: await hasRefundRequest(req, row.id) ? 'admin' : 'provider' })
+          // Unlock seats wait for every key to be invalid; keys never sent were just cancelled, so release those now.
+          await releaseInvalidatedSeats({ req, orderID: relationshipID(current.order) })
+        }
       } else if (!holdOnly && current.order != null) {
         await holdOrderBenefits({ req, orderID: relationshipID(current.order), providerEventID: evidenceID,
           reason: 'verified-provider-payment-risk' })

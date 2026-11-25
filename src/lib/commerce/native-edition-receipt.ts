@@ -1,5 +1,7 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
+import { ticketEmailConsentSchema } from "./contracts";
+import { sharedTicketTarget } from "./event-tickets";
 import { editionRuleFacts, matchesRecordedEditionRule } from "./edition-rules";
 
 const id = z.string().trim().min(1).max(128);
@@ -26,7 +28,10 @@ export const nativePurchaseSnapshotSchema = z.strictObject({
   shippingAmount: z.int().min(0), totalAmount: z.int().min(1),
   orderName: z.string().trim().min(1).max(200),
   shippingAddress: address,
-}).refine((value) => value.releaseID === value.productID &&
+  memberTicketTarget: sharedTicketTarget.optional(),
+  ticketEmailConsent: ticketEmailConsentSchema,
+}).refine((value) => (!value.ticketEmailConsent || !!value.memberTicketTarget) &&
+  (!value.memberTicketTarget || value.editionEntitlements.freeLaunchTicket) && value.releaseID === value.productID &&
   Number.isSafeInteger(value.unitAmount + value.shippingAmount) &&
   value.totalAmount === value.unitAmount + value.shippingAmount && matchesRecordedEditionRule(value) &&
   value.editionEntitlements.freeLaunchTicket === (value.eventID !== null));

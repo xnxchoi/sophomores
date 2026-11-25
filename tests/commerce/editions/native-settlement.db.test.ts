@@ -25,10 +25,16 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
   const { createLocalReq } = await import("payload");
   const { sql } = await import("@payloadcms/db-postgres");
   const { inCommerceTransaction, inPaymentTransaction } = await import("../../../src/lib/commerce/_shared/transaction");
+  const { refundPolicy, refundTerms } = await import("../../../src/lib/commerce/refund-policy");
   const { up, down } = await import("../../../src/payload/migrations/20261122_160100_native_edition_settlement");
   const { down: downTicketTargets } = await import("../../../src/payload/migrations/20261123_040000_event_ticket_targets");
   isolateTransport(t, target.port);
-  const { payload, pool, control, close, version } = await openProofDatabase(true, new Set(), target);
+  const { payload, pool, control, close, version } = await openProofDatabase(true, new Set(), target, {
+    cartAuthorizer: async req => {
+      assert.equal(req.user?.collection, "users");
+      return String(req.user.id);
+    },
+  });
   t.after(close);
   t.diagnostic(`PostgreSQL ${version}; hosted payment, Unlock and NFC are stubs per ADR-0033; no issuance`);
   const migrate = async (apply: typeof up) => {
@@ -51,6 +57,33 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
     await migrate(up);
     assert.deepEqual(await editionColumns(), afterPush);
   });
+  await t.test("the combined migration leaves Home Entry and the nullable cart marker in place", async () => {
+    const { migrations } = await import("../../../src/payload/migrations");
+    const guestCart = migrations.findIndex(({ name }) => name === "20261124_121000_shared_guest_cart_kind");
+    assert.ok(guestCart > 0);
+    const [cart, home] = migrations.slice(guestCart);
+    assert.equal(migrations[guestCart + 1]?.name, "20261124_130000_home_entry");
+    const columns = async () => (await control.query(`SELECT table_name, column_name, is_nullable
+      FROM information_schema.columns WHERE table_schema = 'public' AND (
+        (table_name = 'carts_items' AND column_name = 'ticket_kind') OR
+        (table_name = 'home_entry' AND column_name = 'warp_start') OR
+        (table_name = 'home_entry_entry_links' AND column_name = 'code'))
+      ORDER BY table_name`)).rows;
+    const cartColumn = { table_name: "carts_items", column_name: "ticket_kind", is_nullable: "YES" };
+    const homeColumns = [
+      { table_name: "home_entry", column_name: "warp_start", is_nullable: "YES" },
+      { table_name: "home_entry_entry_links", column_name: "code", is_nullable: "NO" },
+    ];
+    await migrate(cart.down); // The shared fixture pushes the cart schema but has no Home Entry global.
+    assert.deepEqual(await columns(), []);
+    await migrate(cart.up);
+    await migrate(home.up);
+    assert.deepEqual(await columns(), [cartColumn, ...homeColumns]);
+    await migrate(cart.down);
+    assert.deepEqual(await columns(), homeColumns);
+    await migrate(cart.up); // On current main Home Entry has already run.
+    assert.deepEqual(await columns(), [cartColumn, ...homeColumns]);
+  });
   await publishFixtureCatalogue(payload);
   await t.test("legacy payment control settles through the same installed plugin and owned PG fixture", async () => {
     const donor = await initiateAttempt(payload);
@@ -58,7 +91,353 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
     assert.equal((await orders(control, donor.transactionID)).length, 1);
   });
 
+  await t.test("shared event: one Member and two Guest seats, two Guest slots per sponsor, and one final token mapping", async (shared) => {
+    const { randomUUID } = await import("node:crypto");
+    const { z } = await import("zod");
+    const { seedCheckoutCart, initiateThroughEndpoint } = await import("../core/payment-postgres-fixture");
+    const { up: upBinding, down: downBinding } = await import("../../../src/payload/migrations/20261124_120000_shared_event_ticket_binding");
+    const { accountAllowanceAdmits, reservePurchase } = await import("../../../src/lib/commerce/reservations");
+    const { withCommerceWrite } = await import("../../../src/lib/commerce/access");
+    const { doorTicketLabelEndpoint } = await import("../../../src/lib/commerce/keys/door-ticket-label");
+    await migrate(downBinding);
+    await migrate(upBinding);
+    const member = await seedMember(payload);
+    const guest = await seedCheckoutCart(payload, { user: member, customerID: z.uuid().parse(member.id) as ReturnType<typeof randomUUID> });
+    const eventID = guest.eventID;
+    // The refund terms a guest quote shows beside Pay, as the page derives them (Review-B r3: the server re-derives them).
+    const guestTerms = async () => refundTerms(refundPolicy({ version: 3, kind: "guest-ticket-v1", eventID }),
+      (await payload.findByID({ collection: "commerce-events", id: eventID, depth: 0, overrideAccess: true }) as { partIStartsAt?: unknown }).partIStartsAt);
+    const lock = "0x" + "b".repeat(40);
+    const ticketTarget = { chainID: 137, lock, mode: "shared" as const };
+    const priorEvent = process.env.UNLOCK_SHARED_TICKET_EVENT_ID;
+    const priorGuestProduct = process.env.UNLOCK_SHARED_TICKET_GUEST_PRODUCT_ID;
+    const priorSignet = process.env.MEMBER_WALLET_LOCK_ADDRESS;
+    const priorChain = process.env.MEMBER_WALLET_CHAIN_ID;
+    const priorOwner = process.env.MEMBER_WALLET_OWNER_ADDRESS;
+    const priorOrigin = process.env.NEXT_PUBLIC_SERVER_URL;
+    try {
+      process.env.UNLOCK_SHARED_TICKET_EVENT_ID = eventID;
+      process.env.UNLOCK_SHARED_TICKET_GUEST_PRODUCT_ID = guest.productID;
+      process.env.MEMBER_WALLET_LOCK_ADDRESS = "0x" + "a".repeat(40);
+      process.env.MEMBER_WALLET_CHAIN_ID = "84532";
+      process.env.MEMBER_WALLET_OWNER_ADDRESS = "0x" + "c".repeat(40);
+      process.env.NEXT_PUBLIC_SERVER_URL = "http://localhost:3000";
+      await payload.update({ collection: "commerce-events" as never, id: eventID, overrideAccess: true, data: {
+        checkInAuthority: "unlock-events", capacity: 4, transportCapacity: 4,
+        unlockTicketConfiguration: { version: 1, mode: "shared", chainID: 137, eventLock: lock, guestProductID: guest.productID },
+      } as never });
+      const memberCart = await seedNativeCart(payload, member, editions[1], eventID);
+      for (const chain of ["84532", "137"]) {
+        process.env.MEMBER_WALLET_CHAIN_ID = chain;
+        if (chain === "137") delete process.env.MEMBER_WALLET_OWNER_ADDRESS;
+        await assert.rejects(prepare(payload, memberCart));
+        await assert.rejects(initiateThroughEndpoint(payload, member, { cartID: guest.cartID, shippingAddress: guest.shippingAddress }));
+        assert.deepEqual((await control.query(
+          "SELECT id FROM transactions WHERE cart_id IN ($1,$2)", [memberCart.cartID, guest.cartID])).rows, []);
+        assert.deepEqual((await control.query(
+          "SELECT reserved_quantity::int, committed_quantity::int FROM commerce_events WHERE id=$1", [eventID])).rows,
+        [{ reserved_quantity: 0, committed_quantity: 0 }]);
+      }
+      process.env.MEMBER_WALLET_OWNER_ADDRESS = "0x" + "c".repeat(40);
+      await assert.rejects(initiateThroughEndpoint(payload, member, {
+        cartID: guest.cartID, shippingAddress: guest.shippingAddress, guestQuote: { productID: guest.productID, quantity: 1, totalAmount: 10_000, refundTerms: await guestTerms() },
+      }), /initiate answered (403|500)/);
+      assert.deepEqual((await control.query("SELECT id FROM transactions WHERE cart_id=$1", [guest.cartID])).rows, []);
+      assert.deepEqual((await control.query(
+        "SELECT reserved_quantity::int, committed_quantity::int FROM commerce_events WHERE id=$1", [eventID])).rows,
+      [{ reserved_quantity: 0, committed_quantity: 0 }]);
+      const m = await prepare(payload, memberCart);
+      await settleOne(payload, m);
+      const priorConsent = process.env.UNLOCK_TICKET_EMAIL_CONSENT_ENABLED;
+      shared.after(() => {
+        if (priorConsent === undefined) delete process.env.UNLOCK_TICKET_EMAIL_CONSENT_ENABLED;
+        else process.env.UNLOCK_TICKET_EMAIL_CONSENT_ENABLED = priorConsent;
+      });
+      delete process.env.UNLOCK_TICKET_EMAIL_CONSENT_ENABLED;
+      const g = await initiateThroughEndpoint(payload, member, {
+        cartID: guest.cartID, shippingAddress: guest.shippingAddress,
+        guestQuote: { productID: guest.productID, quantity: 1, totalAmount: 10_000, refundTerms: await guestTerms() },
+        ticketEmailConsent: "unlock-ticket-email-v1",
+      }) as { transactionID: ReturnType<typeof randomUUID>; paymentID: string };
+      const withoutConsent = await payload.findByID({ collection: "transactions", id: g.transactionID, overrideAccess: true, depth: 0 });
+      assert.equal((withoutConsent.portone.snapshot as Record<string, unknown>).ticketEmailConsent, undefined);
+      await settleOne(payload, { ...guest, ...g, total: 10_000 });
+
+      const req = await createLocalReq({ user: member }, payload);
+      const reservation = (attemptID: string, req: import("payload").PayloadRequest) => withCommerceWrite(req, () => reservePurchase({
+        req, attemptID, customerID: String(member.id), productID: guest.productID, releaseID: guest.productID,
+        eventID, quantity: 1, accountLimit: 2, ticketTarget, snapshotHash: "a".repeat(64),
+      }));
+      const holder = deferred<number>(), waiter = deferred<number>(), release = deferred<void>();
+      const second = randomUUID(), third = randomUUID();
+      const winning = inCommerceTransaction(req, async () => {
+        const session = await nativeSession(req);
+        const { rows } = await session.execute(sql`SELECT pg_backend_pid() AS pid`);
+        await reservation(second, req);
+        holder.resolve(Number(rows[0].pid));
+        await release.promise;
+      });
+      let losing: Promise<PromiseSettledResult<unknown>[]> | undefined;
+      try {
+        const holderPID = await Promise.race([holder.promise, winning.then(() => { throw new Error("winner missed barrier"); })]);
+        const nextReq = await createLocalReq({ user: member }, payload);
+        losing = Promise.allSettled([inCommerceTransaction(nextReq, async () => {
+          const session = await nativeSession(nextReq);
+          const { rows } = await session.execute(sql`SELECT pg_backend_pid() AS pid`);
+          waiter.resolve(Number(rows[0].pid));
+          return reservation(third, nextReq);
+        })]);
+        const waiterPID = await Promise.race([waiter.promise, losing.then(() => { throw new Error("loser missed barrier"); })]);
+        let waiting = false;
+        for (let i = 0; i < 60; i++) {
+          const { rowCount } = await control.query("SELECT 1 FROM pg_locks WHERE pid=$1 AND locktype='advisory' AND NOT granted AND $2 = ANY(pg_blocking_pids(pid))", [waiterPID, holderPID]);
+          if (rowCount) { waiting = true; break; }
+          await delay(25);
+        }
+        assert.equal(waiting, true);
+      } finally {
+        release.resolve();
+        await Promise.allSettled(losing ? [winning, losing] : [winning]);
+      }
+      await winning;
+      assert.ok(losing);
+      const [result] = await losing;
+      assert.equal(result.status, "rejected");
+      if (result.status === "rejected") assert.match(String(result.reason), /allowance exceeded/);
+      await payload.update({ collection: "commerce-events" as never, id: eventID, overrideAccess: true,
+        data: { capacity: 3, transportCapacity: 3 } as never });
+      const other = await seedMember(payload);
+      await payload.update({ collection: "users", id: other.id, overrideAccess: true, data: { membershipStatus: "approved" } });
+      const otherReq = await createLocalReq({ user: other }, payload);
+      await assert.rejects(inCommerceTransaction(otherReq, () => withCommerceWrite(otherReq, () => reservePurchase({
+        req: otherReq, attemptID: randomUUID(), customerID: String(other.id), productID: guest.productID, releaseID: guest.productID,
+        eventID, quantity: 1, accountLimit: 2, ticketTarget, snapshotHash: "b".repeat(64),
+      }))), /Insufficient product or guaranteed admission capacity/);
+      const state = await control.query(`SELECT e.reserved_quantity::int AS reserved, e.committed_quantity::int AS paid,
+        a.reserved_quantity::int AS guest_reserved, a.paid_quantity::int AS guest_paid FROM commerce_events e
+        JOIN commerce_allowances a ON a.release_i_d=$2 AND a.customer_id=$3 WHERE e.id=$1`,
+      [eventID, `guest:${eventID}`, member.id]);
+      assert.deepEqual(state.rows, [{ reserved: 1, paid: 2, guest_reserved: 1, guest_paid: 1 }]);
+      const grants = await control.query(`SELECT k.id, k.purpose, a.ticket_tier FROM commerce_key_grant_intents k
+        JOIN commerce_admissions a ON a.id=k.entitlement_id WHERE a.event_id=$1 ORDER BY a.ticket_tier, k.purpose`, [eventID]);
+      assert.deepEqual(grants.rows.map(({ purpose, ticket_tier }) => [purpose, ticket_tier]),
+        [["primary", "guest"], ["primary", "member"], ["member-event", "member"]]);
+      const hash = "0x" + "c".repeat(64);
+      const target = { chainID: 137, lock, recipient: "0x" + "e".repeat(40), ticketMode: "shared", ticketTier: "guest" };
+      const tokenKey = `137:${lock}:7`;
+      // Stand in for a settled chain receipt; use the actual database index and read endpoint.
+      await control.query(`UPDATE commerce_key_grant_intents SET state='granted', token_i_d='7', ticket_token_key=$2,
+        settled_tx_hash=$3, granted_at=now(), target=$4 WHERE id=$1`, [grants.rows[0].id, tokenKey, hash, target]);
+      await assert.rejects(control.query("UPDATE commerce_key_grant_intents SET ticket_token_key=$1 WHERE id=$2",
+        [tokenKey, grants.rows[2].id]), { code: "23505" });
+      const read = async (user: unknown, tokenID = "7", requestedLock = lock) => doorTicketLabelEndpoint.handler({
+        method: "GET", url: "http://localhost:3000/api/commerce/events/lookup",
+        headers: new Headers({ "sec-fetch-site": "same-origin" }),
+        routeParams: { eventID, lock: requestedLock, tokenID }, payload, context: {}, user,
+      } as unknown as import("payload").PayloadRequest);
+      const staff = { collection: "admins", _strategy: "staff-better-auth", role: "staff", id: randomUUID() };
+      const response = await read(staff);
+      assert.equal(response.status, 200);
+      assert.match(response.headers.get("cache-control") ?? "", /private, no-store/);
+      const label = await response.json();
+      assert.deepEqual(Object.keys(label).sort(), ["sponsorRef", "tier"]);
+      assert.equal(label.tier, "guest");
+      assert.match(label.sponsorRef, /^[a-f0-9]{24}$/);
+      assert.equal((await read(member)).status, 404);
+      assert.equal((await read(null)).status, 404);
+      assert.deepEqual(await (await read(staff, "8")).json(), { tier: null });
+      await control.query("UPDATE commerce_key_grant_intents SET cancel_requested=true WHERE id=$1", [grants.rows[0].id]);
+      assert.deepEqual(await (await read(staff)).json(), { tier: null });
+      // Fixture: the Signet cancellation and allowance release are already
+      // verified; the Member Event entitlement independently remains live.
+      await control.query("UPDATE commerce_allowances SET paid_quantity=0 WHERE customer_id=$1 AND release_i_d='membership'", [member.id]);
+      const repurchase = await seedCheckoutCart(payload, { user: member, customerID: guest.customerID });
+      const readAllowance = async () => accountAllowanceAdmits(await createLocalReq({ user: member }, payload), {
+        customerID: guest.customerID, productID: repurchase.productID, eventID: repurchase.eventID, quantity: 1, accountLimit: 1,
+      });
+      assert.equal(await readAllowance(), false, "the live Signet itself still blocks repurchase");
+      await control.query("UPDATE commerce_key_grant_intents SET state='cancelled' WHERE id=$1", [grants.rows[1].id]);
+      assert.equal(await readAllowance(), true, "a live Member Event intent and a Guest intent are not Signet holds");
+      await initiateThroughEndpoint(payload, member, { cartID: repurchase.cartID, shippingAddress: repurchase.shippingAddress });
+      await control.query("UPDATE commerce_allowances SET reserved_quantity=0 WHERE customer_id=$1 AND release_i_d='membership'", [member.id]);
+      await control.query("UPDATE commerce_key_grant_intents SET target=jsonb_set(target, '{ticketTier}', to_jsonb($2::text)) WHERE id=$1", [grants.rows[2].id, "guest"]);
+      await assert.rejects(readAllowance, /Member Event grant identity is inconsistent/);
+      await assert.rejects(migrate(downBinding), /Cannot drop shared event ticket evidence|Failed query/);
+
+      await shared.test("a typed two-Guest line survives a cart save and reload and initiates at the canonical price", async () => {
+        const { down: downCartKind } = await import("../../../src/payload/migrations/20261124_121000_shared_guest_cart_kind");
+        await payload.update({ collection: "commerce-events" as never, id: eventID, overrideAccess: true,
+          data: { capacity: 5, transportCapacity: 5 } as never });
+        const sponsor = await seedMember(payload);
+        const sponsorReq = await createLocalReq({ user: sponsor }, payload);
+        const line = { product: guest.productID, quantity: 2, ticketKind: "shared-event-guest" };
+        const save = () => payload.create({
+          collection: "carts", req: sponsorReq, overrideAccess: false, depth: 0, data: { items: [line], currency: "KRW" },
+        });
+        process.env.UNLOCK_SHARED_TICKET_GUEST_PRODUCT_ID = guest.productID;
+        delete process.env.UNLOCK_SHARED_TICKET_EVENT_ID;
+        await assert.rejects(save(), /one unit/i);
+        process.env.UNLOCK_SHARED_TICKET_EVENT_ID = eventID;
+        process.env.UNLOCK_SHARED_TICKET_GUEST_PRODUCT_ID = randomUUID();
+        await assert.rejects(save(), /one unit/i);
+        process.env.UNLOCK_SHARED_TICKET_GUEST_PRODUCT_ID = guest.productID;
+        await assert.rejects(save(), /Guest Tickets require approved membership/);
+        await payload.update({ collection: "users", id: sponsor.id, overrideAccess: true, data: { membershipStatus: "approved" } });
+        const saved = await save();
+        const reloaded = await payload.findByID({ collection: "carts", id: saved.id, depth: 0, overrideAccess: true });
+        assert.equal(reloaded.items?.[0]?.ticketKind, line.ticketKind);
+        assert.equal(reloaded.items?.[0]?.quantity, 2);
+        await assert.rejects(payload.update({
+          collection: "carts", id: saved.id, req: await createLocalReq({ user: sponsor }, payload), overrideAccess: false, depth: 0,
+          data: { items: [{ ...line, quantity: 3 }] },
+        }), /Only two Guest Tickets per purchase/);
+        process.env.UNLOCK_TICKET_EMAIL_CONSENT_ENABLED = "1";
+        const checkout = { cartID: reloaded.id, shippingAddress: guest.shippingAddress };
+        for (const guestQuote of [
+          { productID: guest.productID, quantity: 1, totalAmount: 10_000, refundTerms: await guestTerms() },
+          { productID: guest.productID, quantity: 2, totalAmount: 18_000, refundTerms: await guestTerms() },
+          { productID: randomUUID(), quantity: 2, totalAmount: 20_000, refundTerms: await guestTerms() },
+          undefined,
+        ]) {
+          assert.deepEqual(await initiateThroughEndpoint(payload, sponsor, { ...checkout, guestQuote }), { message: "Guest quote changed", outcome: "guest-quote-changed" });
+          assert.deepEqual((await control.query("SELECT id FROM transactions WHERE cart_id=$1", [reloaded.id])).rows, []);
+          assert.deepEqual((await control.query("SELECT id FROM commerce_reservations WHERE customer_id=$1", [sponsor.id])).rows, []);
+        }
+        // Stale refund terms (the page showed other terms than apply now): nothing is written, and the answer carries the
+        // current terms for the page to show before a new press (Review-B r3).
+        assert.deepEqual(await initiateThroughEndpoint(payload, sponsor, { ...checkout,
+          guestQuote: { productID: guest.productID, quantity: 2, totalAmount: 20_000, refundTerms: { kind: "refundable" } } }),
+          { message: "Guest quote changed", outcome: "guest-quote-changed", refundTerms: await guestTerms() });
+        assert.deepEqual((await control.query("SELECT id FROM transactions WHERE cart_id=$1", [reloaded.id])).rows, []);
+        // The event's start is edited while this Pay is in flight, after the fast check has passed (a committed edit on
+        // another connection, made from the fast check's own read): the check under the event lock sees the new start and
+        // the whole preparation rolls back. No attempt, no reservation, every counter as it was (Review-B r4).
+        const counters = async () => ({
+          event: (await control.query("SELECT reserved_quantity::int, committed_quantity::int FROM commerce_events WHERE id=$1", [eventID])).rows,
+          product: (await control.query("SELECT reserved_quantity::int FROM products WHERE id=$1", [guest.productID])).rows,
+          allowances: (await control.query("SELECT release_i_d, reserved_quantity::int, paid_quantity::int FROM commerce_allowances WHERE customer_id=$1 ORDER BY release_i_d", [sponsor.id])).rows,
+        });
+        const before = await counters();
+        const shown = await guestTerms();
+        const original = (await control.query("SELECT part_i_starts_at FROM commerce_events WHERE id=$1", [eventID])).rows[0].part_i_starts_at as Date;
+        const moved = new Date(original.getTime() + 24 * 60 * 60 * 1000);
+        const hooks = payload.collections["commerce-events"].config.hooks;
+        let edited = false;
+        // Fires on the fast check's own read (it selects only the start), after that read returned the old start.
+        let fastCheckSaw: unknown;
+        const editDuringRead = async ({ doc }: { doc: Record<string, unknown> }) => {
+          if (!edited && "partIStartsAt" in doc && !("name" in doc)) {
+            edited = true; fastCheckSaw = doc.partIStartsAt;
+            await control.query("UPDATE commerce_events SET part_i_starts_at=$2 WHERE id=$1", [eventID, moved]);
+          }
+          return doc;
+        };
+        hooks.afterRead.push(editDuringRead as never);
+        try {
+          const raced = await initiateThroughEndpoint(payload, sponsor, { ...checkout,
+            guestQuote: { productID: guest.productID, quantity: 2, totalAmount: 20_000, refundTerms: shown } });
+          assert.equal(edited, true);
+          // The fast check saw the old start, so it passed; only the check under the event lock could refuse.
+          assert.equal(new Date(String(fastCheckSaw)).getTime(), original.getTime());
+          const now = await guestTerms();
+          assert.notDeepEqual(now, shown);
+          assert.deepEqual(raced, { message: "Guest quote changed", outcome: "guest-quote-changed", refundTerms: now });
+        } finally {
+          hooks.afterRead.splice(hooks.afterRead.indexOf(editDuringRead as never), 1);
+          await control.query("UPDATE commerce_events SET part_i_starts_at=$2 WHERE id=$1", [eventID, original]);
+        }
+        assert.deepEqual((await control.query("SELECT id FROM transactions WHERE cart_id=$1", [reloaded.id])).rows, []);
+        assert.deepEqual((await control.query("SELECT id FROM commerce_reservations WHERE customer_id=$1", [sponsor.id])).rows, []);
+        assert.deepEqual(await counters(), before);
+        const attempt = await initiateThroughEndpoint(payload, sponsor, { ...checkout,
+          guestQuote: { productID: guest.productID, quantity: 2, totalAmount: 20_000, refundTerms: await guestTerms() },
+          ticketEmailConsent: "unlock-ticket-email-v1" }) as { transactionID: string };
+        const stored = await payload.findByID({ collection: "transactions", id: attempt.transactionID, overrideAccess: true, depth: 0 });
+        assert.equal((stored.portone.snapshot as Record<string, unknown>).ticketEmailConsent, "unlock-ticket-email-v1");
+        assert.equal((stored.portone.snapshot as Record<string, unknown>).email, undefined);
+        const charge = await control.query("SELECT amount::int FROM transactions WHERE id=$1", [attempt.transactionID]);
+        assert.deepEqual(charge.rows, [{ amount: 20_000 }]);
+        await assert.rejects(migrate(downCartKind), /Cannot drop persisted shared Guest cart markers|Failed query/);
+      });
+
+      await shared.test("switching Guest sales preserves both frozen targets and the same event capacity", async (proof) => {
+        const { loadCommerceOffer } = await import("../../../src/lib/commerce/catalogue");
+        const guestLock = "0x" + "f".repeat(40);
+        const saleConfig = { version: 1, mode: "shared", chainID: 137, eventLock: lock, guestProductID: guest.productID, guestLock };
+        const settings = { KEY_GRANT_POLYGON_EVENT_LOCKS: `${lock},${guestLock}`, UNLOCK_SEPARATE_GUEST_LOCK_ENABLED: "1" };
+        for (const [key, value] of Object.entries(settings)) {
+          const previous = process.env[key];
+          proof.after(() => { if (previous === undefined) delete process.env[key]; else process.env[key] = previous; });
+          process.env[key] = value;
+        }
+        const configure = (config: object) => payload.update({ collection: "commerce-events" as never,
+          id: eventID, overrideAccess: true, data: { unlockTicketConfiguration: config } as never });
+        await assert.rejects(configure({ ...saleConfig, guestLock: "0x" + "A".repeat(40) }),
+          /Guest lock must differ from Signet/);
+        await configure(saleConfig);
+        await assert.rejects(configure({ ...saleConfig, guestLock: "0x" + "d".repeat(40) }), /immutable/);
+        await assert.rejects(configure({ ...saleConfig, guestLock: undefined }), /immutable/);
+        const savedEvent = await payload.findByID({ collection: "commerce-events", id: eventID, depth: 0, overrideAccess: true });
+        assert.deepEqual(savedEvent.unlockTicketConfiguration, saleConfig);
+        const offer = () => loadCommerceOffer(payload, undefined, guest.productID);
+        assert.equal((await offer())?.ticketTarget?.lock, guestLock);
+        assert.equal((await offer())?.maximumQuantity, 2);
+        assert.equal((await offer())?.availableQuantity, 0, "old reservations count against the same event");
+        await payload.update({ collection: "commerce-events" as never, id: eventID, overrideAccess: true,
+          data: { capacity: 7, transportCapacity: 7 } as never });
+        const sponsor = await seedMember(payload);
+        await payload.update({ collection: "users", id: sponsor.id, overrideAccess: true, data: { membershipStatus: "approved" } });
+        const cart = await payload.create({ collection: "carts", req: await createLocalReq({ user: sponsor }, payload), overrideAccess: false,
+          data: { items: [{ product: guest.productID, quantity: 1, ticketKind: "shared-event-guest" }], currency: "KRW" } });
+        const prepared = await initiateThroughEndpoint(payload, sponsor, {
+          cartID: cart.id, shippingAddress: guest.shippingAddress,
+          guestQuote: { productID: guest.productID, quantity: 1, totalAmount: 10_000, refundTerms: await guestTerms() },
+        }) as { transactionID: ReturnType<typeof randomUUID>; paymentID: string };
+        delete process.env.UNLOCK_SEPARATE_GUEST_LOCK_ENABLED;
+        assert.equal((await offer())?.ticketTarget?.lock, lock);
+        await settleOne(payload, { ...guest, ...prepared, cartID: z.uuid().parse(cart.id) as ReturnType<typeof randomUUID>,
+          customerID: z.uuid().parse(sponsor.id) as ReturnType<typeof randomUUID>, user: sponsor, total: 10_000 });
+        const pins = await control.query(`SELECT a.ticket_target->>'lock' AS lock
+          FROM commerce_admissions a WHERE a.transaction_id IN ($1,$2) ORDER BY a.ticket_target->>'lock'`, [g.transactionID, prepared.transactionID]);
+        assert.deepEqual(pins.rows, [{ lock }, { lock: guestLock }]);
+
+        // Reuse token ID 7 on a different lock, as two independent contracts can.
+        const guestTokenKey = `137:${guestLock}:7`;
+        const granted = await control.query(`UPDATE commerce_key_grant_intents k
+          SET state='granted', token_i_d='7', ticket_token_key=$2, settled_tx_hash=$3, granted_at=now(), target=$4
+          FROM commerce_admissions a WHERE a.id=k.entitlement_id AND a.transaction_id=$1`,
+        [prepared.transactionID, guestTokenKey, hash, { ...target, lock: guestLock }]);
+        assert.equal(granted.rowCount, 1);
+        const guestLabel = await read(staff, "7", guestLock);
+        assert.equal(guestLabel.status, 200, "frozen second-lock ticket remains readable with new second-lock sales off");
+        assert.deepEqual(Object.keys(await guestLabel.clone().json()).sort(), ["sponsorRef", "tier"]);
+        assert.equal((await guestLabel.json()).tier, "guest");
+        assert.deepEqual(await (await read(staff, "7", lock)).json(), { tier: null }, "cancelled old-lock key stays unavailable");
+        assert.equal((await read(staff, "7", process.env.MEMBER_WALLET_LOCK_ADDRESS)).status, 404);
+        assert.equal((await read(sponsor, "7", guestLock)).status, 404);
+      });
+    } finally {
+      for (const [key, value] of Object.entries({
+        UNLOCK_SHARED_TICKET_EVENT_ID: priorEvent, UNLOCK_SHARED_TICKET_GUEST_PRODUCT_ID: priorGuestProduct,
+        MEMBER_WALLET_LOCK_ADDRESS: priorSignet, NEXT_PUBLIC_SERVER_URL: priorOrigin,
+        MEMBER_WALLET_CHAIN_ID: priorChain, MEMBER_WALLET_OWNER_ADDRESS: priorOwner,
+      })) {
+        if (value === undefined) delete process.env[key]; else process.env[key] = value;
+      }
+    }
+  });
+
   const conf = { chainID: 137 as const, lock: "0x" + "b".repeat(40), memberLock: "0x" + "a".repeat(40) };
+  await t.test("CMS cannot replace or remove a legacy Guest lock", async () => {
+    const { eventID, productID } = await seedConfiguredAttempt(payload, undefined, conf);
+    const configuration = { chainID: conf.chainID, memberLock: conf.memberLock, guestLock: conf.lock, guestProductID: productID };
+    const configure = (config: object) => payload.update({ collection: "commerce-events" as never, id: eventID, overrideAccess: true,
+      data: { unlockTicketConfiguration: config } as never });
+    await assert.rejects(configure({ ...configuration, guestLock: "0x" + "d".repeat(40) }), /immutable/);
+    await assert.rejects(configure({ ...configuration, guestLock: undefined }));
+    const event = await payload.findByID({ collection: "commerce-events", id: eventID, depth: 0, overrideAccess: true });
+    assert.equal(Reflect.get(event.unlockTicketConfiguration as object, "guestLock"), conf.lock);
+  });
   async function guestAttempt() {
     const guest = await seedConfiguredAttempt(payload, undefined, conf);
     const { user, customerID, cartID, transactionID, snapshot } = guest;

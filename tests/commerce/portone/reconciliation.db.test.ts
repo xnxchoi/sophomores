@@ -353,7 +353,9 @@ test('I2 disposable PostgreSQL admission, accounting, native fencing and restart
     await purchaseGate(settled)
     // A verified full cancellation follows.
     const cancel = provider(settled, 'CANCELLED', settled.snapshot.totalAmount, settled.snapshot.totalAmount)
-    await signedWebhook(settled, 'cancelled-after-settlement', 'Transaction.Cancelled', cancel)
+    const cancelDelivery = await signedWebhook(settled, 'cancelled-after-settlement', 'Transaction.Cancelled', cancel)
+    // PortOne redelivers on non-2xx; a verified full cancellation and its replay are answered 200 (coordinator, 24 Nov).
+    assert.deepEqual([cancelDelivery.status, (await cancelDelivery.json()).outcome], [200, 'cancellation-verified'])
     const cancelled = await readPortOneTransaction(browser.req, settled.transactionID.replaceAll('-', ''))
     assert.deepEqual([cancelled.status, cancelled.commerceReviewHold, cancelled.commerceResolutionConflict], ['cancelled', true, false])
     const reservationState = async (f: Attempt) => (await control.query(
@@ -362,6 +364,15 @@ test('I2 disposable PostgreSQL admission, accounting, native fencing and restart
       "SELECT paid_quantity::int, reserved_quantity::int FROM commerce_allowances WHERE customer_id=$1 AND release_i_d='membership'", [f.customerID])).rows
     const released = await reservationState(settled)
     assert.deepEqual(released.map(row => [row.state, row.release_reason]), [['released', 'confirmed-cancel']])
+    // The order moves to refunded once, with its record; the financial snapshot is untouched.
+    const orderRecord = async (f: Attempt) => (await control.query(`SELECT status, amount::int, commerce_snapshot,
+      commerce_refund_source, commerce_refund_provider_event_i_d, commerce_refund_transaction_i_d, commerce_refund_refunded_at
+      FROM orders WHERE id = (SELECT order_id FROM transactions WHERE id = $1)`, [f.transactionID])).rows
+    const refunded = await orderRecord(settled)
+    assert.equal(refunded.length, 1)
+    assert.deepEqual([refunded[0].status, refunded[0].amount, refunded[0].commerce_refund_source, refunded[0].commerce_refund_provider_event_i_d,
+      refunded[0].commerce_refund_transaction_i_d, refunded[0].commerce_refund_refunded_at instanceof Date],
+    ['refunded', settled.snapshot.totalAmount, 'provider', 'cancelled-after-settlement', settled.transactionID, true])
     const closed = await evidence(settled.transactionID)
     // Case 11: the Paid case is unchanged; the disposition is a separate immutable record.
     assert.deepEqual(closed[paidReviewScope(settled.transactionID)], opened[paidReviewScope(settled.transactionID)])
@@ -373,10 +384,151 @@ test('I2 disposable PostgreSQL admission, accounting, native fencing and restart
     assert.deepEqual(await localResult(settled), ['local-terminal', 'cancelled'])
     // Case 11 replay: the same cancellation changes nothing and releases nothing twice.
     const freed = await allowance(settled)
-    await signedWebhook(settled, 'cancelled-after-settlement', 'Transaction.Cancelled', cancel)
+    const replayDelivery = await signedWebhook(settled, 'cancelled-after-settlement', 'Transaction.Cancelled', cancel)
+    assert.deepEqual([replayDelivery.status, (await replayDelivery.json()).outcome], [200, 'already-cancelled'])
     assert.deepEqual(await evidence(settled.transactionID), closed)
     assert.deepEqual(await reservationState(settled), released)
     assert.deepEqual(await allowance(settled), freed)
+    assert.deepEqual(await orderRecord(settled), refunded)
+    // S2, staff refund (owner's rule: guest tickets until 3 days before Part I; book-only edition; never membership
+    // editions or the membership product). A stand-in PortOne; no real cancel is sent.
+    {
+      const { requestOrderRefund, refundRequestScope, refundCutoff } = await import('../../../src/lib/commerce/portone/refund')
+      const { seedConfiguredAttempt } = await import('../core/payment-postgres-fixture')
+      const admin = await createLocalReq({ user: { id: 'staff-refund', collection: 'admins', role: 'admin', _strategy: 'staff-better-auth' } as never }, db.payload)
+      const settle = async (f: Attempt) => {
+        await pace()
+        const confirm = await confirmation(db.payload, f)
+        assert.equal((await runReconciliation(confirm.req, { transactionID: f.transactionID,
+          paymentID: f.transactionID.replaceAll('-', ''), cartID: f.cartID }, 'confirm', confirm.run, confirm.deps)).status, 200)
+        return (await control.query('SELECT order_id FROM transactions WHERE id=$1', [f.transactionID])).rows[0].order_id as string
+      }
+      const requests = async (f: Attempt) => (await control.query('SELECT count(*)::int AS n FROM commerce_reconciliations WHERE scope=$1',
+        [refundRequestScope(f.transactionID)])).rows[0].n as number
+      const calls: unknown[] = []
+      const answers: ({ ok: true } | { ok: false; type: string })[] = [{ ok: true }, { ok: false, type: 'PAYMENT_ALREADY_CANCELLED' }]
+      const cancelPayment = async (input: unknown) => { calls.push(input); return answers.shift()! }
+
+      // The membership product is refused: nothing written, nothing sent.
+      const membership = await initiateAttempt(db.payload)
+      const membershipOrder = await settle(membership)
+      assert.deepEqual(await requestOrderRefund({ req: admin, orderID: membershipOrder, reason: 'Owner refund', deps: { config: providerConfig, cancelPayment } }),
+        { outcome: 'refused', reason: 'not-refundable-product' })
+      assert.deepEqual([calls.length, await requests(membership)], [0, 0])
+
+      // Review-A: unknown completion stays 503 through the registered webhook. The lease expires while PortOne is read
+      // (disposable database only), so completion cannot be recorded. It fails closed: the attempt is escalated for
+      // catch-up, a redelivery is still not acknowledged, and nothing is refunded.
+      const fullCancel = provider(membership, 'CANCELLED', membership.snapshot.totalAmount, membership.snapshot.totalAmount)
+      const expiring = async () => {
+        await control.query(`UPDATE commerce_reconciliations SET state = jsonb_set(state::jsonb, '{active,expiresAt}', '0'::jsonb) WHERE scope = $1`,
+          [`reconciliation-attempt:${membership.transactionID}`])
+        return fullCancel()
+      }
+      const unknown = await signedWebhook(membership, 'membership-cancel-unknown', 'Transaction.Cancelled', expiring)
+      assert.equal(unknown.status, 503)
+      const redelivered = await signedWebhook(membership, 'membership-cancel-unknown', 'Transaction.Cancelled', fullCancel)
+      assert.ok(redelivered.status >= 400, `redelivery answered ${redelivered.status}`)
+      assert.equal((await orderRecord(membership))[0].status, 'processing')
+      assert.deepEqual([calls.length, await requests(membership)], [0, 0])
+
+      // A guest ticket order: two units, two keys owed. One key stands in as already sent and granted (fixture only).
+      const conf = { chainID: 137 as const, lock: '0x' + 'b'.repeat(40), memberLock: '0x' + 'a'.repeat(40) }
+      const guest = await seedConfiguredAttempt(db.payload, undefined, conf) as unknown as Attempt
+      const guestOrder = await settle(guest)
+      const startsAt = new Date(Date.now() + 10 * 24 * 3600_000)
+      await control.query('UPDATE commerce_events SET part_i_starts_at=$2 WHERE id=$1', [guest.eventID, startsAt])
+      const cutoff = refundCutoff(startsAt.toISOString())!
+      const intents = (await control.query(`SELECT k.id, a.id AS admission FROM commerce_key_grant_intents k JOIN commerce_admissions a ON a.id = k.entitlement_id
+        WHERE a.transaction_id = $1 ORDER BY a.unit`, [guest.transactionID])).rows as { id: string; admission: string }[]
+      assert.equal(intents.length, 2)
+      // A granted key always has its target: the guest lock and the recipient's wallet (the fixture's was owed before any wallet).
+      await control.query(`UPDATE commerce_key_grant_intents SET state='granted', token_i_d='1', target=$2::jsonb WHERE id=$1`,
+        [intents[0].id, JSON.stringify({ chainID: conf.chainID, lock: conf.lock, recipient: '0x' + 'c'.repeat(40) })])
+      const seats = async () => (await control.query('SELECT committed_quantity::int AS n FROM commerce_events WHERE id=$1', [guest.eventID])).rows[0].n as number
+      const released = async () => (await control.query('SELECT id, seat_released_at IS NOT NULL AS released FROM commerce_admissions WHERE transaction_id=$1 ORDER BY unit',
+        [guest.transactionID])).rows.map((row) => row.released as boolean)
+      const committed = await seats()
+      const deps = { config: providerConfig, now: () => cutoff - 1, cancelPayment }
+      const member = await createLocalReq({ user: guest.user }, db.payload)
+      await assert.rejects(requestOrderRefund({ req: member, orderID: guestOrder, reason: 'not staff', deps }), (error: { status?: number }) => error.status === 403)
+      // At the cutoff: closed before anything is written or sent. Just before it: allowed.
+      assert.deepEqual(await requestOrderRefund({ req: admin, orderID: guestOrder, reason: 'Owner refund', deps: { ...deps, now: () => cutoff } }),
+        { outcome: 'closed', cutoffAt: new Date(cutoff).toISOString() })
+      assert.deepEqual([calls.length, await requests(guest)], [0, 0])
+      // Review-A: the cancel goes to the store and channel configured now, so a payment settled on another one is
+      // refused before anything is written or sent.
+      for (const config of [{ ...providerConfig, storeId: 'store-other' }, { ...providerConfig, channelKey: 'channel-other' }]) {
+        assert.deepEqual(await requestOrderRefund({ req: admin, orderID: guestOrder, reason: 'Owner refund', deps: { ...deps, config } }),
+          { outcome: 'refused', reason: 'other-payment-channel' })
+      }
+      assert.deepEqual([calls.length, await requests(guest)], [0, 0])
+      // Review-A: the clock is read exactly twice, once just before the ledger write and once just before PortOne is
+      // asked. The write reading is a moment before the cutoff and the send reading at it: closed, the request recorded
+      // with the write reading, PortOne not asked. A third reading would fail the test.
+      const crossing = [cutoff - 1, cutoff]
+      const strictClock = () => { const at = crossing.shift(); assert.notEqual(at, undefined, 'unexpected clock read'); return at! }
+      assert.deepEqual(await requestOrderRefund({ req: admin, orderID: guestOrder, reason: 'Owner refund', deps: { ...deps, now: strictClock } }),
+        { outcome: 'closed', cutoffAt: new Date(cutoff).toISOString() })
+      assert.deepEqual([calls.length, await requests(guest), crossing.length], [0, 1, 0])
+      const recordedAt = (await control.query('SELECT state FROM commerce_reconciliations WHERE scope=$1', [refundRequestScope(guest.transactionID)])).rows[0].state.requestedAt
+      assert.equal(recordedAt, new Date(cutoff - 1).toISOString())
+      // A recorded request is closed at the write reading too, before PortOne is asked.
+      assert.deepEqual(await requestOrderRefund({ req: admin, orderID: guestOrder, reason: 'Owner refund', deps: { ...deps, now: () => cutoff } }),
+        { outcome: 'closed', cutoffAt: new Date(cutoff).toISOString() })
+      assert.deepEqual([calls.length, await requests(guest)], [0, 1])
+      // Before the cutoff: allowed (the recorded request is reused).
+      assert.deepEqual(await requestOrderRefund({ req: admin, orderID: guestOrder, reason: 'Owner refund', deps }), { outcome: 'requested' })
+      assert.deepEqual(calls, [{ paymentId: guest.transactionID.replaceAll('-', ''), storeId: providerConfig.storeId, reason: 'Owner refund',
+        currentCancellableAmount: guest.snapshot.totalAmount, idempotencyKey: `refund:${guest.transactionID}` }])
+      assert.equal(await requests(guest), 1)
+      assert.deepEqual(await requestOrderRefund({ req: admin, orderID: guestOrder, reason: 'Owner refund', deps }), { outcome: 'already-cancelled' })
+      assert.equal(await requests(guest), 1)
+      const done = await signedWebhook(guest, 'staff-refund-cancelled', 'Transaction.Cancelled',
+        provider(guest, 'CANCELLED', guest.snapshot.totalAmount, guest.snapshot.totalAmount))
+      assert.equal(done.status, 200)
+      const guestRecord = await orderRecord(guest)
+      assert.deepEqual([guestRecord[0].status, guestRecord[0].commerce_refund_source, guestRecord[0].commerce_refund_provider_event_i_d],
+        ['refunded', 'admin', 'staff-refund-cancelled'])
+      // The unsent key was cancelled at the refund, so its seat is released now; the granted key's seat waits.
+      const keyStates = async () => (await control.query('SELECT state, cancel_requested FROM commerce_key_grant_intents WHERE id = ANY($1) ORDER BY array_position($1, id)',
+        [intents.map((intent) => intent.id)])).rows.map((row) => [row.state, row.cancel_requested])
+      assert.deepEqual(await keyStates(), [['granted', true], ['cancelled', false]])
+      assert.deepEqual(await released(), [false, true])
+      assert.equal(await seats(), committed - 1)
+      // The owner's wallet cancels the key; Auth's real key-grant tick reconciles it and, in the same tick, runs the seat
+      // sweep. The grant adapter is a stand-in that reads the key as cancelled on chain; anything else it is asked fails.
+      const { runKeyGrantTick } = await import('../../../src/lib/commerce/keys/grant-catch-up')
+      const chainReads: string[] = []
+      const grant = new Proxy({ keyInvalidAtDepth: async ({ tokenID }: { tokenID: string }) => { chainReads.push(tokenID); return true } }, {
+        get: (stub, key) => key in stub ? stub[key as 'keyInvalidAtDepth'] : key === 'then' ? undefined : () => { throw new Error(`stand-in grant: ${String(key)}`) },
+      }) as never
+      const tick = (limit?: number) => runKeyGrantTick({ payload: db.payload, grant, acquire: async () => async () => {}, limit,
+        env: { KEY_GRANT_POLYGON_LIVE: '1', KEY_GRANT_POLYGON_MAX_COST_WEI: '1000000000000000000' } })
+      // A failed release does not fail the tick: counters made inconsistent for one tick. The cancel is still recorded.
+      await control.query('UPDATE commerce_events SET committed_quantity=0 WHERE id=$1', [guest.eventID])
+      const failed = await tick()
+      const keyRow = (await control.query('SELECT state, cancel_requested, token_i_d, next_attempt_at, target FROM commerce_key_grant_intents WHERE id=$1', [intents[0].id])).rows[0]
+      assert.ok(failed.outcome === 'ran' && failed.cancelled === 1 && failed.seatsReleased === 0, JSON.stringify({ failed, keyRow }))
+      assert.deepEqual([chainReads, await keyStates(), await released()], [['1'], [['cancelled', true], ['cancelled', false]], [false, true]])
+      await control.query('UPDATE commerce_events SET committed_quantity=$2 WHERE id=$1', [guest.eventID, committed - 1])
+      // Review-A and Wallet ML: later ticks retry it, fairly. At one admission per tick, refunded admissions that can never
+      // release (here the earlier membership order's, which is not an Unlock event) cannot starve this seat: the durable
+      // cursor moves past them, so it is reached within one round.
+      const queued = (await control.query(`SELECT count(*)::int AS n FROM commerce_admissions WHERE status = 'revoked' AND benefit_review
+        AND seat_released_at IS NULL AND checked_in_at IS NULL`)).rows[0].n as number
+      assert.ok(queued >= 2, `refunded admissions in the queue: ${queued}`)
+      let passes = 0, swept = 0
+      while (swept === 0 && passes <= queued) { const ran = await tick(1); swept = ran.outcome === 'ran' ? ran.seatsReleased : 0; passes++ }
+      assert.equal(swept, 1, `released within ${passes} ticks of ${queued}`)
+      assert.deepEqual(await released(), [true, true])
+      assert.equal(await seats(), committed - 2)
+      const after = await tick()
+      assert.ok(after.outcome === 'ran' && after.cancelled === 0 && after.seatsReleased === 0, 'each seat once')
+      // Once refunded, the admin action does not ask PortOne again.
+      assert.deepEqual(await requestOrderRefund({ req: admin, orderID: guestOrder, reason: 'Owner refund', deps }), { outcome: 'refunded' })
+      assert.equal(calls.length, 2)
+    }
     assert.deepEqual(await discover(settled), [])
     // Case 13: the original Paid redelivered after the cancellation is stale and cannot reopen it.
     const stale = await signedWebhook(settled, 'paid-before-settlement', 'Transaction.Paid', provider(settled, 'PAID', settled.snapshot.totalAmount, 0))

@@ -15,9 +15,9 @@ const chainWith = (counts: { latest: number; pending: number }, raws: Hex[]) => 
   eth_getTransactionCount: (params) => numberToHex(params[1] === "latest" ? counts.latest : counts.pending),
   eth_sendRawTransaction: (params) => { raws.push(params[0] as Hex); return keccak256(params[0] as Hex); },
 });
-const adapterOn = (handlers: ReturnType<typeof healthyChain>) => {
+const adapterOn = (handlers: ReturnType<typeof healthyChain>, account = privateKeyToAccount(generatePrivateKey())) => {
   const chain = mockChain(handlers);
-  return { ...chain, adapter: createUnlockKeyGrantAdapter({ chainID: 84532, account: privateKeyToAccount(generatePrivateKey()), transport: chain.transport, now }) };
+  return { ...chain, adapter: createUnlockKeyGrantAdapter({ chainID: 84532, account, transport: chain.transport, now }) };
 };
 const replacement = { intentID: "intent-1", target, nonce: 3 };
 const atLeastTenPercentAbove = (next: bigint, previous: bigint) => next > previous && next * 10n >= previous * 11n;
@@ -112,9 +112,11 @@ test("prepared grants and replacements carry the signed bytes that hash to their
 });
 
 test("a re-send is classified from the node's answer: accepted, already known, nonce used, or unknown", async () => {
+  // Re-sent only by the signer that signed it (Review-A, 24 Nov: recorded bytes are checked before any RPC).
+  const signer = privateKeyToAccount(generatePrivateKey());
   const raw = (await (async () => {
     const raws: Hex[] = [];
-    const { adapter } = adapterOn(chainWith({ latest: 0, pending: 0 }, raws));
+    const { adapter } = adapterOn(chainWith({ latest: 0, pending: 0 }, raws), signer);
     const prepared = await adapter.prepare({ intentID: "i", attemptID: "a", target, nonceFloor: 0 });
     adapter.release({ txHash: (prepared as { txHash: string }).txHash });
     return (prepared as { raw: string }).raw;
@@ -127,7 +129,7 @@ test("a re-send is classified from the node's answer: accepted, already known, n
     ["other hash", () => `0x${"9".repeat(64)}`, "unknown"],
   ];
   for (const [label, send, kind] of cases) {
-    const { adapter } = adapterOn(healthyChain({ eth_sendRawTransaction: send }));
-    assert.deepEqual(await adapter.rebroadcast({ raw }), { kind }, label);
+    const { adapter } = adapterOn(healthyChain({ eth_sendRawTransaction: send }), signer);
+    assert.deepEqual(await adapter.rebroadcast({ raw, txHash: keccak256(raw), nonce: parseTransaction(raw).nonce!, target }), { kind }, label);
   }
 });

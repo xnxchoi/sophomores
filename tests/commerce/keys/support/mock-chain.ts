@@ -1,5 +1,5 @@
 import PublicLockV14 from "@unlock-protocol/contracts/dist/abis/PublicLock/PublicLockV14.json";
-import { custom, decodeFunctionData, encodeAbiParameters, encodeErrorResult, encodeEventTopics, numberToHex, type Abi, type Hex } from "viem";
+import { custom, decodeFunctionData, encodeAbiParameters, encodeErrorResult, encodeEventTopics, numberToHex, parseAbi, type Abi, type Hex } from "viem";
 
 /**
  * A scripted EIP-1193 provider for the Unlock adapter tests. It answers the
@@ -55,11 +55,15 @@ export function receipt(status: "0x1" | "0x0", logs: unknown[], to: Hex = lockAd
   };
 }
 
+// v15's role hook, which the v14 ABI lacks (the Polygon role-hook preflight reads it).
+const callAbi = [...lockAbi, ...parseAbi(["function onHasRoleHook() view returns (address)"])] as Abi;
+export const address = (value: Hex): Hex => encodeAbiParameters([{ type: "address" }], [value]);
+
 /** `eth_call` handlers keyed by the PublicLock function the calldata selects. */
 export function lockCalls(calls: Partial<Record<string, Handler>>): Handler {
   return (params) => {
     const { data } = params[0] as { data: Hex };
-    const { functionName } = decodeFunctionData({ abi: lockAbi, data });
+    const { functionName } = decodeFunctionData({ abi: callAbi, data });
     const handler = calls[functionName];
     if (!handler) throw new Error(`unscripted eth_call ${functionName}`);
     return handler(params);
@@ -73,7 +77,8 @@ export const uintArray = (values: bigint[]): Hex => encodeAbiParameters([{ type:
 export function healthyChain(overrides: Record<string, Handler> = {}): Record<string, Handler> {
   return {
     eth_chainId: () => numberToHex(84532),
-    eth_call: lockCalls({ totalKeys: () => uint(0n), expirationDuration: () => uint(30n * 86_400n), grantKeys: () => uintArray([1n]) }),
+    eth_call: lockCalls({ totalKeys: () => uint(0n), expirationDuration: () => uint(30n * 86_400n), grantKeys: () => uintArray([1n]),
+      publicLockVersion: () => uint(15n), onHasRoleHook: () => address(`0x${"0".repeat(40)}`) }),
     eth_getTransactionCount: () => "0x0",
     eth_estimateGas: () => "0x30d40",
     eth_getBlockByNumber: () => block,

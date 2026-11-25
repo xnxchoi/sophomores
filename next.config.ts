@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 import { withPayload } from "@payloadcms/next/withPayload";
 import createNextIntlPlugin from "next-intl/plugin";
+import { essaysEnabled } from "./src/lib/content/essays";
+import { homeEntryGatePath, homeEntryMarker, warpEntryCookie } from "./src/lib/content/home";
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
@@ -22,7 +24,8 @@ const nextConfig: NextConfig = {
   // Default redirects run before Proxy and retain the query. NFC must reject
   // noncanonical paths itself, and the dev server must not log tap URLs.
   skipTrailingSlashRedirect: true,
-  logging: { incomingRequests: { ignore: [/^\/+nfc(?:[/?\\]|$)/i] } },
+  // Entry links (/w/<code>) carry a secret code, so they are left out of the request log too.
+  logging: { incomingRequests: { ignore: [/^\/+nfc(?:[/?\\]|$)/i, /^\/+w(?:[/?\\]|$)/i] } },
   // Three route groups each own a root layout and none is the app root, so a thrown notFound() has no
   // root not-found to render and is served as Next's bare error shell. Unmatched URLs get
   // src/app/global-not-found.tsx instead, a whole document that holds dark from its first frame.
@@ -35,7 +38,26 @@ const nextConfig: NextConfig = {
         {
           source: `/:section(shop|me)/orders/:id((?!(?:${orderId})$)[^/]+)`,
           destination: siteNotFound
-        }
+        },
+        // "/" without the Warp cookie, and not a staff draft preview, is decided by the home-entry gate before any
+        // page renders: the Warp home inside the owner's window, otherwise the default home (src/lib/content/home.ts).
+        {
+          source: "/",
+          missing: [
+            { type: "cookie", key: warpEntryCookie },
+            { type: "cookie", key: "__prerender_bypass" },
+            // The gate's own way back inside an open window: never sent round again.
+            { type: "query", key: homeEntryMarker }
+          ],
+          destination: homeEntryGatePath
+        },
+        // Essays are switched off (src/lib/content/essays.ts): every /essays URL is the site's 404.
+        ...(essaysEnabled
+          ? []
+          : [
+              { source: "/essays", destination: siteNotFound },
+              { source: "/essays/:path*", destination: siteNotFound }
+            ])
       ],
       afterFiles: [],
       fallback: []

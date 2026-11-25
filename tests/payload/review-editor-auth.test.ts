@@ -202,7 +202,13 @@ test("the same CMS cookie is not a customer session and cannot authorize collabo
   const hooks = registerHooks({
     resolve(specifier, context, nextResolve) {
       const source = specifier === "next/headers" ? `export const headers = async () => globalThis.${key}.headers`
-        : specifier === "@/payload" ? `export const getPayload = async () => globalThis.${key}.payload` : undefined;
+        : specifier === "@/payload" ? `export const getPayload = async () => globalThis.${key}.payload`
+        // The setlist reads carry the caller's Payload principal on a local request; this stub has no
+        // Payload config for createLocalReq, so the request is the principal Payload's own auth returns.
+        : specifier === "@/lib/music/local-request" ? `export const setlistLocalRequest = async (payload, request, known) =>
+            ({ user: known ?? (await payload.auth({ headers: request.headers })).user ?? null, payloadAPI: "local", context: {} });
+          export const setlistMember = (req) => req.user?.collection === "users" ? req.user : null;`
+        : undefined;
       return source === undefined ? nextResolve(specifier, context)
         : { url: "data:text/javascript," + encodeURIComponent(source), shortCircuit: true };
     },

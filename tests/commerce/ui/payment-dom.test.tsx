@@ -27,6 +27,15 @@ const transactionID = '123e4567-e89b-42d3-a456-426614174000'
 const paymentID = transactionID.replaceAll('-', '')
 const orderID = '123e4567-e89b-42d3-a456-426614174001'
 const intent = { version: 1, attemptID: '123e4567-e89b-42d3-a456-426614174002', cartID: 'cart-1', transactionID, paymentID }
+/** Resume waits for payment discovery, which carries the saved attempt's refund terms. */
+async function enabledResume() {
+  const resume = await ui.screen.findByRole('button', { name: 'Resume same payment' })
+  await ui.waitFor(() => assert.equal((resume as HTMLButtonElement).disabled, false))
+  return resume
+}
+/** The retained attempt as discovery reports it, with the refund terms its frozen snapshot was bought under. */
+const discoveredIntent = (refundTerms: unknown = { kind: 'until', cutoffAt: '2026-12-08T01:00:00.000Z' }) =>
+  ({ transactionID, paymentID, cartID: 'cart-1', productID: 'product-1', quantity: 1, totalAmount: 10000, currency: 'KRW', status: 'pending', reviewHold: false, refundTerms })
 const storageKey = 'sphmrs:commerce-payment:customer-1'
 const address: ShippingAddress = { country: 'KR', recipientName: 'Recipient', phone: '01012345678', postalCode: '12345', addressLine1: 'Address' }
 const sdkRequest = { storeId: 'store-1', channelKey: 'channel-1', paymentId: paymentID, orderName: 'Approved product', totalAmount: 10000,
@@ -36,6 +45,8 @@ let cartAvailable = true
 let confirmationStatus = 200
 let resumeOutcome = 'status-only'
 let preparationOutcome = 'prepared'
+/** Refund terms the stand-in server answers with on a stale quote or resume (Review-B r3). */
+let serverTerms: unknown
 let accountStatus = 200
 let accountID = 'customer-1'
 let ownAccountRead: (() => Promise<Response>) | undefined
@@ -44,7 +55,7 @@ let retirementStatus = 200
 let resultOutcome = 'local-unresolved'
 const newerIntent = { version: 1, attemptID: '123e4567-e89b-42d3-a456-426614174009', cartID: 'cart-1' }
 let retiredTransactionID = transactionID
-let discovered: { transactionID: string; paymentID: string; cartID: string; productID: string; quantity: number; totalAmount: number; currency: string; status: string; reviewHold: boolean; resolutionConflict?: boolean; orderName?: string | null }[] = []
+let discovered: { transactionID: string; paymentID: string; cartID: string; productID: string; quantity: number; totalAmount: number; currency: string; status: string; reviewHold: boolean; resolutionConflict?: boolean; orderName?: string | null; refundTerms?: unknown }[] = []
 
 function globalValue(key: string, value: unknown) {
   if (!previous.has(key)) previous.set(key, Object.getOwnPropertyDescriptor(globalThis, key))
@@ -104,8 +115,10 @@ before(async () => {
     if (url.pathname === '/api/addresses') return Response.json({ docs: [] })
     if (url.origin === 'http://localhost' && url.pathname === '/api/payments/portone/pending') return Response.json({ attempts: discovered })
     if (url.pathname === '/api/carts/cart-1') return Response.json({ id: 'cart-1', currency: 'KRW', items: [{ id: 'item-1', product: 'product-1', quantity: 1 }] })
+    if (url.pathname.endsWith('/initiate') && preparationOutcome === 'guest-quote-changed') return Response.json({ message: 'Guest quote changed', outcome: preparationOutcome, ...(serverTerms ? { refundTerms: serverTerms } : {}) })
     if (url.pathname.endsWith('/initiate')) return Response.json({ transactionID, paymentID, outcome: preparationOutcome, ...(preparationOutcome === 'prepared' ? { paymentRequest: sdkRequest } : {}) })
     if (url.pathname.endsWith('/confirm-order')) return confirmationStatus === 200 ? Response.json({ orderID, transactionID }) : Response.json({ message: 'Unconfirmed' }, { status: confirmationStatus })
+    if (url.pathname.endsWith('/resume') && resumeOutcome === 'terms-changed') return Response.json({ message: 'Refund terms changed', transactionID, paymentID, outcome: resumeOutcome, refundTerms: serverTerms })
     if (url.pathname.endsWith('/resume')) return Response.json({ transactionID, paymentID, outcome: resumeOutcome, ...(resumeOutcome === 'resumable' ? { paymentRequest: sdkRequest } : {}) })
     if (url.pathname.endsWith('/retire')) return Response.json({ outcome: 'retired', transactionID: retiredTransactionID, paymentID }, { status: retirementStatus })
     if (url.pathname.endsWith('/result')) {
@@ -127,7 +140,7 @@ afterEach(() => {
   membership = activeMember
   retirementStatus = 200; retiredTransactionID = transactionID; resultOutcome = 'local-unresolved'
   ownAccountRead = undefined; providerAccountRead = undefined; dom.window.localStorage.clear()
-  ui.cleanup(); dom.window.sessionStorage.clear(); calls = []; cartAvailable = true; confirmationStatus = 200; resumeOutcome = 'status-only'; preparationOutcome = 'prepared'; discovered = []; accountStatus = 200; accountID = 'customer-1'
+  ui.cleanup(); dom.window.sessionStorage.clear(); calls = []; cartAvailable = true; confirmationStatus = 200; resumeOutcome = 'status-only'; preparationOutcome = 'prepared'; serverTerms = undefined; discovered = []; accountStatus = 200; accountID = 'customer-1'
 })
 
 test('explicit review mode renders a settled notice without mounting the commerce session or requesting auth', async () => {
@@ -227,6 +240,7 @@ test('a native product goes to its own display-only checkout through the real E1
     // The price shows in the facts and again in the Release pending row.
     assert.ok(ui.screen.getAllByText('₩82,000').length >= 1)
     assert.ok(ui.screen.getByText('Includes the book, one membership token and one free Member Ticket.'))
+    assert.ok(ui.screen.getByText('Personalised with your membership. No refunds.'))
     assert.ok(ui.screen.getByText('Release pending'))
     // One way back to the product: the page's top link, not a second copy inside the summary.
     assert.deepEqual(ui.screen.getAllByRole('link', { name: 'Product details' }).map((link) => link.getAttribute('href')), ['/shop/products/personal'])
@@ -302,10 +316,11 @@ test('the checkout route gates private checkout on fresh membership and retains 
 
 test('a verified failed attempt is retired only after an explicit confirm, unlocks checkout and never opens payment', async () => {
   dom.window.sessionStorage.setItem(storageKey, JSON.stringify(intent))
+  discovered = [discoveredIntent()]
   resumeOutcome = 'retirable'
   let opens = 0
   render(async () => { opens++; return undefined })
-  ui.fireEvent.click(await ui.screen.findByRole('button', { name: 'Resume same payment' }))
+  ui.fireEvent.click(await enabledResume())
   const cancel = await ui.screen.findByRole('button', { name: 'Cancel this attempt' })
   assert.equal(calls.some((call) => call.path.endsWith('/retire')), false)
   ui.fireEvent.click(cancel)
@@ -313,6 +328,7 @@ test('a verified failed attempt is retired only after an explicit confirm, unloc
   assert.equal((await ui.screen.findAllByText('Cancel this attempt?')).length > 0, true)
   assert.equal(calls.some((call) => call.path.endsWith('/retire')), false)
   await ui.act(() => new Promise((resolve) => setTimeout(resolve, 320))) // past ConfirmMorph's 280 ms double-tap guard
+  discovered = [] // once retired, discovery no longer lists it
   ui.fireEvent.click(await ui.screen.findByRole('button', { name: 'Cancel attempt' }))
   const pay = await ui.screen.findByRole('button', { name: 'Pay by card' })
   await ui.waitFor(() => assert.equal((pay as HTMLButtonElement).disabled, false))
@@ -324,11 +340,12 @@ test('a verified failed attempt is retired only after an explicit confirm, unloc
 
 for (const failure of ['unavailable', 'mismatch']) test(`retirement ${failure} preserves the retained attempt`, async () => {
   dom.window.sessionStorage.setItem(storageKey, JSON.stringify(intent))
+  discovered = [discoveredIntent()]
   resumeOutcome = 'retirable'
   if (failure === 'unavailable') retirementStatus = 409
   else retiredTransactionID = orderID
   render(async () => undefined, true)
-  ui.fireEvent.click(await ui.screen.findByRole('button', { name: 'Resume same payment' }))
+  ui.fireEvent.click(await enabledResume())
   ui.fireEvent.click(await ui.screen.findByRole('button', { name: 'Cancel this attempt' }))
   await ui.act(() => new Promise((resolve) => setTimeout(resolve, 320))) // past ConfirmMorph's 280 ms double-tap guard
   ui.fireEvent.click(await ui.screen.findByRole('button', { name: 'Cancel attempt' }))
@@ -382,14 +399,48 @@ test('a terminal answer for an older attempt never clears or announces over a ne
 })
 
 test('recovery rows show the order name the server froze for each attempt', async () => {
-  discovered = [{ transactionID, paymentID, cartID: 'cart-1', productID: 'product-1', quantity: 1, totalAmount: 82000, currency: 'KRW', status: 'pending', reviewHold: false, orderName: 'PREVIEW Édition personnelle' }]
+  discovered = [{ transactionID, paymentID, cartID: 'cart-1', productID: 'product-1', quantity: 1, totalAmount: 82000, currency: 'KRW', status: 'pending', reviewHold: false, orderName: 'PREVIEW Édition personnelle' , refundTerms: { kind: 'none', reason: 'personalised-edition' } }]
   render(async () => undefined, true)
   await ui.screen.findByText('PREVIEW Édition personnelle')
+  // Each recovery row says what refund rule that attempt was bought under (Review-B r2: shop/payment resume included).
+  assert.ok(ui.screen.getByText('Personalised with your membership. No refunds.'))
 })
 
-function render(sdk: typeof requestPayment, recovery = false) {
-  ui.render(<EnglishMessages><Provider><Payment shippingAddress={address} recovery={recovery} requestPayment={sdk} /></Provider></EnglishMessages>)
+function render(sdk: typeof requestPayment, recovery = false, guestQuote?: import("@/lib/commerce/contracts").GuestCheckoutQuote, offerTicketEmailConsent = false) {
+  ui.render(<EnglishMessages><Provider><Payment shippingAddress={address} recovery={recovery} guestQuote={guestQuote} offerTicketEmailConsent={offerTicketEmailConsent} requestPayment={sdk} /></Provider></EnglishMessages>)
 }
+
+for (const consent of [false, true]) {
+  test(`ticket email choice is optional and only explicit consent is submitted (${consent})`, async () => {
+    preparationOutcome = 'status-only'
+    render(async () => { throw new Error("SDK must not open") }, false, undefined, true)
+    const checkbox = ui.screen.getByRole('checkbox', { name: /share my checkout email with Unlock/i }) as HTMLInputElement
+    assert.equal(checkbox.checked, false)
+    if (consent) ui.fireEvent.click(checkbox)
+    const pay = await ui.screen.findByRole('button', { name: 'Pay by card' })
+    await ui.waitFor(() => assert.equal((pay as HTMLButtonElement).disabled, false))
+    ui.fireEvent.click(pay)
+    await ui.screen.findByText('An existing attempt was found. Check its status before continuing.')
+    const body = calls.find(call => call.path.endsWith('/initiate'))?.body
+    assert.ok(body)
+    assert.equal(body.ticketEmailConsent, consent ? "unlock-ticket-email-v1" : undefined)
+    assert.equal(Object.hasOwn(body, "email"), false)
+  })
+}
+
+test('a stale Guest quote never opens the SDK or retains a rejected fresh attempt', async () => {
+  preparationOutcome = 'guest-quote-changed'
+  let opens = 0
+  const quote = { productID: orderID, quantity: 2, totalAmount: 20_000, refundTerms: { kind: 'until', cutoffAt: '2026-12-08T01:00:00.000Z' } } as const
+  render(async () => { opens++; return undefined }, false, quote)
+  const pay = await ui.screen.findByRole('button', { name: 'Pay by card' })
+  await ui.waitFor(() => assert.equal((pay as HTMLButtonElement).disabled, false))
+  ui.fireEvent.click(pay)
+  await ui.screen.findByText('Your guest ticket selection or price changed. Reload and review the total before paying.')
+  assert.deepEqual(calls.find(call => call.path.endsWith('/initiate'))?.body.guestQuote, quote)
+  assert.equal(opens, 0)
+  assert.equal(dom.window.sessionStorage.getItem(storageKey), null)
+})
 
 test('SDK cancellation keeps exact attempt and address, makes no second charge, and never claims paid', async () => {
   confirmationStatus = 409
@@ -435,12 +486,15 @@ test('authoritative confirmation retires the matching retained attempt and permi
 test('confirming an older attempt preserves a different concurrently retained attempt', async () => {
   const newer = { ...intent, transactionID: orderID, paymentID: orderID.replaceAll('-', '') }
   dom.window.sessionStorage.setItem(storageKey, JSON.stringify(intent))
+  discovered = [discoveredIntent()]
   resumeOutcome = 'resumable'
   render(async () => {
     dom.window.sessionStorage.setItem(storageKey, JSON.stringify(newer))
     return undefined
   }, true)
-  ui.fireEvent.click(await ui.screen.findByRole('button', { name: 'Resume same payment' }))
+  const resume = await ui.screen.findByRole('button', { name: 'Resume same payment' })
+  await ui.waitFor(() => assert.equal((resume as HTMLButtonElement).disabled, false))
+  ui.fireEvent.click(resume)
   await ui.screen.findByText('Payment confirmed. Your order has been received.')
   assert.deepEqual(JSON.parse(dom.window.sessionStorage.getItem(storageKey)!), newer)
 })
@@ -458,10 +512,15 @@ test('a reused preparation is status-only and never opens the SDK', async () => 
 
 test('READY/status-only resume never reopens; explicit verified resumable opens exactly the same payment once', async () => {
   dom.window.sessionStorage.setItem(storageKey, JSON.stringify(intent))
+  discovered = [discoveredIntent()]
   let opens = 0
   const ids: string[] = []
   render(async (request) => { opens++; ids.push(request.paymentId); return undefined }, true)
   const resume = await ui.screen.findByRole('button', { name: 'Resume same payment' })
+  await ui.waitFor(() => assert.equal((resume as HTMLButtonElement).disabled, false))
+  // The saved attempt's own refund terms are on screen before Resume can reopen the payment window (Review-B r2).
+  const terms = await ui.screen.findByText(/^Refundable until .+ \(Seoul time\)\.$/)
+  assert.equal(terms.compareDocumentPosition(resume) & dom.window.Node.DOCUMENT_POSITION_FOLLOWING, dom.window.Node.DOCUMENT_POSITION_FOLLOWING)
   ui.fireEvent.click(resume)
   await ui.screen.findByText('This attempt cannot be reopened. Check payment status or contact support.')
   assert.equal(opens, 0)
@@ -500,7 +559,7 @@ test('unknown confirmation stays recoverable and does not charge automatically',
 })
 
 test('a new tab discovers canonical pending metadata without PII or opening payment', async () => {
-  discovered = [{ transactionID, paymentID, cartID: 'cart-1', productID: 'product-1', quantity: 1, totalAmount: 10000, currency: 'KRW', status: 'pending', reviewHold: false }]
+  discovered = [{ transactionID, paymentID, cartID: 'cart-1', productID: 'product-1', quantity: 1, totalAmount: 10000, currency: 'KRW', status: 'pending', reviewHold: false , refundTerms: { kind: 'none', reason: 'personalised-edition' } }]
   let opens = 0
   render(async () => { opens++; return undefined }, true)
   ui.fireEvent.click(await ui.screen.findByRole('button', { name: /10,000 KRW.*View attempt/ }))
@@ -512,7 +571,7 @@ test('a new tab discovers canonical pending metadata without PII or opening paym
 
 test('a resolution conflict is manual review only, never resumable or retirable', async () => {
   dom.window.sessionStorage.setItem(storageKey, JSON.stringify(intent))
-  discovered = [{ transactionID, paymentID, cartID: 'cart-1', productID: 'product-1', quantity: 1, totalAmount: 10000, currency: 'KRW', status: 'cancelled', reviewHold: false, resolutionConflict: true }]
+  discovered = [{ transactionID, paymentID, cartID: 'cart-1', productID: 'product-1', quantity: 1, totalAmount: 10000, currency: 'KRW', status: 'cancelled', reviewHold: false, resolutionConflict: true , refundTerms: { kind: 'none', reason: 'personalised-edition' } }]
   render(async () => { throw new Error('Conflict must never open payment') }, true)
   await ui.screen.findByText('This payment needs review. Contact support before trying again.')
   assert.equal((ui.screen.getByRole('button', { name: 'Resume same payment' }) as HTMLButtonElement).disabled, true)
@@ -904,4 +963,80 @@ test('a native body failure after boundary unmount is ignored without new identi
   await ui.act(async () => { controller!.error(new TypeError('Unmounted stream failure')) })
   assert.equal(calls.length, before)
   assert.equal(document.querySelector('[data-commerce-identity-state]') === null, true)
+})
+
+test('without the saved attempt\'s refund terms, Resume stays off and says why; Check stays available', async () => {
+  dom.window.sessionStorage.setItem(storageKey, JSON.stringify(intent))
+  resumeOutcome = 'resumable'
+  let opens = 0
+  render(async () => { opens++; return undefined }, true)
+  await ui.screen.findByText("This attempt's refund terms can't be confirmed, so it can't be resumed. Check payment status instead.")
+  assert.equal((ui.screen.getByRole('button', { name: 'Resume same payment' }) as HTMLButtonElement).disabled, true)
+  await ui.waitFor(() => assert.equal((ui.screen.getByRole('button', { name: 'Check payment' }) as HTMLButtonElement).disabled, false))
+  assert.equal(opens, 0)
+  assert.equal(calls.some((call) => call.path.endsWith('/resume')), false)
+})
+
+test('resume sends the terms on screen; when the server finds others it shows them and opens nothing until a new press', async () => {
+  dom.window.sessionStorage.setItem(storageKey, JSON.stringify(intent))
+  discovered = [discoveredIntent()]
+  resumeOutcome = 'terms-changed'
+  serverTerms = { kind: 'closed', cutoffAt: '2026-12-08T01:00:00.000Z' }
+  let opens = 0
+  render(async () => { opens++; return undefined }, true)
+  ui.fireEvent.click(await enabledResume())
+  // The cutoff passed while the page was open: the new terms replace the old ones before anything can open.
+  await ui.screen.findByText('The refund terms changed. Check them, then resume again.')
+  assert.ok(await ui.screen.findByText(/^Refunds for this event closed .+ \(Seoul time\)\.$/))
+  assert.equal(ui.screen.queryByText(/^Refundable until/) === null, true)
+  assert.equal(opens, 0)
+  assert.deepEqual(calls.find((call) => call.path.endsWith('/resume'))?.body.refundTerms, { kind: 'until', cutoffAt: '2026-12-08T01:00:00.000Z' })
+  // The next press sends the terms now on screen; with them current, the same payment opens once.
+  resumeOutcome = 'resumable'
+  ui.fireEvent.click(await enabledResume())
+  await ui.screen.findByText('Payment confirmed. Your order has been received.')
+  assert.equal(opens, 1)
+  assert.deepEqual(calls.filter((call) => call.path.endsWith('/resume')).at(-1)?.body.refundTerms, serverTerms)
+})
+
+test('a guest Pay with stale refund terms opens nothing, hands the page the new terms and asks for a new press', async () => {
+  preparationOutcome = 'guest-quote-changed'
+  serverTerms = { kind: 'until', cutoffAt: '2026-12-09T01:00:00.000Z' }
+  const changed: unknown[] = []
+  let opens = 0
+  const quote = { productID: orderID, quantity: 1, totalAmount: 10_000, refundTerms: { kind: 'until', cutoffAt: '2026-12-08T01:00:00.000Z' } } as const
+  ui.render(<EnglishMessages><Provider><Payment shippingAddress={address} guestQuote={quote} onRefundTermsChanged={(terms) => changed.push(terms)}
+    requestPayment={async () => { opens++; return undefined }} /></Provider></EnglishMessages>)
+  const pay = await ui.screen.findByRole('button', { name: 'Pay by card' })
+  await ui.waitFor(() => assert.equal((pay as HTMLButtonElement).disabled, false))
+  ui.fireEvent.click(pay)
+  // The event start moved: the server's terms differ from the quote's. Nothing opens; the page gets the new terms.
+  await ui.screen.findByText('The refund terms changed. Check them, then pay again.')
+  assert.deepEqual(changed, [serverTerms])
+  assert.equal(opens, 0)
+  assert.deepEqual(calls.find((call) => call.path.endsWith('/initiate'))?.body.guestQuote, quote)
+  assert.equal(dom.window.sessionStorage.getItem(storageKey), null)
+})
+
+test('a closed guest event says so on the saved attempt before Resume', async () => {
+  dom.window.sessionStorage.setItem(storageKey, JSON.stringify(intent))
+  discovered = [discoveredIntent({ kind: 'closed', cutoffAt: '2026-11-20T01:00:00.000Z' })]
+  render(async () => undefined, true)
+  assert.ok(await ui.screen.findByText(/^Refunds for this event closed .+ \(Seoul time\)\.$/))
+})
+
+test('guest tickets state the event refund cutoff before Pay, or plainly that refunds have closed', async () => {
+  const { GuestTicketPurchase } = await import('@/components/commerce/guest-ticket-purchase')
+  const cases = [[{ kind: 'until', cutoffAt: '2026-12-08T01:00:00.000Z' }, /^Refundable until .+ \(Seoul time\)\.$/],
+    [{ kind: 'closed', cutoffAt: '2026-11-20T01:00:00.000Z' }, /^Refunds for this event closed .+ \(Seoul time\)\.$/],
+    [{ kind: 'closed', cutoffAt: null }, /^Refunds for this event have closed\.$/]] as const
+  for (const [refundTerms, text] of cases) {
+    ui.render(<EnglishMessages><GuestTicketPurchase customerID="customer-1" productID="product-1" title="Guest ticket" priceKRW={10000}
+      available={1} limit={1} locale="en" refundTerms={refundTerms} /></EnglishMessages>)
+    const line = await ui.screen.findByText(text)
+    const pay = await ui.screen.findByRole('button', { name: 'Pay by card' })
+    assert.equal(line.compareDocumentPosition(pay) & dom.window.Node.DOCUMENT_POSITION_FOLLOWING, dom.window.Node.DOCUMENT_POSITION_FOLLOWING)
+    assert.match(line.className, /\btext-sm\b/); assert.match(line.className, /\btext-foreground\b/)
+    ui.cleanup()
+  }
 })

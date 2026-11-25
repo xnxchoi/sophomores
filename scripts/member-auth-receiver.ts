@@ -29,7 +29,10 @@ export function receiverProcessEnvironment(env: Environment): NodeJS.ProcessEnv 
     "PHONE_VERIFICATION_ORIGIN", "PHONE_VERIFICATION_DATABASE_URL", "PHONE_VERIFICATION_STATE_SECRET",
     "PHONE_VERIFICATION_RECIPIENT", "PHONE_VERIFICATION_ZOHO_ACCOUNT_ID",
     "PHONE_VERIFICATION_CARRIER_POLICY", "PHONE_VERIFICATION_ALLOW_LEGACY_ZOHO_ARC",
-    "PHONE_VERIFICATION_RECEIVER_HEALTH_DIRECTORY"
+    "PHONE_VERIFICATION_RECEIVER_HEALTH_DIRECTORY",
+    // The preview sandbox runtime: its supervisor's attestation (never the PortOne or review settings) and the private
+    // OAuth file outside the read-only app tree.
+    "PREVIEW_RUNTIME", "PHONE_VERIFICATION_RECEIVER_SECRETS_FILE", "PHONE_VERIFICATION_PREVIEW_ATTESTATION"
   ]);
   return { ...Object.fromEntries(Object.entries(env).filter(([key, value]) => allowed.has(key) && value !== undefined)),
     ...canonicalDatabase,

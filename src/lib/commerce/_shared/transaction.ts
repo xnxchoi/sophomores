@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { isProxy } from "node:util/types";
 import { postgresAdapter, sql, type PostgresAdapter, type PostgresAdapterArgs } from "@payloadcms/db-postgres";
 import { APIError, type CollectionSlug, type PayloadRequest } from "payload";
+import { takeRefundTermsChange } from "../portone/refund-terms";
 
 export type CommerceDocument = Record<string, unknown> & { id: string };
 
@@ -163,7 +164,15 @@ export async function inPaymentEndpoint(req: PayloadRequest, handler: (req: Payl
       return response;
     });
   } catch (error) {
-    if (error instanceof OfficialPaymentRejection) return error.response;
+    if (error instanceof OfficialPaymentRejection) {
+      // A guest Pay whose refund terms changed under the event lock threw inside the official handler (its 500); the
+      // whole payment transaction has rolled back here, so no attempt or reservation exists. Answer as a changed quote
+      // with the current terms for the page to show (Review-B r4; fix-forward, 25 Nov).
+      const changedTerms = takeRefundTermsChange(req);
+      if (changedTerms) return Response.json({ message: "Guest quote changed", outcome: "guest-quote-changed", refundTerms: changedTerms },
+        { headers: { "Cache-Control": "private, no-store" } });
+      return error.response;
+    }
     if (error instanceof APIError) {
       logger.error({ msg: "Official payment endpoint rejected", cause: "official-api-rejection", status: error.status });
       throw error;

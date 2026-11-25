@@ -9,6 +9,7 @@ import { PageInset } from "@/components/core/PageInset/PageInset";
 import { Button } from "@/components/ui/button";
 import type { MemberWelcomeView } from "@/lib/member-auth/welcome/read";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
+import { useAccountSheetTrigger } from "@/components/auth/use-account-sheet";
 
 const arrival: Variants = {
   initial: {},
@@ -23,6 +24,8 @@ const settle = { type: "spring", visualDuration: 0.38, bounce: 0 } as const;
 
 export function WelcomeCard({ view }: { view: MemberWelcomeView }) {
   const t = useTranslations("Customer.components_membership_welcome");
+  // Sign in opens the in-place sheet; the href is the no-JS and modifier-click path (owner, 24 Nov).
+  const signIn = useAccountSheetTrigger();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const retryRequested = useRef(false);
@@ -66,7 +69,7 @@ export function WelcomeCard({ view }: { view: MemberWelcomeView }) {
             retryRequested.current = true;
             startTransition(() => router.refresh());
           }}>{pending ? t("checking") : t("tryAgain")}</Button>}
-        {view.state === "signed-out" && <Link href="/account" prefetch={false}
+        {view.state === "signed-out" && <Link href={signIn.href} onClick={signIn.onClick} prefetch={false}
           className="inline-flex min-h-12 items-center justify-center rounded-full bg-foreground px-5 py-2 text-sm font-medium text-background hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground">
           {t("signIn")}
         </Link>}

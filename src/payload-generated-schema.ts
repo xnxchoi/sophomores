@@ -223,6 +223,10 @@ export const enum_orders_fulfillment_return_disposition = pgEnum(
   "enum_orders_fulfillment_return_disposition",
   ["pending-inspection", "restock", "do-not-restock"]
 );
+export const enum_orders_commerce_refund_source = pgEnum(
+  "enum_orders_commerce_refund_source",
+  ["provider", "admin"]
+);
 export const enum_transactions_payment_method = pgEnum(
   "enum_transactions_payment_method",
   ["portone"]
@@ -275,6 +279,10 @@ export const enum_commerce_key_grant_intents_recipient_mode = pgEnum(
   "enum_commerce_key_grant_intents_recipient_mode",
   ["member_safe", "guest_email"]
 );
+export const enum_commerce_key_grant_intents_purpose = pgEnum(
+  "enum_commerce_key_grant_intents_purpose",
+  ["primary", "member-event"]
+);
 export const enum_commerce_key_grant_intents_state = pgEnum(
   "enum_commerce_key_grant_intents_state",
   [
@@ -319,6 +327,13 @@ export const enum__commerce_publication_v_published_locale = pgEnum(
   "enum__commerce_publication_v_published_locale",
   ["en", "ko"]
 );
+export const enum_home_entry_warpstart_tz = pgEnum(
+  "enum_home_entry_warpstart_tz",
+  ["Asia/Seoul"]
+);
+export const enum_home_entry_warpend_tz = pgEnum("enum_home_entry_warpend_tz", [
+  "Asia/Seoul"
+]);
 
 export const admins = pgTable(
   "admins",
@@ -3010,7 +3025,8 @@ export const carts_items = pgTable(
     quantity: numeric("quantity", { mode: "number" }).notNull().default(1),
     variant: uuid("variant_id").references(() => variants.id, {
       onDelete: "set null"
-    })
+    }),
+    ticketKind: varchar("ticket_kind")
   },
   (columns) => [
     index("carts_items_order_idx").on(columns._order),
@@ -3144,6 +3160,18 @@ export const orders = pgTable(
     fulfillment_returnDisposition: enum_orders_fulfillment_return_disposition(
       "fulfillment_return_disposition"
     ),
+    commerceRefund_refundedAt: timestamp("commerce_refund_refunded_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }),
+    commerceRefund_source: enum_orders_commerce_refund_source(
+      "commerce_refund_source"
+    ),
+    commerceRefund_providerEventID: varchar(
+      "commerce_refund_provider_event_i_d"
+    ),
+    commerceRefund_transactionID: varchar("commerce_refund_transaction_i_d"),
     updatedAt: timestamp("updated_at", {
       mode: "string",
       withTimezone: true,
@@ -3737,6 +3765,11 @@ export const commerce_admissions = pgTable(
       withTimezone: true,
       precision: 3
     }),
+    seatReleasedAt: timestamp("seat_released_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }),
     benefitReview: boolean("benefit_review").default(false),
     benefitHoldEvidence: varchar("benefit_hold_evidence"),
     benefitHoldReason: varchar("benefit_hold_reason"),
@@ -3955,6 +3988,8 @@ export const commerce_key_grant_intents = pgTable(
       enum_commerce_key_grant_intents_recipient_mode(
         "recipient_mode"
       ).notNull(),
+    purpose: enum_commerce_key_grant_intents_purpose("purpose").notNull().default("primary"),
+    ticketTokenKey: varchar("ticket_token_key"),
     state: enum_commerce_key_grant_intents_state("state")
       .notNull()
       .default("awaiting_wallet"),
@@ -4040,12 +4075,14 @@ export const commerce_key_grant_intents = pgTable(
     ),
     index("commerce_key_grant_intents_order_idx").on(columns.order),
     index("commerce_key_grant_intents_payment_idx").on(columns.payment),
-    uniqueIndex("commerce_key_grant_intents_entitlement_idx").on(
+    index("commerce_key_grant_intents_entitlement_idx").on(
       columns.entitlement
     ),
     index("commerce_key_grant_intents_beneficiary_user_idx").on(
       columns.beneficiaryUser
     ),
+    uniqueIndex("entitlement_purpose_idx").on(columns.entitlement, columns.purpose),
+    uniqueIndex("commerce_key_grant_intents_ticket_token_key_idx").on(columns.ticketTokenKey),
     index("commerce_key_grant_intents_state_idx").on(columns.state),
     index("commerce_key_grant_intents_next_attempt_at_idx").on(
       columns.nextAttemptAt
@@ -4890,6 +4927,53 @@ export const site_editorial_locales = pgTable(
     }).onDelete("cascade")
   ]
 );
+
+export const home_entry_entry_links = pgTable(
+  "home_entry_entry_links",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: uuid("_parent_id").notNull(),
+    id: varchar("id").primaryKey(),
+    code: varchar("code").notNull(),
+    note: varchar("note")
+  },
+  (columns) => [
+    index("home_entry_entry_links_order_idx").on(columns._order),
+    index("home_entry_entry_links_parent_id_idx").on(columns._parentID),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [home_entry.id],
+      name: "home_entry_entry_links_parent_id_fk"
+    }).onDelete("cascade")
+  ]
+);
+
+export const home_entry = pgTable("home_entry", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  warpStart: timestamp("warp_start", {
+    mode: "string",
+    withTimezone: true,
+    precision: 3
+  }),
+  warpStart_tz:
+    enum_home_entry_warpstart_tz("warpstart_tz").default("Asia/Seoul"),
+  warpEnd: timestamp("warp_end", {
+    mode: "string",
+    withTimezone: true,
+    precision: 3
+  }),
+  warpEnd_tz: enum_home_entry_warpend_tz("warpend_tz").default("Asia/Seoul"),
+  updatedAt: timestamp("updated_at", {
+    mode: "string",
+    withTimezone: true,
+    precision: 3
+  }),
+  createdAt: timestamp("created_at", {
+    mode: "string",
+    withTimezone: true,
+    precision: 3
+  })
+});
 
 export const nfc_tap_handoffs = pgTable(
   "nfc_tap_handoffs",
@@ -6509,6 +6593,21 @@ export const relations_site_editorial = relations(
     })
   })
 );
+export const relations_home_entry_entry_links = relations(
+  home_entry_entry_links,
+  ({ one }) => ({
+    _parentID: one(home_entry, {
+      fields: [home_entry_entry_links._parentID],
+      references: [home_entry.id],
+      relationName: "entryLinks"
+    })
+  })
+);
+export const relations_home_entry = relations(home_entry, ({ many }) => ({
+  entryLinks: many(home_entry_entry_links, {
+    relationName: "entryLinks"
+  })
+}));
 
 type DatabaseSchema = {
   enum__locales: typeof enum__locales;
@@ -6549,6 +6648,7 @@ type DatabaseSchema = {
   enum_orders_commerce_version: typeof enum_orders_commerce_version;
   enum_orders_fulfillment_status: typeof enum_orders_fulfillment_status;
   enum_orders_fulfillment_return_disposition: typeof enum_orders_fulfillment_return_disposition;
+  enum_orders_commerce_refund_source: typeof enum_orders_commerce_refund_source;
   enum_transactions_payment_method: typeof enum_transactions_payment_method;
   enum_transactions_status: typeof enum_transactions_status;
   enum_transactions_currency: typeof enum_transactions_currency;
@@ -6561,6 +6661,7 @@ type DatabaseSchema = {
   enum_commerce_admissions_stock_disposition: typeof enum_commerce_admissions_stock_disposition;
   enum_commerce_redemptions_kind: typeof enum_commerce_redemptions_kind;
   enum_commerce_key_grant_intents_recipient_mode: typeof enum_commerce_key_grant_intents_recipient_mode;
+  enum_commerce_key_grant_intents_purpose: typeof enum_commerce_key_grant_intents_purpose;
   enum_commerce_key_grant_intents_state: typeof enum_commerce_key_grant_intents_state;
   enum_payload_jobs_log_task_slug: typeof enum_payload_jobs_log_task_slug;
   enum_payload_jobs_log_state: typeof enum_payload_jobs_log_state;
@@ -6570,6 +6671,8 @@ type DatabaseSchema = {
   enum__commerce_publication_v_version_shipping_countries: typeof enum__commerce_publication_v_version_shipping_countries;
   enum__commerce_publication_v_version_status: typeof enum__commerce_publication_v_version_status;
   enum__commerce_publication_v_published_locale: typeof enum__commerce_publication_v_published_locale;
+  enum_home_entry_warpstart_tz: typeof enum_home_entry_warpstart_tz;
+  enum_home_entry_warpend_tz: typeof enum_home_entry_warpend_tz;
   admins: typeof admins;
   users_role: typeof users_role;
   users: typeof users;
@@ -6685,6 +6788,8 @@ type DatabaseSchema = {
   help_content_locales: typeof help_content_locales;
   site_editorial: typeof site_editorial;
   site_editorial_locales: typeof site_editorial_locales;
+  home_entry_entry_links: typeof home_entry_entry_links;
+  home_entry: typeof home_entry;
   nfc_tap_handoffs: typeof nfc_tap_handoffs;
   relations_admins: typeof relations_admins;
   relations_users_role: typeof relations_users_role;
@@ -6801,6 +6906,8 @@ type DatabaseSchema = {
   relations_help_content: typeof relations_help_content;
   relations_site_editorial_locales: typeof relations_site_editorial_locales;
   relations_site_editorial: typeof relations_site_editorial;
+  relations_home_entry_entry_links: typeof relations_home_entry_entry_links;
+  relations_home_entry: typeof relations_home_entry;
 };
 
 declare module "@payloadcms/db-postgres" {

@@ -1,12 +1,14 @@
 import { createHash } from "node:crypto";
 import type { PayloadRequest } from "payload";
 import { MAX_ORDER_UNITS, MEMBERSHIP_RELEASE } from "./contracts";
-import { keyGrantStates } from "./keys/contracts";
+import { keyGrantStates, MEMBER_EVENT_GRANT, memberEventGrantOperationKey, parseKeyGrantTarget } from "./keys/contracts";
+import { assertGuestSponsorMembership } from "./membership";
 import { optionalRelationshipID, purchaseSnapshotSchema, reservationAllowance } from "./purchase-snapshot";
-import { resolveEventTicketTarget, guestTicketTarget, sameTicketTarget, usesUnlockEvents, unlockEventTicketConfiguration } from "./event-tickets";
+import { resolveEventTicketTarget, guestTicketTarget, sameTicketTarget, usesUnlockEvents, unlockEventTicketConfiguration, sharedTicketMode, sharedTicketTarget, sharedEventTicketsEnabled, sharedGuestSalePin, SHARED_GUEST_LIMIT } from "./event-tickets";
 import { counter, createCommerce, findCommerce, lockCommerce, readCommerce, relationshipID, updateCommerce, type CommerceDocument } from "./_shared/transaction";
+import { RefundTermsChanged, refundPolicy, refundTerms, sameRefundTerms, type RefundTerms } from "./refund-policy";
 
-type ReservationInput = { req: PayloadRequest; attemptID: string; customerID: string; releaseID: string; productID: string; eventID: string | null; variantID?: string; quantity: number; accountLimit: number; snapshotHash: string; productVersion?: string; variantVersion?: string; ticketTarget?: unknown };
+type ReservationInput = { /** The refund terms shown beside Pay, for a guest purchase (Review-B r4). */ refundTerms?: RefundTerms; req: PayloadRequest; attemptID: string; customerID: string; releaseID: string; productID: string; eventID: string | null; variantID?: string; quantity: number; accountLimit: number; snapshotHash: string; productVersion?: string; variantVersion?: string; ticketTarget?: unknown; memberTicketTarget?: unknown };
 type ReservationAction = { req: PayloadRequest; attemptID: string };
 export type VerifiedReleaseReason = "confirmed-cancel" | "accepted-return" | "verified-failure";
 
@@ -74,6 +76,31 @@ export async function lockOrderReservation({ req, orderID }: { req: PayloadReque
  */
 const LIVE_MEMBERSHIP_KEY = "An earlier membership key is not yet cancelled";
 
+/** Ignore a Member Event intent only when it proves a distinct, pinned entitlement. */
+async function assertMemberEventIdentity(req: PayloadRequest, customer: string, intent: CommerceDocument, order: CommerceDocument) {
+  const snapshot = purchaseSnapshotSchema.safeParse(order.commerceSnapshot);
+  const admission = await readCommerce(req, "commerce-admissions", relationshipID(intent.entitlement));
+  const pinned = snapshot.success && snapshot.data.version === 2 ? snapshot.data.memberTicketTarget : undefined;
+  const paymentID = relationshipID(intent.payment);
+  if (order.commerceVersion !== "commerce-v1" || !snapshot.success || !pinned || !snapshot.data.eventID ||
+    snapshot.data.customerID !== customer || relationshipID(order.customer) !== customer ||
+    relationshipID(admission.buyer) !== customer || relationshipID(intent.beneficiaryUser) !== customer ||
+    relationshipID(admission.order) !== order.id || relationshipID(admission.event) !== snapshot.data.eventID ||
+    relationshipID(admission.transaction) !== paymentID || !Array.isArray(order.transactions) ||
+    order.transactions.length !== 1 || relationshipID(order.transactions[0]) !== paymentID ||
+    intent.recipientMode !== "member_safe" || admission.unit !== 1 || admission.orderUnitKey !== `${order.id}:1` ||
+    admission.ticketTier !== "member" || !sameTicketTarget(admission.ticketTarget, pinned) ||
+    intent.operationKey !== memberEventGrantOperationKey(order.id, admission.unit)) throw new Error("Member Event grant identity is inconsistent");
+  if (intent.target == null) {
+    if (intent.state !== "awaiting_wallet") throw new Error("Member Event grant identity is inconsistent");
+    return;
+  }
+  const target = parseKeyGrantTarget(intent.target);
+  if (target.ticketTier !== "member" || !sameTicketTarget(pinned, { chainID: target.chainID, lock: target.lock, mode: target.ticketMode })) {
+    throw new Error("Member Event grant identity is inconsistent");
+  }
+}
+
 async function assertNoLiveMembershipKey(req: PayloadRequest, customerID: string): Promise<void> {
   const live = keyGrantStates.filter((state) => state !== "cancelled");
   const pageSize = 50;
@@ -85,6 +112,11 @@ async function assertNoLiveMembershipKey(req: PayloadRequest, customerID: string
       if (intent.order == null) throw new Error(LIVE_MEMBERSHIP_KEY);
       // A missing or unreadable order throws here, so the purchase fails closed.
       const order = await readCommerce(req, "orders", relationshipID(intent.order));
+      if (intent.purpose === MEMBER_EVENT_GRANT) {
+        await assertMemberEventIdentity(req, customerID, intent, order);
+        continue;
+      }
+      if (intent.purpose != null && intent.purpose !== "primary") throw new Error("Key grant purpose is inconsistent");
       if (order.commerceVersion === "commerce-v1") {
         const snapshot = purchaseSnapshotSchema.safeParse(order.commerceSnapshot);
         if (snapshot.success && snapshot.data.version === 3) continue;
@@ -112,9 +144,9 @@ async function readAccountAllowance(req: PayloadRequest, customerID: string, pro
  * refuse a line early with a clear reason, and reservePurchase, under its locks, stays authoritative. SYSTEM reads of
  * server-only ledgers; it answers yes or no and never returns them. Integrity and storage failures propagate (fail closed).
  */
-export async function accountAllowanceAdmits(req: PayloadRequest, { customerID, productID, eventID, quantity, accountLimit }:
-  { customerID: string; productID: string; eventID: string | null; quantity: number; accountLimit: number }): Promise<boolean> {
-  const { namespace, reserved, paid } = await readAccountAllowance(req, customerID, productID, eventID);
+export async function accountAllowanceAdmits(req: PayloadRequest, { customerID, productID, eventID, quantity, accountLimit, guest = false }:
+  { customerID: string; productID: string; eventID: string | null; quantity: number; accountLimit: number; guest?: boolean }): Promise<boolean> {
+  const { namespace, reserved, paid } = await readAccountAllowance(req, customerID, productID, eventID, guest);
   if (reserved + paid + quantity > accountLimit) return false;
   if (namespace !== MEMBERSHIP_RELEASE) return true;
   try { await assertNoLiveMembershipKey(req, customerID); }
@@ -128,6 +160,8 @@ export async function reservePurchase(input: ReservationInput): Promise<Commerce
   if (!Number.isSafeInteger(accountLimit) || accountLimit < 1 || accountLimit > MAX_ORDER_UNITS || !Number.isSafeInteger(quantity) || quantity < 1 || quantity > accountLimit) throw new Error("Purchase quantity exceeds the recorded account limit");
   // Commerce v1 sells the membership token only: one allowance per account, across products.
   const ticket = input.ticketTarget === undefined ? null : guestTicketTarget.parse(input.ticketTarget);
+  const memberTicket = input.memberTicketTarget === undefined ? null : sharedTicketTarget.parse(input.memberTicketTarget);
+  if (memberTicket && (!eventID || !variantID || ticket)) throw new Error("Invalid Member Ticket reservation");
   if (!attemptID || !customerID || !productID || (ticket ? !eventID || !!variantID || releaseID !== productID || productID === MEMBERSHIP_RELEASE : variantID ? releaseID !== productID : !eventID || releaseID !== MEMBERSHIP_RELEASE)
     || !/^[a-f0-9]{64}$/.test(snapshotHash)) throw new Error("Invalid reservation identity or snapshot");
   await lockCommerce(req, [`attempt:${attemptID}`]);
@@ -143,10 +177,21 @@ export async function reservePurchase(input: ReservationInput): Promise<Commerce
   if (!product) throw new Error("Canonical product is missing");
   const event = eventID === null ? null : await readCommerce(req, "commerce-events", eventID);
   if (ticket && (!event || !sameTicketTarget(resolveEventTicketTarget(event, "guest", productID), ticket))) throw new Error("Guest ticket lock configuration changed");
+  if (ticket && sharedTicketMode(ticket)) {
+    const sale = sharedGuestSalePin();
+    if (accountLimit !== SHARED_GUEST_LIMIT || !event || sale?.eventID !== event.id ||
+      sale.productID !== productID || !sharedEventTicketsEnabled(event.id, ticket)) {
+      throw new Error("Shared Guest Ticket reservation unavailable");
+    }
+    await assertGuestSponsorMembership(req, customerID);
+  }
   if (event?.unlockTicketConfiguration != null && !ticket) {
     const config = unlockEventTicketConfiguration.safeParse(event.unlockTicketConfiguration);
     if (!config.success || config.data.guestProductID === productID) throw new Error("Guest offer cannot be reserved as membership");
+    if ((memberTicket || "mode" in config.data) && (!memberTicket || !sharedEventTicketsEnabled(event.id, memberTicket) ||
+      !sameTicketTarget(memberTicket, resolveEventTicketTarget(event, "member", productID)))) throw new Error("Shared Member Ticket reservation unavailable");
   }
+  if (memberTicket && !event?.unlockTicketConfiguration) throw new Error("Shared Member Ticket configuration unavailable");
   const variant = variantID ? await readCommerce(req, "variants", variantID) : null;
   const now = Date.now();
   const saleStart = new Date(String(product.saleStartsAt)).getTime();
@@ -158,12 +203,21 @@ export async function reservePurchase(input: ReservationInput): Promise<Commerce
       variant.updatedAt !== input.variantVersion)) ||
     !Number.isFinite(saleStart) || !Number.isFinite(saleEnd) || saleStart >= saleEnd || now < saleStart || now >= saleEnd) throw new Error("Product is not available for purchase");
   const productReserved = counter(product.reservedQuantity);
+  const capacity = event && (memberTicket || (ticket && sharedTicketMode(ticket)))
+    ? Math.min(counter(event.capacity), counter(event.transportCapacity)) : event ? counter(event.capacity) : null;
   if (counter((variant ?? product).inventory) - productReserved < quantity ||
-    (event && counter(event.capacity) - counter(event.committedQuantity) - counter(event.reservedQuantity) < quantity)) throw new Error("Insufficient product or guaranteed admission capacity");
+    (event && capacity !== null && capacity - counter(event.committedQuantity) - counter(event.reservedQuantity) < quantity)) throw new Error("Insufficient product or guaranteed admission capacity");
   const { namespace, key, allowance, reserved, paid } = await readAccountAllowance(req, customerID, productID, eventID, !!ticket);
   // Single membership token per account (owner, 22 Nov), under the snapshot's recorded limit.
   if (reserved + paid + quantity > accountLimit) throw new Error("Account membership allowance exceeded");
   if (namespace === MEMBERSHIP_RELEASE) await assertNoLiveMembershipKey(req, customerID);
+  // The refund terms shown beside Pay, checked again under the event lock against the event as read here and a clock
+  // sampled after every read above (Review-B r4): a change (an edited start, a cutoff crossed while this request waited)
+  // throws before any write, so the attempt and its reservation roll back together.
+  if (ticket && input.refundTerms !== undefined) {
+    const terms = refundTerms(refundPolicy({ version: 3, kind: "guest-ticket-v1", eventID }), event?.partIStartsAt, Date.now());
+    if (!sameRefundTerms(input.refundTerms, terms)) throw new RefundTermsChanged(terms);
+  }
   if (allowance) await updateCommerce(req, "commerce-allowances", allowance.id, { reservedQuantity: reserved + quantity });
   else await createCommerce(req, "commerce-allowances", { accountReleaseKey: key, customer: customerID, releaseID: namespace, reservedQuantity: quantity, paidQuantity: 0 });
   await req.payload.db.updateOne({ collection: "products", id: productID, data: { reservedQuantity: { $inc: quantity } }, req });
@@ -200,7 +254,11 @@ export async function releaseReservation({ req, attemptID, verifiedReason, provi
   const allowanceField = settled ? "paidQuantity" : "reservedQuantity";
   const eventField = settled ? "committedQuantity" : "reservedQuantity";
   if (counter(allowance[allowanceField]) < quantity || (!settled && counter(product.reservedQuantity) < quantity)) throw new Error("Release counters are inconsistent");
-  await updateCommerce(req, "commerce-allowances", allowance.id, { [allowanceField]: counter(allowance[allowanceField]) - quantity });
+  const ticket = guestTicketTarget.safeParse(reservation.ticketTarget);
+  // Keep a paid shared Guest slot charged against the cap while its key may still be usable.
+  if (!settled || !ticket.success || !sharedTicketMode(ticket.data)) {
+    await updateCommerce(req, "commerce-allowances", allowance.id, { [allowanceField]: counter(allowance[allowanceField]) - quantity });
+  }
   let releasedCapacity = settled ? 0 : quantity;
   if (!settled) await req.payload.db.updateOne({ collection: "products", id: product.id, data: { reservedQuantity: { $inc: -quantity } }, req });
   if (settled && event) {

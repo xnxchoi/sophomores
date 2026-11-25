@@ -1,19 +1,19 @@
 import { z } from "zod";
-import { commerceSnapshotSchema, matchesPurchaseCharge, MEMBERSHIP_RELEASE, purchaseChargeFields } from "./contracts";
-import { guestTicketTarget } from "./event-tickets";
+import { commerceSnapshotSchema, matchesPurchaseCharge, MEMBERSHIP_RELEASE, purchaseChargeFields, ticketEmailConsentSchema } from "./contracts";
+import { guestTicketTarget, sharedTicketMode, SHARED_GUEST_LIMIT } from "./event-tickets";
 import { nativePurchaseSnapshotSchema } from "./native-edition-receipt";
 import { relationshipID } from "./_shared/transaction";
 
 // This contract is deliberately not emitted by checkout until a Guest offer is approved.
 export const guestPurchaseSnapshotSchema = z.strictObject({
   version: z.literal(3), kind: z.literal("guest-ticket-v1"), ...purchaseChargeFields, releaseID: z.string().min(1).max(128),
-  shippingAmount: z.literal(0), ticketTarget: guestTicketTarget,
-}).refine((value) => matchesPurchaseCharge(value) && value.releaseID === value.productID && value.productID !== MEMBERSHIP_RELEASE);
+  shippingAmount: z.literal(0), ticketTarget: guestTicketTarget, ticketEmailConsent: ticketEmailConsentSchema,
+}).refine((value) => matchesPurchaseCharge(value) && (!sharedTicketMode(value.ticketTarget) || value.accountLimit === SHARED_GUEST_LIMIT) && value.releaseID === value.productID && value.productID !== MEMBERSHIP_RELEASE);
 
 export const purchaseSnapshotSchema = z.union([commerceSnapshotSchema, nativePurchaseSnapshotSchema, guestPurchaseSnapshotSchema]);
 export type PurchaseSnapshot = Readonly<z.infer<typeof purchaseSnapshotSchema>>;
 
-export function purchaseAllowance(snapshot: Pick<PurchaseSnapshot, "productID" | "eventID"> & { version?: number }) {
+export function purchaseAllowance(snapshot: Pick<PurchaseSnapshot, "productID" | "eventID" | "version">) {
   return reservationAllowance(snapshot.productID, snapshot.eventID, snapshot.version === 3);
 }
 

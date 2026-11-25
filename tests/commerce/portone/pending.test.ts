@@ -36,9 +36,11 @@ test('discovery returns every bounded own pending/processing/held attempt with a
   assert.equal(result.status, 200)
   const data = await result.json()
   assert.equal(data.attempts.length, 3)
-  assert.deepEqual(Object.keys(data.attempts[0]).sort(), ['transactionID', 'paymentID', 'cartID', 'productID', 'quantity', 'totalAmount', 'currency', 'status', 'reviewHold', 'resolutionConflict', 'orderName'].sort())
+  assert.deepEqual(Object.keys(data.attempts[0]).sort(), ['transactionID', 'paymentID', 'cartID', 'productID', 'quantity', 'totalAmount', 'currency', 'status', 'reviewHold', 'resolutionConflict', 'orderName', 'refundTerms'].sort())
   // Only the frozen order name leaves the snapshot; the address and keys stay private.
   assert.equal(data.attempts[0].orderName, 'PREVIEW Premium edition')
+  // A snapshot that names no product the refund policy knows is not refundable; only the derived terms leave.
+  assert.deepEqual(data.attempts[0].refundTerms, { kind: 'none', reason: 'not-refundable-product' })
   assert.equal(JSON.stringify(data).includes('private'), false)
   assert.equal(JSON.stringify(data).includes(otherID), false)
   assert.equal(data.attempts[2].reviewHold, true)
@@ -124,4 +126,60 @@ test('fresh browser discovery retains an exact retired attempt with a signed Pai
   // A broken case-to-row binding is unavailable, never a clean empty ledger.
   ledger.state.identity.snapshotHash = 'b'.repeat(64)
   assert.equal((await createPendingEndpoint(async () => customerID).handler(f.req)).status, 503)
+})
+
+test('each attempt carries the refund terms of its frozen snapshot; a guest ticket reads its event once, open or closed', async () => {
+  const eventID = '91b6495b-479b-4306-98f1-83b729807b00'
+  const day = 24 * 60 * 60 * 1000
+  const snapshotted = (id: string, snapshot: Record<string, unknown>) => { const value = row(id); return { ...value, portone: { ...value.portone, snapshot: { orderName: 'PREVIEW', ...snapshot } } } }
+  const docs = [
+    snapshotted('91b6495b-479b-4306-98f1-83b729807b01', { version: 3, kind: 'guest-ticket-v1', eventID }),
+    snapshotted('91b6495b-479b-4306-98f1-83b729807b02', { version: 3, kind: 'guest-ticket-v1', eventID }),
+    snapshotted('91b6495b-479b-4306-98f1-83b729807b03', { version: 2, eventID: null, editionEntitlements: { membershipSignet: false, freeLaunchTicket: false } }),
+    snapshotted('91b6495b-479b-4306-98f1-83b729807b04', { version: 2, eventID, editionEntitlements: { membershipSignet: true, freeLaunchTicket: true } }),
+  ]
+  for (const [startsIn, expected] of [[4 * day, 'until'], [2 * day, 'closed']] as const) {
+    const partIStartsAt = new Date(Date.now() + startsIn).toISOString()
+    let eventReads = 0
+    const req = Object.assign(new Request('http://localhost:3000/api/payments/portone/pending', { headers: { 'sec-fetch-site': 'same-origin' } }), {
+      user: { id: customerID, collection: 'users' }, payload: {
+        find: async (input: { collection: string }) => input.collection === 'commerce-reconciliations' ? { docs: [], totalDocs: 0 } : { docs },
+        findByID: async (input: { collection: string; id: string; select?: unknown }) => {
+          assert.equal(input.collection, 'commerce-events'); assert.equal(input.id, eventID); assert.deepEqual(input.select, { partIStartsAt: true })
+          eventReads++
+          return { id: eventID, partIStartsAt }
+        } },
+    }) as unknown as PayloadRequest
+    const result = await createPendingEndpoint(async () => customerID).handler(req)
+    assert.equal(result.status, 200)
+    const terms = (await result.json()).attempts.map((attempt: { refundTerms: unknown }) => attempt.refundTerms)
+    const cutoffAt = new Date(new Date(partIStartsAt).getTime() - 3 * day).toISOString()
+    assert.deepEqual(terms, [{ kind: expected, cutoffAt }, { kind: expected, cutoffAt },
+      { kind: 'refundable' }, { kind: 'none', reason: 'personalised-edition' }])
+    assert.equal(eventReads, 1)
+  }
+})
+
+test('current refund terms are re-derived from the clock and the event start: crossing the cutoff, or a moved start, changes them', async () => {
+  const { currentRefundTerms, sameRefundTerms } = await import('../../../src/lib/commerce/portone/refund-terms')
+  const eventID = '91b6495b-479b-4306-98f1-83b729807b10'
+  const day = 24 * 60 * 60 * 1000
+  let partIStartsAt = '2026-12-11T10:00:00.000Z'
+  const req = { payload: { findByID: async () => ({ id: eventID, partIStartsAt }) } } as unknown as PayloadRequest
+  const guest = { version: 3, kind: 'guest-ticket-v1', eventID }
+  const cutoff = Date.parse(partIStartsAt) - 3 * day
+  const shown = await currentRefundTerms(req, guest, cutoff - 1)
+  assert.deepEqual(shown, { kind: 'until', cutoffAt: '2026-12-08T10:00:00.000Z' })
+  assert.equal(sameRefundTerms(shown, await currentRefundTerms(req, guest, cutoff - 1)), true)
+  // The cutoff passes while the page is open.
+  const crossed = await currentRefundTerms(req, guest, cutoff)
+  assert.deepEqual(crossed, { kind: 'closed', cutoffAt: '2026-12-08T10:00:00.000Z' })
+  assert.equal(sameRefundTerms(shown, crossed), false)
+  // The event start moves a day later.
+  partIStartsAt = '2026-12-12T10:00:00.000Z'
+  const moved = await currentRefundTerms(req, guest, cutoff - 1)
+  assert.deepEqual(moved, { kind: 'until', cutoffAt: '2026-12-09T10:00:00.000Z' })
+  assert.equal(sameRefundTerms(shown, moved), false)
+  // Nothing shown is never the same as anything.
+  assert.equal(sameRefundTerms(undefined, moved), false)
 })

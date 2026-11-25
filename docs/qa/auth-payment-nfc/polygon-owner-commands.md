@@ -1,5 +1,7 @@
 # Polygon one grant: commands for the owner to run
 
+**Completed 22 Nov** (01:14 KST): tx `0x8dc0c2a66771a57240a01931a359ea08af41a75240e8e0a60a72075abe84301f`, block 97714798, token 1. Kept for the record.
+
 You run these yourself. No agent broadcasts or moves funds.
 
 Script: `polygon-one-grant.ts`, SHA-256 `f42c222925ad07d14213583977cc1f538733bf54f736fccfe99b740dd830433c`. Codex Review-A passed it. These commands replace the old-script commands in HANDOFF.md.

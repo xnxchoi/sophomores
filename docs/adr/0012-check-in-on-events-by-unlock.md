@@ -45,6 +45,8 @@ Unlock's pages (checked 2026-11-16) say: any phone camera opens a ticket's QR; s
 
 ## Amendment (2026-11-20): Member and Guest ticket locks
 
+**Superseded 24 Nov.** Owner, verbatim: "One lock + guest label at door". One Edition I lock per event, a distinct key per admission, and staff see guest or member at the scan. The two-lock text is kept as history.
+
 **Owner, verbatim** (see the [20 Nov decision ledger entry](../qa/auth-payment-nfc/consolidation.md#member-and-guest-event-tickets-20-nov)):
 
 > "I want to separate the 2 in price and benefit; one for the members, one for the guests. The guests are not  given gifts."

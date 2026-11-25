@@ -15,7 +15,7 @@ import { privateKeyToAccount, type PrivateKeyAccount } from "viem/accounts";
 export const signerDirectory = join(homedir(), ".config", "sphmrs");
 export const keyGranterFile = join(signerDirectory, "base-sepolia-key-granter.env");
 export const lockManagerFile = join(signerDirectory, "base-sepolia-lock-manager.env");
-export type SignerPrefix = "UNLOCK_TEST_GRANTER" | "UNLOCK_TEST_LOCK_MANAGER";
+export type SignerPrefix = "UNLOCK_TEST_GRANTER" | "UNLOCK_TEST_LOCK_MANAGER" | "UNLOCK_LIVE_GRANTER";
 
 const privateKeyPattern = /^0x[0-9a-f]{64}$/i;
 
@@ -24,7 +24,7 @@ export class SignerLoadError extends Error {
 }
 
 /** Reads a regular, non-symlinked file owned by `uid` with no group or other access. */
-async function readOwnerOnly(file: string, uid: number | undefined): Promise<string> {
+export async function readOwnerOnly(file: string, uid: number | undefined): Promise<string> {
   let link: boolean;
   try { link = (await lstat(file)).isSymbolicLink(); } catch { throw new SignerLoadError("Signer file is missing or unreadable"); }
   if (link) throw new SignerLoadError("Signer file must not be a symbolic link");

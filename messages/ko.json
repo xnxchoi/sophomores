@@ -513,7 +513,17 @@
       "correctReturnReviewDetails": "반품 검토 상세 정보 수정",
       "prepareNextDrink": "다음 음료 준비",
       "continueAdmissionOperations": "입장권 작업 계속하기",
-      "reloadSavedEditor": "저장된 편집기 다시 불러오기"
+      "reloadSavedEditor": "저장된 편집기 다시 불러오기",
+      "refundRequested": "",
+      "refundAlreadyCancelled": "",
+      "refundAlreadyRefunded": "",
+      "refundUnknown": "",
+      "refundRefused": "",
+      "refundClosed": "",
+      "refundClosedNoDate": "",
+      "refundRefusedPersonalised": "",
+      "refundRefusedProduct": "",
+      "refundRefusedOtherChannel": ""
     },
     "orderControls": {
       "savedFulfillmentStatus": "저장된 배송 상태: {status}",
@@ -533,7 +543,13 @@
       "iManuallyReviewedAnyUsedAttendanceOrBenefits": "해당 항목의 입장 및 혜택 사용 이력을 수동으로 검토했습니다",
       "acceptPhysicalReturn": "실물 반품 승인",
       "finalStockDisposition": "최종 재고 처리 방식",
-      "confirmFinalDisposition": "최종 재고 처리 확정"
+      "confirmFinalDisposition": "최종 재고 처리 확정",
+      "refundInFull": "",
+      "refundInFullExplainer": "",
+      "refundReason": "",
+      "refundConfirm": "",
+      "refundButton": "",
+      "noRefundsPersonalisedEdition": ""
     },
     "recoveryReview": {
       "expectedRevision": "기준 리비전:",
@@ -652,6 +668,9 @@
       "paidConfirmed": "결제 및 확정 완료",
       "cancelled": "취소됨",
       "refunded": "환불됨",
+      "orderRefundRecord": "",
+      "refundSourceProvider": "",
+      "refundSourceAdmin": "",
       "heldForPaymentReview": "결제 검토를 위해 보류",
       "portOneTossPaymentsKRWKakaoPayNaverPay": "PortOne / Toss Payments (KRW, KakaoPay, NaverPay)",
       "stripeInternationalCreditCards": "Stripe (해외 신용카드)",
@@ -794,7 +813,19 @@
       "productBookGlitterTile": "",
       "productBookPages": "",
       "productBookPageFront": "",
-      "productBookPageBack": ""
+      "productBookPageBack": "",
+      "homeEntry": "",
+      "homeEntryDescription": "",
+      "warpWindowStart": "",
+      "warpWindowEnd": "",
+      "warpWindowDescription": "",
+      "warpWindowOrder": "",
+      "entryLinks": "",
+      "entryLinksDescription": "",
+      "entryLinkCode": "",
+      "entryLinkCodeLength": "",
+      "entryLinkCodeDescription": "",
+      "entryLinkNote": ""
     }
   },
   "Customer": {
@@ -915,6 +946,12 @@
     "components_commerce_order_admissions": {
       "guestAdmissions": "게스트 입장권",
       "guestTicketShare": "",
+      "forwardGuestQR": "",
+      "googleWalletPass": "",
+      "copyGoogleWalletPass": "",
+      "getGoogleWalletPass": "",
+      "gettingGoogleWalletPass": "",
+      "googleWalletPassFailed": "",
       "appleWalletPass": "",
       "walletPassUnavailable": "",
       "purchaseIncludesOneAdmissionAddTheGuest": "",
@@ -944,6 +981,8 @@
       "privateLinkExpiry": "만료: {date}(한국 시간). 이 링크를 가진 사람은 누구나 초대 등록을 시도할 수 있어요."
     },
     "components_commerce_payment": {
+      "ticketEmailConsent": "",
+      "guestQuoteChanged": "",
       "copyOrderReference": "",
       "viewOrder": "",
       "paymentConfirmedYourOrderHasBeenReceived": "결제를 확인했어요. 주문이 접수됐어요.",
@@ -993,6 +1032,17 @@
       "noUnresolvedPaymentAttemptWasFoundForThisAccount": "이 계정에서 처리가 끝나지 않은 결제 시도를 찾지 못했어요.",
       "aPaymentAttemptIsSavedNothingWillReopenAutomatically": "결제 시도가 저장돼 있어요. 결제창은 자동으로 다시 열리지 않아요.",
       "checkingExistingPayments": "이전 결제 정보를 확인하고 있어요…"
+    },
+    "components_commerce_refund_terms": {
+      "personalisedNoRefunds": "",
+      "membershipNoRefunds": "",
+      "refundable": "",
+      "refundableUntil": "",
+      "refundsClosed": "",
+      "refundsClosedNoDate": "",
+      "changedBeforePay": "",
+      "changedBeforeResume": "",
+      "unconfirmed": ""
     },
     "components_commerce_shipping_address": {
       "deliveryAddress": "배송지 주소",
@@ -1309,6 +1359,21 @@
       "yourPayment": "결제 내역",
       "aReturnFromThePaymentWindowIsNotA": "결제창에서 돌아왔다고 결제가 완료된 것은 아니에요. 아래에서 저장된 결제 시도를 확인해 주세요.",
       "backToShop": "상품 안내로 돌아가기"
+    },
+    "app_site_shop_invitations_page": {
+      "title": "",
+      "unavailable": "",
+      "membersOnly": "",
+      "memberLimit": "",
+      "selectQuantity": "",
+      "saveSelection": "",
+      "cartSaved": "",
+      "cartNotSaved": "",
+      "differentCart": "",
+      "viewCart": "",
+      "priceEach": "",
+      "total": "",
+      "checkoutAddress": ""
     },
     "app_site_shop_invitations_claim_page": {
       "yourGuestInvitation": "게스트 초대장"
@@ -1653,6 +1718,10 @@
         "title": "",
         "line": ""
       },
+      "signedIn": {
+        "title": "",
+        "line": ""
+      },
       "ready": {
         "title": "",
         "line": ""
@@ -1716,7 +1785,6 @@
     "closeInvitation": "초대장 닫기",
     "closeWithSymbol": "닫기 ×",
     "notFoundNavigation": "",
-    "notFoundShop": "",
     "routeErrorTitle": "",
     "routeErrorDescription": "",
     "routeErrorHelp": "",

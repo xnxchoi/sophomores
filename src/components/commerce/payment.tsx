@@ -11,11 +11,13 @@ import Link from "next/link";
 import { useCart, useEcommerce, usePayments } from "@payloadcms/plugin-ecommerce/client/react";
 import { requestPayment as portOneRequestPayment, type PaymentRequest } from "@portone/browser-sdk/v2";
 import { z } from "zod";
-import { shippingAddressSchema, type ShippingAddress } from "@/lib/commerce/contracts";
+import { shippingAddressSchema, TICKET_EMAIL_CONSENT, type GuestCheckoutQuote, type ShippingAddress } from "@/lib/commerce/contracts";
 import { providerPaymentId } from "@/lib/tickets/portone/payment-id";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { ActionButton, CopyButton } from "@/components/core/ArcFocus/ArcFocus";
 import { commercePaymentIntentPrefix } from "@/lib/member-auth/browser-copies";
+import { refundTermsSchema, type RefundTerms as Terms } from "@/lib/commerce/refund-policy";
+import { RefundTerms } from "./refund-terms";
 
 const identifier = z.string().min(1).max(128);
 /** Thrown after every Pay press so the action button returns to idle rather than showing success. */
@@ -28,14 +30,18 @@ const sdkRequestSchema = z.object({ storeId: identifier, channelKey: identifier,
   orderName: z.string().min(1).max(200), totalAmount: z.int().positive(), currency: z.literal("KRW"), redirectUrl: z.url(),
   customer: z.object({ customerId: identifier, email: z.email().optional(), fullName: z.string().max(128).optional() }) });
 const preparedSchema = z.object({ transactionID: z.uuid(), paymentID: providerPaymentId,
-  outcome: z.enum(["prepared", "resumable", "status-only", "retirable"]), paymentRequest: sdkRequestSchema.optional() });
+  outcome: z.enum(["prepared", "resumable", "status-only", "retirable", "terms-changed"]), paymentRequest: sdkRequestSchema.optional(),
+  refundTerms: refundTermsSchema.optional() });
 const confirmedSchema = z.object({ orderID: z.uuid(), transactionID: z.uuid() });
 const retiredSchema = z.object({ outcome: z.literal("retired"), transactionID: z.uuid(), paymentID: providerPaymentId });
 const terminalSchema = z.object({ outcome: z.literal("local-terminal"), status: z.enum(["failed", "cancelled", "refunded"]) });
 const pendingSchema = z.object({ attempts: z.array(z.object({ transactionID: z.uuid(), paymentID: providerPaymentId,
   cartID: identifier, productID: identifier, quantity: z.int().min(1).max(3), totalAmount: z.int().positive(), currency: z.literal("KRW"),
   status: z.string().max(40), reviewHold: z.boolean(), resolutionConflict: z.boolean().default(false),
-  orderName: z.string().max(200).nullable().default(null) })).max(100) });
+  orderName: z.string().max(200).nullable().default(null),
+  // The refund rule the attempt was bought under, derived by the server from its frozen snapshot. Required: an attempt
+  // without it can't be resumed (owner, 25 Nov: told before the sale; Review-B r2).
+  refundTerms: refundTermsSchema })).max(100) });
 type PaymentIntent = z.infer<typeof intentSchema>;
 
 type CommercePaymentProps = {
@@ -43,6 +49,10 @@ type CommercePaymentProps = {
   onBusyChange?: (busy: boolean) => void; onAttemptChange?: (retained: boolean) => void;
   requestPayment?: typeof portOneRequestPayment;
   productID?: string;
+  guestQuote?: GuestCheckoutQuote;
+  offerTicketEmailConsent?: boolean;
+  /** The server found different refund terms than the guest quote showed; the page shows these and waits for a new press. */
+  onRefundTermsChanged?: (terms: Terms) => void;
 };
 
 /** Payment failures show as toasts (owner, for payment failures only); confirmed and cancelled results stay inline. */
@@ -52,12 +62,14 @@ export function CommercePayment(props: CommercePaymentProps) {
 }
 
 /** No shipping, customer details, cart secrets or SDK requests are stored in browser storage. */
-function PaymentPanel({ shippingAddress, disabled = false, onBusyChange, onAttemptChange, recovery = false, productID, requestPayment = portOneRequestPayment }: CommercePaymentProps) {
+function PaymentPanel({ onRefundTermsChanged, shippingAddress, disabled = false, onBusyChange, onAttemptChange, recovery = false, productID, guestQuote, offerTicketEmailConsent = false, requestPayment = portOneRequestPayment }: CommercePaymentProps) {
   const t = useTranslations('Customer.components_commerce_payment');
+  const refundCopy = useTranslations('Customer.components_commerce_refund_terms');
   const { toast } = useToastStack();
   const fail = (title: string) => { toast({ type: "error", title }); };
   const { user } = useEcommerce();
   const customerID = user?.id;
+  const [ticketEmailConsent, setTicketEmailConsent] = useState(false);
   const { cart, refreshCart } = useCart();
   // 3.92.1 declares context.cartID but omits it from the runtime provider value.
   // The actual canonical document returned by useCart is the available authority.
@@ -131,7 +143,7 @@ function PaymentPanel({ shippingAddress, disabled = false, onBusyChange, onAttem
     if (!storageKey) return false;
     const saved = window.sessionStorage.getItem(storageKey);
     const current = saved ? intentSchema.safeParse(JSON.parse(saved)) : null;
-    if (current?.success && current.data.transactionID === value.transactionID
+    if (current?.success && (value.transactionID !== undefined || current.data.attemptID === value.attemptID) && current.data.transactionID === value.transactionID
       && current.data.paymentID === value.paymentID && current.data.cartID === value.cartID) {
       window.sessionStorage.removeItem(storageKey);
       window.dispatchEvent(new Event("commerce-payment-update"));
@@ -185,7 +197,7 @@ function PaymentPanel({ shippingAddress, disabled = false, onBusyChange, onAttem
   async function resumePayment() {
     if (!intent?.transactionID || !intent.paymentID) throw new Error("Missing attempt");
     const response = await fetch("/api/payments/portone/resume", { method: "POST", credentials: "include", cache: "no-store",
-      headers: { "Content-Type": "application/json" }, body: JSON.stringify({ transactionID: intent.transactionID, paymentID: intent.paymentID, cartID: intent.cartID }) });
+      headers: { "Content-Type": "application/json" }, body: JSON.stringify({ transactionID: intent.transactionID, paymentID: intent.paymentID, cartID: intent.cartID, refundTerms: retainedTerms }) });
     if (!response.ok) throw new Error("Resume unavailable");
     const resumed = preparedSchema.parse(await response.json());
     if (resumed.transactionID !== intent.transactionID || resumed.paymentID !== intent.paymentID) throw new Error("Attempt mismatch");
@@ -194,7 +206,17 @@ function PaymentPanel({ shippingAddress, disabled = false, onBusyChange, onAttem
       fail(t('thisPaymentFailedCancelThisAttemptBeforeStartingAnother'));
       return;
     }
+    if (resumed.outcome === "terms-changed" && resumed.refundTerms) {
+      // The server's terms now differ from the ones on screen: show them; Resume needs a new press (Review-B r3).
+      const fresh = resumed.refundTerms, id = intent.transactionID;
+      setDiscovery((current) => ({ ...current, attempts: current.attempts.map((attempt) => attempt.transactionID === id ? { ...attempt, refundTerms: fresh } : attempt) }));
+      fail(refundCopy('changedBeforeResume'));
+      return;
+    }
     if (resumed.outcome !== "resumable" || !resumed.paymentRequest) { fail(t('thisAttemptCannotBeReopenedCheckPaymentStatusOr')); return; }
+    // Never reopen the payment window for an attempt whose refund terms weren't on screen (Review-B r2). Check and Cancel
+    // never open it, so they stay available.
+    if (!discovery.attempts.some((attempt) => attempt.transactionID === intent.transactionID)) { fail(t('thisAttemptCannotBeReopenedCheckPaymentStatusOr')); return; }
     await openSDK(intent, resumed.paymentRequest);
   }
   async function preparePayment() {
@@ -206,10 +228,22 @@ function PaymentPanel({ shippingAddress, disabled = false, onBusyChange, onAttem
     const attempt = intent ?? { version: 1 as const, attemptID: crypto.randomUUID(), cartID: String(cartID) };
     if (attempt.cartID !== String(cartID) || !attempt.attemptID) throw new Error("Cart changed");
     saveIntent(attempt); // Same preparation ID survives a lost response; no silent new charge.
-    const prepared = preparedSchema.parse(await initiatePayment("portone", { additionalData: { shippingAddress, attemptID: attempt.attemptID } }));
+    const result = await initiatePayment("portone", { additionalData: { shippingAddress, attemptID: attempt.attemptID, guestQuote,
+      ...(offerTicketEmailConsent && ticketEmailConsent ? { ticketEmailConsent: TICKET_EMAIL_CONSENT } : {}),
+    } });
+    const changed = z.strictObject({ message: z.literal("Guest quote changed"), outcome: z.literal("guest-quote-changed"), refundTerms: refundTermsSchema.optional() }).safeParse(result);
+    if (changed.success) {
+      clearMatchingIntent(attempt);
+      // New refund terms (the cutoff passed, or the event moved): show them; Pay needs a new press (Review-B r3).
+      if (changed.data.refundTerms) { onRefundTermsChanged?.(changed.data.refundTerms); fail(refundCopy('changedBeforePay')); }
+      else fail(t('guestQuoteChanged'));
+      return;
+    }
+    const prepared = preparedSchema.parse(result);
     const retained = { ...attempt, transactionID: prepared.transactionID, paymentID: prepared.paymentID };
     saveIntent(retained);
     if (prepared.outcome !== "prepared" || !prepared.paymentRequest) { fail(t('anExistingAttemptWasFoundCheckItsStatusBefore')); return; }
+    if (guestQuote && prepared.paymentRequest.totalAmount !== guestQuote.totalAmount) throw new Error("Guest quote mismatch");
     await openSDK(retained, prepared.paymentRequest);
   }
   /** Resolves true only when a retire landed; every failure has already shown its toast. */
@@ -261,6 +295,8 @@ function PaymentPanel({ shippingAddress, disabled = false, onBusyChange, onAttem
   }
   const retained = Boolean(intent?.transactionID);
   const reviewHold = discovery.attempts.some((attempt) => attempt.transactionID === intent?.transactionID && (attempt.reviewHold || attempt.resolutionConflict));
+  // Resume can open the payment window, so the saved attempt's refund terms show beside it first.
+  const retainedTerms = discovery.attempts.find((attempt) => attempt.transactionID === intent?.transactionID)?.refundTerms;
   const unavailable = busy || !user || stored === undefined || stored === null || Boolean(stored && !intent) || Boolean(orderID);
   return <section aria-label={t('payment')} className="space-y-6 text-foreground">
     <header className="border-b border-border pb-4"><h2 className="text-xl">{t('payment')}</h2></header>
@@ -269,17 +305,24 @@ function PaymentPanel({ shippingAddress, disabled = false, onBusyChange, onAttem
       {discovery.attempts.map((attempt) => <button key={attempt.transactionID} type="button" disabled={unavailable}
         onClick={() => { try { saveIntent({ version: 1, cartID: attempt.cartID, transactionID: attempt.transactionID, paymentID: attempt.paymentID }); setMessage(""); } catch { fail(t('paymentNeedsBrowserStorageEnableItAndReload')); } }}
         className="grid min-h-12 w-full grid-cols-1 items-center gap-x-4 gap-y-2 border-t border-border py-4 last:border-b sm:grid-cols-[minmax(0,1fr)_auto] text-left text-sm transition-colors hover:bg-muted focus-visible:bg-muted disabled:opacity-40">
-        <span className="min-w-0 tabular-nums">{attempt.orderName && <span className="mb-1 block font-medium wrap-anywhere">{attempt.orderName}</span>}{attempt.totalAmount.toLocaleString("ko-KR")} KRW <span className="mt-1 block wrap-anywhere text-xs text-muted-foreground">{t('referenceEnding')}{attempt.paymentID.slice(-6)}</span></span><span className="font-medium">{attempt.reviewHold || attempt.resolutionConflict ? t('reviewNeeded') : t('viewAttempt')}</span>
+        <span className="min-w-0 tabular-nums">{attempt.orderName && <span className="mb-1 block font-medium wrap-anywhere">{attempt.orderName}</span>}{attempt.totalAmount.toLocaleString("ko-KR")} KRW <RefundTerms as="span" terms={attempt.refundTerms} className="mt-1" /><span className="mt-1 block wrap-anywhere text-xs text-muted-foreground">{t('referenceEnding')}{attempt.paymentID.slice(-6)}</span></span><span className="font-medium">{attempt.reviewHold || attempt.resolutionConflict ? t('reviewNeeded') : t('viewAttempt')}</span>
       </button>)}
     </div>}
+    {offerTicketEmailConsent && !recovery && !retained && !orderID && <label className="flex min-h-11 items-center gap-3 text-sm">
+      <input type="checkbox" checked={ticketEmailConsent} disabled={unavailable || disabled}
+        onChange={event => setTicketEmailConsent(event.target.checked)} className="size-5 shrink-0 accent-foreground" />
+      <span>{t('ticketEmailConsent')}</span>
+    </label>}
     {/* Always settles back to idle: a confirmed payment replaces this button with the order, so it never shows a success state. */}
     {!recovery && !retained && !orderID && <ActionButton label={t('payByCard')} pendingLabel={t('preparing')} successLabel={t('payByCard')} resetAfterMs={0}
       disabled={(unavailable && !busy) || disabled || !cartID || discovery.state !== "ready" || discovery.attempts.length > 0}
       onAction={async () => { await run("start"); throw settled; }} onActionError={() => {}} />}
     {retained && !orderID && <div className="grid gap-3">
+      {retainedTerms ? <RefundTerms terms={retainedTerms} />
+        : discovery.state === "ready" && <p className="text-sm leading-6 text-foreground text-pretty">{refundCopy('unconfirmed')}</p>}
       <button type="button" disabled={unavailable} onClick={() => void run("check")} className="h-10 rounded-full border border-foreground bg-transparent px-5 text-[13px] uppercase tracking-[0.04em] text-foreground outline-offset-4 transition-colors hover:bg-foreground hover:text-background focus-visible:outline-2 focus-visible:outline-foreground disabled:opacity-40 pointer-coarse:h-11">{busy ? t('checking') : t('checkPayment')}</button>
 
-      <button type="button" disabled={unavailable || reviewHold} onClick={() => void run("resume")} className="group/focus inline-flex min-h-11 items-center text-xs uppercase tracking-[0.04em] underline decoration-dotted underline-offset-4 hover:decoration-solid disabled:opacity-40"><FocusShape className="outline-offset-4">{t('resumeSamePayment')}</FocusShape></button>
+      <button type="button" disabled={unavailable || reviewHold || !retainedTerms} onClick={() => void run("resume")} className="group/focus inline-flex min-h-11 items-center text-xs uppercase tracking-[0.04em] underline decoration-dotted underline-offset-4 hover:decoration-solid disabled:opacity-40"><FocusShape className="outline-offset-4">{t('resumeSamePayment')}</FocusShape></button>
       {/* Cancelling retires the attempt for good, so it asks first and offers no undo. Its own row, so the question has room. */}
       {retirableTransactionID === intent?.transactionID && <ConfirmMorph className="justify-self-start" label={t('cancelThisAttempt')} prompt={t('cancelThisAttemptQuestion')} confirmLabel={t('cancelAttempt')}
         cancelLabel={t('keepAttempt')} pendingLabel={t('cancellingAttempt')} doneLabel={t('attemptCancelled')} errorLabel={t('couldNotCancelAttempt')} retryLabel={t('tryAgain')}

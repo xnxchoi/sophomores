@@ -2,7 +2,7 @@ import { APIError, type CollectionConfig, type FieldHook } from "payload";
 import { isHex, keccak256, type Hex } from "viem";
 import { ledgerCollection, relation } from "@/lib/commerce/_shared/collection";
 import { commerceServerWrite } from "@/lib/commerce/access";
-import { canTransition, grantBroadcastPending, grantBroadcastSuppressed, isTxHash, keyGrantIdentityFields, keyGrantStates, parseKeyGrantTarget, recipientModes, type KeyGrantState, type RecordedSend } from "@/lib/commerce/keys/contracts";
+import { canTransition, grantBroadcastPending, grantBroadcastSuppressed, isTxHash, MEMBER_EVENT_GRANT, ticketTokenIdentity, keyGrantIdentityFields, keyGrantStates, parseKeyGrantTarget, recipientModes, type KeyGrantState, type RecordedSend } from "@/lib/commerce/keys/contracts";
 import { relationshipID } from "@/lib/commerce/_shared/transaction";
 
 const identityValue = (value: unknown): string | null => value === null || value === undefined ? null
@@ -57,7 +57,9 @@ export const CommerceKeyGrantIntents: CollectionConfig = {
   ...ledgerCollection("commerce-key-grant-intents", [
     { name: "operationKey", type: "text", required: true, unique: true },
     relation("order", "orders"), relation("payment", "transactions"),
-    { name: "entitlement", type: "relationship", relationTo: "commerce-admissions", required: true, unique: true, index: true },
+    { name: "entitlement", type: "relationship", relationTo: "commerce-admissions", required: true, index: true },
+    { name: "purpose", type: "select", required: true, defaultValue: "primary", options: ["primary", MEMBER_EVENT_GRANT] },
+    { name: "ticketTokenKey", type: "text", unique: true },
     { name: "beneficiaryUser", type: "relationship", relationTo: "users", index: true },
     { name: "recipientMode", type: "select", required: true, options: [...recipientModes] },
     { name: "state", type: "select", required: true, index: true, defaultValue: "awaiting_wallet", options: [...keyGrantStates] },
@@ -95,10 +97,12 @@ export const CommerceKeyGrantIntents: CollectionConfig = {
     { name: "cancelSends", type: "json" },
     { name: "cancelLastSentAt", type: "date", index: true },
   ]),
+  indexes: [{ fields: ["entitlement", "purpose"], unique: true }],
   hooks: {
     beforeChange: [({ data, originalDoc, operation, req }) => {
       if (!commerceServerWrite(req)) throw new APIError("Key grants are server owned", 403);
       if (operation === "create") {
+        if (data.ticketTokenKey != null || data.tokenID != null) throw new APIError("New intents cannot contain mint evidence", 400);
         if (data.state !== "awaiting_wallet" && data.state !== undefined) throw new APIError("Key grants start awaiting a wallet", 400);
         if (data.recipientMode === "member_safe" && !data.beneficiaryUser) throw new APIError("Member key grants need a beneficiary", 400);
         if (data.recipientMode === "guest_email") throw new APIError("Guest key grants are not enabled yet", 400);
@@ -118,6 +122,12 @@ export const CommerceKeyGrantIntents: CollectionConfig = {
       const retry = from === "failed_retryable" && to === "pending";
       if (originalDoc.txHash && "txHash" in data && data.txHash !== originalDoc.txHash && !(retry && data.txHash === null)) throw new APIError("Recorded transaction hash cannot change", 409);
       if (to === "granted" && !(data.tokenID ?? originalDoc.tokenID)) throw new APIError("A granted key needs confirmation evidence", 409);
+      if (originalDoc.ticketTokenKey != null && (changes(data, originalDoc, "ticketTokenKey") || changes(data, originalDoc, "tokenID"))) throw new APIError("Ticket token binding is immutable", 409);
+      if (changes(data, originalDoc, "ticketTokenKey") || (to === "granted" && from !== "granted" && (data.target ?? originalDoc.target)?.ticketMode === "shared")) {
+        const target = parseKeyGrantTarget(data.target ?? originalDoc.target);
+        const expected = ticketTokenIdentity(target.chainID, target.lock, data.tokenID ?? originalDoc.tokenID);
+        if (to !== "granted" || target.ticketMode !== "shared" || !expected || !isTxHash(data.settledTxHash) || data.ticketTokenKey !== expected) throw new APIError("Invalid ticket token binding", 409);
+      }
       if (originalDoc.cancelRequested === true && data.cancelRequested === false) throw new APIError("Key cancellation request cannot be reset", 409);
       // Write-ahead evidence: an attempt's signer and nonce never change, its sends only grow,
       // and only a proven-nonexecution retry starts over with none.

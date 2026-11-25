@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -13,13 +14,14 @@ import { useTranslations } from "next-intl";
 import { PageInset } from "@/components/core/PageInset/PageInset";
 import { Button } from "@/components/core/ArcFocus/ArcFocus";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
+import { useAccountSheetSubmit } from "@/components/auth/use-account-sheet";
 
 /**
  * The page a member sees after tapping their card (owner, 22 Nov: "we should probably confirm ... just one step ...
  * very premium ... feels like an experience already"; concept C, "I like the light up part").
  *
  * The NFC lane owns the route and the private projection (GET and POST /nfc/[ref]); this view only renders its five
- * states. It shows no name, product or card reference. Unavailable also covers a card on another account, so the page
+ * states, plus one of its own: signed in through the sheet from the signed-out state, which asks for a new tap. It shows no name, product or card reference. Unavailable also covers a card on another account, so the page
  * never reveals an owner. Confirm is one POST to /nfc/[formRef] carrying the opaque `confirmation`; the route answers with a
  * 303 to /welcome or the account page, so the light holds its confirming state for as long as that takes.
  *
@@ -36,14 +38,21 @@ export type NfcTapView =
 const ease = [0.16, 1, 0.3, 1] as const;
 const copyKey = {
   "signed-out": "signedOut",
+  "signed-in": "signedIn",
   ready: "ready",
   "already-linked": "alreadyLinked",
   stale: "stale",
   unavailable: "unavailable"
-} as const satisfies Record<NfcTapState, string>;
+} as const satisfies Record<NfcTapState | "signed-in", string>;
 
 export function TapConfirm({ view }: { view: NfcTapView }) {
   const t = useTranslations("Customer.app_site_nfc_tap");
+  // Sign in opens the in-place sheet over the tap. The tap's proof never travels through sign-in (NFC lane contract),
+  // so this page can't continue afterwards: once signed in it says so and asks for a new tap (Review-A, 24 Nov).
+  // Without JavaScript the form goes to the sign-in page (no next: the tap is not on the closed return list, so
+  // sign-in ends at shop home).
+  const [signedIn, setSignedIn] = useState(false);
+  const openSignIn = useAccountSheetSubmit(useCallback(() => setSignedIn(true), []));
   const [confirming, setConfirming] = useState(false);
   // Set in the same event as the submit, so a second press before React re-renders can't send twice.
   const sent = useRef(false);
@@ -54,7 +63,7 @@ export function TapConfirm({ view }: { view: NfcTapView }) {
   // Only a live page can have spent its confirmation; other states keep their own copy and next step.
   const state: NfcTapState = expired && liveView ? "stale" : view.state;
   const live = expired ? null : liveView;
-  const key = copyKey[state];
+  const key = copyKey[state === "signed-out" && signedIn ? "signed-in" : state];
 
   useEffect(() => {
     const restored = (event: PageTransitionEvent) => {
@@ -131,9 +140,9 @@ export function TapConfirm({ view }: { view: NfcTapView }) {
                     {confirming ? t("confirming") : t("confirm")}
                   </Button>
                 </form>
-              ) : state === "signed-out" ? (
+              ) : state === "signed-out" && !signedIn ? (
                 // Sign-in starts fresh: the tap link is never carried through it (NFC lane contract); the member taps again.
-                <form method="get" action="/account">
+                <form method="get" action="/sign-in" onSubmit={openSignIn}>
                   <Button
                     type="submit"
                     variant="primary"

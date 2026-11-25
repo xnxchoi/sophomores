@@ -9,6 +9,8 @@ import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { PageInset } from "@/components/core/PageInset/PageInset";
 import { cn } from "@/lib/utils";
 import { PurchaseNotOpen } from "../book-offer";
+import { RefundTerms } from "../refund-terms";
+import { editionRefundTerms } from "@/lib/commerce/refund-policy";
 import { BookStage } from "../book3d/book-stage";
 import type { BookTextures } from "../book3d/book";
 import { FormatRow } from "./format-row";
@@ -74,6 +76,8 @@ export function ProductInfo({ product, offer, content }: { product: EditionProdu
 
     <section aria-label={t("formats")} className="mt-10">
       <PurchaseNotOpen priceKRW={offer.priceKRW} />
+      {/* The refund rule beside the buy row, before any Pay (owner, 25 Nov; Review-B r2). */}
+      <RefundTerms terms={editionRefundTerms(offer.editionEntitlements)} className="mt-3" />
       {content.formats.length > 0 && <ul>
         {content.formats.map((format) => <FormatRow key={format.label} {...format} />)}
       </ul>}

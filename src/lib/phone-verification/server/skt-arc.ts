@@ -1,7 +1,7 @@
 import { arc } from "mailauth/lib/arc";
 import { dkimVerify } from "mailauth/lib/dkim/verify";
 import { simpleParser } from "mailparser";
-import { carrierSender, type CarrierTrustDecision } from "./carriers";
+import { carrierSender, type Carrier, type CarrierTrustDecision } from "./carriers";
 import { parseCarrierMessage, type CarrierMessage } from "./message";
 import {
   createArcDns,
@@ -9,18 +9,35 @@ import {
   type ArcTxtResolver
 } from "./skt-arc-dns";
 
-const policyVersion = "local-skt-zoho-arc-v1";
+export const LOCAL_SKT_POLICY = "local-skt-zoho-arc-v1";
+/**
+ * The preview carrier trial (owner, 24 Nov: staff on SKT, an SKT MVNO, KT and LG U+ test on preview). Allowed only
+ * in the preview sandbox runtime (receiver-config.ts). MVNOs use their host network's gateway (carrier guide), so an
+ * SKT MVNO line arrives as SKT. The same strict gate as the SKT pilot, with one carrier difference: KT publishes no
+ * DMARC record, so a KT message must show DMARC "none" (no policy) instead of "pass", and is otherwise held to the
+ * same SPF pass, exact envelope-equals-From number identity and single-hop Zoho ARC.
+ */
+export const PREVIEW_TRIAL_POLICY = "preview-trial-zoho-arc-v1";
 // Public Zoho ARC key observed and cryptographically validated during this local pilot.
 // Opt-in remains local-only; key rotation fails closed until independently reviewed.
 const legacyZohoKey = Object.freeze({
   selector: "zohoarc",
   sha256: "b06478a771d93ff36cd26463c7e0ed0cd5c7e5d344c7b840f602e5b452fe0397"
 });
-const reject = (): CarrierTrustDecision => ({
-  approved: false,
-  policyVersion,
-  reason: "Carrier evidence not authenticated"
+/** Exact MMS gateway domains per carrier in the preview trial (carrier guide); SKT MVNOs use SKT's. */
+const trialSenderDomains: Readonly<Record<Carrier, readonly string[]>> = Object.freeze({
+  skt: ["vmms.nate.com", "emms.nate.com", "sktmms.nate.com"],
+  kt: ["ktfmms.magicn.com"],
+  lgu: ["mmsmail.uplus.co.kr"]
 });
+/** What the trial log records for one decision: no phone number, token or address. */
+export type CarrierEvidence = Readonly<{
+  carrier: Carrier | "unknown";
+  arc: string;
+  spf: string;
+  dmarc: string;
+}>;
+type Decision = CarrierTrustDecision & { evidence?: CarrierEvidence };
 const protectedNames = [
   "from",
   "to",
@@ -123,17 +140,36 @@ function headersOf(raw: string): Map<string, string[]> {
   return entries;
 }
 
+type VerifyOptions = {
+  dns?: ArcTxtResolver;
+  deadlineMs?: number;
+  maxQueries?: number;
+  allowLegacyZohoKey?: boolean;
+};
+
 /** Local SKT phone-possession evidence only; never an identity or registration grant. */
-export async function verifySktZohoArc(
+export function verifySktZohoArc(raw: string, message: CarrierMessage, options: VerifyOptions = {}): Promise<Decision> {
+  return verifyCarrierZohoArc(raw, message, { ...options, policyVersion: LOCAL_SKT_POLICY, carriers: ["skt"] });
+}
+
+/** Preview-trial phone-possession evidence (SKT and its MVNOs, KT, LG U+); never an identity or registration grant. */
+export function verifyPreviewTrialZohoArc(raw: string, message: CarrierMessage, options: VerifyOptions = {}): Promise<Decision> {
+  return verifyCarrierZohoArc(raw, message, { ...options, policyVersion: PREVIEW_TRIAL_POLICY, carriers: ["skt", "kt", "lgu"] });
+}
+
+async function verifyCarrierZohoArc(
   raw: string,
   message: CarrierMessage,
-  options: {
-    dns?: ArcTxtResolver;
-    deadlineMs?: number;
-    maxQueries?: number;
-    allowLegacyZohoKey?: boolean;
-  } = {}
-): Promise<CarrierTrustDecision> {
+  options: VerifyOptions & { policyVersion: string; carriers: readonly Carrier[] }
+): Promise<Decision> {
+  const { policyVersion } = options;
+  const evidence: { carrier: Carrier | "unknown"; arc: string; spf: string; dmarc: string } = { carrier: "unknown", arc: "unchecked", spf: "unchecked", dmarc: "unchecked" };
+  const reject = (): Decision => ({
+    approved: false,
+    policyVersion,
+    reason: "Carrier evidence not authenticated",
+    evidence: Object.freeze({ ...evidence })
+  });
   let context: ReturnType<typeof createArcDns> | undefined;
   try {
     const headers = headersOf(raw);
@@ -143,11 +179,12 @@ export async function verifySktZohoArc(
         message.messageId
       )?.[1]
     });
+    evidence.carrier = parsed.carrier;
     if (
       parsed.phone !== message.phone ||
       parsed.token !== message.token ||
-      parsed.carrier !== "skt" ||
-      message.carrier !== "skt"
+      parsed.carrier !== message.carrier ||
+      !options.carriers.includes(parsed.carrier)
     )
       return reject();
     const mail = await simpleParser(raw, {
@@ -156,7 +193,9 @@ export async function verifySktZohoArc(
       skipImageLinks: true
     });
     const from = mail.from?.value[0]?.address?.toLowerCase();
-    if (!from || carrierSender(from)?.carrier !== "skt") return reject();
+    if (!from || carrierSender(from)?.carrier !== parsed.carrier) return reject();
+    // The trial accepts only each carrier's exact MMS gateway domain (runbook table), not informal aliases.
+    if (policyVersion === PREVIEW_TRIAL_POLICY && !trialSenderDomains[parsed.carrier].includes(from.split("@")[1] ?? "")) return reject();
     context = createArcDns(options.dns, options);
     const boundedResolver = context.resolver;
     const legacy = options.allowLegacyZohoKey === true;
@@ -181,6 +220,7 @@ export async function verifySktZohoArc(
       });
       const signature = result.signature;
       const chain = result.chain;
+      evidence.arc = String(result.status.result ?? "none");
       if (
         result.status.result !== "pass" ||
         result.i !== 1 ||
@@ -215,13 +255,18 @@ export async function verifySktZohoArc(
       )
         return reject();
       const auth = result.authenticationResults;
+      evidence.spf = String(auth?.spf?.result ?? "none");
+      evidence.dmarc = String(auth?.dmarc?.result ?? "none");
       // Zoho reports either the domain or its exact authenticated From mailbox.
       // Do not parse/suffix-match arbitrary addresses here: retain exact identity.
       const dmarcIdentities = [from.split("@")[1], from, `<${from}>`];
+      // KT publishes no DMARC record ("none"); every other carrier must pass DMARC.
+      const dmarcAccepted = auth?.dmarc?.result === "pass"
+        || (parsed.carrier === "kt" && policyVersion === PREVIEW_TRIAL_POLICY && auth?.dmarc?.result === "none");
       if (
         auth?.mta !== "mx.zohomail.com" ||
         auth.spf?.result !== "pass" ||
-        auth.dmarc?.result !== "pass" ||
+        !dmarcAccepted ||
         auth.spf?.smtp?.mailfrom !== from ||
         !dmarcIdentities.includes(auth.dmarc?.header?.from)
       )
@@ -229,7 +274,8 @@ export async function verifySktZohoArc(
       return {
         approved: true,
         policyVersion,
-        reason: "Authenticated local SKT phone possession evidence"
+        reason: policyVersion === LOCAL_SKT_POLICY ? "Authenticated local SKT phone possession evidence" : "Authenticated preview-trial phone possession evidence",
+        evidence: Object.freeze({ ...evidence })
       };
     })();
     return await Promise.race([verification, context.deadline]);

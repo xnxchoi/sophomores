@@ -69,7 +69,7 @@ export function SetlistHeader({ setlist, contributedCount, archiveOnly = false }
         className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"
       />
 
-      <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between lg:flex-col">
+      <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between lg:flex-col lg:items-stretch">
         <div className="flex flex-col gap-3 max-w-2xl">
           <div className="flex items-center gap-2">
             <span className="flex size-7 items-center justify-center text-white">

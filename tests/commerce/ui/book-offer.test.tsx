@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { AppRouterContext, type AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import type { ReactNode } from "react";
 import { listCommerceEditionProducts, type CommerceEditionShop } from "@/lib/commerce/editions";
-import { BookUnavailable, CommerceShopView } from "@/components/commerce/book-offer";
+import { BookUnavailable, CommerceShopView, NativeCheckoutSummary } from "@/components/commerce/book-offer";
 import { CommerceLoadRetry } from "@/components/commerce/load-retry";
 import { ProductPage } from "@/components/commerce/product-page/product-page";
 import { readProductPageContent } from "@/components/commerce/product-page/_shared/content";
@@ -43,6 +43,8 @@ test("a product page shows one product, its facts and that purchase is not open,
   assert.match(html, /One per account/);
   assert.match(html, /Release pending/);
   assert.match(html, /href="\/shop"/);
+  assert.match(html, /Release pending[\s\S]*?<p data-refund-terms="none" class="[^"]*\btext-sm\b[^"]*\btext-foreground\b[^"]*">Personalised with your membership\. No refunds\.<\/p>/);
+  assert.doesNotMatch(html, /Refundable\./);
   // No button in the server HTML: the book's Look inside control mounts on the client, in its layer above the shared
   // canvas. Nothing buys, carts or pays.
   assert.equal(/<button\b/.test(html), false);
@@ -94,4 +96,18 @@ test("a product with content fields shows its shelf, sections and table; malform
   assert.equal((html.match(/R\. Reader/g) ?? []).length, 1, "the empty quote is dropped");
   assert.equal(content.techniques.length, 0);
   assert.doesNotMatch(html, /<form\b|<input\b|href="[^"]*(?:checkout|payment)/i);
+});
+
+test("checkout states the refund rule before payment: book only refundable, membership editions not", async () => {
+  const products = (await shop()).products;
+  const book = products.find(({ product }) => product.productID === "book")!;
+  const personal = products.find(({ product }) => product.productID === "personal")!;
+  const bookHTML = render(<NativeCheckoutSummary title={book.product.title} offer={book.offer} />);
+  assert.match(bookHTML, /Release pending[\s\S]*?<p data-refund-terms="refundable" class="[^"]*\btext-sm\b[^"]*\btext-foreground\b[^"]*">Refundable\.<\/p>/);
+  assert.doesNotMatch(bookHTML, /No refunds/);
+  // Once in the checkout summary, beside the buy row; never twice.
+  assert.equal((bookHTML.match(/data-refund-terms=/g) ?? []).length, 1);
+  const personalHTML = render(<NativeCheckoutSummary title={personal.product.title} offer={personal.offer} />);
+  assert.match(personalHTML, /Release pending[\s\S]*?<p data-refund-terms="none"[^>]*>Personalised with your membership\. No refunds\.<\/p>/);
+  assert.doesNotMatch(personalHTML, /Refundable\./);
 });

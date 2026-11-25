@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { currentUser, getDeviceSessions, getUserAccounts } from "@/lib/auth/server";
 import type { User } from "@/payload-types";
 import SecuritySectionClient from "./page.client";
+import { memberSignInHref } from "@/lib/member-auth/paths";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("PageMetadata");
@@ -15,7 +16,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function SecuritySettingsPage() {
   const user = (await currentUser()) as User | null;
   if (!user) {
-    return redirect("/account?next=/me/settings/security");
+    return redirect(memberSignInHref("/me/settings/security"));
   }
 
   const [sessions, accounts] = await Promise.all([

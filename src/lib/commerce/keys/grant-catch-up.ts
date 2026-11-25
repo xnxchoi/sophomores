@@ -26,9 +26,11 @@ import { dispatchKeyGrants, logOverCap, reconcileKeyGrants, reconcileOwnerCancel
  */
 export const KEY_GRANT_TICK_LIMIT = 10;
 /**
- * One deadline for the whole tick: no pass starts a new row, hash or step after this long; unfinished work stays due
- * and comes first next tick. With one in-flight row's walk (WALK_BUDGET_MS, 2 min) and RPC timeouts, a run ends well
- * inside the unit's TimeoutStartSec (15 min).
+ * A cooperative scheduling budget for the whole tick, not a hard bound: after this long no pass, work-list page, row
+ * or hash starts, and unfinished work stays due for the next tick. Work already in flight may finish: the current
+ * hash's reads (its walk gives up after WALK_BUDGET_MS, 2 min), and the nonce safety reads, which always read in full.
+ * The unit's TimeoutStartSec=900 is systemd's start timeout, a hard kill reported via OnFailure as systemd_failed; it
+ * is not a graceful bound.
  */
 export const TICK_BUDGET_MS = 10 * 60_000;
 
@@ -61,7 +63,8 @@ export async function runKeyGrantTick({ payload, grant, acquire, env = process.e
     // One shared deadline (TICK_BUDGET_MS) across every pass (Review-A, 25 Nov).
     const clock = now ?? (() => new Date());
     const deadline = clock().getTime() + budgetMs;
-    // Once the deadline is spent, no later pass starts (each pass also checks it inside, before every query and row).
+    // Once the budget is spent, no later pass starts. Each pass also checks it before every work-list page, row and
+    // hash; the nonce safety reads and the hash in flight may still finish (cooperative, not a hard stop).
     const spent = () => clock().getTime() > deadline;
     const reconciled = spent() ? 0 : await reconcileKeyGrants({ payload, adapter: grant, limit, now, deadline, onOverCap: (intentID) => { overCap.push(intentID); logOverCap(intentID, log); } });
     const replaced = spent() ? 0 : await replaceStuckKeyGrants({ payload, adapter: grant, limit, now, log, deadline });

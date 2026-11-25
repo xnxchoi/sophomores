@@ -11,8 +11,6 @@ import { cn } from "@/lib/utils";
 import { PurchaseNotOpen } from "../book-offer";
 import { RefundTerms } from "../refund-terms";
 import { editionRefundTerms } from "@/lib/commerce/refund-policy";
-import { BookStage } from "../book3d/book-stage";
-import type { BookTextures } from "../book3d/book";
 import { FormatRow } from "./format-row";
 import type { ProductMedia, ProductPageContent } from "./_shared/content";
 
@@ -23,7 +21,7 @@ export type ShelfEntry = { productID: string; title: string; current: boolean };
 /**
  * One product's page, ported section by section from stripe.press's (map 23 Nov; owner: "As stripe.press does!"):
  * - left 61%, pinned under the header: the shelf strip of titles, then the stage (the product's art, full bleed, with the
- *   3D book on it; with no art, the book stands on the page, unboxed);
+ *   book now opens in the shop's scene, so this page, kept for a product the shop's list can't show, has the art alone);
  * - right 39%, scrolling: label, title, byline, description, the ruled format rows, about;
  * - then full-width sections that scroll over the pinned stage: praise in two columns, and the details table beside the
  *   gallery strip.
@@ -36,10 +34,9 @@ export function ProductPage({ product, offer, content, shelf }: { product: Editi
   return <PageInset as="main" className="pt-[4.5rem] pb-24 text-foreground lg:grid lg:grid-cols-[minmax(0,1.58fr)_minmax(0,1fr)] lg:items-start lg:gap-x-10">
     <div className="relative z-0 flex min-w-0 flex-col lg:sticky lg:top-[4.5rem] max-lg:has-[[data-open=true]]:z-50 lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:h-[calc(100svh-5.5rem)]">
       <ShelfStrip shelf={shelf} label={t("shelf")} />
-      <BookStage id={product.productID} textures={bookTextures(content)} pageTextures={pageTextures(content)}
-        className="relative aspect-[4/5] w-full sm:aspect-[5/4] lg:aspect-auto lg:min-h-0 lg:flex-1">
+      {art && <div className="relative aspect-[4/5] w-full sm:aspect-[5/4] lg:aspect-auto lg:min-h-0 lg:flex-1">
         <StageArt art={art} />
-      </BookStage>
+      </div>}
     </div>
 
     <div className="relative z-1 min-w-0 bg-background pt-6 lg:col-start-2 lg:row-start-1 lg:min-h-[calc(100lvh+488px)] lg:bg-transparent lg:pt-0">
@@ -110,8 +107,8 @@ export function ProductExtras({ content }: { content: ProductPageContent }) {
   return <>
     {/* stripe.press's detail geometry (desktop): the info column runs to 100lvh + 560 px down the page and the full-width
         sections start under a 160 px top padding, where the book's scroll exit is measured from (the anchor), so the book
-        holds for about 500 px of scroll before it leaves (book-stage.tsx). */}
-    {hasFullWidth && <div data-covers-stage className="relative z-1 bg-background pt-10 lg:col-span-full lg:row-start-2 lg:pt-40">
+        holds for about 500 px of scroll before it leaves (the shop's reading scroll reads the anchor, shop-home.tsx). */}
+    {hasFullWidth && <div className="relative z-1 bg-background pt-10 lg:col-span-full lg:row-start-2 lg:pt-40">
       <div data-book-exit-anchor aria-hidden="true" />
       {content.praise.length > 0 && <section aria-label={t("praise")} className="border-t border-foreground pt-3">
         <Label>{t("praise")}</Label>
@@ -222,15 +219,6 @@ function physicalDetails(content: ProductPageContent, locale: string, t: Transla
 export function firstImage(product: EditionProduct): ProductMedia | null {
   for (const { image } of product.images) if (typeof image === "object" && image?.url) return { url: image.url, alt: image.alt ?? null };
   return null;
-}
-
-/** The product's own book textures, slot by slot; an empty slot leaves the cover plain (no borrowed textures ship). */
-export function bookTextures(content: ProductPageContent): BookTextures {
-  const book = content.book;
-  return {
-    coverDiffuse: book?.coverDiffuse?.url, coverBumpBase: book?.coverBumpBase?.url, coverBumpCustom: book?.coverBumpCustom?.url,
-    coverFoil: book?.coverFoil?.url, coverGloss: book?.coverGloss?.url, coverGlitter: book?.coverGlitter?.url
-  };
 }
 
 export function pageTextures(content: ProductPageContent): string[] {

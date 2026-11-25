@@ -484,7 +484,7 @@ function Cards({ items, featured, geometry, progressRef, listeners, reading, J, 
   const [shown, setShown] = useState(false);
   useEffect(() => { const timer = window.setTimeout(() => setShown(true), 50); return () => window.clearTimeout(timer); }, []);
   useEffect(() => {
-    const { height, mobile } = geometry, set = listeners.current;
+    const { height, mobile } = geometry, set = listeners.current, box = height - (mobile ? 25 : CARD_INSET_BOTTOM);
     // A phone (0wim:331-470): 8 px apart while browsing, 16 in the details; there each card leaves upward with its book's
     // card exit, linearly (1.3 cards plus the gap at 1), books already read fully gone; during the carry it rides the
     // landing's exit with the open book.
@@ -506,7 +506,17 @@ function Cards({ items, featured, geometry, progressRef, listeners, reading, J, 
         if (!plate) continue;
         const lift = index === J && !reading.current ? 1.25 * height * Math.max(0, Math.min(1, (locked - J) / (0.35 / 0.6))) : 0;
         const exit = mobile ? exitOf(index) * (1.3 * height + gap) : 0;
-        const y = (index - locked) * (height + gap) - lift - exit;
+        let y = (index - locked) * (height + gap) - lift - exit;
+        // A phone's details: the card gives way to its rising slot (their clamp `L`): within 0.35 of a card above the box,
+        // its top may not climb above the slot's top + 24 px, eased out as the slot passes the box's top.
+        const tops = hub.detailSectionTopsLiveRef.current as number[] | null, slot = tops?.[index];
+        if (mobile && reading.current && openRef.current != null && slot != null) {
+          const edge = slot - window.scrollY + 24 - geometry.top, room = 0.35 * box;
+          if (edge > -room && y < edge) {
+            const n = Math.max(0, Math.min(1, -edge / room)), smooth = n * n * (3 - 2 * n);
+            y += (edge - y) * (1 - smooth);
+          }
+        }
         plate.style.transform = "translate3d(0," + y + "px,0)";
         const c = Math.max(0, Math.min(1, (locked - index + 1) / 2)), e = (0.48 * (1 + Math.cos(2 * Math.PI * c))) / 2;
         if (photo) photo.style.transform = "translate3d(0," + -0.7 * y + "px,0) scale(" + 1 / (0.5 / 2 ** (0.38 * e) + 0.5) + ")";

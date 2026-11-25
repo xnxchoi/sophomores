@@ -5,7 +5,6 @@ import { getPayload } from "payload";
 import config from "@payload-config";
 import { listCommerceEditionProducts, loadCommerceEditionOffer, loadPublishedCommerceEditions, type CommerceEditionOffer } from "@/lib/commerce/editions";
 import { BookUnavailable, CommerceShopView } from "@/components/commerce/book-offer";
-import { WideOrNarrow } from "@/components/commerce/shop/wide-or-narrow";
 import type { CommerceEditionShop } from "@/lib/commerce/editions";
 import { ProductPage, type ShelfEntry } from "@/components/commerce/product-page/product-page";
 import { readProductPageContent, type ProductPageContent } from "@/components/commerce/product-page/_shared/content";
@@ -19,9 +18,9 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /**
- * One native product's address. From 900 px up it is the shop with this product's details open, as stripe.press renders
- * /book/<slug> as its home with that book open (owner, 25 Nov: details open in their scene). Below 900 px, for now, the
- * product's own page (phone layout of the shop is open). Display facts from E1; purchase not open yet.
+ * One native product's address: the shop with this product's details open, at every width, as stripe.press renders
+ * /book/<slug> as its home with that book open (owner, 25 Nov: details open in their scene). Without the shop's list
+ * (it failed to load or doesn't include this product) the product's own page. Display facts from E1; purchase not open yet.
  */
 export default async function ShopProductPage({ params }: { params: Promise<{ id: string }> }) {
   await connection();
@@ -59,8 +58,7 @@ export default async function ShopProductPage({ params }: { params: Promise<{ id
   }
   return <div className="min-h-dvh bg-background text-foreground">
     {!(product && offer) ? <><FXFrameOff /><BookUnavailable /></>
-      : shop ? <WideOrNarrow wide={<CommerceShopView shop={shop} contents={contents} initialOpen={id} />}
-          narrow={<><FXFrameOff /><ProductPage product={product} offer={offer} content={content} shelf={shelf} /></>} />
+      : shop ? <CommerceShopView shop={shop} contents={contents} initialOpen={id} />
       : <><FXFrameOff /><ProductPage product={product} offer={offer} content={content} shelf={shelf} /></>}
   </div>;
 }

@@ -20,6 +20,10 @@ import { useEffect } from "react";
  * Volumes, rates and throttles are theirs. Nothing plays before the first press, key or touch (browsers allow audio
  * only then; theirs waits the same way). Unlike theirs, every file is created and decoded at that first input rather
  * than at its first use, so the first turn isn't late by a decode.
+ *
+ * Sounds live only while the working scene is mounted (useBookSounds(active)): leaving it removes the unlock
+ * listeners, cancels pending delays and load callbacks (each carries the mount's generation), and stops every voice.
+ * Only a trusted input unlocks.
  */
 const DIR = "/assets/three/book/audio/";
 const FILES = {
@@ -29,8 +33,9 @@ const FILES = {
 type Role = keyof typeof FILES;
 const UNLOCK = ["pointerdown", "keydown", "touchstart"] as const;
 
-let unlocked = false, listening = false;
+let unlocked = false, listening = false, mounted = false, generation = 0;
 let howls: Record<Role, Howl[]> | null = null;
+const timers = new Set<number>();
 
 const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
 const pick = <T,>(list: readonly T[]) => list[Math.floor(Math.random() * list.length)];
@@ -46,25 +51,38 @@ function load() {
   return howls;
 }
 
-function unlock() {
-  unlocked = true;
+function unlock(event: Event) {
+  if (!event.isTrusted || !mounted) return;
+  unlocked = true; stopListening(); resume(); load();
+}
+function listen() {
+  if (unlocked || listening || !mounted) return;
+  listening = true;
+  UNLOCK.forEach((type) => window.addEventListener(type, unlock, { capture: true, passive: true }));
+}
+function stopListening() {
+  if (!listening) return;
+  listening = false;
   UNLOCK.forEach((type) => window.removeEventListener(type, unlock, true));
-  resume(); load();
 }
 
-/** Their `d`: true once audio is allowed; until then it listens for the first input. */
-function ready() {
-  if (!unlocked && !listening && typeof window !== "undefined") {
-    listening = true;
-    UNLOCK.forEach((type) => window.addEventListener(type, unlock, { capture: true, passive: true }));
-  }
-  return unlocked;
+/** Their `d`: true once audio is allowed and the scene is mounted. */
+function ready() { listen(); return mounted && unlocked; }
+
+/** A step for later that runs only if the same mount is still live. */
+function later(run: () => void, delayMs: number) {
+  const mount = generation;
+  const id = window.setTimeout(() => { timers.delete(id); if (mount === generation && mounted) run(); }, delayMs);
+  timers.add(id);
 }
 
 function play(role: Role, volume: number, rate = 1) {
   if (!ready()) return;
-  const howl = pick(load()[role]);
-  const start = () => { resume(); const id = howl.play(); howl.volume(volume, id); howl.rate(rate, id); };
+  const mount = generation, howl = pick(load()[role]);
+  const start = () => {
+    if (mount !== generation || !mounted) return;
+    resume(); const id = howl.play(); howl.volume(volume, id); howl.rate(rate, id);
+  };
   if (howl.state() === "loaded") start(); else howl.once("load", start);
 }
 
@@ -103,13 +121,13 @@ export const bookSound = {
   crackle(delayMs = 0) {
     if (!ready()) return;
     const go = () => play("open", 0.2);
-    if (delayMs > 0) window.setTimeout(go, delayMs); else go();
+    if (delayMs > 0) later(go, delayMs); else go();
   },
   /** `J`: the book settling open or shut; at most one per 250 ms. */
   settle(delayMs = 0) {
     if (!ready()) return;
     const go = () => { const now = performance.now(); if (now - settledAt < 250) return; settledAt = now; play("close", 0.25); };
-    if (delayMs > 0) window.setTimeout(go, delayMs); else go();
+    if (delayMs > 0) later(go, delayMs); else go();
   },
   /** `D`: a page let go, pitched up with its speed. */
   flop(speed = 0.5) { play("flip", 0.14, 0.8 + 0.25 * clamp01(speed)); },
@@ -146,12 +164,21 @@ const exports = {
   X: bookSound.grab, G: bookSound.rub, r: bookSound.shuffle, z: bookSound.turn
 };
 
-/** Arms the first-input unlock and hands the scene its sounds while the shop is mounted. */
-export function useBookSounds() {
+function mount() { mounted = true; generation += 1; listen(); }
+function unmount() {
+  mounted = false; generation += 1; stopListening();
+  timers.forEach((id) => window.clearTimeout(id)); timers.clear();
+  if (howls) Object.values(howls).flat().forEach((howl) => howl.stop());
+  if (rubVoice) { try { rubVoice.source.stop(); } catch { /* already stopped */ } rubVoice.source.disconnect(); rubVoice = null; }
+}
+
+/** While `active` (the working scene is on the page): arms the first-input unlock and hands the scene its sounds. */
+export function useBookSounds(active: boolean) {
   useEffect(() => {
+    if (!active) return;
     const global = globalThis as unknown as { __SPSOUND?: typeof exports };
-    ready();
+    mount();
     global.__SPSOUND = exports;
-    return () => { if (global.__SPSOUND === exports) delete global.__SPSOUND; };
-  }, []);
+    return () => { if (global.__SPSOUND === exports) delete global.__SPSOUND; unmount(); };
+  }, [active]);
 }

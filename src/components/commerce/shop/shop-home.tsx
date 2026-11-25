@@ -39,7 +39,8 @@ export function ShopHome({ items, labels, initialOpen }: { items: Item[]; labels
   initialOpen?: string }) {
   const books = useMemo<SceneBook[]>(() => items.map(({ id, title, stageArt, pages }) => ({ id, title, stageArt: stageArt?.url ?? null, pages })), [items]);
   const { vendored, failed } = useStripeScene(books, Math.min(FEATURED_MAX, items.length));
-  useBookSounds();
+  // Sounds only while the working scene is up: not while it loads, nor on the plain list it falls back to.
+  useBookSounds(vendored != null && !failed);
   const first = items[0]?.stageArt;
   if (failed) return <ShopFallback items={items} labels={labels} initialOpen={initialOpen} />;
   // Native wheel scrolling here, as on stripe.press: their scroll mapping, holds and shelf catch read the browser's own

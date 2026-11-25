@@ -11,6 +11,7 @@ import { useShelfCatch, type ShelfCatchSource } from "./use-shelf-catch";
 import { useBookDetail, type BookDetailSource } from "./use-book-detail";
 import { useReadingScroll, type ReadingSource } from "./use-reading-scroll";
 import { useBookSounds } from "./use-book-sounds";
+import { LookInsideBar } from "./look-inside-bar";
 
 /**
  * The shop's home, rebuilt from stripe.press's home code (06w9 module 43181; .tmp/stripe-notes/home-layout-inventory.md,
@@ -616,28 +617,6 @@ function OpenBookPill({ label, shown, onHover, onOpen }: { label: string; shown:
     onClick={(event) => { event.stopPropagation(); onOpen(); }}
     className={cn("fixed bottom-[14%] left-[30%] z-30 -translate-x-1/2 rounded-full bg-background px-3 py-1.5 text-xs pointer-coarse:min-h-11 uppercase tracking-[-0.02em] text-foreground transition-opacity duration-300 max-[900px]:hidden",
       shown ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0")}>+ {label} +</button>;
-}
-
-/**
- * Their control bar while a book is open (LookInsideControlBar, 06w9:8661-8996): "[ < ]", the spread, "[ > ]" and
- * "[ X ]"; across the width on the home, under the book (left of the details) in the details.
- */
-function LookInsideBar({ shown, wide, page, leaves, labels, onBack, onForward, onClose }: { shown: boolean; wide: boolean; page: number; leaves: number;
-  labels: Labels; onBack: () => void; onForward: () => void; onClose: () => void }) {
-  const left = Math.max(1, 2 * page - 1), right = Math.min(2 * leaves, 2 * page);
-  return <div data-look-inside-bar aria-hidden={!shown} inert={!shown}
-    className={cn("fixed bottom-4 left-4 z-30 flex h-9 items-center justify-between text-xs uppercase tracking-[-0.02em] transition-opacity duration-300 pointer-coarse:h-11 max-[900px]:bottom-7 max-[900px]:h-11",
-      wide ? "right-4" : "right-[calc(40%+16px)] max-[900px]:right-4", shown ? "opacity-100" : "pointer-events-none opacity-0")}>
-    <button type="button" aria-label={labels.previousPage} disabled={page <= 0} onClick={(event) => { event.stopPropagation(); onBack(); }}
-      className="min-h-9 px-2 transition-opacity hover:opacity-70 disabled:opacity-30 pointer-coarse:min-h-11 pointer-coarse:min-w-11 max-[900px]:min-h-11 max-[900px]:min-w-11">[ &lt; ]</button>
-    <span className="tabular-nums">{page <= 0 ? "" : left === right ? left : left + "–" + right}</span>
-    <div className="flex items-center gap-2">
-      <button type="button" aria-label={labels.nextPage} disabled={page >= leaves} onClick={(event) => { event.stopPropagation(); onForward(); }}
-        className="min-h-9 px-2 transition-opacity hover:opacity-70 disabled:opacity-30 pointer-coarse:min-h-11 pointer-coarse:min-w-11 max-[900px]:min-h-11 max-[900px]:min-w-11">[ &gt; ]</button>
-      <button type="button" aria-label={labels.closeBook} onClick={(event) => { event.stopPropagation(); onClose(); }}
-        className="min-h-9 px-2 transition-opacity hover:opacity-70 pointer-coarse:min-h-11 pointer-coarse:min-w-11 max-[900px]:min-h-11 max-[900px]:min-w-11">[ X ]</button>
-    </div>
-  </div>;
 }
 
 /**

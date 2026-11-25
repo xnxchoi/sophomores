@@ -1,0 +1,10 @@
+# After Docker: packet-verify every fence generation on the real bridge (VPS plan v6 §1), Wanted by the docker.service
+# drop-in. A failure escalates; starts stay refused while any generation exists.
+[Unit]
+Description=Packet-verify key-job fence generations after Docker starts
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/kj-guard probe-all
+TimeoutStartSec=120

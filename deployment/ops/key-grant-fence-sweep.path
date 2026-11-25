@@ -1,0 +1,10 @@
+# Starts the sweep whenever the fence directory changes (a marker written by any guard process, finished or not).
+[Unit]
+Description=Watch for key-job fence markers
+
+[Path]
+PathChanged=/var/lib/sophomores-key-grant/fence/
+Unit=key-grant-fence-sweep.service
+
+[Install]
+WantedBy=multi-user.target

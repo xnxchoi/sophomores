@@ -1,0 +1,11 @@
+# Completes every pending fence generation (VPS plan v6 §1): a table for each KJ/fence/<N> marker that has none,
+# verified by its owned definition and with packets. Never deletes anything. A oneshot WITHOUT RemainAfterExit, so the
+# path unit and the backstop timer can start it again for a newer generation; it rescans before it exits.
+[Unit]
+Description=Complete pending key-job fence generations
+After=key-grant-fence-restore.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/kj-guard sweep
+TimeoutStartSec=120

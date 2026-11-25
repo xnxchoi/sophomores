@@ -1,0 +1,17 @@
+# KJ/config/guard.conf (root 0600; no secrets): the values kj-guard builds containers and fences from. Every value is
+# validated by the guard. Filled at K2 from K1's recorded facts.
+IMAGE=sha256:<64 hex: the runner image ID K0 loaded and verified>
+DBNET=sophomores-review-db
+KJNET=sophomores-key-grant-egress
+MAILNET=sophomores-review-egress
+# The key job's bridge name, fixed at K2 (docker network create -o com.docker.network.bridge.name=kjegress0).
+BRIDGE=kjegress0
+# The tick's measured peak from the rehearsal, plus a margin.
+TICK_MEMORY=<n>m
+# The packet probe: an address reserved outside the network's --ip-range, the bridge gateway, and a fixed outside IP.
+PROBE_ADDR=<a.b.c.250/24>
+PROBE_GW=<a.b.c.1>
+PROBE_TARGET=<outside IPv4>
+# sha256 of `nft -s list table inet key_grant_fence_<N>` with the name made generation-neutral (key_grant_fence_@),
+# recorded once on the VM and checked again by K1 on the VPS.
+FENCE_LIST_SHA=<64 hex>

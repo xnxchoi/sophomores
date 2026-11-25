@@ -371,7 +371,7 @@
     "enterAValidKorean010MobileNumber": "Enter a valid Korean 010 mobile number.",
     "contactEmail": "Contact email",
     "enterAnEmailAddressYouCanAccess": "Enter an email address you can access.",
-    "detailsAreUnverifiedThisRequestWontChangeYourAccountStaffMustVerifyOwnershipRestorationIsntGuaranteed": "Details are unverified. This request won’t change your account. Staff must verify ownership; restoration isn’t guaranteed.",
+    "detailsAreUnverifiedThisRequestWontChangeYourAccountStaffMustVerifyOwnershipRestorationIsntGuaranteed": "Nothing changes until staff confirm the account is yours, and restoring access isn’t guaranteed.",
     "tooManyRequests": "Too many requests.",
     "tryAgainIn": "Try again in",
     "youCanTryAgain": "You can try again.",

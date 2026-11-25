@@ -53,6 +53,8 @@ export type MemberAccountViewProps = {
   completionAction?: ReactNode;
   authenticatedAction?: ReactNode;
   onRecover?: () => void;
+  /** Receives the step's heading; the sign-in page shows it as its h1. */
+  onTitle?: (title: string) => void;
   onPasskey: () => void;
   onSocial: (provider: MemberSocialProvider) => void;
   onCode: () => void;
@@ -98,7 +100,7 @@ function NoAccountMessage({ capabilities }: { capabilities?: Readonly<Partial<Pi
 }
 
 /** The sign-in page's note for new visitors: the sign-up providers that are actually on, or that sign-up is off (Review-B, 26 Nov). */
-export function SignUpProvidersNote({ capabilities }: { capabilities?: Readonly<Partial<Pick<MemberCapabilities, MemberSocialProvider>>> }) {
+export function useSignUpProvidersNote(capabilities?: Readonly<Partial<Pick<MemberCapabilities, MemberSocialProvider>>>): string {
   const t = useTranslations("MemberAuth");
   const providers = useSignUpProviders(capabilities, "signInPageNewHere");
   return providers ? t("signInPageNewHere", { providers }) : t("signUpIsUnavailableTryAgainShortly");
@@ -164,6 +166,11 @@ export function MemberAccountView(props: MemberAccountViewProps) {
       : props.flow === "signup"
         ? t("signUp")
         : t("logIn");
+  // The page's h1 also follows the email-code step, which happens inside the identity phase (Review-B, 26 Nov).
+  const phaseT = useTranslations("AuthPhase");
+  const pageTitle = phase === "identity" && props.snapshot.codeRequested ? phaseT("emailHeading") : heading;
+  const { onTitle } = props;
+  useEffect(() => { onTitle?.(pageTitle); }, [onTitle, pageTitle]);
   useLayoutEffect(() => {
     if ((phase === "setup" || phase === "member") && document.visibilityState !== "hidden")
       document.getElementById(props.headingId ?? "member-account-heading")?.focus({ preventScroll: true });
@@ -232,12 +239,16 @@ export function MemberAccountView(props: MemberAccountViewProps) {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.2 }}
       >
-      {!sharedEmail && (
+      {!sharedEmail && props.presentation === "page" && (
+        // The page's h1 carries this heading; the step keeps its focus target without a second heading.
+        <div id={props.headingId ?? "member-account-heading"} tabIndex={-1} data-phase-focus="" className="sr-only">{heading}</div>
+      )}
+      {!sharedEmail && props.presentation !== "page" && (
         <VerificationTrayTitle>
           <Heading
             id={props.headingId ?? "member-account-heading"}
             tabIndex={-1}
-            className={cn("!text-[24px] !leading-[30px] !font-medium", mobileTray || props.presentation ? "!mt-0" : "pl-14", props.presentation === "page" && phase === "identity" && "sr-only", pendingSetup && !embeddedPhone && "mt-0! mb-2!", status?.member && "!mt-0 !mb-4 flex items-center gap-2.5", embeddedPhone && "sr-only")}
+            className={cn("!text-[24px] !leading-[30px] !font-medium", mobileTray || props.presentation ? "!mt-0" : "pl-14", pendingSetup && !embeddedPhone && "mt-0! mb-2!", status?.member && "!mt-0 !mb-4 flex items-center gap-2.5", embeddedPhone && "sr-only")}
           >
             {status?.member && <Check aria-hidden="true" data-account-confirmed="" className="size-5 shrink-0 text-foreground" strokeWidth={1.5} />}
             {heading}
@@ -711,9 +722,9 @@ function IdentityStep(props: MemberAccountViewProps & { locked: boolean; reserve
         locale="en"
         headingId={props.headingId ?? "member-account-heading"}
         renderHeading={(heading, title) => (
-          // The sign-in page's h1 is the page's one heading for the entry step: the step keeps its focus target, but not
-          // as a second heading (Review-B, 26 Nov). Its later steps (the code) keep their own heading.
-          props.presentation === "page" && !snapshot.codeRequested && !props.reauthenticating
+          // On the sign-in page the h1 is the one heading for the entry and code steps alike: each step keeps its focus
+          // target, not a second heading (Review-B, 26 Nov); the code step's help and email stay visible.
+          props.presentation === "page" && !props.reauthenticating
             ? <div id={props.headingId ?? "member-account-heading"} tabIndex={-1} data-phase-focus="" className="sr-only">{title}</div>
             : props.reauthenticating ? <div className="sr-only">{heading}</div> : props.presentation === "ticket-checkout"
             // The code step keeps the step's one heading.

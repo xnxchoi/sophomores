@@ -124,6 +124,14 @@ test("Continue looks the email up; the code goes only on a separate Send press",
   assert.deepEqual(c.named("code"), [], "no code before the explicit Send");
   ui.fireEvent.click(send);
   await untilAsserted(ui, () => assert.deepEqual(c.named("code"), [["code", "member@example.com"]]));
+  // Review-B, 26 Nov: the code step is the page's step too: its title is the h1, the one heading, and the entry note goes.
+  await untilAsserted(ui, () => assert.equal(ui.screen.getByRole("heading", { level: 1 }).textContent, messages.AuthPhase.emailHeading));
+  assert.equal(ui.screen.getAllByRole("heading").length, 1, "one heading on the code step");
+  assert.equal(ui.screen.queryByText(/New here\?/), null, "no entry note on the code step");
+  assert.ok(ui.screen.getByText("member@example.com"), "the code step still shows the email");
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: messages.AuthPhase.changeEmail }));
+  await untilAsserted(ui, () => assert.equal(ui.screen.getByRole("heading", { level: 1 }).textContent, messages.MemberAuth.logIn));
+  assert.ok(ui.screen.getByText(/New here\?/), "back on the entry step the note returns");
 });
 
 test("an account in setup finishes it on the page: no visitor note, no redirect", async () => {

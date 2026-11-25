@@ -28,8 +28,8 @@ The code is `src/lib/commerce/keys/` (worker passes, `grant-catch-up.ts`, `unloc
   is signed until a person clears the hook or confirms it. A failed read retries; it does not park.
   A re-send of recorded bytes re-reads the hook first: a set hook stops it (`rebroadcast_refused`, logged as
   `rebroadcast_role_hook_set`); an unreadable hook sends nothing and tries again next tick.
-- **Canonical receipts:** a receipt settles a grant or cancel, or counts as a revert, only once it is at the chain's
-  depth *and* its block hash equals the canonical block at that height. A reorged-out or stale-fork receipt stays
+- **Canonical receipts:** a receipt settles a grant or cancel, or counts as a revert, only once it is settled by the chain's
+  rule (Polygon: at or below the node's `finalized` block; Base Sepolia: 10 blocks deep) *and* its block hash equals the canonical block at that height. A reorged-out or stale-fork receipt stays
   pending until the chain shows the transaction in a canonical block.
 - **Off** (the default): it prints `{"outcome":"off"}` before loading anything.
 - **What the tick never does:**
@@ -42,7 +42,7 @@ The code is `src/lib/commerce/keys/` (worker passes, `grant-catch-up.ts`, `unloc
 |---|---|---|---|
 | `KEY_GRANT_POLYGON_LIVE` | tick host | unset = off | Exactly `1` turns Polygon grants on. Anything else keeps them off. |
 | `KEY_GRANT_POLYGON_MAX_COST_WEI` | tick host | none. Required when on | The approved worst case for one transaction (gas limit × max fee), in wei. It must be at most 5 POL. Set it from a quote at go-live (below). Without it no Polygon transaction is built. |
-| `KEY_GRANT_POLYGON_RPC_URL` | tick host | none. Required when on | A Polygon mainnet RPC, https only. |
+| `KEY_GRANT_POLYGON_RPC_URL` | tick host | none. Required when on | A Polygon mainnet RPC, https only. It must answer `eth_getBlockByNumber("finalized")`; without that, nothing ever settles (fail closed). Check before go-live (below). |
 | `KEY_GRANT_POLYGON_EVENT_LOCKS` | tick host (and wherever the export runs) | empty = no event locks | A comma list of event-ticket lock addresses on Polygon, one per event. Tonight it is the Edition I lock `0xef6414927acb08f4d5a35cc9e5de07b9f3255060`. Any entry that is not an address stops the tick (`bad_event_locks`). A ticket whose lock is not listed (nor Signet) parks with `lock_not_enabled`. That lock's `maxKeysPerAddress` is 1 on chain: a member plus two guests on one wallet fails until the owner sets it to 3. |
 | `UNLOCK_LIVE_GRANTER_PRIVATE_KEY`, `UNLOCK_LIVE_GRANTER_ADDRESS` | `~/.config/sphmrs/polygon-key-granter.env` on the tick host, mode 0600, owned by the tick's user | none | The grant signer. These are **not** app env and **not** in the VPS env allowlist. The address must be `0x2CDb…5336`; any other is refused. |
 | `MEMBER_WALLET_LOCK_ADDRESS` (existing) | app and tick | | It must be the Signet lock above on Polygon. |
@@ -56,11 +56,11 @@ There is **no lock-manager key on any of our hosts** (ADR-0008, ADR-0011). The o
    - Compute `0.10 / price` POL, then convert to wei (× 10^18, rounded down). At POL USD 0.076 that is about `1315789473684210526`.
    - Set `KEY_GRANT_POLYGON_MAX_COST_WEI` to that value. Recheck it if POL moves far.
    - The per-gas ceiling (3,000 gwei) also applies. The budget checks the gas *limit*, not the gas used. The 20 Nov estimate for `grantKeys` was about 261,000 gas: at 3,000 gwei that is about 0.78 POL, about USD 0.06, so the ceiling alone stays under the cap at today's price, and the budget is the real check.
-3. **RPC.** Set `KEY_GRANT_POLYGON_RPC_URL`.
+3. **RPC.** Set `KEY_GRANT_POLYGON_RPC_URL`. Check it reports finality: `curl -s -H 'content-type: application/json' --data '{"jsonrpc":"2.0","id":1,"method":"eth_getBlockByNumber","params":["finalized",false]}' "$KEY_GRANT_POLYGON_RPC_URL"` must return a block a few blocks behind `latest`, not null or an error.
 4. **Event locks.** Set `KEY_GRANT_POLYGON_EVENT_LOCKS` to the event locks to grant on, comma-separated.
 5. **Switch.** Set `KEY_GRANT_POLYGON_LIVE=1`.
 6. **Schedule.** Schedule the tick, from a release checkout with dependencies installed and the app's database env. For example, a systemd timer every minute running `node --import tsx scripts/key-grant-tick.ts`, or the cron line `* * * * * cd <release> && node --import tsx scripts/key-grant-tick.ts >> <log> 2>&1`. Only one runs at a time anyway.
-7. **Watch.** Watch the first runs: `dispatched` counts sends, and each grant settles once it is 256 blocks deep, about 9 minutes.
+7. **Watch.** Watch the first runs: `dispatched` counts sends, and each grant settles once its block is finalized, usually seconds (25 Nov read: `finalized` trailed the head by 2 blocks, about 3 s, on a public node).
 
 To stop: unset `KEY_GRANT_POLYGON_LIVE`, or set it to anything but `1`. The next tick does nothing. Grants already sent keep being reconciled once the switch is back on.
 
@@ -74,7 +74,7 @@ A refund marks the order's key `cancelRequested`. Nothing on our hosts can cance
 2. **Cancel each key.** Use your lock-manager wallet, never a key on our hosts. Either:
    - in the Unlock dashboard (app.unlock-protocol.com), open that line's lock on Polygon, find the key by token ID, and choose cancel/expire; or
    - in your wallet (MetaMask), call `expireAndRefundFor(tokenId, 0)` on the lock, with a refund of 0. The payment refund is done separately.
-3. **Let the tick reconcile.** The tick checks each one and marks it `cancelled` (evidence `key_not_valid`) once the key is no longer valid at 256 confirmations. Until then, the request stays recorded.
+3. **Let the tick reconcile.** The tick checks each one and marks it `cancelled` (evidence `key_not_valid`) once the key is no longer valid at the finalized block. Until then, the request stays recorded.
 
 ## Checks
 - `{"outcome":"failure","reason":...}`:

@@ -4,7 +4,7 @@ import { decodeFunctionData, keccak256, maxUint256, numberToHex, parseTransactio
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import type { KeyGrantAdapter, KeyGrantTarget } from "@/lib/commerce/keys/contracts";
 import { createUnlockKeyGrantAdapter } from "@/lib/commerce/keys/unlock/adapter";
-import { confirmationDepth, maxFeeCeiling } from "@/lib/commerce/keys/unlock/transactions";
+import { confirmationDepth, finalizedTagChains, maxFeeCeiling } from "@/lib/commerce/keys/unlock/transactions";
 import { dispatchKeyGrants } from "@/lib/commerce/keys/worker";
 import { fakePayload } from "./support/fake-payload";
 import { hashOf, healthyChain, lockAbi, lockAddress, lockCalls, mockChain, receipt, recipient, revertNotGranter, RpcFailure, target, transferLog, uint, uintArray } from "./support/mock-chain";
@@ -111,9 +111,9 @@ test("reconcile reports a reverted receipt as definitely reverted", async () => 
   assert.deepEqual(await adapter.reconcile({ intentID: "intent-1", txHash: hashOf("c"), target }), { kind: "definitelyReverted", code: "tx_reverted" });
 });
 
-test("confirmation depth is a per-chain setting, conservative for Polygon", () => {
+test("confirmation is a per-chain rule: a block count on Base Sepolia, finality on Polygon", () => {
   assert.ok(confirmationDepth[84532] >= 2, "Base Sepolia waits beyond inclusion");
-  assert.ok(confirmationDepth[137] > 157, "Polygon waits past its largest publicly reported reorg (157 blocks)");
+  assert.ok(finalizedTagChains.has(137) && confirmationDepth[137] === undefined, "Polygon waits for its finalized block, not a block count");
 });
 
 test("a receipt one block short of the chain's depth stays unknown, whether it succeeded or reverted", async () => {

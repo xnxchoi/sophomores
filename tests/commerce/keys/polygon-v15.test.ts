@@ -9,7 +9,6 @@ import { createUnlockKeyGrantAdapter } from "@/lib/commerce/keys/unlock/adapter"
 import { createUnlockKeyCancelAdapter } from "@/lib/commerce/keys/unlock/cancel";
 import { dispatchKeyGrants } from "@/lib/commerce/keys/worker";
 import { fakePayload } from "./support/fake-payload";
-import { confirmationDepth } from "@/lib/commerce/keys/unlock/transactions";
 import { address, cancelLog, hashOf, healthyChain, lockAbi, lockAddress, lockCalls, mockChain, receipt, recipient, transferLog, uint, uintArray } from "./support/mock-chain";
 
 // Owner, 24 Nov: "our lock is v15". The Signet lock reads publicLockVersion 15; Edition I reads 14. Our adapters
@@ -50,7 +49,7 @@ test("every PublicLock function, event and error our adapters use is identical i
   assert.equal((v15 as readonly AbiFunction[]).find((item) => item.name === "onHasRoleHook")?.outputs[0]?.type, "address");
 });
 
-const polygon = (calls: Record<string, () => Hex> = {}, methods: Record<string, (params: unknown[]) => unknown> = {}) => healthyChain({
+const polygon = (calls: Record<string, (params: unknown[]) => Hex> = {}, methods: Record<string, (params: unknown[]) => unknown> = {}) => healthyChain({
   eth_chainId: () => numberToHex(137),
   eth_call: lockCalls({ totalKeys: () => uint(0n), expirationDuration: () => uint(30n * 86_400n), grantKeys: () => uintArray([1n]),
     publicLockVersion: () => uint(15n), onHasRoleHook: () => address(zero), isLockManager: () => bool(true), ownerOf: () => address(recipient),
@@ -130,8 +129,10 @@ test("a grant parked on a role hook is loud: one fixed line, the intent stays pa
 // Review-A, 25 Nov (r5): depth alone does not make a receipt canonical. A receipt whose block is not the canonical
 // block at its height (reorged out, or served by a node on a stale fork) settles nothing and triggers no retry.
 test("a buried receipt whose block is not the canonical block at its height stays unknown, success or revert", async () => {
-  const deep = () => numberToHex(100 + confirmationDepth[137] - 1);
+  const deep = () => numberToHex(150);
+  const finalized = { ...(healthyChain().eth_getBlockByNumber([]) as object), number: "0x64", hash: hashOf("1") };
   const atHeight = (hash: Hex | null) => (params: unknown[]) => {
+    if (params[0] === "finalized") return finalized;
     assert.equal(params[0], "0x64");
     return hash === null ? null : { ...(healthyChain().eth_getBlockByNumber([]) as object), number: "0x64", hash };
   };
@@ -181,4 +182,31 @@ test("re-sending recorded bytes re-reads the role hook: set is refused, unreadab
     assert.deepEqual(answer, kind === "refused" ? { kind, code: "role_hook_set" } : { kind }, label);
     assert.equal(methods().includes("eth_sendRawTransaction"), kind === "accepted", label);
   }
+});
+
+// Owner, 25 Nov (r6): Polygon trusts a receipt once its block is finalized (milestones), not after a fixed 256 blocks.
+test("Polygon settles a receipt once its block is at or below the finalized block, and never without one", async () => {
+  const block = (number: number, hash: Hex = hashOf("1")) => ({ ...(healthyChain().eth_getBlockByNumber([]) as object), number: numberToHex(number), hash });
+  const cases: [string, (params: unknown[]) => unknown, () => Hex, string][] = [
+    ["finalized at the receipt's block", ([tag]) => tag === "finalized" ? block(100) : block(100), () => numberToHex(101), "confirmed"],
+    ["finalized past it, head barely ahead", ([tag]) => tag === "finalized" ? block(105, hashOf("5")) : block(100), () => numberToHex(105), "confirmed"],
+    ["finalized one block short", ([tag]) => tag === "finalized" ? block(99, hashOf("9")) : block(100), () => numberToHex(400), "unknown"],
+    ["no finalized block", ([tag]) => tag === "finalized" ? null : block(100), () => numberToHex(400), "unknown"],
+    ["finalized read fails", ([tag]) => { if (tag === "finalized") throw new Error("unsupported block tag"); return block(100); }, () => numberToHex(400), "unknown"],
+    ["finalized past the head", ([tag]) => tag === "finalized" ? block(120, hashOf("5")) : block(100), () => numberToHex(110), "unknown"],
+  ];
+  for (const [label, blocks, head, kind] of cases) {
+    const { adapter, requests } = granter(polygon({}, { eth_getTransactionReceipt: () => receipt("0x1", [transferLog(42n)]), eth_blockNumber: head, eth_getBlockByNumber: blocks }));
+    assert.equal((await adapter.reconcile({ intentID: "i", txHash: hashOf("c"), target })).kind, kind, label);
+    assert.ok(requests.some((request) => request.method === "eth_getBlockByNumber" && request.params?.[0] === "finalized"), label);
+  }
+});
+
+test("on Polygon, a key read as already invalid is read at the finalized block", async () => {
+  const final = { ...(healthyChain().eth_getBlockByNumber([]) as object), number: "0x64", hash: hashOf("5") };
+  const reads: unknown[] = [];
+  const { adapter } = granter(polygon({ isValidKey: ([, at]) => { reads.push(at); return bool(false); } }, {
+    eth_blockNumber: () => numberToHex(101), eth_getBlockByNumber: ([tag]) => { assert.equal(tag, "finalized"); return final; } }));
+  assert.equal(await adapter.keyInvalidAtDepth({ target, tokenID: "5" }), true);
+  assert.deepEqual(reads, [{ blockHash: hashOf("5"), requireCanonical: true }]);
 });

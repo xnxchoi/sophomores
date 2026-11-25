@@ -26,16 +26,19 @@ import { POLYGON_CHAIN_ID, polygonKeyGrantsLive, polygonRoleHookClear, roleHookS
 const SEND_RPC_TIMEOUT_MS = 5_000;
 
 /**
- * Blocks a receipt must be buried under (its own block counts as one) before
- * it is trusted, success or revert. Per chain, because reorg depth differs.
- * - 84532 Base Sepolia: OP-stack sequencer ordering; reorgs are rare and shallow.
- *   10 blocks is about 20 s.
- * - 137 Polygon PoS: enabled behind the go-live switch. Polygon has
- *   reorged far deeper than Base: the largest publicly reported was 157 blocks
- *   (February 2023). 256 blocks (about 9 min at ~2 s) clears that with margin.
- *   The cost is a longer "key pending" after payment; the payment is unaffected.
+ * When a receipt is trusted (success or revert), per chain. In both cases its
+ * block must also be the canonical block at its height (buriedReceipt).
+ * - 84532 Base Sepolia: buried under 10 blocks (its own block counts as one).
+ *   OP-stack sequencer ordering; reorgs are rare and shallow. About 20 s.
+ * - 137 Polygon PoS: at or below the node's `finalized` block (owner, 25 Nov;
+ *   replaces a fixed 256-block wait, about 9 min). Polygon's milestones make a
+ *   block final within seconds; a finalized block cannot be reorged without
+ *   breaking consensus. The 157-block reorg of February 2023 predates
+ *   milestones. A node that cannot report `finalized` proves nothing: the
+ *   receipt stays pending (fail closed).
  */
-export const confirmationDepth: Readonly<Record<number, number>> = { 84532: 10, 137: 256 };
+export const confirmationDepth: Readonly<Record<number, number>> = { 84532: 10 };
+export const finalizedTagChains: ReadonlySet<number> = new Set([137]);
 
 /**
  * Highest `maxFeePerGas` (wei) any transaction of ours may carry, first sends
@@ -139,7 +142,22 @@ export function createSignerTransactions({ chainID, account, transport, holdMs =
   if (budget === null) throw new Error(`Unlock transactions are refused on chain ${chainID}: no approved fee budget (KEY_GRANT_POLYGON_MAX_COST_WEI)`);
   const overBudget = (gas: bigint | undefined, maxFeePerGas: bigint | undefined) =>
     gas === undefined || maxFeePerGas === undefined || maxFeePerGas > ceiling || gas * maxFeePerGas > budget;
-  const depth = BigInt(confirmationDepth[chainID]);
+  const byFinality = finalizedTagChains.has(chainID);
+  const depth = BigInt(confirmationDepth[chainID] ?? 0);
+  if (!byFinality && depth < 1n) throw new Error(`Unlock transactions are refused on chain ${chainID}: no confirmation rule`);
+  /** The highest block whose receipts are trusted now: the finalized block, or the head less the depth; null if none. */
+  const settledBlock = async (): Promise<{ number: bigint; hash: Hex } | null> => {
+    if (byFinality) {
+      const final = await client.getBlock({ blockTag: "finalized" });
+      if (final.number === null || !final.hash) return null;
+      const head = await client.getBlockNumber({ cacheTime: 0 });
+      return final.number <= head ? { number: final.number, hash: final.hash } : null; // a finalized block past the head is not believed
+    }
+    const head = await client.getBlockNumber({ cacheTime: 0 });
+    if (head + 1n < depth) return null;
+    const block = await client.getBlock({ blockNumber: head - depth + 1n });
+    return block.number === head - depth + 1n && block.hash ? { number: block.number, hash: block.hash } : null;
+  };
   const ceiling = maxFeeCeiling[chainID];
   if (!transport) throw new Error("Unlock requires an explicit transport");
   const rpc: Transport = options => transport({ ...options, timeout: SEND_RPC_TIMEOUT_MS });
@@ -277,17 +295,14 @@ export function createSignerTransactions({ chainID, account, transport, holdMs =
       transaction.release();
     },
 
-    /** Canonical reads at this hash satisfy the same depth as a settled receipt. */
+    /** Canonical reads at this hash satisfy the same rule as a settled receipt (finalized on Polygon, depth elsewhere). */
     async buriedBlockHash(): Promise<Hex | null> {
-      const head = await client.getBlockNumber({ cacheTime: 0 });
-      if (head + 1n < depth) return null;
-      const block = await client.getBlock({ blockNumber: head - depth + 1n });
-      return block.number === head - depth + 1n ? block.hash : null;
+      return (await settledBlock())?.hash ?? null;
     },
 
     /**
-     * The receipt of `txHash`, only once it is to `to`, buried at the chain's
-     * depth, and its block is the canonical block at that height (a receipt from
+     * The receipt of `txHash`, only once it is to `to`, settled by the chain's
+     * rule (finalized on Polygon, depth on Base Sepolia), and its block is the canonical block at that height (a receipt from
      * a reorged-out block, or from a node on a stale fork, is not trusted:
      * Review-A, 25 Nov); `null` while that cannot be shown (not mined, too
      * shallow, not canonical, another chain, unreachable).
@@ -299,8 +314,8 @@ export function createSignerTransactions({ chainID, account, transport, holdMs =
       if (!seen.receipt.to || !isAddressEqual(seen.receipt.to, to)) return null;
       const height = seen.receipt.blockNumber;
       try {
-        const head = await client.getBlockNumber({ cacheTime: 0 });
-        if (head - height + 1n < depth) return null;
+        const settled = await settledBlock();
+        if (!settled || height > settled.number) return null;
         const canonical = await client.getBlock({ blockNumber: height });
         return canonical.number === height && !!canonical.hash && canonical.hash.toLowerCase() === seen.receipt.blockHash.toLowerCase() ? seen.receipt : null;
       } catch { return null; }

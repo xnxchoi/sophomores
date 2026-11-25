@@ -10,7 +10,7 @@ import { createUnlockKeyCancelAdapter } from "@/lib/commerce/keys/unlock/cancel"
 import {
   loadPolygonKeyGranterAccount, POLYGON_KEY_GRANTER, POLYGON_SIGNET_LOCK, polygonEventLocks, polygonKeyGrantsLive,
 } from "@/lib/commerce/keys/unlock/polygon";
-import { chainEnabled, confirmationDepth, maxCostWei, maxFeeCeiling } from "@/lib/commerce/keys/unlock/transactions";
+import { chainEnabled, maxCostWei, maxFeeCeiling } from "@/lib/commerce/keys/unlock/transactions";
 import { dispatchKeyGrants } from "@/lib/commerce/keys/worker";
 import { fakePayload } from "./support/fake-payload";
 import { healthyChain, lockAbi, lockAddress, mockChain, receipt, recipient, transferLog } from "./support/mock-chain";
@@ -87,13 +87,15 @@ test("switch on: the pinned signer grants one key on the pinned lock, signed for
   assert.deepEqual((call.args?.[0] as Hex[]).map((address) => address.toLowerCase()), [recipient]);
 });
 
-test("switch on: a grant is confirmed only at Polygon's 256-block depth", async () => {
+test("switch on: a grant is confirmed only once Polygon has finalized its block", async () => {
   const minted = receipt("0x1", [transferLog(7n)]);
-  let head = 100 + confirmationDepth[137] - 2;
-  const { adapter } = pinnedAdapter(polygonChain({ eth_getTransactionReceipt: () => minted, eth_blockNumber: () => numberToHex(head) }));
+  const base = healthyChain().eth_getBlockByNumber([]) as object;
+  let finalized = 99;
+  const { adapter } = pinnedAdapter(polygonChain({ eth_getTransactionReceipt: () => minted, eth_blockNumber: () => numberToHex(400),
+    eth_getBlockByNumber: ([tag]) => tag === "finalized" ? { ...base, number: numberToHex(finalized), hash: `0x${"9".repeat(64)}` } : base }));
   const txHash = `0x${"e".repeat(64)}`;
-  assert.deepEqual(await adapter.reconcile({ intentID: "i", txHash, target: polygonTarget }), { kind: "unknown" }, "one block short");
-  head += 1;
+  assert.deepEqual(await adapter.reconcile({ intentID: "i", txHash, target: polygonTarget }), { kind: "unknown" }, "one block short of finalized");
+  finalized += 1;
   assert.deepEqual(await adapter.reconcile({ intentID: "i", txHash, target: polygonTarget }), { kind: "confirmed", tokenID: "7" });
 });
 

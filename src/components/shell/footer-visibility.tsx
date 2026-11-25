@@ -117,9 +117,9 @@ export function FXFrameOff() {
 export function FooterGate({ children }: { children: ReactNode }) {
   const pathname = usePathname() ?? "";
   if (pathHidesFooter(pathname)) return null;
-  // From md up it tucks 22px under the page's end, so the footer itself shows behind the page's rounded bottom
-  // corners and no other colour shows in them. Its own top padding (md:pt-14) keeps the links clear.
-  return <div className="md:sticky md:bottom-0 md:z-0 md:-mt-[22px]">{children}</div>;
+  // From md up it tucks 32px (the page's corner radius, below) under the page's end, so the footer itself shows behind
+  // the page's rounded bottom corners and no other colour shows in them. Its own top padding (md:pt-20) keeps the links clear.
+  return <div className="md:sticky md:bottom-0 md:z-0 md:-mt-[32px]">{children}</div>;
 }
 
 /**
@@ -185,11 +185,15 @@ function CoveredPage({ children }: { children: ReactNode }) {
     return () => observer.disconnect();
   }, [isPresent, setPageEnd]);
   return (
-    // Rounded bottom corners (owner, 21 Nov: "And rounded corners it is"), the frame corners' own size from md up
-    // (RP_Menu: 22 px off phones, The Hideaway's 2.2rem on its 10 px root), so the page visibly lifts off the pinned footer. Below md the footer isn't
-    // pinned, so the page keeps square corners. overflow-clip keeps a page's own full-width background (such as
-    // /shop's) inside the rounding; unlike overflow-hidden it isn't a scroll container, so sticky children still work.
-    <div ref={cover} data-themed="background-color" className="relative z-1 bg-background md:overflow-clip md:rounded-b-[22px]">
+    // Rounded bottom corners (owner, 21 Nov: "And rounded corners it is"), wider than the frame's so the two read as nested
+    // (owner, 26 Nov: "It needs to be rounded wider so that it doesn't look awkward"). The page is the outer layer and the
+    // frame's window the inner one, so outer radius = inner radius + inset: the frame corner's 22 px (RP_Menu, off
+    // phones) plus the closed frame's 10 px inset (RP_Pro top/left/right) = 32 px. The page runs under the side rails, so
+    // the arc enters from behind the frame. A clip at the rails would also cut the shop's fixed scene and controls.
+    // Below md the footer isn't pinned, so the page keeps square corners. overflow-clip keeps a page's own full-width
+    // background (such as /shop's) inside the rounding; unlike overflow-hidden it isn't a scroll container, so sticky
+    // children still work.
+    <div ref={cover} data-themed="background-color" className="relative z-1 bg-background md:overflow-clip md:rounded-b-[32px]">
       {children}
       <div ref={end} aria-hidden="true" />
     </div>

@@ -6,15 +6,14 @@ import { PageInset } from "@/components/core/PageInset/PageInset";
 import { Badge } from "@/components/arc/badge/badge";
 import { ArcRoles } from "./arc-roles";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
-import { BookStage } from "./book3d/book-stage";
-import { FeaturedReleases, ShopShelf } from "./shop/shop-front";
-import { bookTextures, firstImage, pageTextures, StageArt } from "./product-page/product-page";
+import { ShopHome } from "./shop/shop-front";
+import { firstImage } from "./product-page/product-page";
 import { readProductPageContent, type ProductPageContent } from "./product-page/_shared/content";
 
 /**
  * Book shop: each edition is its own product (owner), listed separately with no picker. Display facts only. Laid out as
- * stripe.press's home: new and featured books first, each on its own art with the 3D book over it, then every edition on
- * one shelf, spine out (shop/shop-front.tsx). Order follows each product's shelf order, then the shop's own order.
+ * stripe.press's home, with their book scene copied verbatim (shop/shop-front.tsx ShopHome, shop/stripe-scene.tsx).
+ * Order follows each product's shelf order, then the shop's own order.
  * `contents`: each product's page fields by product ID (art, book textures, shelf title); a product without them shows
  * its first image and a plain book.
  */
@@ -30,20 +29,9 @@ export function CommerceShopView({ shop, contents = {} }: { shop: CommerceEditio
       price: money.format(entry.offer.priceKRW), href: "/shop/products/" + encodeURIComponent(entry.product.productID) }));
   return <PageInset as="main" className="pt-[4.5rem] pb-24 text-foreground">
     <h1 className="sr-only">{t("book")}</h1>
-    <FeaturedReleases label={t("featured")} viewDetails={t("viewDetails")} items={entries.map(({ product, content, title, price, href }) => ({
-      id: product.productID, title, price, href,
-      // stripe.press's proportions (Review-B, 25 Nov: its art starts right under the rail, y 162 at 1440×900): the art
-      // fills the row from the rail down, and the book stands nearly its height, spilling a little past its lower edge,
-      // clear of the rail above and the caption below.
-      stage: <BookStage id={product.productID} textures={bookTextures(content)} pageTextures={pageTextures(content)} closedZ={17}
-        className="relative aspect-[4/5] w-full sm:aspect-[5/4] lg:aspect-auto lg:h-[calc(100svh-12rem)]">
-        <div className="absolute inset-x-0 top-0 bottom-[6%] overflow-hidden rounded-[10px] bg-muted">
-          <StageArt art={content.stageArt ?? firstImage(product)} />
-        </div>
-      </BookStage>
+    <ShopHome label={t("featured")} viewDetails={t("viewDetails")} items={entries.map(({ product, content, title, price, href }) => ({
+      id: product.productID, title, price, href, stageArt: content.stageArt ?? firstImage(product),
     }))} />
-    <ShopShelf label={t("allProducts")} viewDetails={t("viewDetails")}
-      books={entries.map(({ product, content, title, price, href }) => ({ id: product.productID, title, price, href, textures: bookTextures(content) }))} />
   </PageInset>;
 }
 

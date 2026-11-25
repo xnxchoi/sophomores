@@ -3,12 +3,14 @@
 import { ArrowRightIcon } from "@phosphor-icons/react/dist/ssr";
 import dynamic from "next/dynamic";
 import { useTransitionRouter } from "next-transition-router";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link } from "@/components/core/Link/Link";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
+import { cn } from "@/lib/utils";
 import type { BookTextures } from "../book3d/book";
 import { recordCarry } from "../book3d/book-carry";
 import type { ShelfRect } from "../book3d/shelf-canvas";
+import { StripeScene } from "./stripe-scene";
 
 // three stays in the lazy canvas chunk (as BookStage loads book-canvas).
 const ShelfView = dynamic(() => import("../book3d/shelf-canvas"), { ssr: false });
@@ -55,6 +57,55 @@ function Caption({ title, price, href, label }: { title: string; price: string; 
       <FocusShape className="inline-flex items-center gap-[inherit]">{label}<ArrowRightIcon aria-hidden="true" className="size-3.5" /></FocusShape>
     </Link>
   </div>;
+}
+
+/**
+ * The shop's home as stripe.press's (owner, 25 Nov: their 3D verbatim, the page ours in Tailwind). One tall page: each
+ * book has a window-high stretch of scroll, and the scroll position is the book index their scene follows (their home
+ * feeds `scrollProgress` and its live ref the same way). Fixed over it: the art card (the current book's stage art),
+ * their book scene and the title rail under the header; in the flow, each book's caption with its link.
+ */
+export function ShopHome({ items, label, viewDetails }: {
+  items: { id: string; title: string; price: string; href: string; stageArt: { url: string; alt?: string | null } | null }[]; label: string; viewDetails: string;
+}) {
+  const router = useTransitionRouter();
+  const progressRef = useRef(0);
+  const [progress, setProgress] = useState(0);
+  useEffect(() => {
+    let frame = 0;
+    const read = () => {
+      frame = 0;
+      const value = Math.max(0, Math.min(items.length - 1, window.scrollY / Math.max(1, window.innerHeight)));
+      progressRef.current = value; setProgress(value);
+    };
+    const schedule = () => { frame ||= requestAnimationFrame(read); };
+    read();
+    window.addEventListener("scroll", schedule, { passive: true }); window.addEventListener("resize", schedule);
+    return () => { cancelAnimationFrame(frame); window.removeEventListener("scroll", schedule); window.removeEventListener("resize", schedule); };
+  }, [items.length]);
+  const active = Math.min(items.length - 1, Math.round(progress)), item = items[active];
+  const books = useMemo(() => items.map(({ id, title, stageArt }) => ({ id, title, stageArt: stageArt?.url ?? null })), [items]);
+  if (!item) return null;
+  return <section aria-label={label}>
+    <div aria-hidden="true" className="fixed inset-x-4 top-[10.125rem] bottom-14 z-0 overflow-hidden rounded-[10px] bg-muted">
+      {items.map((entry, index) => entry.stageArt && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img key={entry.id} src={entry.stageArt.url} alt={entry.stageArt.alt ?? ""} draggable={false}
+          className={cn("absolute inset-0 size-full object-cover transition-opacity duration-[600ms] ease-[cubic-bezier(0.16,1,0.3,1)]", index === active ? "opacity-100" : "opacity-0")} />))}
+    </div>
+    <StripeScene books={books} progress={progress} progressRef={progressRef} active={active}
+      onOpen={(index) => { const target = items[index]; if (target) router.push(target.href); }}
+      className="pointer-events-none fixed inset-0 isolate z-10" />
+    <div className="fixed inset-x-4 top-[4.5rem] z-20 pt-2">
+      <SectionLabel>{label}</SectionLabel>
+      <TitleRail titles={items.map((entry) => entry.title)} active={active} label={label}
+        onPick={(index) => window.scrollTo({ top: index * window.innerHeight, behavior: "smooth" })} />
+    </div>
+    {/* Each book's stretch of scroll, its caption pinned to the bottom of the window while the stretch is in view. */}
+    {items.map((entry) => <article key={entry.id} className="relative z-20 flex h-svh flex-col justify-end">
+      <div className="sticky bottom-0 bg-background"><Caption title={entry.title} price={entry.price} href={entry.href} label={viewDetails} /></div>
+    </article>)}
+  </section>;
 }
 
 /**

@@ -17,7 +17,9 @@ import { readProductPageContent, type ProductPageContent } from "./product-page/
  * `contents`: each product's page fields by product ID (art, book textures, shelf title); a product without them shows
  * its first image and a plain book.
  */
-export function CommerceShopView({ shop, contents = {} }: { shop: CommerceEditionShop | null; contents?: Record<string, ProductPageContent> }) {
+export function CommerceShopView({ shop, contents = {}, initialOpen }: { shop: CommerceEditionShop | null; contents?: Record<string, ProductPageContent>;
+  /** A product's address: the shop opens with that product's details open (stripe.press renders /book/<slug> as its home). */
+  initialOpen?: string }) {
   const t = useTranslations("Customer.components_commerce_book_offer");
   const locale = useLocale();
   if (!shop || shop.status === "unavailable" || shop.products.length === 0) return <BookUnavailable />;
@@ -29,7 +31,7 @@ export function CommerceShopView({ shop, contents = {} }: { shop: CommerceEditio
       price: money.format(entry.offer.priceKRW), href: "/shop/products/" + encodeURIComponent(entry.product.productID) }));
   return <PageInset as="main" className="pt-[4.5rem] pb-24 text-foreground">
     <h1 className="sr-only">{t("book")}</h1>
-    <ShopHome labels={{ featured: t("featured"), shelf: t("allProducts"), viewDetails: t("viewDetails"), toShelf: t("allProducts") }} items={entries.map(({ product, offer, content, title, price, href }) => ({
+    <ShopHome initialOpen={initialOpen} labels={{ featured: t("featured"), shelf: t("allProducts"), viewDetails: t("viewDetails"), toShelf: t("allProducts") }} items={entries.map(({ product, offer, content, title, price, href }) => ({
       id: product.productID, title, price, href, stageArt: content.stageArt ?? firstImage(product),
       // The details column for this book, opened in the scene (the product page's own column, unchanged).
       details: <><ProductInfo product={product} offer={offer} content={content} /><ProductExtras content={content} /></>,

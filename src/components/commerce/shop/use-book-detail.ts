@@ -38,15 +38,18 @@ export function useBookDetail(hub: SceneHub, catalogue: SceneCatalogue, router: 
     window.dispatchEvent(new Event("resize"));
   }, []);
 
-  const openBook = useCallback((index: number) => {
+  // `arrived`: the page was loaded on this product's address (theirs: the deep link opens with rememberOrigin false and
+  // instant, 06w9:15164-15170): no carry, no history entry; closing replaces the address with the shop's.
+  const openBook = useCallback((index: number, arrived = false) => {
     const current = transition().current;
     if (current.active && !current.returning && current.index === index) return true;
     if (window.innerWidth < 900) return false;                                    // phone: row 20, not this slice
     cancel();
-    const raw = source.current.rawProgress(), onShelf = raw >= catalogue.J + 0.5 && raw < catalogue.K + 1;
+    const raw = source.current.rawProgress(), onShelf = !arrived && raw >= catalogue.J + 0.5 && raw < catalogue.K + 1;
     fromShelf.current = onShelf;
     const href = source.current.hrefOf(index);
-    if (href && !pushed.current) { window.history.pushState(null, "", href); pushed.current = true; }
+    if (arrived) pushed.current = true;
+    else if (href && !pushed.current) { window.history.pushState(null, "", href); pushed.current = true; }
     else if (href) window.history.replaceState(null, "", href);
     if (!onShelf) { setPresenting(true); settle(index); return true; }
     const token = ++clock.current.token;

@@ -26,14 +26,16 @@ type Labels = { featured: string; shelf: string; viewDetails: string; toShelf: s
 type Geometry = { lvh: number; mobile: boolean; top: number; height: number; offset: number; extents: number[];
   starts: number[]; lock: number[]; total: number };
 
-export function ShopHome({ items, labels }: { items: Item[]; labels: Labels }) {
+export function ShopHome({ items, labels, initialOpen }: { items: Item[]; labels: Labels;
+  /** The product whose address the page was loaded on: it opens in place once the scene is ready. */
+  initialOpen?: string }) {
   const books = useMemo<SceneBook[]>(() => items.map(({ id, title, stageArt }) => ({ id, title, stageArt: stageArt?.url ?? null })), [items]);
   const vendored = useStripeScene(books, Math.min(FEATURED_MAX, items.length));
   const first = items[0]?.stageArt;
   // Native wheel scrolling here, as on stripe.press: their scroll mapping, holds and shelf catch read the browser's own
   // scroll, and the site's Lenis smoothing would keep driving the page through the shelf's catch.
   return <section data-lenis-prevent-wheel aria-label={labels.featured} className="relative min-h-svh">
-    {vendored && items.length > 0 ? <Home vendored={vendored} items={items} labels={labels} /> : first && (
+    {vendored && items.length > 0 ? <Home vendored={vendored} items={items} labels={labels} initialOpen={initialOpen} /> : first && (
       // The first card where theirs lands (162 px down, 16 px in, 24 px off the bottom) until their code is running.
       <div className="pointer-events-none fixed inset-x-4 top-[162px] bottom-6 z-0 overflow-hidden rounded-[8px] bg-muted max-[899px]:inset-x-2 max-[899px]:top-[140px]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -44,7 +46,7 @@ export function ShopHome({ items, labels }: { items: Item[]; labels: Labels }) {
   </section>;
 }
 
-function Home({ vendored, items, labels }: { vendored: Vendored; items: Item[]; labels: Labels }) {
+function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; items: Item[]; labels: Labels; initialOpen?: string }) {
   const { hub, scroll, catalogue, router, seats, motion: tokens } = vendored;
   const navigate = useTransitionRouter();
   const count = items.length, J = catalogue.J, K = catalogue.K;
@@ -182,6 +184,12 @@ function Home({ vendored, items, labels }: { vendored: Vendored; items: Item[]; 
     unpin: () => window.dispatchEvent(new Event("scroll")) }; });
   const detail = useBookDetail(hub, catalogue, router, tokens, detailSource);
   const openRef = useRef((index: number) => { const item = items[index]; if (item) navigate.push(item.href); });
+  const arrived = useRef(initialOpen);
+  useEffect(() => {
+    const index = items.findIndex((entry) => entry.id === arrived.current);
+    arrived.current = undefined;
+    if (index >= 0 && items[index]?.details) detail.openBook(index, true);
+  }, []);   // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { openRef.current = (index: number) => {
     if (items[index]?.details && detail.openBook(index)) return;
     const item = items[index]; if (item) navigate.push(item.href);

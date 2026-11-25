@@ -4,7 +4,9 @@ import { connection } from "next/server";
 import { getPayload } from "payload";
 import config from "@payload-config";
 import { listCommerceEditionProducts, loadCommerceEditionOffer, loadPublishedCommerceEditions, type CommerceEditionOffer } from "@/lib/commerce/editions";
-import { BookUnavailable } from "@/components/commerce/book-offer";
+import { BookUnavailable, CommerceShopView } from "@/components/commerce/book-offer";
+import { WideOrNarrow } from "@/components/commerce/shop/wide-or-narrow";
+import type { CommerceEditionShop } from "@/lib/commerce/editions";
 import { ProductPage, type ShelfEntry } from "@/components/commerce/product-page/product-page";
 import { readProductPageContent, type ProductPageContent } from "@/components/commerce/product-page/_shared/content";
 import { loadProductPageDocuments } from "./page-documents";
@@ -16,7 +18,11 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t("shop"), robots: { index: false, follow: false } };
 }
 
-/** One native product on its own page (each edition is its own product). Display facts from E1; purchase not open yet. */
+/**
+ * One native product's address. From 900 px up it is the shop with this product's details open, as stripe.press renders
+ * /book/<slug> as its home with that book open (owner, 25 Nov: details open in their scene). Below 900 px, for now, the
+ * product's own page (phone layout of the shop is open). Display facts from E1; purchase not open yet.
+ */
 export default async function ShopProductPage({ params }: { params: Promise<{ id: string }> }) {
   await connection();
   const { id } = await params;
@@ -24,6 +30,9 @@ export default async function ShopProductPage({ params }: { params: Promise<{ id
   let offer: CommerceEditionOffer | null = null;
   let content: ProductPageContent = readProductPageContent(null);
   let shelf: ShelfEntry[] = [];
+  // The shop as /shop shows it, with every listed product's page fields; null leaves the product page alone.
+  let shop: CommerceEditionShop | null = null;
+  const contents: Record<string, ProductPageContent> = {};
   try {
     const payload = await getPayload({ config });
     const [catalogue, edition] = await Promise.all([loadPublishedCommerceEditions(payload, undefined, id), loadCommerceEditionOffer(payload, id)]);
@@ -31,12 +40,14 @@ export default async function ShopProductPage({ params }: { params: Promise<{ id
     if (catalogue.status === "displayable" && edition && catalogue.product.productID === edition.productID) { product = catalogue.product; offer = edition; }
     if (product) {
       // The page's content fields (spec 23 Nov) and the shelf. Either failing leaves the page with its facts only.
-      const shop = await listCommerceEditionProducts(payload).catch(() => null);
+      shop = await listCommerceEditionProducts(payload).catch(() => null);
       const listed = shop?.status === "displayable" ? shop.products : [];
       const documents = await loadProductPageDocuments(payload, [id, ...listed.map((entry) => entry.product.productID)])
         .catch(() => [] as unknown[]);
       const contentOf = (productID: string) => readProductPageContent(documents.find((document) => String((document as { id?: unknown }).id) === productID));
       content = contentOf(id);
+      for (const entry of listed) contents[entry.product.productID] = contentOf(entry.product.productID);
+      if (!listed.some((entry) => entry.product.productID === id)) shop = null;
       shelf = listed
         .map((entry, index) => ({ entry, index, own: contentOf(entry.product.productID) }))
         // Shelf order first; products without one keep the shop's price order after them.
@@ -47,7 +58,9 @@ export default async function ShopProductPage({ params }: { params: Promise<{ id
     console.error("Published product information is unavailable.");
   }
   return <div className="min-h-dvh bg-background text-foreground">
-    <FXFrameOff />
-    {product && offer ? <ProductPage product={product} offer={offer} content={content} shelf={shelf} /> : <BookUnavailable />}
+    {!(product && offer) ? <><FXFrameOff /><BookUnavailable /></>
+      : shop ? <WideOrNarrow wide={<CommerceShopView shop={shop} contents={contents} initialOpen={id} />}
+          narrow={<><FXFrameOff /><ProductPage product={product} offer={offer} content={content} shelf={shelf} /></>} />
+      : <><FXFrameOff /><ProductPage product={product} offer={offer} content={content} shelf={shelf} /></>}
   </div>;
 }

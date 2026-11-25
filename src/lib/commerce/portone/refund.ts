@@ -68,10 +68,7 @@ function portOneCancel(config: PortOneConfig): ProviderCancel {
   }
 }
 
-/**
- * The ledger row, written once per payment inside its own committed transaction; a repeat request reuses it. The clock
- * is read here, after the locks and reads, so the cutoff holds at the moment of the write (Review-A, 24 Nov).
- */
+/** The ledger row, written once per payment inside its own committed transaction; a repeat request reuses it. */
 async function recordRefundRequest(req: PayloadRequest, orderID: string, reason: string, config: PortOneConfig, clock: () => number): Promise<Recorded> {
   return inCommerceTransaction(req, () => withCommerceWrite(req, async (): Promise<Recorded> => {
     await lockCommerce(req, [`order-benefits:${orderID}`])
@@ -97,13 +94,17 @@ async function recordRefundRequest(req: PayloadRequest, orderID: string, reason:
       const eventID = transaction.portone.snapshot.eventID
       if (eventID == null) throw new APIError('Event unavailable', 409, undefined, true)
       cutoff = refundCutoff((await readCommerce(req, 'commerce-events', eventID)).partIStartsAt)
-      if (cutoff === null || clock() >= cutoff) return { closed: cutoffAt(cutoff) }
+      if (cutoff === null) return { closed: null }
     }
     const scope = refundRequestScope(transactionID)
     const existing = await findCommerce(req, 'commerce-reconciliations', 'scope', scope)
+    // The clock is read once, after every lock and lookup and just before the write, so a row is never written at or
+    // past the cutoff (Review-A, 25 Nov). The same reading is the request's time.
+    const at = clock()
+    if (cutoff !== null && at >= cutoff) return { closed: cutoffAt(cutoff) }
     if (existing) return { request: refundRequestSchema.parse(existing.state), cutoff }
     const state = refundRequestSchema.parse({ orderID, transactionID, paymentID, amount: transaction.amount, reason,
-      requestedBy: String(req.user?.id), requestedAt: new Date(clock()).toISOString() })
+      requestedBy: String(req.user?.id), requestedAt: new Date(at).toISOString() })
     await createCommerce(req, 'commerce-reconciliations', { scope, state })
     return { request: state, cutoff }
   }))

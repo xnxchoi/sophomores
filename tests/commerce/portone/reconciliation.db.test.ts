@@ -462,10 +462,18 @@ test('I2 disposable PostgreSQL admission, accounting, native fencing and restart
           { outcome: 'refused', reason: 'other-payment-channel' })
       }
       assert.deepEqual([calls.length, await requests(guest)], [0, 0])
-      // Review-A: the cutoff is checked again just before PortOne is asked. Here the write happens a moment before it and
-      // the send would happen at it: closed, the request recorded, PortOne not asked.
+      // Review-A: the clock is read exactly twice, once just before the ledger write and once just before PortOne is
+      // asked. The write reading is a moment before the cutoff and the send reading at it: closed, the request recorded
+      // with the write reading, PortOne not asked. A third reading would fail the test.
       const crossing = [cutoff - 1, cutoff]
-      assert.deepEqual(await requestOrderRefund({ req: admin, orderID: guestOrder, reason: 'Owner refund', deps: { ...deps, now: () => crossing.shift() ?? cutoff } }),
+      const strictClock = () => { const at = crossing.shift(); assert.notEqual(at, undefined, 'unexpected clock read'); return at! }
+      assert.deepEqual(await requestOrderRefund({ req: admin, orderID: guestOrder, reason: 'Owner refund', deps: { ...deps, now: strictClock } }),
+        { outcome: 'closed', cutoffAt: new Date(cutoff).toISOString() })
+      assert.deepEqual([calls.length, await requests(guest), crossing.length], [0, 1, 0])
+      const recordedAt = (await control.query('SELECT state FROM commerce_reconciliations WHERE scope=$1', [refundRequestScope(guest.transactionID)])).rows[0].state.requestedAt
+      assert.equal(recordedAt, new Date(cutoff - 1).toISOString())
+      // A recorded request is closed at the write reading too, before PortOne is asked.
+      assert.deepEqual(await requestOrderRefund({ req: admin, orderID: guestOrder, reason: 'Owner refund', deps: { ...deps, now: () => cutoff } }),
         { outcome: 'closed', cutoffAt: new Date(cutoff).toISOString() })
       assert.deepEqual([calls.length, await requests(guest)], [0, 1])
       // Before the cutoff: allowed (the recorded request is reused).

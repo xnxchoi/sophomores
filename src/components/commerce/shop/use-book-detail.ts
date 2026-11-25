@@ -8,7 +8,9 @@ const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
 const inOutQuad = (x: number) => (x < 0.5 ? 2 * x * x : 1 - (-2 * x + 2) ** 2 / 2);
 
 /** What the hook needs from its page: raw scroll progress, the hrefs to show in the address bar, and where the shop is. */
-export type BookDetailSource = { rawProgress: () => number; hrefOf: (index: number) => string | null; home: string };
+export type BookDetailSource = { rawProgress: () => number; hrefOf: (index: number) => string | null; home: string;
+  /** Commit the scene's progress to the open book (theirs: `e6(e)` when the detail settles) and release it on close. */
+  pin: (index: number) => void; unpin: () => void };
 
 /**
  * Their book detail (06w9), desktop: a click on a shelf spine carries that book into its details inside the scene.
@@ -31,6 +33,7 @@ export function useBookDetail(hub: SceneHub, catalogue: SceneCatalogue, router: 
 
   const cancel = () => { clock.current.token += 1; if (clock.current.frame) cancelAnimationFrame(clock.current.frame); clock.current.frame = 0; };
   const settle = useCallback((index: number) => {
+    source.current.pin(index);
     setOpen(index); setLeaving(false);
     window.dispatchEvent(new Event("resize"));
   }, []);
@@ -78,9 +81,9 @@ export function useBookDetail(hub: SceneHub, catalogue: SceneCatalogue, router: 
     };
     clock.current.frame = requestAnimationFrame(step);
     return true;
-  }, [hub, catalogue, settle]);   // eslint-disable-line react-hooks/exhaustive-deps
+  }, [hub, catalogue, settle, source]);   // eslint-disable-line react-hooks/exhaustive-deps
 
-  const closeState = useCallback(() => { setOpen(null); setPresenting(false); setLeaving(false); }, []);
+  const closeState = useCallback(() => { setOpen(null); setPresenting(false); setLeaving(false); source.current.unpin(); }, [source]);
 
   const closeBook = useCallback((fromHistory = false) => {
     if (open == null) return;

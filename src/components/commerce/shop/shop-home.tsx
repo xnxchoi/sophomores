@@ -170,9 +170,16 @@ function Home({ vendored, items, labels }: { vendored: Vendored; items: Item[]; 
   useShelfCatch(hub, catalogue, catchSource);
 
   // Opening a book into its details inside the scene (use-book-detail.ts); the phone keeps the product page for now.
-  const detailSource = useRef<BookDetailSource>({ rawProgress: () => 0, hrefOf: () => null, home: "/shop" });
+  const detailSource = useRef<BookDetailSource>({ rawProgress: () => 0, hrefOf: () => null, home: "/shop", pin: () => undefined, unpin: () => undefined });
   useEffect(() => { detailSource.current = { rawProgress: () => hub.scrollProgressDirectLiveRef.current as number,
-    hrefOf: (index) => items[index]?.href ?? null, home: "/shop" }; });
+    hrefOf: (index) => items[index]?.href ?? null, home: "/shop",
+    // The scene poses an open book by the progress in its details: at the open book's own index, the top of them.
+    pin: (index) => {
+      progressRef.current = index; hub.scrollProgressDirectLiveRef.current = index;
+      hub.spineViewProgressLiveRef.current = hub.spineViewProgressFor(index); setCommitted(index);
+    },
+    // Back to the page's own scroll (it held still while open).
+    unpin: () => window.dispatchEvent(new Event("scroll")) }; });
   const detail = useBookDetail(hub, catalogue, router, tokens, detailSource);
   const openRef = useRef((index: number) => { const item = items[index]; if (item) navigate.push(item.href); });
   useEffect(() => { openRef.current = (index: number) => {

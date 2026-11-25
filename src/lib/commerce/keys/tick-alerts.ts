@@ -40,7 +40,7 @@ const FAILURE_REASONS: ReadonlySet<string> = new Set([
  */
 export const FENCE_REASONS: readonly string[] = Object.freeze([
   "fence_unknown_quiescence", "fence_query_failed", "fence_stop_hung", "fence_live_permit_left",
-  "fence_install_failed", "fence_verify_failed",
+  "fence_install_failed", "fence_verify_failed", "fence_marker_failed",
 ]);
 const FENCE_REASON_SET: ReadonlySet<string> = new Set(FENCE_REASONS);
 const UNRECOGNISED = "unrecognised";

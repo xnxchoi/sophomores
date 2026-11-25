@@ -13,6 +13,8 @@ const GUARD = resolve("deployment/ops/kj-guard.sh");
 const IMAGE = `sha256:${"a".repeat(64)}`;
 const CID = "b".repeat(64);
 const INVOCATION = "0123456789abcdef0123456789abcdef";
+const MAIL_ENV = ["MEMBER_AUTH_MAIL_MODE=smtp", "MEMBER_AUTH_SMTP_HOST=smtp.zeptomail.com", "MEMBER_AUTH_SMTP_PORT=465",
+  "MEMBER_AUTH_SMTP_USERNAME=x", "MEMBER_AUTH_SMTP_PASSWORD=x", "MEMBER_AUTH_SMTP_FROM=x@example.com", "KEY_GRANT_ALERT_TO=x@example.com"].join("\n") + "\n";
 const FENCE_LIST_SHA = createHash("sha256").update("table inet key_grant_fence_@ { stub }\n").digest("hex");
 
 const STUBS: Record<string, string> = {
@@ -45,7 +47,9 @@ case "$*" in
   "-f -") n="$(sed -nE 's/^add table inet key_grant_fence_([0-9a-f]{16})$/\\1/p')"; : >"$STUB/tables/$n" ;;
   "-s list table inet key_grant_fence_"*) n="\${5#key_grant_fence_}"; [ -e "$STUB/tables/$n" ] || exit 1; echo "table inet key_grant_fence_$n { stub }" ;;
   "delete table inet key_grant_fence_"*) n="\${4#key_grant_fence_}"
-      if [ -e "$KJ_ROOT/fence/$n" ]; then echo "marker_present_at_delete $n" >>"$STUB/log"; fi; rm -f "$STUB/tables/$n" ;;
+      [ -e "$STUB/nft_delete_fail" ] && exit 1
+      if [ ! -e "$KJ_ROOT/fence/$n" ]; then echo "marker_gone_before_delete $n" >>"$STUB/log"; fi; rm -f "$STUB/tables/$n"
+      if [ -e "$STUB/nft_fail_after_delete" ]; then : >"$STUB/nft_fail"; fi ;;
   *) exit 0 ;;
 esac`,
   // No bridge in the test host: the packet probe is deferred (key-grant-fence-probe.service runs it after Docker).
@@ -69,7 +73,7 @@ function setup() {
   writeFileSync(join(kj, "rpc/polygon-rpc.env"), "");
   writeFileSync(join(kj, "signer/polygon-key-granter.env"), "");
   writeFileSync(join(kj, "config/key-job.env"), "DATABASE_URI=x\nPAYLOAD_SECRET=x\nKEY_GRANT_POLYGON_MAX_COST_WEI=1\n");
-  writeFileSync(join(kj, "mail/alert-mail.env"), "MEMBER_AUTH_MAIL_MODE=smtp\nMEMBER_AUTH_SMTP_HOST=x\nKEY_GRANT_ALERT_TO=x\n");
+  writeFileSync(join(kj, "mail/alert-mail.env"), MAIL_ENV);
   chmodSync(GUARD, 0o755);
   const guard = (...args: string[]) => {
     const result = spawnSync("bash", [GUARD, ...args], { encoding: "utf8", env: {
@@ -158,7 +162,7 @@ test("fence: marker then table per generation; unfence N releases N only, marker
   assert.equal(event(released.out), "released", released.out);
   assert.deepEqual(markers(), [second]);
   assert.deepEqual(tables(), [second], "generation M still blocks after N is removed");
-  assert.doesNotMatch(log(), /marker_present_at_delete/);
+  assert.doesNotMatch(log(), /marker_gone_before_delete/, "the marker stays until the table is confirmed gone");
   assert.match(log(), /systemctl stop docker\.socket docker\.service/);
   assert.equal(event(guard("run", "tick").out), "fenced");
   assert.equal(event(guard("fence", "rm -rf").out), "reason_invalid");
@@ -278,5 +282,30 @@ test("config is parsed as data: unknown keys, duplicates or shell syntax refuse"
     writeFileSync(join(kj, "config/guard.conf"), conf);
     writeFileSync(join(kj, "config/key-job.env"), `DATABASE_URI=${value}\n`);
     assert.equal(event(guard("run", "tick").out), "keyjob_env_refused", value);
+  }
+});
+
+test("unfence keeps the marker when the delete fails or the listing after it fails", () => {
+  const { stub, guard, markers } = setup();
+  guard("fence", "fence_unknown_quiescence");
+  const [n] = markers();
+  writeFileSync(join(stub, "nft_delete_fail"), "");
+  assert.equal(event(guard("unfence", n!).out), "table_delete_failed");
+  assert.deepEqual(markers(), [n]);
+  rmSync(join(stub, "nft_delete_fail"));
+  writeFileSync(join(stub, "nft_fail_after_delete"), "");
+  assert.equal(event(guard("unfence", n!).out), "release_unverified");
+  assert.deepEqual(markers(), [n], "admission stays refused by the marker");
+  rmSync(join(stub, "nft_fail")); rmSync(join(stub, "nft_fail_after_delete"));
+  assert.equal(event(guard("sweep").out), "swept", "the sweep restores the table for the kept marker (fail closed)");
+  assert.equal(event(guard("unfence", n!).out), "released");
+});
+
+test("mail env: exactly the mailer's seven keys, all required, mode smtp", () => {
+  const { kj, guard } = setup();
+  for (const env of [MAIL_ENV.replace(/^MEMBER_AUTH_SMTP_FROM=.*\n/m, ""), `${MAIL_ENV}MEMBER_AUTH_SMTP_EXTRA=x\n`,
+    MAIL_ENV.replace("MEMBER_AUTH_MAIL_MODE=smtp", "MEMBER_AUTH_MAIL_MODE=disabled")]) {
+    writeFileSync(join(kj, "mail/alert-mail.env"), env);
+    assert.equal(event(guard("run", "mail").out), "mail_env_refused");
   }
 });

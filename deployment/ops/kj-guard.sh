@@ -27,7 +27,7 @@ CONF="$KJ/config/guard.conf"
 LABEL=co.sophomores.key-job
 RUNLABEL=co.sophomores.key-job-run
 DOCKER_TIMEOUT=20   # every Docker call made under the lock is bounded (timeout -k 5 20)
-FENCE_REASONS=" fence_unknown_quiescence fence_query_failed fence_stop_hung fence_live_permit_left fence_install_failed fence_verify_failed "
+FENCE_REASONS=" fence_unknown_quiescence fence_query_failed fence_stop_hung fence_live_permit_left fence_install_failed fence_verify_failed fence_marker_failed "
 
 say() { printf '{"guard":"%s","event":"%s"%s}\n' "${CMD:-}" "$1" "${2:+,$2}"; }
 die() { say "$1" "${2:-}"; exit "${3:-1}"; }
@@ -168,14 +168,16 @@ gen_lock() { mkdir -p -m 0700 "$RUN"; exec 7>"$RUN/gen-$1.lock"; flock -w "${2:-
 gen_unlock() { exec 7>&-; }
 
 # Steps 2-3 for generation N (v6 §1): install, verify the owned definition, then packets when the bridge exists.
-# From a sweep, only a generation whose marker still exists once its lock is held; from a fence, always.
+# A published generation (its marker was written) is completed only while its marker still exists once N's lock is
+# held, by every completer (the fencer itself, a sweep, restore, probe-all): a delayed completer can never recreate N
+# after a release. "unpublished" is only the fencer's own generation whose marker write failed (see fence).
 complete_generation() {
-  local n="$1" mode="${2:-probe}" from="${3:-fence}" probe=0
+  local n="$1" mode="${2:-probe}" from="${3:-published}" probe=0
   if ! gen_lock "$n"; then
-    [ "$from" = sweep ] && return 0   # a release of N holds it: the next sweep looks again
+    [ "$from" = published ] && [ "${4:-}" = sweep ] && return 0   # a release of N holds it: the next sweep looks again
     escalate fence_install_failed; return 1
   fi
-  if [ "$from" = sweep ] && [ ! -f "$FENCE_DIR/$n" ]; then gen_unlock; return 0; fi
+  if [ "$from" = published ] && [ ! -f "$FENCE_DIR/$n" ]; then gen_unlock; RELEASED_MEANWHILE=1; return 0; fi
   if ! install_table "$n" || ! owned_definition "$n"; then gen_unlock; escalate fence_install_failed; return 1; fi
   gen_unlock
   [ "$mode" = probe ] || return 0
@@ -186,17 +188,30 @@ complete_generation() {
   esac
 }
 
+publish_marker() {
+  local n="$1" reason="$2" tmp="$FENCE_DIR/.$1.tmp"
+  mkdir -p -m 0700 "$FENCE_DIR" && printf '%s %s %s\n' "$n" "$reason" "$(date -u +%s)" >"$tmp" && sync "$tmp" &&
+    mv "$tmp" "$FENCE_DIR/$n" && sync "$FENCE_DIR"
+}
 fence() {
-  local reason="$1" n tmp
+  local reason="$1" n
   n="$(hex16)"
-  mkdir -p -m 0700 "$FENCE_DIR"
-  tmp="$FENCE_DIR/.$n.tmp"
-  { printf '%s %s %s\n' "$n" "$reason" "$(date -u +%s)" >"$tmp" && sync "$tmp" && mv "$tmp" "$FENCE_DIR/$n" && sync "$FENCE_DIR"; } ||
-    crit fence_marker_failed   # the table still goes in: adding a drop only moves toward safety
-  load_fence_conf   # after the marker: the intent is durable before any configuration is read
-  escalate "$reason"
-  complete_generation "$n" || die fence_incomplete "\"generation\":\"$n\""
-  say fenced "\"generation\":\"$n\""
+  RELEASED_MEANWHILE=0
+  if publish_marker "$n" "$reason" || publish_marker "$n" "$reason"; then
+    load_fence_conf   # after the marker: the intent is durable before any configuration is read
+    escalate "$reason"
+    complete_generation "$n" probe published || die fence_incomplete "\"generation\":\"$n\""
+    # Released by an operator between publish and completion: nothing is recreated (the release proved quiescence).
+    [ "$RELEASED_MEANWHILE" = 0 ] || die released_meanwhile "\"generation\":\"$n\""
+    say fenced "\"generation\":\"$n\""
+  else
+    # The marker can't be written (twice). The drop still goes in, as an unpublished table: admission refuses while
+    # it exists, but a reboot would not restore it (restore works from markers). Escalated as its own reason, exit 1.
+    load_fence_conf
+    escalate "$reason"; escalate fence_marker_failed
+    complete_generation "$n" probe unpublished || true
+    die fence_unpublished "\"generation\":\"$n\""
+  fi
 }
 
 sweep() {
@@ -206,7 +221,7 @@ sweep() {
     installed="$(tables)" || { escalate fence_install_failed; installed=""; }
     for n in $(markers); do
       printf '%s\n' "$installed" | grep -qx "$n" && continue
-      complete_generation "$n" "$mode" sweep || failed=1
+      complete_generation "$n" "$mode" published sweep || failed=1
     done
     after="$(markers | sha256sum)"
     [ "$before" = "$after" ] && break   # a newer marker landed meanwhile: sweep again
@@ -218,7 +233,7 @@ sweep() {
 probe_all() {
   local n rc failed=0
   for n in $(markers); do
-    if ! owned_definition "$n"; then escalate fence_install_failed; complete_generation "$n" probe sweep || failed=1; continue; fi
+    if ! owned_definition "$n"; then escalate fence_install_failed; complete_generation "$n" probe published sweep || failed=1; continue; fi
     rc=0; packet_probe "$n" || rc=$?
     [ "$rc" = 0 ] || { escalate fence_verify_failed; failed=1; }
   done
@@ -246,12 +261,12 @@ check_env_file() {
   [ -z "$(printf '%s\n' "$keys" | uniq -d)" ] || return 1
   for key in $keys; do
     [[ " $allowed " == *" $key "* ]] && continue
-    [[ " $allowed " == *" MEMBER_AUTH_SMTP_* "* && "$key" == MEMBER_AUTH_SMTP_* ]] && continue
     return 1
   done
   for key in $required; do printf '%s\n' "$keys" | grep -qx "$key" || return 1; done
 }
 KEYJOB_KEYS="DATABASE_URI PAYLOAD_SECRET BETTER_AUTH_SECRET KEY_GRANT_POLYGON_MAX_COST_WEI KEY_GRANT_POLYGON_EVENT_LOCKS"
+MAIL_KEYS="MEMBER_AUTH_MAIL_MODE MEMBER_AUTH_SMTP_HOST MEMBER_AUTH_SMTP_PORT MEMBER_AUTH_SMTP_USERNAME MEMBER_AUTH_SMTP_PASSWORD MEMBER_AUTH_SMTP_FROM KEY_GRANT_ALERT_TO"
 live_value_ok() { [ "$(sed -nE 's/^KEY_GRANT_POLYGON_LIVE=(.*)$/\1/p' "$1")" = 1 ]; }
 
 # Every key-job container of a unit, any state: "ID STATE RUN" lines. A failed query, or any line not exactly that
@@ -329,8 +344,9 @@ preflight_files() {
           live_value_ok "$KJ/config/scheduled.env"; } || die scheduled_env_refused
       fi ;;
     mail)
-      check_env_file "$KJ/mail/alert-mail.env" "2002:2002 400" "MEMBER_AUTH_MAIL_MODE KEY_GRANT_ALERT_TO MEMBER_AUTH_SMTP_*" \
-        "MEMBER_AUTH_MAIL_MODE KEY_GRANT_ALERT_TO" || die mail_env_refused ;;
+      # Exactly the member mailer's keys (mail-config.ts loadMemberMailConfig), all required: mode smtp and its five.
+      { check_env_file "$KJ/mail/alert-mail.env" "2002:2002 400" "$MAIL_KEYS" "$MAIL_KEYS" &&
+        [ "$(sed -nE 's/^MEMBER_AUTH_MAIL_MODE=(.*)$/\1/p' "$KJ/mail/alert-mail.env")" = smtp ]; } || die mail_env_refused ;;
   esac
 }
 
@@ -472,7 +488,7 @@ generation_state() {
   if [ "$has_table" = 1 ] && ! owned_definition "$n"; then echo table_not_owned; return 1; fi
   case "$has_marker$has_table" in
     11) STATE="marker table" ;;
-    01) STATE=orphan ;;   # a release that died after deleting the marker: finish it
+    01) STATE=orphan ;;   # an unpublished fence (its marker write failed) or an older release: finish it
     10) echo generation_incomplete; return 1 ;;   # the sweep hasn't installed it yet: let it, then release
     *) echo generation_unknown; return 1 ;;
   esac
@@ -511,13 +527,15 @@ unfence() {
   gen_lock "$n" 60 || die generation_busy
   refusal="$(generation_state "$n")" || die "$refusal"
   STATE=""; generation_state "$n" >/dev/null || die generation_changed   # sets STATE in this shell
-  if [ "$STATE" = "marker table" ]; then
-    rm -f "${FENCE_DIR:?}/${n:?}"; sync "$FENCE_DIR" 2>/dev/null || true   # marker first: the table still refuses admission
-  fi
+  # The durable marker stays until a successful listing positively shows the table gone, under both locks: until
+  # then admission refuses (marker) and restore and the sweep would reinstall the table (fail closed).
   nft delete table inet "key_grant_fence_$n" || die table_delete_failed
-  # Released only once a successful listing shows N gone and its marker absent.
   listed="$(tables)" || die release_unverified
-  if printf '%s\n' "$listed" | grep -qx "$n" || [ -e "$FENCE_DIR/$n" ]; then die release_unverified; fi
+  if printf '%s\n' "$listed" | grep -qx "$n"; then die release_unverified; fi
+  if [ "$STATE" = "marker table" ]; then
+    rm -f "${FENCE_DIR:?}/${n:?}" && sync "$FENCE_DIR" || die marker_remove_failed
+  fi
+  [ ! -e "$FENCE_DIR/$n" ] || die release_unverified
   gen_unlock
   say released "\"generation\":\"$n\",\"remaining\":$( { markers; printf '%s\n' "$listed"; } | sort -u | grep -c . || true)"
 }

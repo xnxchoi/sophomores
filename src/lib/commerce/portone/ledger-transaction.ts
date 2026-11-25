@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 import type { PostgresAdapter } from '@payloadcms/db-postgres'
 // The adapter's own re-export of drizzle-orm/node-postgres (Payload's documented drizzle proxy), so the ledger binds
 // the exact Drizzle copy the adapter resolves (two drizzle-orm copies are installed, one per pg peer). A bundled static
-// import: Turbopack compiled the old createRequire(resolve(...)) into createRequire(<module id>), which throws.
+// import: Turbopack compiled the old runtime require-from-resolved-path into a call on a numeric module id, which throws.
 import { drizzle } from '@payloadcms/db-postgres/drizzle/node-postgres'
 import type { PayloadRequest } from 'payload'
 

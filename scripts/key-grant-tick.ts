@@ -60,7 +60,8 @@ async function tick() {
         try { await client.query("SELECT pg_advisory_unlock(hashtext($1))", [RUN_LOCK]); } finally { client.release(); }
       };
     };
-    return await runKeyGrantTick({ payload, grant, acquire });
+    // Alert lines are written synchronously, like the result line, so none is lost when the process exits.
+    return await runKeyGrantTick({ payload, grant, acquire, log: (line) => writeSync(2, line + "\n") });
   } finally {
     await payload.destroy();
   }

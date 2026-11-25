@@ -1,10 +1,15 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { test } from "node:test";
 import { encodeAbiParameters, keccak256, numberToHex, type Hex } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { runKeyGrantTick } from "@/lib/commerce/keys/grant-catch-up";
 import { createUnlockKeyGrantAdapter } from "@/lib/commerce/keys/unlock/adapter";
 import { fakePayload, type Row } from "./support/fake-payload";
+import { overCapTick } from "./support/over-cap-tick";
 import { address, healthyChain, lockAddress, lockCalls, mockChain, recipient, uint, uintArray } from "./support/mock-chain";
 
 // The key-grant tick (owner, 24 Nov: "automatic catchup it is"; coordinator: wire the cancel runner, OFF until go-live).
@@ -16,7 +21,7 @@ const owed = (id: string, unit: number, extra: Record<string, unknown> = {}): Ro
   ({ id, operationKey: `unlock-grant:v1:order-${id}:${unit}`, entitlement: "adm", state: "pending", attempts: 0, target, ...extra });
 
 const bool = (value: boolean): Hex => encodeAbiParameters([{ type: "bool" }], [value]);
-// The mock's block is number 100; at this head it sits exactly at Polygon's 256-block depth.
+// The mock's block is number 100, and the mock names it finalized (Polygon settles at the finalized block).
 const buriedHead = numberToHex(100 + 256 - 1);
 
 function grantAdapter(keyValid?: boolean | (() => never)) {
@@ -66,7 +71,7 @@ test("an owed key is granted once; the next tick does not send it again", async 
   const { payload, rows } = fakePayload([owed("a", 1)]);
   const lock = runLock();
   const first = await runKeyGrantTick({ payload, grant: adapter, acquire: lock.acquire, env: live, now });
-  assert.deepEqual(first, { outcome: "ran", reconciled: 0, replaced: 0, dispatched: 1, cancelled: 0, seatsReleased: 0, seatSweepFailures: 0 });
+  assert.deepEqual(first, { outcome: "ran", reconciled: 0, replaced: 0, dispatched: 1, cancelled: 0, seatsReleased: 0, seatSweepFailures: 0, overCap: [] });
   const second = await runKeyGrantTick({ payload, grant: adapter, acquire: lock.acquire, env: live, now });
   assert.equal(second.outcome === "ran" && second.dispatched, 0);
   assert.equal(raws.length, 1, "one transaction for the order");
@@ -149,11 +154,44 @@ test("a failed seat sweep does not fail the tick: it is counted, written as one 
   const ledger = rows["commerce-reconciliations"];
   delete rows["commerce-reconciliations"]; // the sweep's ledger read now throws
   const failed = await runKeyGrantTick({ payload, grant: adapter, acquire: runLock().acquire, env: live, now, log: (line) => lines.push(line) });
-  assert.deepEqual(failed, { outcome: "ran", reconciled: 0, replaced: 0, dispatched: 0, cancelled: 0, seatsReleased: 0, seatSweepFailures: 1 });
+  assert.deepEqual(failed, { outcome: "ran", reconciled: 0, replaced: 0, dispatched: 0, cancelled: 0, seatsReleased: 0, seatSweepFailures: 1, overCap: [] });
   assert.deepEqual(lines, ['{"event":"seat_sweep_failed","count":1}'], "no message, id or customer data");
   rows["commerce-reconciliations"] = ledger;
   const retried = await runKeyGrantTick({ payload, grant: adapter, acquire: runLock().acquire, env: live, now, log: (line) => lines.push(line) });
   assert.equal(retried.outcome === "ran" && retried.seatSweepFailures, 0);
   assert.equal(lines.length, 1);
   assert.equal(rows["commerce-reconciliations"].length, 1, "the retry saved its cursor");
+});
+
+// Review-A, 25 Nov (r10): the over-cap alert must survive the tick's exit. Its intent IDs ride in the result line, and
+// both lines are written synchronously before an immediate exit.
+test("an over-cap grant is reported in the tick's result line and as one alert line, and stays submitted", async () => {
+  const { run, rows, methods } = overCapTick();
+  const lines: string[] = [];
+  const result = await run((line) => lines.push(line));
+  assert.deepEqual(result, { outcome: "ran", reconciled: 0, replaced: 0, dispatched: 0, cancelled: 0, seatsReleased: 0, seatSweepFailures: 0, overCap: ["i9"] });
+  assert.deepEqual(lines, ['{"event":"key_grant_over_cap","intent":"i9"}']);
+  assert.equal(rows["commerce-key-grant-intents"][0].state, "submitted");
+  assert.equal(methods().includes("eth_getBlockByHash"), false);
+});
+
+test("under a cron-style redirect and under pipes, both over-cap lines reach the log before the process exits", () => {
+  const fixture = join("tests", "commerce", "keys", "support", "over-cap-tick-exit.ts");
+  const folder = mkdtempSync(join(tmpdir(), "over-cap-"));
+  try {
+    // The runbook's cron line: `... >> <log> 2>&1`.
+    const log = join(folder, "tick.log");
+    const cron = spawnSync("sh", ["-c", `node --import tsx "${fixture}" >> "${log}" 2>&1`], { encoding: "utf8", timeout: 60_000 });
+    assert.equal(cron.status, 0);
+    const logged = readFileSync(log, "utf8").trim().split("\n");
+    assert.ok(logged.includes('{"event":"key_grant_over_cap","intent":"i9"}'), "stderr alert line in the log");
+    assert.ok(logged.some((line) => line.startsWith("{\"outcome\":\"ran\"") && JSON.parse(line).overCap[0] === "i9"), "result line with overCap");
+    // Pipes, as a systemd service's stdout and stderr (not proven on systemd itself here: macOS).
+    const piped = spawnSync("node", ["--import", "tsx", fixture], { encoding: "utf8", timeout: 60_000 });
+    assert.equal(piped.status, 0);
+    assert.deepEqual(JSON.parse(piped.stdout.trim()).overCap, ["i9"]);
+    assert.ok(piped.stderr.includes('{"event":"key_grant_over_cap","intent":"i9"}'));
+  } finally {
+    rmSync(folder, { recursive: true, force: true });
+  }
 });

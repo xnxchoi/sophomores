@@ -2,7 +2,7 @@ import type { Payload, PayloadRequest } from "payload";
 import type { KeyGrantAdapter } from "./contracts";
 import { polygonKeyGrantsLive } from "./unlock/polygon";
 import { releaseInvalidatedSeatsSweep } from "../seat-release";
-import { dispatchKeyGrants, reconcileKeyGrants, reconcileOwnerCancels, replaceStuckKeyGrants, type KeyStateReader } from "./worker";
+import { dispatchKeyGrants, logOverCap, reconcileKeyGrants, reconcileOwnerCancels, replaceStuckKeyGrants, type KeyStateReader } from "./worker";
 
 /*
  * The automatic catch-up for owed keys (owner, 24 Nov: "automatic catchup it is"), and the runner for refund cancels
@@ -28,7 +28,7 @@ export const KEY_GRANT_TICK_LIMIT = 10;
 
 export type KeyGrantTickResult =
   | Readonly<{ outcome: "off" | "busy" }>
-  | Readonly<{ outcome: "ran"; reconciled: number; replaced: number; dispatched: number; cancelled: number; seatsReleased: number; seatSweepFailures: number }>;
+  | Readonly<{ outcome: "ran"; reconciled: number; replaced: number; dispatched: number; cancelled: number; seatsReleased: number; seatSweepFailures: number; overCap: readonly string[] }>;
 
 export type KeyGrantTick = {
   payload: Payload;
@@ -39,7 +39,7 @@ export type KeyGrantTick = {
   env?: Readonly<Record<string, string | undefined>>;
   limit?: number;
   now?: () => Date;
-  /** Where the fixed failure line goes (stderr by default). */
+  /** Where the fixed alert lines go (stderr by default; the tick script writes them synchronously). */
   log?: (line: string) => void;
 };
 
@@ -48,7 +48,10 @@ export async function runKeyGrantTick({ payload, grant, acquire, env = process.e
   const release = await acquire();
   if (!release) return { outcome: "busy" };
   try {
-    const reconciled = await reconcileKeyGrants({ payload, adapter: grant, limit, now });
+    // Over-cap grants are alerted twice: the fixed stderr line, and their intent IDs in the result line, which the tick
+    // script writes synchronously before it exits (Review-A, 25 Nov: an alert must not be lost at exit).
+    const overCap: string[] = [];
+    const reconciled = await reconcileKeyGrants({ payload, adapter: grant, limit, now, onOverCap: (intentID) => { overCap.push(intentID); logOverCap(intentID, log); } });
     const replaced = await replaceStuckKeyGrants({ payload, adapter: grant, limit, now });
     const dispatched = await dispatchKeyGrants({ payload, adapter: grant, limit, now });
     const cancelled = await reconcileOwnerCancels({ payload, reader: grant, limit, now });
@@ -60,7 +63,7 @@ export async function runKeyGrantTick({ payload, grant, acquire, env = process.e
       seatSweepFailures = 1;
     }
     if (seatSweepFailures) log(JSON.stringify({ event: "seat_sweep_failed", count: seatSweepFailures }));
-    return { outcome: "ran", reconciled, replaced, dispatched, cancelled, seatsReleased, seatSweepFailures };
+    return { outcome: "ran", reconciled, replaced, dispatched, cancelled, seatsReleased, seatSweepFailures, overCap };
   } finally {
     await release();
   }

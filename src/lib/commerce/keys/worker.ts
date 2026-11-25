@@ -59,6 +59,8 @@ import type { KeyGrantTarget, RebroadcastInput } from "./contracts";
  */
 
 type Pass = { payload: Payload; adapter: KeyGrantAdapter; limit?: number; now?: () => Date };
+/** reconcileKeyGrants only: told each intent whose receipt is beyond the ancestry cap (default: logOverCap to stderr). */
+type ReconcilePass = Pass & { onOverCap?: (intentID: string) => void };
 type CancelPass = { payload: Payload; adapter: KeyCancelAdapter; limit?: number; now?: () => Date };
 const INTENTS = "commerce-key-grant-intents";
 const PAGE = 25;
@@ -451,7 +453,7 @@ export async function dispatchKeyGrants({ payload, adapter, limit = 10, now = ()
  * sends. Only one transaction per nonce can mine: a confirmed hash grants the
  * key, and a reverted one proves the nonce consumed without a key.
  */
-export async function reconcileKeyGrants({ payload, adapter, limit = 10, now = () => new Date() }: Pass): Promise<number> {
+export async function reconcileKeyGrants({ payload, adapter, limit = 10, now = () => new Date(), onOverCap = (intentID) => logOverCap(intentID) }: ReconcilePass): Promise<number> {
   let settled = 0;
   for await (const row of due(payload, { and: [{ state: { in: ["submitted", "ambiguous"] } }, { txHash: { exists: true } }] }, now)) {
     if (settled >= limit) break;
@@ -475,7 +477,7 @@ export async function reconcileKeyGrants({ payload, adapter, limit = 10, now = (
     }
     const result = outcomes.find((entry) => entry.outcome.kind === "confirmed") ?? outcomes.find((entry) => entry.outcome.kind === "definitelyReverted");
     if (!result) {
-      if (outcomes.some((entry) => entry.outcome.kind === "unknown" && entry.outcome.code === beyondAncestryCap)) logOverCap(row.id);
+      if (outcomes.some((entry) => entry.outcome.kind === "unknown" && entry.outcome.code === beyondAncestryCap)) onOverCap(String(row.id));
       await deferOrSurface(payload, row, now());
       continue;
     }
@@ -486,8 +488,9 @@ export async function reconcileKeyGrants({ payload, adapter, limit = 10, now = (
 
 /**
  * One fixed stderr line for a grant whose receipt sits further below the finalized block than the tick walks
- * (ANCESTRY_CAP): it stays pending until a person runs the one-shot reconcile (deployment/KEY-GRANTS.md). Printed on
- * every tick while it lasts; no address, order or customer data.
+ * (ANCESTRY_CAP): it stays pending until a person runs the one-shot reconcile (deployment/KEY-GRANTS.md). Printed each
+ * time the row comes due, not every tick: an unanswered reconcile is deferred RECONCILE_RECHECK_MS (2 min). The tick
+ * also returns these IDs in its result line (grant-catch-up.ts). No address, order or customer data.
  */
 export function logOverCap(intentID: string, log: (line: string) => void = (line) => console.error(line)): void {
   log(JSON.stringify({ event: "key_grant_over_cap", intent: String(intentID) }));

@@ -40,14 +40,18 @@ The code is `src/lib/commerce/keys/` (worker passes, `grant-catch-up.ts`, `unloc
   - **What this does and does not catch:** these checks detect an RPC whose answers contradict each other. They do not
     detect every way a pool of backends can mix answers, and nothing in one RPC's answers can expose a consistently
     dishonest RPC.
-  - **Live prerequisite: owner choice pending (25 Nov).** `KEY_GRANT_POLYGON_RPC_URL` must be an RPC the owner
-    chooses and trusts to answer from a single view of the chain. Unlock's hosted RPC
-    (`https://rpc.unlock-protocol.com/137`) was proposed for launch and is on hold. Its published source rate-limits
-    reads such as `eth_getBlockByHash`, receipts and `eth_blockNumber` per IP (10 per 10 s and 1,000 per hour per
-    method), which makes the 256-block ancestry walk take minutes and the recovery walk impossible. It also falls back
-    to other public endpoints on errors, and its README asks production apps to use their own RPC. The decision goes
-    to the owner. Until it is recorded here, Polygon stays off. A free public pool does not qualify. The code reads
-    one RPC; it does not corroborate against a second.
+  - **Live RPC: Alchemy (owner decision, 25 Nov, verbatim: "Sure, we use alchemy").** `KEY_GRANT_POLYGON_RPC_URL` is
+    the https URL of the owner's Alchemy app for Polygon mainnet (the provider key is in the URL path). It lives only
+    in an owner-only file on the tick host, `~/.config/sphmrs/polygon-rpc.env` (mode 0600, not a symlink), as
+    `KEY_GRANT_POLYGON_RPC_URL=https://...`. It is never pasted in chat, committed or printed. The scheduler loads it
+    into the tick's environment (systemd `EnvironmentFile=`, or `set -a; . ~/.config/sphmrs/polygon-rpc.env; set +a`
+    in the cron line). The owner accepts Alchemy as the trusted single-view provider; the code still reads one RPC
+    and does not corroborate against a second.
+  - **Why not Unlock's hosted RPC** (`https://rpc.unlock-protocol.com/137`, proposed for launch, then dropped): its
+    published source rate-limits reads such as `eth_getBlockByHash`, receipts and `eth_blockNumber` per IP (10 per 10 s
+    and 1,000 per hour per method, exempting only calls to Unlock contracts). That makes the 256-block ancestry walk
+    take minutes and the recovery walk impossible. It also falls back to other public endpoints on errors, and its
+    README asks production apps to use their own RPC. A free public pool does not qualify either.
   - **The cap applies on both chains.** Base Sepolia settles at 10 blocks deep, so its receipts are tied to the
     settled block by the same walk and the same 256-block cap.
 - **Over-cap alert and recovery:** at one tick a minute a receipt is checked within a few blocks of finality. If the
@@ -93,7 +97,7 @@ The code is `src/lib/commerce/keys/` (worker passes, `grant-catch-up.ts`, `unloc
 |---|---|---|---|
 | `KEY_GRANT_POLYGON_LIVE` | tick host | unset = off | Exactly `1` turns Polygon grants on. Anything else keeps them off. |
 | `KEY_GRANT_POLYGON_MAX_COST_WEI` | tick host | none. Required when on | The approved worst case for one transaction (gas limit × max fee), in wei. It must be at most 5 POL. Set it from a quote at go-live (below). Without it no Polygon transaction is built. |
-| `KEY_GRANT_POLYGON_RPC_URL` | tick host | none. Required when on | A Polygon mainnet RPC, https only. **Owner choice pending** (RPC trust, above): owner-chosen and trusted, single view, not a load-balanced public pool. It must answer `eth_getBlockByNumber("finalized")`; without that, nothing ever settles (fail closed). Check before go-live (below). |
+| `KEY_GRANT_POLYGON_RPC_URL` | tick host | none. Required when on | The owner's Alchemy Polygon mainnet URL, https only, loaded from `~/.config/sphmrs/polygon-rpc.env` (0600); never printed (RPC trust, above). It must answer `eth_getBlockByNumber("finalized")`; without that, nothing ever settles (fail closed). Check before go-live (below). |
 | `KEY_GRANT_POLYGON_EVENT_LOCKS` | tick host (and wherever the export runs) | empty = no event locks | A comma list of event-ticket lock addresses on Polygon, one per event. Tonight it is the Edition I lock `0xef6414927acb08f4d5a35cc9e5de07b9f3255060`. Any entry that is not an address stops the tick (`bad_event_locks`). A ticket whose lock is not listed (nor Signet) parks with `lock_not_enabled`. That lock's `maxKeysPerAddress` is 1 on chain: a member plus two guests on one wallet fails until the owner sets it to 3. |
 | `UNLOCK_LIVE_GRANTER_PRIVATE_KEY`, `UNLOCK_LIVE_GRANTER_ADDRESS` | `~/.config/sphmrs/polygon-key-granter.env` on the tick host, mode 0600, owned by the tick's user | none | The grant signer. These are **not** app env and **not** in the VPS env allowlist. The address must be `0x2CDb…5336`; any other is refused. |
 | `MEMBER_WALLET_LOCK_ADDRESS` (existing) | app and tick | | It must be the Signet lock above on Polygon. |
@@ -102,9 +106,11 @@ There is **no lock-manager key on any of our hosts** (ADR-0008, ADR-0011). The o
 
 ## Go-live (the owner)
 **Live gates still open (25 Nov), each recorded here before the switch goes on:**
-1. **RPC:** the owner's choice of `KEY_GRANT_POLYGON_RPC_URL` (RPC trust, above), then a read-only validation of it
-   (step 3: chain 137, `finalized` a few blocks behind `latest`, the block numbered at the finalized height has the
-   finalized hash, and a short `parentHash` walk by hash succeeds without rate limiting).
+1. **RPC:** the owner creates the Alchemy app and the file `~/.config/sphmrs/polygon-rpc.env` (above). Then a
+   read-only validation: `node --import tsx scripts/key-grant-rpc-check.ts` must print `"outcome":"pass"`. It checks
+   chain 137; the `latest`, `safe` and `finalized` tags; `finalized` a few blocks behind `latest` (at most 128); the
+   block numbered at the finalized height carrying the finalized hash; a 10-block `parentHash` walk by hash; and
+   latency. It prints the URL's host, never its path, and uses no account. Record the result line here.
 2. **Over-cap alert through the real scheduler:** on the tick host, under the actual scheduler (systemd timer or cron),
    run a synthetic over-cap tick and confirm both the result line's `overCap` and the
    `{"event":"key_grant_over_cap",...}` line reach the scheduler's log and the alert. The unit test proved it only

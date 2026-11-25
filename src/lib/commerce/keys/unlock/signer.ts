@@ -24,7 +24,7 @@ export class SignerLoadError extends Error {
 }
 
 /** Reads a regular, non-symlinked file owned by `uid` with no group or other access. */
-async function readOwnerOnly(file: string, uid: number | undefined): Promise<string> {
+export async function readOwnerOnly(file: string, uid: number | undefined): Promise<string> {
   let link: boolean;
   try { link = (await lstat(file)).isSymbolicLink(); } catch { throw new SignerLoadError("Signer file is missing or unreadable"); }
   if (link) throw new SignerLoadError("Signer file must not be a symbolic link");

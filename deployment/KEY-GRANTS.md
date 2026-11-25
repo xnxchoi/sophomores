@@ -180,8 +180,10 @@ script with this signer anywhere else, and never use this signer from another ho
 6. **Release is a separate, approved act (coordinator's go):** `kj-guard unfence <N>` for each generation. It keeps
    admission locked, stops and restarts Docker (with `live-restore` off this interrupts the preview and needs the
    owner's approval), then requires both units inactive with empty cgroups, the timer disabled, a successful listing
-   with no tick or first-run container, and every run record proven absent. Only then does it remove that
-   generation's marker, then its table. Any other generation stays in force.
+   with no tick or first-run container, and every run record proven absent. Before changing anything it also needs a
+   successful nft listing and a table that is ours; a marker whose table isn't installed yet waits for the sweep. Only
+   then does it remove that generation's marker, then its table, and it says "released" only once a fresh listing
+   shows both gone. Any other generation stays in force.
 7. Resume only after a complete queue receipt.
 
 ## Refund cancels (the owner, from his wallet)

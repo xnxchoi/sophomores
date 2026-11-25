@@ -436,6 +436,9 @@ async function requeueRetryable(payload: Payload, now: () => Date, deadline?: nu
     if (pastDeadline(deadline, now)) break;
     await inIntent(payload, row.id, async (req, intent) => {
       if (intent.state !== "failed_retryable" || parked(String(intent.lastErrorCode ?? ""))) return;
+      // A first run limited to its allowlist does no maintenance: a refunded key's cancel releases seats order-wide
+      // (other admissions of the order), so it waits for a normal tick (Review-A, 26 Nov).
+      if (scope && intent.cancelRequested === true) return null;
       // A refunded key that never went out stays cancelled rather than retrying.
       const data = intent.cancelRequested === true ? { state: "cancelled", cancelledAt: now().toISOString() }
         : { state: "pending", txHash: null, tokenID: null, submittedAt: null, attemptID: null, nextAttemptAt: null, signer: null, nonce: null, sends: null, lastSentAt: null, settledTxHash: null };

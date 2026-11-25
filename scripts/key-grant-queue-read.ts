@@ -12,10 +12,13 @@ import type { Config, SanitizedConfig } from "payload";
  * then {"receipt":"complete","intents":n,"byState":{...}}. Anything less than a complete read prints
  * {"receipt":"receipt_incomplete"} and exits 1, so an empty list always means an empty queue.
  *
- * Read only, like key-cancel-export.ts: the key job's read role (sophomores_key_grant_read), its own connection with
- * every transaction read only (default_transaction_read_only, checked), schema push and migrations off, no database
- * creation. No RPC, no signer key: the signer is given as its public address.
+ * Read only, like key-cancel-export.ts: its own connection with every transaction read only
+ * (default_transaction_read_only, checked), schema push and migrations off, no database creation. It also checks it
+ * runs as the read role, sophomores_key_grant_read, with no write privilege on the intents table, and reads everything
+ * in one REPEATABLE READ, READ ONLY transaction (one snapshot). No RPC, no signer key: the signer is given as its
+ * public address.
  */
+const READ_ROLE = "sophomores_key_grant_read";
 async function readQueue(): Promise<string[]> {
   const args = process.argv.slice(2);
   if (args.length !== 2 || args[0] !== "--signer" || !/^0x[0-9a-fA-F]{40}$/.test(args[1] ?? "")) throw new Error("usage");
@@ -45,10 +48,20 @@ async function readQueue(): Promise<string[]> {
     pool.on("error", () => { /* The pending query reports failure; never print driver details. */ });
     const { rows } = await pool.query("SHOW default_transaction_read_only");
     if (rows[0]?.default_transaction_read_only !== "on") throw new Error("Receipt connection is not read only");
+    const role = await pool.query(`SELECT current_user AS role,
+      has_table_privilege('commerce_key_grant_intents', 'INSERT') OR has_table_privilege('commerce_key_grant_intents', 'UPDATE')
+        OR has_table_privilege('commerce_key_grant_intents', 'DELETE') OR has_table_privilege('commerce_key_grant_intents', 'TRUNCATE') AS writes`);
+    if (role.rows[0]?.role !== READ_ROLE || role.rows[0]?.writes !== false) throw new Error("Receipt role is not the read role");
     db.pool = pool;
     await db.connect();
-    const receipt = await readKeyGrantQueue({ payload, signer, pins });
-    return [...receipt.lines.map((line) => JSON.stringify(line)), JSON.stringify(receipt.summary)];
+    const transactionID = await db.beginTransaction({ isolationLevel: "repeatable read", accessMode: "read only" } as never);
+    if (!transactionID) throw new Error("No snapshot transaction");
+    try {
+      const receipt = await readKeyGrantQueue({ payload, signer, pins, req: { payload, transactionID } as never });
+      return [...receipt.lines.map((line) => JSON.stringify(line)), JSON.stringify(receipt.summary)];
+    } finally {
+      await db.rollbackTransaction(transactionID);
+    }
   } finally {
     try { await payload.destroy(); } finally { await pool?.end(); }
   }

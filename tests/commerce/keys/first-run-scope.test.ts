@@ -70,6 +70,16 @@ test("an empty scope does nothing at all", async () => {
   assert.equal(rows["commerce-key-grant-intents"][0].state, "pending");
 });
 
+test("a scoped run leaves a refunded retryable intent for normal maintenance: no order-wide seat release", async () => {
+  const { adapter } = grantAdapter();
+  const refunded = owed(A, { state: "failed_retryable", cancelRequested: true, lastErrorCode: "rpc_unavailable", order: "order" });
+  const { payload, rows } = fakePayload([refunded], [{ id: "adm", status: "available" }, { id: "sibling", status: "available" }]);
+  const before = structuredClone(rows["commerce-admissions"]);
+  await runKeyGrantTick({ payload, grant: adapter, acquire: lock(), env: live, now, scope: new Set([A]) });
+  assert.equal(rows["commerce-key-grant-intents"][0].state, "failed_retryable", "not cancelled during the first run");
+  assert.deepEqual(rows["commerce-admissions"], before, "no admission of the order was touched");
+});
+
 test("replacement never touches a stuck grant outside the list", async () => {
   const { adapter, raws } = grantAdapter();
   const stuck = owed(B, { state: "submitted", signer: adapter.signer, nonce: 0, txHash: `0x${"1".repeat(64)}`, lastSentAt: "2026-11-26T11:00:00.000Z",
@@ -115,6 +125,13 @@ test("queue receipt: listed by intent, target checked, the signer's in-flight in
   assert.equal(byID.c!.signerInFlight, true);
   assert.equal(byID.e!.target, "target_unset");
   assert.deepEqual(receipt.summary, { receipt: "complete", intents: 4, byState: { submitted: 1, pending: 2, ambiguous: 1 } });
+  const seen: unknown[] = [];
+  const spy = { ...payload, find: async (args: { req?: unknown; sort?: unknown; collection: string }) => {
+    seen.push([args.collection, args.sort, args.req]); return payload.find(args as never); } } as never;
+  const snapshot = { transactionID: "tx-snapshot" };
+  await readKeyGrantQueue({ payload: spy, signer, pins, req: snapshot as never });
+  assert.ok(seen.length >= 3 && seen.every((entry) => (entry as unknown[])[2] === snapshot), "every read in the one snapshot");
+  assert.ok(seen.filter((entry) => (entry as unknown[])[0] === "commerce-key-grant-intents").every((entry) => (entry as unknown[])[1] === "id"), "pages ordered by id");
   assert.equal(JSON.stringify(receipt).toLowerCase().includes(recipient.slice(2).toLowerCase()), false, "no address is printed");
 
   const broken = { ...payload, find: async () => { throw new Error("db"); } } as never;

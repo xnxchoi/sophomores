@@ -27,7 +27,8 @@ if [ -f "$STUB/stat_$b" ]; then cat "$STUB/stat_$b"; exit 0; fi
 case "$fmt" in '%u:%a') echo 0:600 ;; *) case "$b" in polygon-rpc.env|polygon-key-granter.env) echo "1000:1000 600" ;; alert-mail.env) echo "2002:2002 400" ;; *) echo "1000:1000 400" ;; esac ;; esac`,
   docker: `echo "docker $*" >>"$STUB/log"
 case "$1" in
-  image|inspect) echo "${IMAGE}" ;;
+  image) echo "${IMAGE}" ;;
+  inspect) id="\${@: -1}"; if [ -f "$STUB/inspect" ]; then cat "$STUB/inspect"; else echo "$id ${IMAGE} \$(cat "$STUB/unit" 2>/dev/null || echo tick) $INVOCATION_ID"; fi ;;
   run) exit 0 ;;
   info) exit 0 ;;
   ps) [ -e "$STUB/ps_fail" ] && exit 1
@@ -200,9 +201,82 @@ test("the mailer still runs while fenced; a reap whose query fails fences a chai
   assert.equal(guard("run", "mail").status, 0);
   rmSync(join(kj, "fence/0123456789abcdef"));
   writeFileSync(join(stub, "ps_fail"), "");
-  assert.equal(event(guard("reap", "tick").out), "reap_unproven");
+  assert.equal(event(guard("reap", "tick").out), "query_failed");
   assert.equal(markers().length, 1);
   const spooled = readdirSync(join(kj, "alerts/spool")).filter((name) => /^slot-\d{3}\.alert\.json$/.test(name));
   assert.equal(spooled.length, 1);
   assert.deepEqual(JSON.parse(readFileSync(join(kj, "alerts/spool", spooled[0]!), "utf8")), { kind: "fence", reason: "fence_query_failed" });
+});
+
+const RUN_OTHER = "f".repeat(32);
+
+test("reap fails closed: an early exit of a chain-capable reap fences, and the permit goes first", () => {
+  const { kj, stub, guard, markers } = setup();
+  const conf = readFileSync(join(kj, "config/guard.conf"), "utf8");
+  rmSync(join(kj, "config/guard.conf"));
+  writeFileSync(join(kj, "config/live.env"), "KEY_GRANT_POLYGON_LIVE=1\nKEY_GRANT_POLYGON_ALLOWED_INTENTS=x\n");
+  assert.equal(event(guard("reap", "first-run").out), "conf_missing");
+  assert.equal(existsSync(join(kj, "config/live.env")), false, "the permit is deleted before anything that can fail");
+  assert.equal(markers().length, 1, "a reap that couldn't prove anything fences");
+  writeFileSync(join(kj, "config/guard.conf"), conf);
+  mkdirSync(join(root, "run/tick"), { recursive: true });
+  writeFileSync(join(root, "run/tick", `${INVOCATION}.cid`), "not-an-id");
+  assert.equal(event(guard("reap", "tick").out), "cid_invalid");
+  assert.equal(markers().length, 2);
+  writeFileSync(join(root, "run/tick", `${INVOCATION}.cid`), CID);
+  writeFileSync(join(stub, "ps"), "garbage line\n");
+  assert.equal(event(guard("reap", "tick").out), "query_failed", "Docker output is checked as data");
+  assert.equal(markers().length, 3);
+  assert.equal(event(guard("reap", "mail").out), "query_failed");
+  assert.equal(markers().length, 3, "the mailer is not chain-capable: no fence");
+});
+
+test("reap: a CID record alone never authorizes rm; the listed container's labels and image must match", () => {
+  const { stub, guard, log, markers } = setup();
+  mkdirSync(join(root, "run/tick"), { recursive: true });
+  writeFileSync(join(root, "run/tick", `${INVOCATION}.cid`), CID);
+  writeFileSync(join(stub, "ps"), `${CID} exited ${RUN_OTHER}\n`);
+  assert.equal(event(guard("reap", "tick").out), "cid_label_mismatch");
+  assert.doesNotMatch(log(), /docker rm/);
+  writeFileSync(join(stub, "ps"), `${CID} exited ${INVOCATION}\n`);
+  writeFileSync(join(stub, "inspect"), `${CID} sha256:${"9".repeat(64)} tick ${INVOCATION}\n`);
+  assert.equal(event(guard("reap", "tick").out), "container_mismatch");
+  assert.doesNotMatch(log(), /docker rm/);
+  assert.equal(markers().length, 2);
+  rmSync(join(stub, "inspect"));
+  assert.equal(event(guard("reap", "tick").out), "reaped");
+  assert.match(log(), new RegExp(`docker rm -f ${CID}`));
+  assert.equal(existsSync(join(root, "run/tick", `${INVOCATION}.cid`)), false, "a proven record is pruned");
+});
+
+test("unfence proves the generation before changing anything, and refuses on any disagreement", () => {
+  const { kj, stub, guard, log, markers } = setup();
+  guard("fence", "fence_unknown_quiescence");
+  const [n] = markers();
+  writeFileSync(join(stub, "nft_fail"), "");
+  assert.equal(event(guard("unfence", n!).out), "generation_unreadable");
+  rmSync(join(stub, "nft_fail"));
+  rmSync(join(stub, "tables", n!));
+  assert.equal(event(guard("unfence", n!).out), "generation_incomplete", "a marker without its table: let the sweep finish");
+  assert.deepEqual(markers(), [n]);
+  assert.doesNotMatch(log(), /systemctl stop/, "refused before the daemon is touched");
+  writeFileSync(join(stub, "tables", n!), "");
+  rmSync(join(kj, "fence", n!));
+  assert.equal(event(guard("unfence", n!).out), "released", "an orphan table from a release that died is finished");
+});
+
+test("config is parsed as data: unknown keys, duplicates or shell syntax refuse", () => {
+  const { kj, guard } = setup();
+  const conf = readFileSync(join(kj, "config/guard.conf"), "utf8");
+  for (const bad of ["EXTRA=1", "IMAGE=$(id)", "DBNET=a b", 'BRIDGE="kjegress0"', `IMAGE=${IMAGE}`]) {
+    writeFileSync(join(kj, "config/guard.conf"), `${conf}${bad}\n`);
+    assert.equal(event(guard("run", "tick").out), "conf_invalid", bad);
+  }
+  writeFileSync(join(kj, "config/guard.conf"), conf.replace(/^FENCE_LIST_SHA=.*\n/m, ""));
+  assert.equal(event(guard("run", "tick").out), "conf_invalid", "every key is required");
+  for (const value of ['"quoted"', "'quoted'", " leading", "trailing ", "a#comment"]) {
+    writeFileSync(join(kj, "config/guard.conf"), conf);
+    writeFileSync(join(kj, "config/key-job.env"), `DATABASE_URI=${value}\n`);
+    assert.equal(event(guard("run", "tick").out), "keyjob_env_refused", value);
+  }
 });

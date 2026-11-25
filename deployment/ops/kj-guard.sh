@@ -35,22 +35,36 @@ crit() { logger -p daemon.crit -t kj-guard "KJ_FENCE $1" 2>/dev/null || true; }
 dockerq() { timeout -k 5 "$DOCKER_TIMEOUT" docker "$@"; }
 hex16() { od -An -N8 -tx1 /dev/urandom | tr -d ' \n'; }
 
-# ---- configuration (root 0600, no secrets): values are validated before any use --------------------------------
+# ---- configuration (root 0600, no secrets): parsed as data, never sourced ------------------------------------------
+# Exactly these keys, each once, as KEY=value with no quotes, spaces or comments; then every value is validated.
+CONF_KEYS="IMAGE DBNET KJNET MAILNET BRIDGE TICK_MEMORY PROBE_ADDR PROBE_GW PROBE_TARGET FENCE_LIST_SHA"
+parse_conf() {
+  local line key seen=" "
+  while IFS= read -r line || [ -n "$line" ]; do
+    case "$line" in ''|'#'*) continue ;; esac
+    [[ "$line" =~ ^([A-Z][A-Z0-9_]*)=([A-Za-z0-9:/._-]*)$ ]] || return 1
+    key="${BASH_REMATCH[1]}"
+    [[ " $CONF_KEYS " == *" $key "* && "$seen" != *" $key "* ]] || return 1
+    seen+="$key "
+    printf -v "$key" '%s' "${BASH_REMATCH[2]}"
+  done <"$CONF"
+  for key in $CONF_KEYS; do [[ "$seen" == *" $key "* ]] || return 1; done
+}
 load_conf() {
-  [ -f "$CONF" ] || die conf_missing
+  [ -f "$CONF" ] && [ ! -L "$CONF" ] || die conf_missing
   [ "$(stat -c '%u:%a' "$CONF")" = "0:600" ] || die conf_mode
-  # shellcheck disable=SC1090
-  . "$CONF"
+  parse_conf || die conf_invalid
   [[ "${IMAGE:-}" =~ ^sha256:[0-9a-f]{64}$ ]] || die conf_image
   local name
   for name in DBNET KJNET MAILNET; do [[ "${!name:-}" =~ ^[a-z0-9][a-z0-9_.-]{0,62}$ ]] || die conf_network; done
   [[ "${BRIDGE:-}" =~ ^[a-z0-9]{1,15}$ ]] || die conf_bridge
   [[ "${TICK_MEMORY:-}" =~ ^[0-9]{2,5}m$ ]] || die conf_memory
+  [[ "${FENCE_LIST_SHA:-}" =~ ^[0-9a-f]{64}$ ]] || die conf_fence_sha
 }
 
-# The fence path needs only these, read as plain values (never sourced), so a damaged or half-filled guard.conf can't
-# stop a fence: the marker is written before this runs, and BRIDGE falls back to the K2 name.
-conf_value() { [ -f "$CONF" ] && sed -nE "s/^$1=([^[:space:]]*)$/\1/p" "$CONF" | tail -1 || true; }
+# The fence path needs only these, read as plain values (never sourced, each validated where used), so a damaged or
+# half-filled guard.conf can't stop a fence: the marker is written before this runs, and BRIDGE falls back to K2's name.
+conf_value() { { [ -f "$CONF" ] && sed -nE "s/^$1=([A-Za-z0-9:\/._-]*)$/\1/p" "$CONF" | tail -1; } || true; }
 load_fence_conf() {
   BRIDGE="$(conf_value BRIDGE)"; [[ "$BRIDGE" =~ ^[a-z0-9]{1,15}$ ]] || BRIDGE=kjegress0
   FENCE_LIST_SHA="$(conf_value FENCE_LIST_SHA)"; [[ "$FENCE_LIST_SHA" =~ ^[0-9a-f]{64}$ ]] || FENCE_LIST_SHA=""
@@ -138,21 +152,33 @@ spool_fence() {
   [ -d "$spool" ] || return 1
   tmp="$spool/.$(hex16).tmp"
   ( umask 007; printf '{"kind":"fence","reason":"%s"}' "$reason" >"$tmp" ) || return 1
-  chgrp 2001 "$tmp" && chmod 0660 "$tmp" && sync "$tmp" || { rm -f "$tmp"; return 1; }
+  chgrp 2001 "$tmp" && chmod 0660 "$tmp" && sync "$tmp" || { rm -f "${tmp:?}"; return 1; }
   start=$(( $(od -An -N2 -tu2 /dev/urandom | tr -d ' ') % 500 ))
   for ((i = 0; i < 500; i++)); do
     slot="$spool/$(printf 'slot-%03d.alert.json' $(( (start + i) % 500 )))"
-    if ln "$tmp" "$slot" 2>/dev/null; then rm -f "$tmp"; sync "$spool"; return 0; fi
+    if ln "$tmp" "$slot" 2>/dev/null; then rm -f "${tmp:?}"; sync "$spool"; return 0; fi
   done
-  rm -f "$tmp"; : >"$spool/overflow"; return 1
+  rm -f "${tmp:?}"; : >"$spool/overflow"; return 1
 }
 escalate() { crit "$1"; spool_fence "$1" || crit "alert_spool_failed"; }
 
+# A per-generation lock (never the admission lock) serializes completing generation N against releasing it, so a
+# sweep that read the marker before an unfence can't reinstall N's table after the release.
+gen_lock() { mkdir -p -m 0700 "$RUN"; exec 7>"$RUN/gen-$1.lock"; flock -w "${2:-30}" 7; }
+gen_unlock() { exec 7>&-; }
+
 # Steps 2-3 for generation N (v6 §1): install, verify the owned definition, then packets when the bridge exists.
+# From a sweep, only a generation whose marker still exists once its lock is held; from a fence, always.
 complete_generation() {
-  local n="$1" probe=0
-  if ! install_table "$n" || ! owned_definition "$n"; then escalate fence_install_failed; return 1; fi
-  [ "${2:-probe}" = probe ] || return 0
+  local n="$1" mode="${2:-probe}" from="${3:-fence}" probe=0
+  if ! gen_lock "$n"; then
+    [ "$from" = sweep ] && return 0   # a release of N holds it: the next sweep looks again
+    escalate fence_install_failed; return 1
+  fi
+  if [ "$from" = sweep ] && [ ! -f "$FENCE_DIR/$n" ]; then gen_unlock; return 0; fi
+  if ! install_table "$n" || ! owned_definition "$n"; then gen_unlock; escalate fence_install_failed; return 1; fi
+  gen_unlock
+  [ "$mode" = probe ] || return 0
   packet_probe "$n" || probe=$?
   case "$probe" in
     0|2) return 0 ;;   # 2: no bridge yet (before Docker); key-grant-fence-probe.service probes after Docker
@@ -180,7 +206,7 @@ sweep() {
     installed="$(tables)" || { escalate fence_install_failed; installed=""; }
     for n in $(markers); do
       printf '%s\n' "$installed" | grep -qx "$n" && continue
-      complete_generation "$n" "$mode" || failed=1
+      complete_generation "$n" "$mode" sweep || failed=1
     done
     after="$(markers | sha256sum)"
     [ "$before" = "$after" ] && break   # a newer marker landed meanwhile: sweep again
@@ -192,7 +218,7 @@ sweep() {
 probe_all() {
   local n rc failed=0
   for n in $(markers); do
-    if ! owned_definition "$n"; then escalate fence_install_failed; complete_generation "$n" || failed=1; continue; fi
+    if ! owned_definition "$n"; then escalate fence_install_failed; complete_generation "$n" probe sweep || failed=1; continue; fi
     rc=0; packet_probe "$n" || rc=$?
     [ "$rc" = 0 ] || { escalate fence_verify_failed; failed=1; }
   done
@@ -212,6 +238,10 @@ check_env_file() {
   # Exit 1 (no line outside KEY=value, comments and blanks) is the only pass; a grep error refuses too.
   grep -qvE '^([A-Z][A-Z0-9_]*=.*|#.*)?$' "$file" || rc=$?
   [ "$rc" = 1 ] || return 1
+  # Only values node --env-file reads exactly as written: no quote (quoted values may span lines), no leading or
+  # trailing space or CR, no "#" (an inline comment to node). Anything else could load differently from what was checked.
+  rc=0; grep -qE "^[A-Z][A-Z0-9_]*=([[:space:]\"'\`]|.*[[:space:]]$|.*#)" "$file" || rc=$?
+  [ "$rc" = 1 ] || return 1
   keys="$(sed -nE 's/^([A-Z][A-Z0-9_]*)=.*/\1/p' "$file" | sort)"
   [ -z "$(printf '%s\n' "$keys" | uniq -d)" ] || return 1
   for key in $keys; do
@@ -224,18 +254,35 @@ check_env_file() {
 KEYJOB_KEYS="DATABASE_URI PAYLOAD_SECRET BETTER_AUTH_SECRET KEY_GRANT_POLYGON_MAX_COST_WEI KEY_GRANT_POLYGON_EVENT_LOCKS"
 live_value_ok() { [ "$(sed -nE 's/^KEY_GRANT_POLYGON_LIVE=(.*)$/\1/p' "$1")" = 1 ]; }
 
-# Every key-job container of a unit, any state: "ID STATE RUN" lines. A failed query returns non-zero.
-listing() { dockerq ps -a --no-trunc --filter "label=$LABEL=$1" --format "{{.ID}} {{.State}} {{.Label \"$RUNLABEL\"}}"; }
+# Every key-job container of a unit, any state: "ID STATE RUN" lines. A failed query, or any line not exactly that
+# shape, returns non-zero: Docker's output is checked as data before anything acts on it.
+listing() {
+  local out line
+  out="$(dockerq ps -a --no-trunc --filter "label=$LABEL=$1" --format "{{.ID}} {{.State}} {{.Label \"$RUNLABEL\"}}")" || return 1
+  while IFS= read -r line; do
+    [ -z "$line" ] && continue
+    [[ "$line" =~ ^[0-9a-f]{64}\ (created|running|paused|restarting|removing|exited|dead)\ ([0-9a-f]{32})?$ ]] || return 1
+  done <<<"$out"
+  printf '%s\n' "$out"
+}
 # The container's image as its full ID (docker ps shows the reference used at create, which is not an ID).
 image_of() { dockerq inspect --format '{{.Image}}' "$1"; }
-all_key_jobs() { dockerq ps -a --no-trunc --filter "label=$LABEL" --format "{{.ID}} {{.Label \"$LABEL\"}}"; }
+all_key_jobs() {
+  local out line
+  out="$(dockerq ps -a --no-trunc --filter "label=$LABEL" --format "{{.ID}} {{.Label \"$LABEL\"}}")" || return 1
+  while IFS= read -r line; do
+    [ -z "$line" ] && continue
+    [[ "$line" =~ ^[0-9a-f]{64}\ [a-z-]{1,32}$ ]] || return 1
+  done <<<"$out"
+  printf '%s\n' "$out"
+}
 # 0 = proven absent, 1 = still listed, 2 = the query failed.
-absent() { local out; out="$(dockerq ps -a --no-trunc --filter "id=$1" --format '{{.ID}}')" || return 2; [ -z "$out" ] || return 1; }
+absent() { local out; [[ "$1" =~ ^[0-9a-f]{64}$ ]] || return 2; out="$(dockerq ps -a --no-trunc --filter "id=$1" --format '{{.ID}}')" || return 2; [ -z "$out" ] || return 1; }
 
 take_lock() { mkdir -p -m 0700 "$RUN"; exec 9>"$LOCK"; flock -w "${1:-30}" 9 || die lock_timeout; }
 drop_lock() { flock -u 9 2>/dev/null || true; exec 9>&-; }
 # A fence from inside run/reap: a fresh generation in its own process, without our lock fd (fence never waits on it).
-fence_now() { CMD=fence "$0" fence "$1" 9>&- || true; }
+fence_now() { CMD=fence "$0" fence "$1" 9>&- >&2 || true; }   # its line goes to stderr: our own outcome stays last
 
 docker_args() {
   local unit="$1" cid="$2" live=""
@@ -323,7 +370,9 @@ run() {
     die create_failed
   fi
   id="$(cat "$cid")"; [[ "$id" =~ ^[0-9a-f]{64}$ ]] || die cid_invalid
-  # Review-B carry-in: re-check the markers between create and start. A fence that landed meanwhile wins.
+  # Review-B carry-in: re-check the markers between create and start, so a fence that landed meanwhile usually stops the
+  # start. Advisory only (a fence can land a moment later): the guarantee is the table on the bridge, which matches
+  # every container on it whenever it started, and is proven by packets (plan v6 §4).
   if chain_capable "$unit" && any_fence; then
     dockerq rm -f "$id" >/dev/null 2>&1 || true
     absent "$id" || fence_now fence_unknown_quiescence
@@ -333,48 +382,73 @@ run() {
   exec docker start -a "$id"
 }
 
+# reap fails closed for chain-capable units: every exit that isn't a proven removal fences (an EXIT trap that needs no
+# healthy configuration), and the first-run permit is deleted first, before anything that could fail.
+REAP_UNIT=""; REAP_DONE=0; REAP_REASON=fence_unknown_quiescence
+drop_permit() {
+  rm -f "${KJ:?}/config/live.env" 2>/dev/null || true
+  if [ -e "$KJ/config/live.env" ] || [ -L "$KJ/config/live.env" ]; then fence_now fence_live_permit_left; fi
+}
+reap_exit() {
+  [ "$REAP_DONE" = 1 ] && return 0
+  if [ "$REAP_UNIT" = first-run ]; then drop_permit; fi
+  if chain_capable "$REAP_UNIT"; then fence_now "$REAP_REASON"; fi
+}
+
 reap() {
-  local unit="$1" dir cid id="" lines rc failed=0 lid lrun limage
+  local unit="$1" dir cid cidv="" lines lid lrun match="" target="" desc rc
   valid_unit "$unit" || die unit_invalid
+  REAP_UNIT="$unit"; trap reap_exit EXIT
+  if [ "$unit" = first-run ]; then drop_permit; fi   # the permit never outlives its run (v4 H1), whatever follows
   [[ "${INVOCATION_ID:-}" =~ ^[0-9a-f]{32}$ ]] || die invocation_missing
   load_conf
   dir="$RUN/$unit"; cid="$dir/$INVOCATION_ID.cid"; mkdir -p -m 0700 "$dir"
   take_lock 30   # with rm (25 s) and the absence check (25 s), reap and any fence it starts fit TimeoutStopSec=300
-  if [ -s "$cid" ]; then id="$(cat "$cid")"; fi
-  # A CID never published: find this invocation's container by its run label (unit + run + image must all match).
-  if lines="$(listing "$unit")"; then
-    while read -r lid _ lrun; do
-      [ -n "$lid" ] && [ "$lrun" = "$INVOCATION_ID" ] || continue
-      if limage="$(image_of "$lid")"; then [ "$limage" = "$IMAGE" ] || failed=1; else failed=2; fi
-      if [ -n "$id" ] && [ "$id" != "$lid" ]; then failed=1; fi
-      id="$lid"
-    done <<<"$lines"
-  else failed=2; fi
-  if [ -n "$id" ] && [ "$failed" = 0 ]; then
-    rc=0; timeout -k 5 20 docker rm -f "$id" >/dev/null 2>&1 || rc=$?
-    if [ "$rc" = 124 ] || [ "$rc" = 137 ]; then failed=3; fi
-    rc=0; absent "$id" || rc=$?
-    if [ "$rc" = 2 ]; then failed=2; elif [ "$rc" != 0 ]; then failed=$(( failed == 3 ? 3 : 1 )); fi
+  if [ -e "$cid" ]; then
+    cidv="$(cat "$cid")"
+    [[ "$cidv" =~ ^[0-9a-f]{64}$ ]] || die cid_invalid
+  fi
+  REAP_REASON=fence_query_failed
+  lines="$(listing "$unit")" || die query_failed
+  REAP_REASON=fence_unknown_quiescence
+  # This invocation's container is the one listed with its run label. A CID record alone never authorizes a removal.
+  while read -r lid _ lrun; do
+    [ -n "$lid" ] || continue
+    if [ "$lrun" = "$INVOCATION_ID" ]; then
+      [ -z "$match" ] || die run_label_duplicate
+      match="$lid"
+    elif [ "$lid" = "$cidv" ]; then die cid_label_mismatch; fi
+  done <<<"$lines"
+  if [ -n "$cidv" ] && [ -n "$match" ] && [ "$cidv" != "$match" ]; then die cid_mismatch; fi
+  if [ -n "$match" ]; then
+    # The full immutable ID, image, unit label and run label, read back from Docker, all match before rm.
+    REAP_REASON=fence_query_failed
+    desc="$(dockerq inspect --format "{{.Id}} {{.Image}} {{index .Config.Labels \"$LABEL\"}} {{index .Config.Labels \"$RUNLABEL\"}}" "$match")" || die inspect_failed
+    REAP_REASON=fence_unknown_quiescence
+    [ "$desc" = "$match $IMAGE $unit $INVOCATION_ID" ] || die container_mismatch
+    rc=0; timeout -k 5 20 docker rm -f "$match" >/dev/null 2>&1 || rc=$?
+    if [ "$rc" = 124 ] || [ "$rc" = 137 ]; then REAP_REASON=fence_stop_hung; fi
+    target="$match"
+  elif [ -n "$cidv" ]; then
+    target="$cidv"   # recorded but not listed: it must be proven absent; it is never removed on the record's word
+  fi
+  if [ -n "$target" ]; then
+    rc=0; absent "$target" || rc=$?
+    case "$rc" in
+      0) ;;
+      2) REAP_REASON=fence_query_failed; die absence_unproven ;;
+      *) die still_listed ;;
+    esac
   fi
   # Proven absent: the record goes. A record left in /run/key-grant is one never proven, and unfence refuses on it.
-  if [ "$failed" = 0 ]; then rm -f "$cid"; fi
-  if [ "$unit" = first-run ]; then
-    # The first-run permit never outlives its run (v4 H1): delete it and prove it gone, whatever happened.
-    rm -f "$KJ/config/live.env"
-    [ ! -e "$KJ/config/live.env" ] || fence_now fence_live_permit_left
-  fi
-  if [ "$failed" != 0 ]; then
-    if chain_capable "$unit"; then
-      case "$failed" in 2) fence_now fence_query_failed ;; 3) fence_now fence_stop_hung ;; *) fence_now fence_unknown_quiescence ;; esac
-    fi
-    die reap_unproven
-  fi
+  rm -f "${cid:?}"
+  REAP_DONE=1
   # Publisher temp files from a hard kill: only under all-publisher quiescence (no key-job container of any kind).
   if lines="$(all_key_jobs)" && [ -z "$lines" ]; then
     # Older than a minute only: a fence process (it takes no lock) may be writing one right now.
     while IFS= read -r path; do
-      if [[ "${path##*/}" =~ ^\.[0-9a-f]{16}\.tmp$ ]] && [ -f "$path" ]; then rm -f "$path"; fi
-    done < <(find "$KJ/alerts/spool" -maxdepth 1 -type f -name '.*.tmp' -mmin +1 2>/dev/null)
+      if [[ "${path##*/}" =~ ^\.[0-9a-f]{16}\.tmp$ ]] && [ -f "$path" ]; then rm -f "${path:?}" || true; fi
+    done < <(find "$KJ/alerts/spool" -maxdepth 1 -type f -name '.*.tmp' -mmin +1 2>/dev/null || true)
   fi
   say reaped
 }
@@ -388,11 +462,27 @@ prove_dead() {
   say dead
 }
 
+# Generation N as it stands: "marker table", "orphan" (table, no marker), or a refusal. The nft listing must succeed,
+# and a table must be ours (owned definition), before anything is changed. Sets STATE; prints a refusal code.
+generation_state() {
+  local n="$1" listed has_marker=0 has_table=0
+  listed="$(tables)" || { echo generation_unreadable; return 1; }
+  if [ -f "$FENCE_DIR/$n" ]; then has_marker=1; fi
+  if printf '%s\n' "$listed" | grep -qx "$n"; then has_table=1; fi
+  if [ "$has_table" = 1 ] && ! owned_definition "$n"; then echo table_not_owned; return 1; fi
+  case "$has_marker$has_table" in
+    11) STATE="marker table" ;;
+    01) STATE=orphan ;;   # a release that died after deleting the marker: finish it
+    10) echo generation_incomplete; return 1 ;;   # the sweep hasn't installed it yet: let it, then release
+    *) echo generation_unknown; return 1 ;;
+  esac
+}
+
 unfence() {
-  local n="$1" pid lines unit cg record
+  local n="$1" pid lines unit cg record listed refusal
   [[ "$n" =~ ^[0-9a-f]{16}$ ]] || die generation_invalid
   load_conf
-  { [ -f "$FENCE_DIR/$n" ] || tables | grep -qx "$n"; } || die generation_unknown
+  refusal="$(generation_state "$n")" || die "$refusal"
   take_lock 120   # held to the end: admission stays locked through the whole release (Review-B carry-in)
   for unit in key-grant-tick.service key-grant-first-run.service key-grant-tick.timer; do
     [ "$(systemctl is-active "$unit" 2>/dev/null || true)" = inactive ] || die unit_active "\"unit\":\"$unit\""
@@ -415,15 +505,21 @@ unfence() {
     case "$unit" in tick|first-run) die container_present "\"unit\":\"$unit\"" ;; esac
   done <<<"$lines"
   for record in "$RUN"/tick/*.cid "$RUN"/first-run/*.cid; do
-    [ -e "$record" ] && die record_unproven
+    if [ -e "$record" ]; then die record_unproven; fi
   done
-  # Generation N only: marker first (admission stays refused by the table), then the table, name and hash checked.
-  rm -f "$FENCE_DIR/$n"; sync "$FENCE_DIR" 2>/dev/null || true
-  if tables | grep -qx "$n"; then
-    owned_definition "$n" || die table_not_owned
-    nft delete table inet "key_grant_fence_$n" || die table_delete_failed
+  # Generation N only, holding N's own lock so no sweep completes N meanwhile; its state is proven again first.
+  gen_lock "$n" 60 || die generation_busy
+  refusal="$(generation_state "$n")" || die "$refusal"
+  STATE=""; generation_state "$n" >/dev/null || die generation_changed   # sets STATE in this shell
+  if [ "$STATE" = "marker table" ]; then
+    rm -f "${FENCE_DIR:?}/${n:?}"; sync "$FENCE_DIR" 2>/dev/null || true   # marker first: the table still refuses admission
   fi
-  say released "\"generation\":\"$n\",\"remaining\":$( { markers; tables || true; } | sort -u | grep -c . || true)"
+  nft delete table inet "key_grant_fence_$n" || die table_delete_failed
+  # Released only once a successful listing shows N gone and its marker absent.
+  listed="$(tables)" || die release_unverified
+  if printf '%s\n' "$listed" | grep -qx "$n" || [ -e "$FENCE_DIR/$n" ]; then die release_unverified; fi
+  gen_unlock
+  say released "\"generation\":\"$n\",\"remaining\":$( { markers; printf '%s\n' "$listed"; } | sort -u | grep -c . || true)"
 }
 
 # The queue receipt, read only: the DB network only, no signer or RPC mount, its own read-role env file.

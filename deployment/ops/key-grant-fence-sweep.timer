@@ -1,12 +1,12 @@
-# Backstop for the path unit: a marker that landed while a sweep was running is never left uninstalled.
+# Backstop for the path unit: a marker that landed while a sweep was running is never left uninstalled, and a marker
+# whose table is gone (a release that died between its two steps) gets its table back within one interval. 5 s, not
+# 30 s: that gap was measured at 19.8 s on the VM (KEY-GRANTS.md, "Measured residual"). An idle sweep is one nft listing.
 [Unit]
-Description=Sweep key-job fence generations every 30 s
-
+Description=Sweep key-job fence generations every 5 s
 [Timer]
-OnBootSec=30s
-OnUnitActiveSec=30s
+OnBootSec=5s
+OnUnitActiveSec=5s
 AccuracySec=1s
 Unit=key-grant-fence-sweep.service
-
 [Install]
 WantedBy=timers.target

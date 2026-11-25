@@ -190,6 +190,25 @@ script with this signer anywhere else, and never use this signer from another ho
    fresh listing shows the table gone, and only then is the marker removed and "released" said. Any other generation stays in force.
 7. Resume only after a complete queue receipt.
 
+**Measured residual (VM acceptance, 26 Nov; accepted by the coordinator).** If `unfence` dies after deleting the table
+but before removing the marker, and that was the only generation, the bridge has no drop until the next sweep: a
+deleted table doesn't trigger the path unit, so the backstop timer puts it back. With the timer at 30 s the gap
+measured 19.8 s, and 172 packets from a test container that wasn't a key job got out. The timer is now 5 s, so the gap
+is at most about 5 s. No key job can use it: `unfence` had already proved that no tick or first-run container exists,
+and admission refuses the whole time because the marker is still there.
+
+**Operator notes.**
+- After a refused run, the tick unit sits in `failed`, and `unfence` refuses with `unit_active`. Run
+  `systemctl reset-failed key-grant-tick.service key-grant-first-run.service` first.
+- Starting a key-job unit during a release fences again, by design: run and reap both time out on the release's lock,
+  and reap's exit trap writes a new generation. Release that one too.
+- A fencer killed after its table went in skips its packet check (the sweep treats an installed table as done). The
+  next `kj-guard probe-all`, or the next boot, checks it with packets.
+- The VM run's guest, for K1 to compare against the VPS (arm64): kernel 6.8.0-147-generic, Docker 29.1.3 (containerd
+  snapshotter, cgroup driver systemd, live-restore off), iptables 1.8.10 on nf_tables, nftables 1.0.9,
+  `FENCE_LIST_SHA` d0a28a0101f71cf5fe2c2755ce6e4f506f08dbdefb8d6b17e5cc5f050a28820d. A different nft version can change
+  the listing, so record the VPS's own value rather than copying this one.
+
 ## Refund cancels (the owner, from his wallet)
 A refund marks the order's key `cancelRequested`. Nothing on our hosts can cancel it: the owner does, from the wallet that manages the Signet lock.
 1. **Export.** Run `node --import tsx scripts/key-cancel-export.ts` on a host with the app's database env.

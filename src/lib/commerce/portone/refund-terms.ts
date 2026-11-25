@@ -24,7 +24,7 @@ export { sameRefundTerms } from '../refund-policy'
 /**
  * A guest Pay whose terms changed under the event lock throws, so the whole preparation rolls back; the official
  * initiate handler turns any throw into a 500. The adapter notes the new terms against the request here, and the
- * endpoint wrapper answers with them once the rollback is done (ecommerce.ts secureCommerceEndpoint).
+ * payment endpoint answers with them once the rollback is done (_shared/transaction.ts inPaymentEndpoint).
  */
 const changedTerms = new WeakMap<PayloadRequest, RefundTerms>()
 export const noteRefundTermsChange = (req: PayloadRequest, terms: RefundTerms) => { changedTerms.set(req, terms) }

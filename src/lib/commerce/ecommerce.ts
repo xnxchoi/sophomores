@@ -28,7 +28,6 @@ import { isVerifiedCommerceWebhook } from "./portone/endpoints";
 import { isVerifiedPaymentCancellation } from "./portone/review";
 import { isVerifiedOrderRefund, refundableOrderStatuses } from "./order-refund";
 import { runReconciliation, settleIfProviderPaid } from "./portone/admission";
-import { takeRefundTermsChange } from "./portone/refund-terms";
 
 const deny = () => false;
 // Keep the standalone catalogues and product switch unchanged. The installed
@@ -318,11 +317,6 @@ export const secureCommerceEndpoint = (endpoint: Endpoint, authorizeMutation: (r
     const response = input ? await runReconciliation(req, input, 'confirm',
       () => settleIfProviderPaid(req, input.paymentID, execute), {}, { boundedRecheck: true, principal }) : await execute();
     assertPrincipalUnchanged(req, principal);
-    // A guest Pay whose refund terms changed under the event lock: the preparation has rolled back (no attempt, no
-    // reservation); answer as a changed quote, with the current terms for the page to show (Review-B r4).
-    const changedTerms = endpoint.path.endsWith("/initiate") ? takeRefundTermsChange(req) : undefined;
-    if (changedTerms) return Response.json({ message: "Guest quote changed", outcome: "guest-quote-changed", refundTerms: changedTerms },
-      { headers: { "Cache-Control": "private, no-store" } });
     return response;
   } catch (error) {
     // An owned attempt read that stopped keeps its meaning: 403 authentication-required, 404 unavailable.

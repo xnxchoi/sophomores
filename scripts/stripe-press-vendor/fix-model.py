@@ -52,6 +52,23 @@ p2.update(translation=p2.pop("matrix")[12:15], scale=[1, S, S])                 
 p2["extras"].pop("pressLookInsideHostRestQuat", None)                               # an array defeats 45610 Q()
 baked = next(c for c in p2["children"] if "name" not in nodes[c])                   # node 27: exported runtime stack
 p2["children"].remove(baked)
-js = json.dumps(j, separators=(",", ":")).encode(); js += b" " * ((4 - len(js) % 4) % 4)
+# 4. (25 Nov, the featured book sat ~80 px low) Their scene centres the book on the hero card by the bounding box of all
+#    its meshes (04ud:19674-19700), so every part must be at rest:
+#    - pages1 rests closed at its own recorded bind rotation (extras.pressBindQuat: 180° about X, the mirrored block),
+#      not the ~76° open pose saved at export;
+#    - crash and innerspine lose the thickness scale baked into X (their recorded bind X scale is 1), and crash sits with
+#      Empty at its z again (the export carried the runtime's thickness shift);
+#    - every node drops the runtime values written into extras at export (bind quaternions and scales, a serialized
+#      edge-art texture): their code records these itself on first load and must not find stale ones.
+p1 = byname["pages1"]; m1 = p1.pop("matrix")
+S1 = (m1[4] ** 2 + m1[5] ** 2 + m1[6] ** 2) ** 0.5
+q = [float(x) for x in p1["extras"]["pressBindQuat"]]; qn = sum(x * x for x in q) ** 0.5
+p1.update(translation=m1[12:15], rotation=[x / qn for x in q], scale=[-1, -S1, -S1])
+empty_z = byname["Empty"]["matrix"][14]
+for name in ("crash", "innerspine"):
+    n = byname[name]; m = n.pop("matrix")
+    n.update(translation=[m[12], m[13], empty_z if name == "crash" else m[14]], rotation=[0.7071067811865476, 0, 0, 0.7071067811865476])
+for n in nodes: n.pop("extras", None)
+js =json.dumps(j, separators=(",", ":")).encode(); js += b" " * ((4 - len(js) % 4) % 4)
 open(OUT, "wb").write(b"glTF" + struct.pack("<II", 2, 12 + 8 + len(js) + len(rest)) + struct.pack("<I", len(js)) + b"JSON" + js + rest)
 print("wrote", OUT, "bones reset:", len(skin["joints"]), "removed child", baked)

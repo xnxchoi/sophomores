@@ -8,24 +8,23 @@
  *
  * Needs: a scratch Postgres migrated with `pnpm migrate`, never the shared dev DB; DATABASE_URI and PAYLOAD_SECRET
  * pointing at it; PORTONE_STORE_ID and PORTONE_CHANNEL_KEY equal to the server's. The script refuses any database
- * that is not on 127.0.0.1 or localhost, or whose name does not end in "_proof".
+ * URI but a plain local one ending in "_proof", with no query or fragment (./proof-database.ts).
  *
  *   node --import tsx tests/commerce/portone/built-ledger/seed.mts seed     -> prints {"paymentID":...,"transactionID":...}
- *   node --import tsx tests/commerce/portone/built-ledger/seed.mts verify <transactionID>
- *                                                                          -> prints {"reconciliationRows":n} (every ledger row naming it)
+ *   node --import tsx tests/commerce/portone/built-ledger/seed.mts verify <transactionID> <webhookID from smoke.mjs>
+ *        -> prints {"pass":true,"event":1,"paidReview":1}: exactly the event row and the paid-review row (exit 1 otherwise)
  *
  * Fixture preparation writes rows through payload.db.create (business hooks bypassed, as the DB proofs' fixtures do);
  * the reservation goes through reservePurchase. Nothing here calls a provider.
  */
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import type { Config, SanitizedConfig } from "payload";
 import type { CommerceSnapshot } from "../../../../src/lib/commerce/contracts";
+import { assertLocalProofDatabase } from "./proof-database";
 
-const [mode, transactionArg] = process.argv.slice(2);
-const database = new URL(process.env.DATABASE_URI ?? "");
-if (!["127.0.0.1", "localhost"].includes(database.hostname) || !database.pathname.endsWith("_proof")) {
-  throw new Error("Refused: the smoke seeds only a local *_proof database");
-}
+const [mode, transactionArg, webhookArg] = process.argv.slice(2);
+// Before Payload (or pg) sees the URI: only a disposable local *_proof database (./proof-database.ts).
+assertLocalProofDatabase(process.env.DATABASE_URI);
 const storeID = process.env.PORTONE_STORE_ID, channelKey = process.env.PORTONE_CHANNEL_KEY;
 if (!storeID || !channelKey) throw new Error("PORTONE_STORE_ID and PORTONE_CHANNEL_KEY are required");
 
@@ -44,10 +43,15 @@ const payload = await getPayload({
 });
 try {
   if (mode === "verify") {
-    if (!transactionArg) throw new Error("verify needs the transaction ID");
-    const { totalDocs } = await payload.count({ collection: "commerce-reconciliations" as never, overrideAccess: true,
-      where: { scope: { contains: transactionArg } } });
-    console.log(JSON.stringify({ reconciliationRows: totalDocs }));
+    if (!transactionArg || !webhookArg) throw new Error("verify needs the transaction ID and the webhook ID");
+    // The two rows the quarantined Paid writes through the ledger, named exactly (accounting.ts eventKey and the paid review).
+    const scopes = { event: `reconciliation-event:${transactionArg}:${createHash("sha256").update(webhookArg).digest("hex")}`,
+      paidReview: `reconciliation-paid-review:${transactionArg}` };
+    const found = Object.fromEntries(await Promise.all(Object.entries(scopes).map(async ([name, scope]) =>
+      [name, (await payload.count({ collection: "commerce-reconciliations" as never, overrideAccess: true, where: { scope: { equals: scope } } })).totalDocs])));
+    const pass = found.event === 1 && found.paidReview === 1;
+    console.log(JSON.stringify({ pass, ...found }));
+    if (!pass) process.exitCode = 1;
   } else if (mode === "seed") {
     const customerID = randomUUID(), eventID = randomUUID(), productID = randomUUID(), cartID = randomUUID(), transactionID = randomUUID();
     const now = new Date().toISOString();
@@ -80,4 +84,4 @@ try {
   await payload.destroy();
 }
 // Payload's pools and job timers keep the loop alive after destroy; the work is done (an error above already threw).
-process.exit(0);
+process.exit(process.exitCode ?? 0);

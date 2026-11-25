@@ -8,6 +8,9 @@
  *   BASE_URL=http://localhost:3217 PORTONE_WEBHOOK_SECRET=whsec_... PORTONE_STORE_ID=store-... \
  *     node tests/commerce/portone/built-ledger/smoke.mjs <paymentID>
  *
+ * Then, with the server stopped (an agent's guarded jobs take one slot per checkout), check the two ledger rows:
+ *   node --import tsx tests/commerce/portone/built-ledger/seed.mts verify <transactionID> <webhookID printed here>
+ *
  * The signature is the Standard Webhooks scheme the server verifies with @portone/server-sdk. The secret must be the
  * throwaway one the scratch server was started with, never a real PortOne secret. Prints one JSON line; exit 0 = pass.
  */
@@ -35,5 +38,6 @@ const text = await response.text();
 let outcome = null;
 try { outcome = JSON.parse(text).outcome ?? null; } catch { /* not JSON */ }
 const pass = response.status === 200 && outcome === "payment-quarantined";
-console.log(JSON.stringify({ pass, status: response.status, outcome }));
+// webhookID is not secret; seed.mts verify uses it to name the event row exactly.
+console.log(JSON.stringify({ pass, status: response.status, outcome, webhookID: id }));
 process.exit(pass ? 0 : 1);

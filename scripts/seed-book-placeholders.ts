@@ -49,36 +49,23 @@ function lines(text: string, max: number) {
 // The book's atlas (book.tsx): u across — back 0–0.455, spine 0.455–0.57, front 0.57–1; the covers fill v 0.21–1 (the
 // image's top 79%), the strip below holds the page edges and the blank the board edges sample. Neutral greys only
 // (colours are on hold).
-function coverSvg(title: string) {
-  const w = 2400, h = 2000, top = h * 0.79, back = w * 0.455, front = w * 0.57, mid = (front + w) / 2;
-  const titleLines = lines(title, 16);
+// Quiet on purpose (owner, 25 Nov: the first, loud version was "an abomination"): flat, plain boards with one small
+// grey label, and a flat dark stage, so nothing reads as finished art.
+function coverSvg() {
+  const w = 2400, h = 2000, top = h * 0.79, back = w * 0.455, front = w * 0.57;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">
-  <defs><pattern id="hatch" width="36" height="36" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-    <rect width="36" height="36" fill="#d6d5d0"/><rect width="2" height="36" fill="#c9c8c3"/></pattern></defs>
   <rect width="${w}" height="${h}" fill="#efeee9"/>
-  <rect width="${w}" height="${top}" fill="url(#hatch)"/>
-  <rect x="${back}" width="${front - back}" height="${top}" fill="#bdbcb7"/>
-  <g font-family="Helvetica, Arial, sans-serif" fill="#1d1d1b" text-anchor="middle">
-    <text x="${mid}" y="170" font-size="54" letter-spacing="10">PLACEHOLDER</text>
-    ${titleLines.map((line, i) => `<text x="${mid}" y="${620 + i * 150 - (titleLines.length - 1) * 75}" font-size="128">${escape(line)}</text>`).join("\n    ")}
-    <text x="${mid}" y="${top - 120}" font-size="46">Cover art not supplied yet</text>
-    <text x="${back / 2}" y="170" font-size="54" letter-spacing="10">PLACEHOLDER</text>
-    <text x="${back / 2}" y="${top / 2}" font-size="64">Back cover</text>
-    <text transform="translate(${(back + front) / 2} ${top / 2}) rotate(90)" dominant-baseline="middle" font-size="76">${escape(title)}</text>
-  </g>
+  <rect width="${w}" height="${top}" fill="#e6e5e1"/>
+  <rect x="${back}" width="${front - back}" height="${top}" fill="#dcdbd7"/>
+  <text x="${front + 90}" y="150" font-family="Helvetica, Arial, sans-serif" font-size="38" letter-spacing="2" fill="#9a9994">Placeholder</text>
 </svg>`;
 }
 
 function stageSvg() {
   const w = 2400, h = 3000;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">
-  <defs><pattern id="hatch" width="48" height="48" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)">
-    <rect width="48" height="48" fill="#2b2c2e"/><rect width="2" height="48" fill="#36373a"/></pattern></defs>
-  <rect width="${w}" height="${h}" fill="url(#hatch)"/>
-  <g font-family="Helvetica, Arial, sans-serif" fill="#8d8e91" text-anchor="middle">
-    <text x="${w / 2}" y="${h / 2 - 40}" font-size="64" letter-spacing="14">PLACEHOLDER</text>
-    <text x="${w / 2}" y="${h / 2 + 60}" font-size="48">Stage art not supplied yet</text>
-  </g>
+  <rect width="${w}" height="${h}" fill="#2b2c2e"/>
+  <text x="90" y="${h - 90}" font-family="Helvetica, Arial, sans-serif" font-size="40" letter-spacing="2" fill="#5a5b5f">Placeholder</text>
 </svg>`;
 }
 
@@ -111,15 +98,23 @@ async function seed() {
       return String(doc.id);
     };
 
-    const stage = await media("placeholder-stage-art.png", "Placeholder stage art", stageSvg());
+    const stage = await media("placeholder-stage-art-v2.png", "Placeholder stage art", stageSvg());
+    const keep = new Set([stage]);
     const products = await payload.find({ ...local, collection: "products" as CollectionSlug, draft: false, limit: 50, pagination: false });
     for (const product of products.docs as unknown as { id: string; title?: string; page?: Record<string, unknown> & { book?: Record<string, unknown> } }[]) {
       const title = product.title ?? "Untitled";
-      const cover = await media("placeholder-cover-" + product.id + ".png", "Placeholder cover art: " + title, coverSvg(title.replace(/^PREVIEW\s+/, "")));
+      const cover = await media("placeholder-cover-v2-" + product.id + ".png", "Placeholder cover art: " + title, coverSvg());
+      keep.add(cover);
       const page = product.page ?? {};
       await payload.update({ ...local, collection: "products" as CollectionSlug, id: product.id, draft: false,
         data: { page: { ...page, stageArt: stage, book: { ...(page.book ?? {}), coverDiffuse: cover } } } as never });
       console.log("placeholder art set: " + product.id);
+    }
+    // Retire the earlier placeholders (no product points at them now): Local API delete, which removes their files too.
+    const old = await payload.find({ ...local, collection: "media" as CollectionSlug, where: { filename: { like: "placeholder-" } } as Where, limit: 100, pagination: false });
+    for (const doc of old.docs) if (!keep.has(String(doc.id))) {
+      await payload.delete({ ...local, collection: "media" as CollectionSlug, id: doc.id });
+      console.log("retired old placeholder: " + String(doc.id));
     }
   } finally {
     await db.destroy?.();

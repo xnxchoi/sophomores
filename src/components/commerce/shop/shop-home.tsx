@@ -300,7 +300,7 @@ function Cards({ items, featured, geometry, progressRef, listeners, J }: { items
 }
 
 /**
- * The title rail (FeaturedTitleList, 21ix): fixed at 70 px (63 on a phone), every title in one line, the active one
+ * The title rail (FeaturedTitleList, 21ix): fixed at 70 px (63 on a phone), every title (three times over) in one line, the active one
  * upright and centred at 47.5 % of the width (500 ms ease-in-out), the rest italic at 0.8; "(Hardcover)" above each
  * title's end; the titles fade in 1.2 s after load and fade out as the shelf takes the screen.
  */
@@ -311,7 +311,7 @@ function TitleRail({ railRef, titles, active, fade, onPick }: { railRef: Ref<HTM
   useEffect(() => { const timer = window.setTimeout(() => setShown(true), 1200); return () => window.clearTimeout(timer); }, []);
   useEffect(() => {
     const place = () => {
-      const item = items.current[active];
+      const item = items.current[titles.length + active];
       if (item) setShift(0.475 * window.innerWidth - 20 - (item.offsetLeft + item.offsetWidth / 2));
     };
     place();
@@ -322,16 +322,18 @@ function TitleRail({ railRef, titles, active, fade, onPick }: { railRef: Ref<HTM
     className="pointer-events-none fixed inset-x-0 top-[70px] z-20 overflow-hidden px-5 pt-5 pb-3 transition-opacity duration-[1600ms] max-[899px]:top-[63px]">
     <ul style={{ transform: "translateX(" + shift + "px)" }}
       className="flex w-max gap-x-[72px] transition-transform duration-500 ease-in-out max-[899px]:gap-x-[30px]">
-      {titles.map((title, index) => <li key={index}>
-        <button ref={(item) => { items.current[index] = item; }} type="button" onClick={() => onPick(index)}
+      {/* Three copies, the middle one active, so the active title always has neighbours on both sides (theirs: 21ix). */}
+      {[...titles, ...titles, ...titles].map((title, slot) => { const index = slot % titles.length, middle = slot >= titles.length && slot < 2 * titles.length;
+        return <li key={slot} aria-hidden={middle ? undefined : true}>
+        <button ref={(item) => { items.current[slot] = item; }} type="button" tabIndex={middle ? undefined : -1} onClick={() => onPick(index)}
           className="pointer-events-auto relative font-display text-[length:calc(40px+16*(100vw-375px)/1353)] leading-[1.12] font-medium tracking-[-0.1rem] whitespace-nowrap text-foreground outline-offset-4 focus-visible:outline-2 max-[899px]:text-[length:calc(44px+17.6*(100vw-375px)/1353)]">
           <span className={cn("block origin-[0_78%] italic transition-[opacity,transform] duration-[448ms] ease-[ease]",
-            index === active ? "opacity-0 [transform:skewX(9deg)]" : "opacity-80")}>{title}</span>
+            middle && index === active ? "opacity-0 [transform:skewX(9deg)]" : "opacity-80")}>{title}</span>
           <span className={cn("absolute inset-0 not-italic transition-[opacity,transform] duration-[448ms] ease-[ease]",
-            index === active ? "opacity-100" : "opacity-0 [transform:skewX(-5deg)]")}>{title}</span>
+            middle && index === active ? "opacity-100" : "opacity-0 [transform:skewX(-5deg)]")}>{title}</span>
           <span className="absolute -top-[18px] right-0 translate-x-[calc(100%+8px)] text-[11px] font-normal tracking-normal not-italic text-muted-foreground max-[899px]:hidden">(Hardcover)</span>
         </button>
-      </li>)}
+      </li>; })}
     </ul>
   </nav>;
 }

@@ -65,5 +65,5 @@ historical ADRs remain provenance, not automatic merge or ownership instructions
 | [0042](0042-tanstack-form.md) | Forms use TanStack Form (design; was design ADR 0007 on feature/product-production) | accepted | 2026-11-15 |
 | [0043](0043-type-setup-follows-the-hideaway.md) | The type setup follows The Hideaway, on a 16px root (design; was design ADR 0008 on feature/product-production) | accepted | 2026-11-15 |
 | [0044](0044-three-layer-colour-tokens.md) | Colour tokens in three layers, under The Hideaway's names (design; was design ADR 0009 on feature/product-production) | accepted | 2026-11-15 |
-| [0045](0045-amber-means-refuse-at-the-door.md) | Amber means refuse at the door | accepted; live verification pending | 2026-11-25 |
+| [0045](0045-amber-means-refuse-at-the-door.md) | Amber means refuse at the door | accepted (door procedure and desk check; live verification pending) | 2026-11-25 |
 | [0046](0046-separate-guest-lock-behind-an-off-switch.md) | A separate Guest lock, built behind an off switch | accepted build only; activation off | 2026-11-25 |

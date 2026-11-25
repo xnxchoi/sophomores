@@ -1,6 +1,9 @@
 import { randomUUID } from 'node:crypto'
-import { createRequire } from 'node:module'
 import type { PostgresAdapter } from '@payloadcms/db-postgres'
+// The adapter's own re-export of drizzle-orm/node-postgres (Payload's documented drizzle proxy), so the ledger binds
+// the exact Drizzle copy the adapter resolves (two drizzle-orm copies are installed, one per pg peer). A bundled static
+// import: Turbopack compiled the old createRequire(resolve(...)) into createRequire(<module id>), which throws.
+import { drizzle } from '@payloadcms/db-postgres/drizzle/node-postgres'
 import type { PayloadRequest } from 'payload'
 
 const pools = new WeakMap<object, { bind: (client: unknown) => PostgresAdapter['drizzle']; pool: PostgresAdapter['pool'] }>()
@@ -15,10 +18,6 @@ export class LedgerLockBusy extends Error {}
 function ledgerDatabase(adapter: PostgresAdapter, reportError: () => void) {
   const existing = pools.get(adapter)
   if (existing) return existing
-  const fromAdapter = createRequire(createRequire(import.meta.url).resolve('@payloadcms/db-postgres'))
-  const { drizzle } = fromAdapter('drizzle-orm/node-postgres') as {
-    drizzle: (args: { client: unknown; schema: PostgresAdapter['schema'] }) => PostgresAdapter['drizzle']
-  }
   const pool = new adapter.pg.Pool({ ...adapter.poolOptions, max: 2, connectionTimeoutMillis: 2000,
     idleTimeoutMillis: 1000, allowExitOnIdle: true, statement_timeout: 5000, idle_in_transaction_session_timeout: 5000 })
   pool.on('error', reportError)
@@ -26,7 +25,7 @@ function ledgerDatabase(adapter: PostgresAdapter, reportError: () => void) {
   pool.on('connect', client => {
     if (!attached.has(client)) { attached.add(client); client.on('error', reportError) }
   })
-  const entry = { bind: (client: unknown) => drizzle({ client, schema: adapter.schema }), pool }
+  const entry = { bind: (client: unknown) => drizzle({ client: client as never, schema: adapter.schema }) as unknown as PostgresAdapter['drizzle'], pool }
   pools.set(adapter, entry)
   return entry
 }

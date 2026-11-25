@@ -35,7 +35,7 @@ function TitleRail({ titles, active, label, onPick }: { titles: string[]; active
       className="flex w-max items-baseline gap-x-8 whitespace-nowrap transition-transform duration-[600ms] ease-[cubic-bezier(0.16,1,0.3,1)] lg:gap-x-12">
       {titles.map((title, index) => <li key={index}>
         <button ref={(item) => { items.current[index] = item; }} type="button" aria-current={index === active || undefined} onClick={() => onPick(index)}
-          className="font-display text-[1.75rem] leading-none tracking-[-0.02em] text-foreground/25 outline-offset-4 transition-colors duration-300 hover:text-foreground/60 focus-visible:outline-2 aria-[current]:text-foreground lg:text-[4.5rem]">
+          className="font-display text-[1.75rem] leading-none tracking-[-0.02em] text-foreground/25 outline-offset-4 transition-colors duration-300 hover:text-foreground/60 focus-visible:outline-2 aria-[current]:text-foreground lg:text-[3.5rem]">
           {title}
         </button>
       </li>)}
@@ -81,7 +81,7 @@ export function FeaturedReleases({ items, label, viewDetails }: {
       <TitleRail titles={items.map((item) => item.title)} active={active} label={label}
         onPick={(index) => rows.current[index]?.scrollIntoView({ behavior: "smooth", block: "center" })} />
     </div>
-    {items.map((item, index) => <article key={item.id} data-index={index} ref={(row) => { rows.current[index] = row; }} className="pt-4 first:pt-2">
+    {items.map((item, index) => <article key={item.id} data-index={index} ref={(row) => { rows.current[index] = row; }} className="pt-4 first:pt-1">
       {item.stage}
       <Caption title={item.title} price={item.price} href={item.href} label={viewDetails} />
     </article>)}

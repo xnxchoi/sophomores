@@ -32,11 +32,12 @@ export function CommerceShopView({ shop, contents = {} }: { shop: CommerceEditio
     <h1 className="sr-only">{t("book")}</h1>
     <FeaturedReleases label={t("featured")} viewDetails={t("viewDetails")} items={entries.map(({ product, content, title, price, href }) => ({
       id: product.productID, title, price, href,
-      // stripe.press's proportions: the art is a band across the middle of the row and the book stands larger than it,
-      // spilling over the band's top and bottom edges (and the title rail) by about a sixth of its height.
-      stage: <BookStage id={product.productID} textures={bookTextures(content)} pageTextures={pageTextures(content)} closedZ={21}
-        className="relative aspect-[4/5] w-full sm:aspect-[5/4] lg:aspect-auto lg:h-[calc(100svh-11rem)]">
-        <div className="absolute inset-x-0 top-[11%] bottom-[11%] overflow-hidden rounded-[10px] bg-muted">
+      // stripe.press's proportions (Review-B, 25 Nov: its art starts right under the rail, y 162 at 1440×900): the art
+      // fills the row from the rail down, and the book stands nearly its height, spilling a little past its lower edge,
+      // clear of the rail above and the caption below.
+      stage: <BookStage id={product.productID} textures={bookTextures(content)} pageTextures={pageTextures(content)} closedZ={17}
+        className="relative aspect-[4/5] w-full sm:aspect-[5/4] lg:aspect-auto lg:h-[calc(100svh-12rem)]">
+        <div className="absolute inset-x-0 top-0 bottom-[6%] overflow-hidden rounded-[10px] bg-muted">
           <StageArt art={content.stageArt ?? firstImage(product)} />
         </div>
       </BookStage>

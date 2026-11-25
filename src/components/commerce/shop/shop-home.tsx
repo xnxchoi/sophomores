@@ -10,6 +10,7 @@ import { useLookInside, type LookInsideSource } from "./use-look-inside";
 import { useShelfCatch, type ShelfCatchSource } from "./use-shelf-catch";
 import { useBookDetail, type BookDetailSource } from "./use-book-detail";
 import { useReadingScroll, type ReadingSource } from "./use-reading-scroll";
+import { useBookSounds } from "./use-book-sounds";
 
 /**
  * The shop's home, rebuilt from stripe.press's home code (06w9 module 43181; .tmp/stripe-notes/home-layout-inventory.md,
@@ -38,6 +39,7 @@ export function ShopHome({ items, labels, initialOpen }: { items: Item[]; labels
   initialOpen?: string }) {
   const books = useMemo<SceneBook[]>(() => items.map(({ id, title, stageArt, pages }) => ({ id, title, stageArt: stageArt?.url ?? null, pages })), [items]);
   const { vendored, failed } = useStripeScene(books, Math.min(FEATURED_MAX, items.length));
+  useBookSounds();
   const first = items[0]?.stageArt;
   if (failed) return <ShopFallback items={items} labels={labels} initialOpen={initialOpen} />;
   // Native wheel scrolling here, as on stripe.press: their scroll mapping, holds and shelf catch read the browser's own
@@ -459,8 +461,8 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
       onHover={look.setPillHover} onOpen={() => { look.setPillHover(false); look.openInDetail(); }} />
     <LookInsideBar shown={look.open} wide={look.home} page={look.page}
       leaves={Math.ceil(scenePages(items[lookHome ?? detail.open ?? 0]?.pages).length / 2)} labels={labels}
-      onBack={() => look.setPage((current) => Math.max(0, current - 1))}
-      onForward={() => look.setPage((current) => Math.min(Math.ceil(scenePages(items[lookHome ?? detail.open ?? 0]?.pages).length / 2), current + 1))}
+      onBack={() => look.turnBy(-1, Math.ceil(scenePages(items[lookHome ?? detail.open ?? 0]?.pages).length / 2))}
+      onForward={() => look.turnBy(1, Math.ceil(scenePages(items[lookHome ?? detail.open ?? 0]?.pages).length / 2))}
       onClose={look.close} />
     <DetailStack shown={readingOpen && !detail.leaving} height={readingOpen ? readingHeight : 0} toShelf={labels.toShelf} onClose={() => detail.closeBook()}>
       {readingOpen && items.map((entry, index) => <DetailSlot key={entry.id} index={index} top={reading.layout.tops[index] ?? 0}

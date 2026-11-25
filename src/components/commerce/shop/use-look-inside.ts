@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { SceneHub } from "./stripe-scene";
+import { bookSound } from "./use-book-sounds";
 
 /**
  * Their "Open book" (look inside), desktop (06w9; mapped in .tmp/stripe-notes/slice-D-look-inside.md). Two modes share
@@ -12,6 +13,8 @@ import type { SceneHub } from "./stripe-scene";
  * scene has the spread's textures (or after 1.2 s regardless) the pages tween 0 → 1 over 900 ms (their sigmoid). The
  * close (`pd`) runs both back together (900/980 ms, easeOutCubic, frame steps capped at 34 ms). Page turns are the
  * scene's (drag or click on the book); ← → turn one leaf with hold-to-repeat; Escape closes the pages first.
+ * Sounds as theirs (16097-16104, 16191, 16336-16352): the spine crackles 200 ms into an open from shut, the book thuds
+ * when an open or close settles (or a frozen book finishes closing), and each turn from the keys or the bar rustles.
  */
 type Book = { pageCount: number; startPage: number };
 const LEAF_REPEAT_FIRST_MS = 300, LEAF_REPEAT_MIN_MS = 50, LEAF_REPEAT_RAMP_MS = 3000;
@@ -29,8 +32,15 @@ export function useLookInside(hub: SceneHub, detailIndex: number | null, source:
   const [open, setOpen] = useState(false), [home, setHome] = useState(false), [homeIndex, setHomeIndex] = useState<number | null>(null);
   const [peek, setPeek] = useState(false), [pillHover, setPillHover] = useState(false), [prepare, setPrepare] = useState(false);
   const [page, setPage] = useState(1);
-  const openRef = useRef(open), homeRef = useRef(home);
-  useEffect(() => { openRef.current = open; homeRef.current = home; });
+  const openRef = useRef(open), homeRef = useRef(home), pageRef = useRef(page);
+  useEffect(() => { openRef.current = open; homeRef.current = home; pageRef.current = page; });
+  /** One leaf by the keys or the bar, within 0..leaves, with their turn sound when the page moves. */
+  const turnBy = useCallback((step: 1 | -1, leaves: number) => {
+    const next = Math.max(0, Math.min(leaves, pageRef.current + step));
+    if (next === pageRef.current) return;
+    bookSound.turn(step > 0 ? "forward" : "backward", 0);
+    pageRef.current = next; setPage(next);
+  }, []);
   const cover = useRef(0), pages = useRef(0);
   const gate = useRef({ requested: false, coverHalf: false, textures: false });
   const timers = useRef({ safety: 0, homeClose: 0, homeOpen: 0, coverFrame: 0, pageFrame: 0, frozenFrame: 0 });
@@ -66,9 +76,12 @@ export function useLookInside(hub: SceneHub, detailIndex: number | null, source:
     cancelAnimationFrame(timers.current.coverFrame);
     const from = cover.current, opening = target >= 1, ms = constant.LOOK_INSIDE_COVER_MS || 980, time = clock(!opening);
     const half = constant.LOOK_INSIDE_PAGE_START_COVER_FRAC ?? 0.5;
+    if (opening && from < 0.5) bookSound.crackle(200);
+    let thud = opening ? from < 0.5 : from >= 0.5;
     const step = () => {
       const l = Math.min(1, time() / ms);
       cover.current = from + (target - from) * (opening ? l * l : easeOutCubic(l));
+      if (thud && (opening ? l >= 1 : cover.current <= 0.005)) { thud = false; bookSound.settle(); }
       if (opening && !gate.current.coverHalf && cover.current >= half) { gate.current.coverHalf = true; startPages(); }
       if (l < 1) { timers.current.coverFrame = requestAnimationFrame(step); return; }
       cover.current = target; timers.current.coverFrame = 0;
@@ -144,9 +157,11 @@ export function useLookInside(hub: SceneHub, detailIndex: number | null, source:
       if (before != null) {
         hub.frozenLookInsideLiveRef.current = { index: before, value };
         cancelAnimationFrame(timers.current.frozenFrame);
+        let thud = true;
         const decay = () => {
-          const l = Math.min(1, (performance.now() - start) / ms);
-          hub.frozenLookInsideLiveRef.current = { index: before, value: value * (1 - easeOutCubic(l)) };
+          const l = Math.min(1, (performance.now() - start) / ms), left = value * (1 - easeOutCubic(l));
+          if (thud && left <= 0.005) { thud = false; bookSound.settle(); }
+          hub.frozenLookInsideLiveRef.current = { index: before, value: left };
           if (l < 1) timers.current.frozenFrame = requestAnimationFrame(decay); else resetFrozen();
         };
         timers.current.frozenFrame = requestAnimationFrame(decay);
@@ -165,7 +180,7 @@ export function useLookInside(hub: SceneHub, detailIndex: number | null, source:
     const index = home ? homeIndex : detailIndex, book = index == null ? null : source.current.book(index);
     const leaves = Math.ceil((book?.pageCount ?? 0) / 2);
     let repeat = 0, held: 1 | -1 | null = null, since = 0;
-    const turn = (step: 1 | -1) => setPage((current) => Math.max(0, Math.min(leaves, current + step)));
+    const turn = (step: 1 | -1) => turnBy(step, leaves);
     const again = () => {
       const k = Math.min(1, (performance.now() - since) / LEAF_REPEAT_RAMP_MS);
       repeat = window.setTimeout(() => { if (held) { turn(held); again(); } },
@@ -195,7 +210,7 @@ export function useLookInside(hub: SceneHub, detailIndex: number | null, source:
       window.removeEventListener("keyup", up, { capture: true });
       window.removeEventListener("wheel", leave); window.removeEventListener("touchmove", leave);
     };
-  }, [open, home, homeIndex, detailIndex, source]);
+  }, [open, home, homeIndex, detailIndex, source, turnBy]);
 
   useEffect(() => () => {
     const t = timers.current;
@@ -216,5 +231,5 @@ export function useLookInside(hub: SceneHub, detailIndex: number | null, source:
     onDetailBookClick: () => openInDetail(), onDetailBookHoverChange: (hovered: boolean) => setPeek(hovered),
     homeLookInside: home,
   };
-  return { open, home, homeIndex, peek, pillHover, setPillHover, page, setPage, openInDetail, openOnHome, close, sceneProps };
+  return { open, home, homeIndex, peek, pillHover, setPillHover, page, setPage, turnBy, openInDetail, openOnHome, close, sceneProps };
 }

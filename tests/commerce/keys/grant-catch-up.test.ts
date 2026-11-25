@@ -65,7 +65,7 @@ test("an owed key is granted once; the next tick does not send it again", async 
   const { payload, rows } = fakePayload([owed("a", 1)]);
   const lock = runLock();
   const first = await runKeyGrantTick({ payload, grant: adapter, acquire: lock.acquire, env: live, now });
-  assert.deepEqual(first, { outcome: "ran", reconciled: 0, replaced: 0, dispatched: 1, cancelled: 0 });
+  assert.deepEqual(first, { outcome: "ran", reconciled: 0, replaced: 0, dispatched: 1, cancelled: 0, seatsReleased: 0 });
   const second = await runKeyGrantTick({ payload, grant: adapter, acquire: lock.acquire, env: live, now });
   assert.equal(second.outcome === "ran" && second.dispatched, 0);
   assert.equal(raws.length, 1, "one transaction for the order");

@@ -394,7 +394,6 @@ test('I2 disposable PostgreSQL admission, accounting, native fencing and restart
     // editions or the membership product). A stand-in PortOne; no real cancel is sent.
     {
       const { requestOrderRefund, refundRequestScope, refundCutoff } = await import('../../../src/lib/commerce/portone/refund')
-      const { releaseInvalidatedSeatsSweep } = await import('../../../src/lib/commerce/seat-release')
       const { seedConfiguredAttempt } = await import('../core/payment-postgres-fixture')
       const admin = await createLocalReq({ user: { id: 'staff-refund', collection: 'admins', role: 'admin', _strategy: 'staff-better-auth' } as never }, db.payload)
       const settle = async (f: Attempt) => {
@@ -443,7 +442,9 @@ test('I2 disposable PostgreSQL admission, accounting, native fencing and restart
       const intents = (await control.query(`SELECT k.id, a.id AS admission FROM commerce_key_grant_intents k JOIN commerce_admissions a ON a.id = k.entitlement_id
         WHERE a.transaction_id = $1 ORDER BY a.unit`, [guest.transactionID])).rows as { id: string; admission: string }[]
       assert.equal(intents.length, 2)
-      await control.query(`UPDATE commerce_key_grant_intents SET state='granted', token_i_d='1' WHERE id=$1`, [intents[0].id])
+      // A granted key always has its target: the guest lock and the recipient's wallet (the fixture's was owed before any wallet).
+      await control.query(`UPDATE commerce_key_grant_intents SET state='granted', token_i_d='1', target=$2::jsonb WHERE id=$1`,
+        [intents[0].id, JSON.stringify({ chainID: conf.chainID, lock: conf.lock, recipient: '0x' + 'c'.repeat(40) })])
       const seats = async () => (await control.query('SELECT committed_quantity::int AS n FROM commerce_events WHERE id=$1', [guest.eventID])).rows[0].n as number
       const released = async () => (await control.query('SELECT id, seat_released_at IS NOT NULL AS released FROM commerce_admissions WHERE transaction_id=$1 ORDER BY unit',
         [guest.transactionID])).rows.map((row) => row.released as boolean)
@@ -495,26 +496,35 @@ test('I2 disposable PostgreSQL admission, accounting, native fencing and restart
       assert.deepEqual(await keyStates(), [['granted', true], ['cancelled', false]])
       assert.deepEqual(await released(), [false, true])
       assert.equal(await seats(), committed - 1)
-      // The owner's wallet cancels the key and Auth's tick reconciles it (stand-in: the reconciled state, written directly).
-      await control.query(`UPDATE commerce_key_grant_intents SET state='cancelled', cancelled_at=now() WHERE id=$1`, [intents[0].id])
-      // A failed release is retried on the next sweep: counters made inconsistent for one pass, then restored.
+      // The owner's wallet cancels the key; Auth's real key-grant tick reconciles it and, in the same tick, runs the seat
+      // sweep. The grant adapter is a stand-in that reads the key as cancelled on chain; anything else it is asked fails.
+      const { runKeyGrantTick } = await import('../../../src/lib/commerce/keys/grant-catch-up')
+      const chainReads: string[] = []
+      const grant = new Proxy({ keyInvalidAtDepth: async ({ tokenID }: { tokenID: string }) => { chainReads.push(tokenID); return true } }, {
+        get: (stub, key) => key in stub ? stub[key as 'keyInvalidAtDepth'] : key === 'then' ? undefined : () => { throw new Error(`stand-in grant: ${String(key)}`) },
+      }) as never
+      const tick = (limit?: number) => runKeyGrantTick({ payload: db.payload, grant, acquire: async () => async () => {}, limit,
+        env: { KEY_GRANT_POLYGON_LIVE: '1', KEY_GRANT_POLYGON_MAX_COST_WEI: '1000000000000000000' } })
+      // A failed release does not fail the tick: counters made inconsistent for one tick. The cancel is still recorded.
       await control.query('UPDATE commerce_events SET committed_quantity=0 WHERE id=$1', [guest.eventID])
-      const sweeper = await createLocalReq({}, db.payload)
-      assert.equal(await releaseInvalidatedSeatsSweep({ req: sweeper }), 0)
-      assert.deepEqual(await released(), [false, true])
+      const failed = await tick()
+      const keyRow = (await control.query('SELECT state, cancel_requested, token_i_d, next_attempt_at, target FROM commerce_key_grant_intents WHERE id=$1', [intents[0].id])).rows[0]
+      assert.ok(failed.outcome === 'ran' && failed.cancelled === 1 && failed.seatsReleased === 0, JSON.stringify({ failed, keyRow }))
+      assert.deepEqual([chainReads, await keyStates(), await released()], [['1'], [['cancelled', true], ['cancelled', false]], [false, true]])
       await control.query('UPDATE commerce_events SET committed_quantity=$2 WHERE id=$1', [guest.eventID, committed - 1])
-      // Review-A and Wallet ML: the sweep is fair. At one admission per pass, refunded admissions that can never release
-      // (here the earlier membership order's, which is not an Unlock event) cannot starve this seat: the durable cursor
-      // moves past them, so it is reached within one round.
+      // Review-A and Wallet ML: later ticks retry it, fairly. At one admission per tick, refunded admissions that can never
+      // release (here the earlier membership order's, which is not an Unlock event) cannot starve this seat: the durable
+      // cursor moves past them, so it is reached within one round.
       const queued = (await control.query(`SELECT count(*)::int AS n FROM commerce_admissions WHERE status = 'revoked' AND benefit_review
         AND seat_released_at IS NULL AND checked_in_at IS NULL`)).rows[0].n as number
       assert.ok(queued >= 2, `refunded admissions in the queue: ${queued}`)
       let passes = 0, swept = 0
-      while (swept === 0 && passes <= queued) { swept = await releaseInvalidatedSeatsSweep({ req: await createLocalReq({}, db.payload), limit: 1 }); passes++ }
-      assert.equal(swept, 1, `released within ${passes} passes of ${queued}`)
+      while (swept === 0 && passes <= queued) { const ran = await tick(1); swept = ran.outcome === 'ran' ? ran.seatsReleased : 0; passes++ }
+      assert.equal(swept, 1, `released within ${passes} ticks of ${queued}`)
       assert.deepEqual(await released(), [true, true])
       assert.equal(await seats(), committed - 2)
-      assert.equal(await releaseInvalidatedSeatsSweep({ req: await createLocalReq({}, db.payload) }), 0, 'each seat once')
+      const after = await tick()
+      assert.ok(after.outcome === 'ran' && after.cancelled === 0 && after.seatsReleased === 0, 'each seat once')
       // Once refunded, the admin action does not ask PortOne again.
       assert.deepEqual(await requestOrderRefund({ req: admin, orderID: guestOrder, reason: 'Owner refund', deps }), { outcome: 'refunded' })
       assert.equal(calls.length, 2)

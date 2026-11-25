@@ -6,7 +6,7 @@ import { purchaseSnapshotSchema } from "../purchase-snapshot";
 import { releaseInvalidatedSeats, releaseInvalidatedSeatsSweep } from "../seat-release";
 import { findCommerce, inCommerceTransaction, lockCommerce, readCommerce, relationshipID, updateCommerce, type CommerceDocument } from "../_shared/transaction";
 import {
-  cancelReplacementStopCodes, grantBroadcastPending, grantBroadcastStops, grantBroadcastSuppressed, grantRecoveryHeld, parkedCancelCodes, parkedGrantCodes, parseKeyGrantTarget, replacementStopCodes, ticketTokenConflict, ticketTokenIdentity, MEMBER_EVENT_GRANT,
+  beyondAncestryCap, cancelReplacementStopCodes, grantBroadcastPending, grantBroadcastStops, grantBroadcastSuppressed, grantRecoveryHeld, parkedCancelCodes, parkedGrantCodes, parseKeyGrantTarget, replacementStopCodes, ticketTokenConflict, ticketTokenIdentity, MEMBER_EVENT_GRANT,
   type BroadcastOutcome, type CancelReconcileOutcome, type KeyCancelAdapter, type KeyGrantAdapter, type RebroadcastOutcome, type ReconcileOutcome, type RecordedSend,
   type ReplaceOutcome, type TransactionFee,
 } from "./contracts";
@@ -474,33 +474,73 @@ export async function reconcileKeyGrants({ payload, adapter, limit = 10, now = (
       outcomes.push({ txHash, outcome });
     }
     const result = outcomes.find((entry) => entry.outcome.kind === "confirmed") ?? outcomes.find((entry) => entry.outcome.kind === "definitelyReverted");
-    if (!result) { await deferOrSurface(payload, row, now()); continue; }
-    await inIntent(payload, row.id, async (req, intent) => {
-      // Fenced by attempt and hash: a result for an older attempt never lands on a newer one.
-      if (!["submitted", "ambiguous"].includes(String(intent.state)) || intent.txHash !== row.txHash || intent.attemptID !== row.attemptID) return;
-      const { outcome, txHash } = result;
-      if (intent.lastErrorCode === ticketTokenConflict && outcome.kind !== "confirmed") return;
-      let ticketTokenKey: string | undefined;
-      if (outcome.kind === "confirmed") {
-        const target = parseKeyGrantTarget(intent.target);
-        if (target.ticketMode === "shared") {
-          const key = ticketTokenIdentity(target.chainID, target.lock, outcome.tokenID);
-          if (key) await lockCommerce(req, [`event-token:${key}`]);
-          const previous = key && await findCommerce(req, INTENTS, "ticketTokenKey", key);
-          if (!key || (previous && previous.id !== intent.id)) {
-            await updateCommerce(req, INTENTS, row.id, { state: "ambiguous", lastErrorCode: ticketTokenConflict, nextAttemptAt: later(now(), HOLD_RECHECK_MS) });
-            return;
-          }
-          ticketTokenKey = key;
-        }
-      }
-      const data = outcome.kind === "confirmed" ? { state: "granted", tokenID: outcome.tokenID, ...(ticketTokenKey ? { ticketTokenKey } : {}), grantedAt: now().toISOString(), nextAttemptAt: null, settledTxHash: txHash }
-        : { state: "failed_retryable", lastErrorCode: code(outcome.kind === "definitelyReverted" ? outcome.code : "tx_reverted"), settledTxHash: txHash, nextAttemptAt: later(now(), RETRY_BACKOFF_MS * Math.max(1, Number(intent.attempts))) };
-      await updateCommerce(req, INTENTS, row.id, data);
-      settled++;
-    });
+    if (!result) {
+      if (outcomes.some((entry) => entry.outcome.kind === "unknown" && entry.outcome.code === beyondAncestryCap)) logOverCap(row.id);
+      await deferOrSurface(payload, row, now());
+      continue;
+    }
+    if (await settleReconciled(payload, row, result, now)) settled++;
   }
   return settled;
+}
+
+/**
+ * One fixed stderr line for a grant whose receipt sits further below the finalized block than the tick walks
+ * (ANCESTRY_CAP): it stays pending until a person runs the one-shot reconcile (deployment/KEY-GRANTS.md). Printed on
+ * every tick while it lasts; no address, order or customer data.
+ */
+export function logOverCap(intentID: string, log: (line: string) => void = (line) => console.error(line)): void {
+  log(JSON.stringify({ event: "key_grant_over_cap", intent: String(intentID) }));
+}
+
+/** Records a definitive reconcile result, fenced by attempt and hash: a result for an older attempt never lands on a newer one. */
+async function settleReconciled(payload: Payload, row: CommerceDocument, result: { txHash: string; outcome: ReconcileOutcome }, now: () => Date): Promise<boolean> {
+  return inIntent(payload, row.id, async (req, intent) => {
+    if (!["submitted", "ambiguous"].includes(String(intent.state)) || intent.txHash !== row.txHash || intent.attemptID !== row.attemptID) return false;
+    const { outcome, txHash } = result;
+    if (intent.lastErrorCode === ticketTokenConflict && outcome.kind !== "confirmed") return false;
+    let ticketTokenKey: string | undefined;
+    if (outcome.kind === "confirmed") {
+      const target = parseKeyGrantTarget(intent.target);
+      if (target.ticketMode === "shared") {
+        const key = ticketTokenIdentity(target.chainID, target.lock, outcome.tokenID);
+        if (key) await lockCommerce(req, [`event-token:${key}`]);
+        const previous = key && await findCommerce(req, INTENTS, "ticketTokenKey", key);
+        if (!key || (previous && previous.id !== intent.id)) {
+          await updateCommerce(req, INTENTS, row.id, { state: "ambiguous", lastErrorCode: ticketTokenConflict, nextAttemptAt: later(now(), HOLD_RECHECK_MS) });
+          return false;
+        }
+        ticketTokenKey = key;
+      }
+    }
+    const data = outcome.kind === "confirmed" ? { state: "granted", tokenID: outcome.tokenID, ...(ticketTokenKey ? { ticketTokenKey } : {}), grantedAt: now().toISOString(), nextAttemptAt: null, settledTxHash: txHash }
+      : { state: "failed_retryable", lastErrorCode: code(outcome.kind === "definitelyReverted" ? outcome.code : "tx_reverted"), settledTxHash: txHash, nextAttemptAt: later(now(), RETRY_BACKOFF_MS * Math.max(1, Number(intent.attempts))) };
+    await updateCommerce(req, INTENTS, row.id, data);
+    return true;
+  });
+}
+
+/**
+ * The one-shot recovery reconcile (scripts/key-grant-reconcile-one.ts): ONE named grant intent and ONE of its recorded
+ * hashes, read with the adapter it is given (a raised ancestry walk budget, the same canonical and ancestry checks).
+ * It only reads the chain and, on a definitive result, makes the same fenced write as the tick. It never signs,
+ * sends or replaces a transaction.
+ */
+export async function reconcileOneKeyGrant({ payload, adapter, intentID, txHash, now = () => new Date() }: { payload: Payload; adapter: KeyGrantAdapter; intentID: string; txHash: string; now?: () => Date }):
+  Promise<{ outcome: "settled"; state: string } | { outcome: "unknown"; code?: string } | { outcome: "refused"; reason: "not_found" | "not_in_flight" | "hash_not_recorded" }> {
+  let row: CommerceDocument | null;
+  try { row = await payload.findByID({ collection: INTENTS as never, id: intentID, depth: 0, overrideAccess: true, disableErrors: true }) as CommerceDocument | null; } catch { row = null; }
+  if (!row) return { outcome: "refused", reason: "not_found" };
+  if (!["submitted", "ambiguous"].includes(String(row.state)) || !row.txHash) return { outcome: "refused", reason: "not_in_flight" };
+  const suppressed = row.lastErrorCode === grantBroadcastSuppressed ? recordedSends(row).at(-1)?.txHash?.toLowerCase() : undefined;
+  const original = [String(row.txHash), ...recordedSends(row).map((send) => send.txHash)].find((value) => value.toLowerCase() === txHash.toLowerCase());
+  if (!original || original.toLowerCase() === suppressed) return { outcome: "refused", reason: "hash_not_recorded" };
+  let outcome: ReconcileOutcome;
+  try { outcome = await adapter.reconcile({ intentID: row.id, txHash: original, target: parseKeyGrantTarget(row.target) }); } catch { outcome = { kind: "unknown" }; }
+  if (outcome.kind === "unknown") return { outcome: "unknown", ...(outcome.code ? { code: outcome.code } : {}) };
+  if (!(await settleReconciled(payload, row, { txHash: original, outcome }, now))) return { outcome: "unknown", code: "not_written" }; // the row moved, or a shared-ticket conflict held it
+  const after = await payload.findByID({ collection: INTENTS as never, id: intentID, depth: 0, overrideAccess: true }) as CommerceDocument;
+  return { outcome: "settled", state: String(after.state) };
 }
 
 /**

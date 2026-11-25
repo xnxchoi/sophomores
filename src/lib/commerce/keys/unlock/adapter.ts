@@ -6,7 +6,7 @@ import {
 import { isTxHash, parseKeyGrantTarget, type KeyGrantAdapter, type KeyGrantTarget, type PrepareOutcome, type ReconcileOutcome, type ReplaceOutcome } from "../contracts";
 import { POLYGON_CHAIN_ID, polygonEventLocks, polygonLockPinned, polygonPins, polygonRoleHookClear, roleHookSet, type PolygonPins } from "./polygon";
 import type { KeyStateReader } from "../worker";
-import { createSignerTransactions, replacementFee, type Inspection } from "./transactions";
+import { beyondAncestryCap, createSignerTransactions, replacementFee, type Inspection } from "./transactions";
 
 /*
  * ADR-0004 chain adapter for an Unlock PublicLock v14, signed by the grant-only
@@ -45,20 +45,22 @@ export type UnlockKeyGrantAdapterOptions = {
   env?: Readonly<Record<string, string | undefined>>;
   /** Polygon's pinned lock and grant signer. Production uses the defaults; tests supply throwaway ones. */
   polygon?: PolygonPins;
+  /** Receipt ancestry walk budget (transactions.ts); only the one-shot recovery reconcile raises it. */
+  ancestryCap?: bigint;
 };
 
 const notSent = (code: string): PrepareOutcome & ReplaceOutcome => ({ kind: "definitelyNotSent", code });
 const unknown: ReconcileOutcome = { kind: "unknown" };
 export const reverted = (error: unknown): boolean => error instanceof BaseError && error.walk((cause) => cause instanceof ContractFunctionRevertedError) instanceof ContractFunctionRevertedError;
 
-export function createUnlockKeyGrantAdapter({ chainID, account, transport, now = () => new Date(), holdMs = 60_000, env, polygon = polygonPins }: UnlockKeyGrantAdapterOptions): UnlockKeyGrantAdapter {
+export function createUnlockKeyGrantAdapter({ chainID, account, transport, now = () => new Date(), holdMs = 60_000, env, polygon = polygonPins, ancestryCap }: UnlockKeyGrantAdapterOptions): UnlockKeyGrantAdapter {
   // Polygon grants come only from the pinned grant signer: any other account is refused before a transport is built.
   if (chainID === POLYGON_CHAIN_ID && !isAddressEqual(account.address, polygon.granter)) {
     throw new Error("Unlock grants on Polygon (137) are refused: the signer is not the pinned key granter");
   }
   // The pinned event locks come from config (validated here, at start-up), unless the caller pinned them itself.
   const pins: PolygonPins = chainID === POLYGON_CHAIN_ID ? { ...polygon, eventLocks: polygon.eventLocks ?? polygonEventLocks(env) } : polygon;
-  const chain = createSignerTransactions({ chainID, account, transport, holdMs, env });
+  const chain = createSignerTransactions({ chainID, account, transport, holdMs, env, ancestryCap });
   const { client } = chain;
 
   /** The target, only if it is well formed, on this adapter's chain, and (on Polygon) on the pinned lock. */
@@ -163,7 +165,8 @@ export function createUnlockKeyGrantAdapter({ chainID, account, transport, now =
       const target = targetHere(value);
       if (typeof target === "string" || !isTxHash(txHash)) return unknown;
       const receipt = await chain.buriedReceipt(txHash as Hex, target.lock);
-      if (!receipt) return unknown; // not mined, not deep enough yet, or not provable; recheck later
+      if (receipt === beyondAncestryCap) return { kind: "unknown", code: beyondAncestryCap }; // the tick alerts
+      if (!receipt) return unknown; // not mined, not settled yet, or not provable; recheck later
       if (receipt.status !== "success") return { kind: "definitelyReverted", code: "tx_reverted" };
       const transfers = parseEventLogs({ abi: lockAbi, eventName: "Transfer", logs: receipt.logs })
         .filter((log) => isAddressEqual(log.address, target.lock)) as unknown as { args: { from: Address; to: Address; tokenId: bigint } }[];

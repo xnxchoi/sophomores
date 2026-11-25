@@ -5,7 +5,7 @@ This is the operator runbook for a stalled key-grant signer. It is decided by AD
 **What exists today, and what doesn't:**
 - **Exists:** the worker parks and holds, automatically.
 - **Exists:** stopping the tick (the go-live switch).
-- **Exists:** read-only reconciliation.
+- **Exists:** read-only reconciliation, including a one-shot command for one over-cap grant (`scripts/key-grant-reconcile-one.ts`).
 - **Not built:** a recovery self-send command.
 - **Not built:** a recovery write-ahead record.
 - **Not built:** an audited "resume" operation.
@@ -32,8 +32,8 @@ The tick keeps printing `{"outcome":"ran",...}` with `dispatched: 0` while owed 
 4. Tell the owner, with the chain, the signer account (CAIP-10), the nonce, the intent IDs, every recorded hash for that nonce, how long it has been stuck, and how many grants are queued behind it. Never send raw transaction bytes, key material, env contents or a member's address.
 
 ## 3. Triage (owner, read-only)
-- **Check every recorded hash** for the stuck nonce at the chain's depth: Polygon 256 blocks, Base Sepolia 10.
-  - **If a grant mined:** turn the switch back on. The tick's reconcile settles it (`granted`) and the queue moves.
+- **Check every recorded hash** for the stuck nonce once it is settled: Polygon at or below the finalized block, Base Sepolia 10 blocks deep.
+  - **If a grant mined:** turn the switch back on. The tick's reconcile settles it (`granted`) and the queue moves, **but only if its block is within 256 blocks of the finalized block** (the tick's ancestry cap). A stall longer than about 8.5 minutes usually leaves it further down: the tick then prints `{"event":"key_grant_over_cap","intent":"<id>"}` on every run and leaves it pending. Settle each such intent with the one-shot command, `scripts/key-grant-reconcile-one.ts` ([KEY-GRANTS.md](KEY-GRANTS.md), "Over-cap alert and recovery"), before expecting the queue to move. It only reads and makes the tick's fenced write; it never sends.
   - **If it reverted** (a confirmed revert at depth, which proves the grant did not execute): reconcile records it as `failed_retryable`. After a backoff the worker requeues it as a fresh attempt at a new nonce, automatically, unless its order was refunded since (then it is cancelled instead) or its code is one that parks. This is the policy in code (`worker.ts`, reconcile and `requeueRetryable`).
 - **`grant_recovery_held` is sticky.** A hold placed because the order's money or benefits are in question (a refund in progress, say) stays until the owner, or the designated commerce authority, settles that order's outcome. An ambiguous or permanent refund is not a cleared hold. A held grant must never be sent: it may belong to a refunded order.
 - **`grant_broadcast_suppressed`** has no stored transaction bytes. It cannot be resumed by rebuilding or editing the row. It is the owner's decision.
@@ -63,7 +63,7 @@ When built, it applies only to a nonce that is permanently held and provably unu
   - Sign only on the owner-controlled signer host, as the owner of the signer file (0600, regular file, no symlink). Approvers are not automatically key holders.
   - Log who used the signer, when, the approval, the purpose and the public hash; never key material.
 - **Settle at depth:**
-  - **If the original grant won the nonce:** reconcile settles it. Route any needed cancel to the owner's wallet ([KEY-GRANTS.md](KEY-GRANTS.md), refund cancels).
+  - **If the original grant won the nonce:** reconcile settles it (beyond the 256-block cap, with the one-shot command above). Route any needed cancel to the owner's wallet ([KEY-GRANTS.md](KEY-GRANTS.md), refund cancels).
   - **If the self-send won:** keep the original disputed hash on its intent, and settle the recovery record without granting a key.
   - An unknown competing transaction, or missing proof, keeps the signer parked.
 - **Resume:** turn the switch back on. The tick resumes behind the cleared nonce.

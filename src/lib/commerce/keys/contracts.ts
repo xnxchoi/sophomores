@@ -112,10 +112,14 @@ export type BroadcastOutcome =
   | { kind: "definitelyNotSent"; code: string }
   | { kind: "unknown" };
 
+/** A receipt whose block sits further below the settled block than this process may walk: deferred, and alerted. */
+export const beyondAncestryCap = "beyond_ancestry_cap" as const;
+
 export type ReconcileOutcome =
   | { kind: "confirmed"; tokenID: string }
   | { kind: "definitelyReverted"; code: string }
-  | { kind: "unknown" };
+  /** `beyond_ancestry_cap`: mined, but too far below the settled block for this process to tie it there (deferred). */
+  | { kind: "unknown"; code?: "beyond_ancestry_cap" };
 
 /**
  * Not-sent codes that retrying cannot fix until someone acts (a chain enabled,

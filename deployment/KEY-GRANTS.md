@@ -40,12 +40,29 @@ The code is `src/lib/commerce/keys/` (worker passes, `grant-catch-up.ts`, `unloc
   - **What this does and does not catch:** these checks detect an RPC whose answers contradict each other. They do not
     detect every way a pool of backends can mix answers, and nothing in one RPC's answers can expose a consistently
     dishonest RPC.
-  - **Live prerequisite:** `KEY_GRANT_POLYGON_RPC_URL` must be an owner-chosen, trusted RPC that answers from a single
-    view of the chain (his own node or a provider endpoint he trusts). Not a load-balanced public pool. The code reads
-    one RPC; it does not corroborate against a second.
-  - **Over-cap gap:** at one tick a minute a receipt is checked within a few blocks of finality. If the tick stops for
-    more than about 8.5 minutes, receipts that fell over 256 blocks below the finalized block stay pending and need a
-    person: the code never settles them from a longer walk.
+  - **Live prerequisite (owner's choice, one of two):** `KEY_GRANT_POLYGON_RPC_URL` is either
+    1. an endpoint whose provider has **confirmed in writing** that it answers every request from a single node's
+       view of the chain (not a load-balanced pool), or
+    2. a **paid** provider endpoint the owner chooses and accepts as trusted.
+    A free public pool does not qualify. Neither does Unlock's hosted endpoint unless its provider confirms
+    single-view answers (Review-A, 25 Nov). The code reads one RPC; it does not corroborate against a second.
+  - **The cap applies on both chains.** Base Sepolia settles at 10 blocks deep, so its receipts are tied to the
+    settled block by the same walk and the same 256-block cap.
+- **Over-cap alert and recovery:** at one tick a minute a receipt is checked within a few blocks of finality. If the
+  tick stops for more than about 8.5 minutes (256 blocks), a receipt can end up more than 256 blocks below the
+  finalized block. The tick then never settles it, and prints one fixed stderr line on every run while it lasts:
+  `{"event":"key_grant_over_cap","intent":"<id>"}`. Point an alert at that line. A person recovers each one:
+  1. Note the intent ID from the line, and one of its recorded hashes (`txHash`, or one in `sends`) from the admin.
+  2. Check the hash on a block explorer: mined, which block, and how far below the finalized block. Use a `--walk`
+     a little above that gap (at most 20,000).
+  3. On the tick host, with the tick's env (the switch may be off; the command only reads), run:
+     `node --import tsx scripts/key-grant-reconcile-one.ts --intent <id> --tx <hash> --walk <blocks>`
+  4. Read its one line. `{"outcome":"settled","state":"granted"}` (or `failed_retryable` for a proven revert) is the
+     same fenced write the tick makes. `{"outcome":"unknown"}` means the evidence did not hold (fork, missing receipt,
+     broken link, or `"code":"beyond_ancestry_cap"` for too small a walk): change nothing by hand and escalate.
+     `{"outcome":"refused","reason":"tick_running"}` means a tick holds the run lock: wait a minute and run it again.
+  The command holds the tick's run lock, uses an account that cannot sign, and never builds, signs, sends or
+  replaces a transaction.
 - **Off** (the default): it prints `{"outcome":"off"}` before loading anything.
 - **What the tick never does:**
   - It never retries an `ambiguous` grant; that waits for reconcile and a person.

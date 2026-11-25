@@ -3,7 +3,7 @@ import {
   type Address, type Hex, type LocalAccount, type TransactionReceipt, type Transport,
 } from "viem";
 import { baseSepolia, polygon } from "viem/chains";
-import { signerAccountID, type BroadcastOutcome, type RebroadcastInput, type RebroadcastOutcome, type TransactionFee } from "../contracts";
+import { beyondAncestryCap, signerAccountID, type BroadcastOutcome, type RebroadcastInput, type RebroadcastOutcome, type TransactionFee } from "../contracts";
 import { POLYGON_CHAIN_ID, polygonKeyGrantsLive, polygonRoleHookClear, roleHookSet } from "./polygon";
 
 /*
@@ -45,6 +45,9 @@ export const finalizedTagChains: ReadonlySet<number> = new Set([137]);
  * A receipt further down stays pending for a person (deployment/KEY-GRANTS.md), never settled or reverted.
  */
 export const ANCESTRY_CAP = 256n;
+export { beyondAncestryCap };
+/** The most a one-shot recovery reconcile may walk (scripts/key-grant-reconcile-one.ts): about 11 h on Polygon. */
+export const MAX_RECOVERY_WALK = 20_000n;
 
 /**
  * Highest `maxFeePerGas` (wei) any transaction of ours may carry, first sends
@@ -138,10 +141,14 @@ export type SignerTransactionsOptions = {
   chainID: number; account: LocalAccount; transport?: Transport; holdMs?: number;
   /** Where the go-live switch is read (default: process.env). */
   env?: Readonly<Record<string, string | undefined>>;
+  /** How far below the settled block a receipt may be tied by parentHash links: ANCESTRY_CAP routinely; more only for
+   * the one-shot recovery reconcile, never above MAX_RECOVERY_WALK. */
+  ancestryCap?: bigint;
 };
 
 /** One signer's transactions on one enabled chain. Throws for a chain that is not enabled (chainEnabled). */
-export function createSignerTransactions({ chainID, account, transport, holdMs = 60_000, env = process.env }: SignerTransactionsOptions) {
+export function createSignerTransactions({ chainID, account, transport, holdMs = 60_000, env = process.env, ancestryCap = ANCESTRY_CAP }: SignerTransactionsOptions) {
+  if (ancestryCap < 1n || ancestryCap > MAX_RECOVERY_WALK) throw new Error(`Unlock ancestry walks are bounded: 1 to ${MAX_RECOVERY_WALK} blocks`);
   const network = Object.hasOwn(networks, chainID) && chainEnabled(chainID, env) ? networks[chainID] : undefined;
   if (!network) throw new Error(`Unlock transactions are refused on chain ${chainID}: Base Sepolia (84532) is enabled, and Polygon (137) only while KEY_GRANT_POLYGON_LIVE=1`);
   const budget = maxCostWei(chainID, env);
@@ -180,10 +187,10 @@ export function createSignerTransactions({ chainID, account, transport, holdMs =
   /**
    * The hash of the settled block's ancestor at `height`, found by walking `parentHash` links down from the settled
    * block itself (Review-A, 25 Nov): a lower block a mixed-backend RPC serves from a fork is not on that path. Each
-   * step must name the expected height and hash. Null when the gap exceeds ANCESTRY_CAP or any link fails.
+   * step must name the expected height and hash. Null when the gap exceeds the cap or any link fails.
    */
   const ancestorAt = async (from: { number: bigint; hash: Hex }, height: bigint): Promise<Hex | null> => {
-    if (height > from.number || from.number - height > ANCESTRY_CAP) return null;
+    if (height > from.number || from.number - height > ancestryCap) return null;
     let hash = from.hash;
     for (let number = from.number; number > height; number--) {
       const block = await client.getBlock({ blockHash: hash });
@@ -346,7 +353,7 @@ export function createSignerTransactions({ chainID, account, transport, holdMs =
      * Review-A, 25 Nov); `null` while that cannot be shown (not mined, too
      * shallow, not canonical, another chain, unreachable).
      */
-    async buriedReceipt(txHash: Hex, to: Address): Promise<TransactionReceipt | null> {
+    async buriedReceipt(txHash: Hex, to: Address): Promise<TransactionReceipt | null | typeof beyondAncestryCap> {
       try { if (!(await onChain())) return null; } catch { return null; }
       const seen = await inspect(txHash);
       if (seen.status !== "mined" && seen.status !== "reverted") return null;
@@ -355,9 +362,10 @@ export function createSignerTransactions({ chainID, account, transport, holdMs =
       try {
         const settled = await settledBlock();
         if (!settled || height > settled.number) return null;
-        // The receipt's block must be the settled block or its ancestor (parentHash links, at most ANCESTRY_CAP), and
+        // The receipt's block must be the settled block or its ancestor (parentHash links, at most the cap), and
         // the numbered block at the settled height is re-read unchanged afterwards. Any mismatch or an over-cap gap is
         // unknown (deferred), never settled and never a revert.
+        if (settled.number - height > ancestryCap) return beyondAncestryCap; // deferred: alerted, recovered one-shot
         const ancestor = await ancestorAt(settled, height);
         if (!ancestor || !same(ancestor, seen.receipt.blockHash)) return null;
         return await stillSettled(settled) ? seen.receipt : null;

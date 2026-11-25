@@ -3,7 +3,7 @@ import { decodeFunctionData, encodeFunctionData, getAddress, isAddressEqual, par
 import { isTxHash, parseKeyGrantTarget, type CancelPrepareOutcome, type CancelReconcileOutcome, type KeyCancelAdapter, type KeyGrantTarget, type ReplaceOutcome } from "../contracts";
 import { reverted } from "./adapter";
 import { POLYGON_CHAIN_ID, polygonEventLocks, polygonLockPinned, POLYGON_SIGNET_LOCK, polygonRoleHookClear, roleHookSet } from "./polygon";
-import { createSignerTransactions, replacementFee } from "./transactions";
+import { beyondAncestryCap, createSignerTransactions, replacementFee } from "./transactions";
 
 /*
  * ADR-0009 cancel adapter for an Unlock PublicLock v14, signed by the separate
@@ -145,7 +145,7 @@ export function createUnlockKeyCancelAdapter({ chainID, account, transport, hold
       const target = targetHere(value);
       if (typeof target === "string" || !isTxHash(txHash) || !tokenPattern.test(tokenID)) return unknown;
       const receipt = await chain.buriedReceipt(txHash as Hex, target.lock);
-      if (!receipt) return unknown;
+      if (!receipt || receipt === beyondAncestryCap) return unknown;
       if (receipt.status !== "success") return { kind: "definitelyReverted", code: "tx_reverted" };
       const cancels = parseEventLogs({ abi: lockAbi, eventName: "CancelKey", logs: receipt.logs })
         .filter((log) => isAddressEqual(log.address, target.lock)) as unknown as { args: { tokenId: bigint; refund: bigint } }[];

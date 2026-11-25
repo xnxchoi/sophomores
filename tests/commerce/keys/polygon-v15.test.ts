@@ -7,9 +7,9 @@ import { decodeFunctionData, keccak256, numberToHex, parseTransaction, type Abi,
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { createUnlockKeyGrantAdapter } from "@/lib/commerce/keys/unlock/adapter";
 import { createUnlockKeyCancelAdapter } from "@/lib/commerce/keys/unlock/cancel";
-import { dispatchKeyGrants } from "@/lib/commerce/keys/worker";
+import { dispatchKeyGrants, reconcileKeyGrants, reconcileOneKeyGrant } from "@/lib/commerce/keys/worker";
 import { fakePayload } from "./support/fake-payload";
-import { ANCESTRY_CAP } from "@/lib/commerce/keys/unlock/transactions";
+import { ANCESTRY_CAP, MAX_RECOVERY_WALK } from "@/lib/commerce/keys/unlock/transactions";
 import { address, cancelLog, hashOf, healthyChain, lockAbi, lockAddress, lockCalls, mockChain, receipt, recipient, transferLog, uint, uintArray } from "./support/mock-chain";
 
 // Owner, 24 Nov: "our lock is v15". The Signet lock reads publicLockVersion 15; Edition I reads 14. Our adapters
@@ -318,4 +318,61 @@ test("a receipt more than ANCESTRY_CAP blocks below the finalized block is defer
     eth_getBlockByNumber: view([101 + cap, top], { 100: hashOf("1"), [101 + cap]: top }) }));
   assert.equal((await beyond.adapter.reconcile({ intentID: "i", txHash: hashOf("c"), target })).kind, "unknown", "one past the cap: no revert");
   assert.equal(beyond.methods().includes("eth_getBlockByHash"), false);
+});
+
+// Review-A, 25 Nov (r9): the tick keeps the 256-block cap and alerts; a person settles an over-cap grant with the
+// one-shot, reconcile-only command (scripts/key-grant-reconcile-one.ts), which raises the walk for ONE recorded hash.
+function recoveryAdapter(handlers: ReturnType<typeof healthyChain>, ancestryCap?: bigint) {
+  const account = privateKeyToAccount(generatePrivateKey());
+  const chain = mockChain(handlers);
+  return { ...chain, adapter: createUnlockKeyGrantAdapter({ chainID: 137, account, transport: chain.transport, env: live, polygon: { lock: lockAddress, granter: account.address }, ancestryCap }) };
+}
+const inFlight = () => fakePayload([{ id: "i9", operationKey: "unlock-grant:v1:order-9:1", entitlement: "adm", state: "submitted", attempts: 1, attemptID: "a9", txHash: hashOf("c"), target }]);
+const neverSent = (methods: string[]) => !methods.some((method) => ["eth_sendRawTransaction", "eth_estimateGas", "eth_getTransactionCount"].includes(method));
+async function capturingErrors<T>(work: () => Promise<T>): Promise<{ result: T; lines: string[] }> {
+  const lines: string[] = [];
+  const original = console.error;
+  console.error = (line: unknown) => { lines.push(String(line)); };
+  try { return { result: await work(), lines }; } finally { console.error = original; }
+}
+
+test("a grant 300 blocks below the finalized block: the tick defers and alerts; the one-shot command settles it", async () => {
+  const [one, top] = [hashOf("1"), hashOf("5")];
+  const chain = () => polygon({}, { eth_getTransactionReceipt: () => receipt("0x1", [transferLog(42n)]), eth_blockNumber: () => numberToHex(400), eth_getBlockByNumber: view([400, top], { 100: one, 400: top }) });
+  const { payload, rows } = inFlight();
+  const tick = recoveryAdapter(chain());
+  const { result, lines } = await capturingErrors(() => reconcileKeyGrants({ payload, adapter: tick.adapter }));
+  assert.equal(result, 0);
+  assert.deepEqual(lines.map((line) => JSON.parse(line)), [{ event: "key_grant_over_cap", intent: "i9" }]);
+  assert.equal(rows["commerce-key-grant-intents"][0].state, "submitted");
+  assert.equal(tick.methods().includes("eth_getBlockByHash"), false, "the tick never walks past its cap");
+  const recovery = recoveryAdapter(chain(), 400n);
+  assert.deepEqual(await reconcileOneKeyGrant({ payload, adapter: recovery.adapter, intentID: "i9", txHash: hashOf("c").toUpperCase().replace("0X", "0x") }), { outcome: "settled", state: "granted" });
+  const row = rows["commerce-key-grant-intents"][0];
+  assert.deepEqual([row.state, row.tokenID, row.settledTxHash], ["granted", "42", hashOf("c")]);
+  assert.equal(recovery.methods().filter((method) => method === "eth_getBlockByHash").length, 300, "one read per link");
+  assert.ok(neverSent(recovery.methods()), "reconcile only: nothing built, signed or sent");
+});
+
+test("the one-shot command cannot settle on forked or missing evidence, and refuses what is not one recorded in-flight hash", async () => {
+  const [one, top, forked] = [hashOf("1"), hashOf("5"), hashOf("6")];
+  for (const [label, answer] of [["success", receipt("0x1", [transferLog(42n)])], ["revert", receipt("0x0", [])]] as const) {
+    const { payload, rows } = inFlight();
+    const fork = recoveryAdapter(polygon({}, { eth_getTransactionReceipt: () => ({ ...answer, blockHash: forked }), eth_blockNumber: () => numberToHex(400),
+      eth_getBlockByNumber: view([400, top], { 100: forked, 400: top }, { [forked]: [100, hashOf("4")] }, { 100: one }) }), 400n);
+    assert.deepEqual(await reconcileOneKeyGrant({ payload, adapter: fork.adapter, intentID: "i9", txHash: hashOf("c") }), { outcome: "unknown" }, `forked ${label}`);
+    assert.equal(rows["commerce-key-grant-intents"][0].state, "submitted", `forked ${label}`);
+    const short = recoveryAdapter(polygon({}, { eth_getTransactionReceipt: () => answer, eth_blockNumber: () => numberToHex(400), eth_getBlockByNumber: view([400, top], { 100: one, 400: top }) }), 299n);
+    assert.deepEqual(await reconcileOneKeyGrant({ payload, adapter: short.adapter, intentID: "i9", txHash: hashOf("c") }), { outcome: "unknown", code: "beyond_ancestry_cap" }, `walk too short ${label}`);
+  }
+  const { payload, rows } = inFlight();
+  const missing = recoveryAdapter(polygon({}, { eth_getTransactionReceipt: () => null, eth_getTransactionByHash: () => null, eth_blockNumber: () => numberToHex(400), eth_getBlockByNumber: view([400, top], { 100: one, 400: top }) }), 400n);
+  assert.deepEqual(await reconcileOneKeyGrant({ payload, adapter: missing.adapter, intentID: "i9", txHash: hashOf("c") }), { outcome: "unknown" }, "no receipt");
+  assert.deepEqual(await reconcileOneKeyGrant({ payload, adapter: missing.adapter, intentID: "i9", txHash: hashOf("d") }), { outcome: "refused", reason: "hash_not_recorded" });
+  assert.deepEqual(await reconcileOneKeyGrant({ payload, adapter: missing.adapter, intentID: "nope", txHash: hashOf("c") }), { outcome: "refused", reason: "not_found" });
+  rows["commerce-key-grant-intents"][0].state = "granted";
+  assert.deepEqual(await reconcileOneKeyGrant({ payload, adapter: missing.adapter, intentID: "i9", txHash: hashOf("c") }), { outcome: "refused", reason: "not_in_flight" });
+  assert.ok(neverSent(missing.methods()));
+  assert.throws(() => recoveryAdapter(healthyChain(), MAX_RECOVERY_WALK + 1n), /bounded/);
+  assert.throws(() => recoveryAdapter(healthyChain(), 0n), /bounded/);
 });

@@ -63,7 +63,7 @@ function Group({ children }: { children: ReactNode }) {
 
 /** Each item fades in on its own beat when the bar mounts (it remounts on every open, so the stagger replays). */
 function BarItem({ index, children }: { index: number; children: ReactNode }) {
-  return <span style={{ transitionDelay: 80 + 60 * index + "ms" }} className="flex items-center transition-opacity duration-[320ms] ease-out starting:opacity-0">{children}</span>;
+  return <span style={{ transitionDelay: 40 + 30 * index + "ms" }} className="flex items-center transition-opacity duration-[240ms] ease-out starting:opacity-0">{children}</span>;
 }
 
 function BarButton({ className, ...props }: ComponentProps<"button">) {

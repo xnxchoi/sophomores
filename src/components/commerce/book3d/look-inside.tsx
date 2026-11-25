@@ -27,8 +27,8 @@ import { BoxGeometry, CanvasTexture, DoubleSide, MathUtils, MeshStandardMaterial
 export type LookState = {
   /** Cover progress (0 shut, 1 open) and page progress (the fan); dir +1 opening, −1 closing. */
   lu: number; ld: number; dir: 1 | -1;
-  /** The face turn before the cover moves (0 posed, 1 facing you): stripe.press's book turns to face the reader over the
-   *  first ~480 ms of opening, then the cover swings. Closing brings it back with the cover. */
+  /** The face turn (0 posed, 1 facing you): stripe.press's book turns to face the reader over the first ~480 ms of
+   *  opening, while the cover's slow t² start barely lifts it. Closing brings it back with the cover. */
   face: number;
   /** Tween clocks (s) and start values of the current open or close. The pages wait for the cover to be half open. */
   luClock: number; ldClock: number; luFrom: number; ldFrom: number; ldRunning: boolean;
@@ -53,7 +53,9 @@ const PEEL = 5;
 const PI = Math.PI;
 // stripe.press (12s2, 3fe6): sweep min(205.35°, 6·stiffness), damping, corner curl tuning; its page is 15.05 wide.
 const SWEEP = MathUtils.degToRad(205.349254), DAMPING = 0.32839134, CURL_RAD = 7.02, CURL_POWER = 0.86, FOLD_TILT = MathUtils.degToRad(31.5);
-const SPAN = 32.4, STRIPE_PAGE_W = 15.05, COVER_MS = 980, PAGE_MS = 900;
+const SPAN = 32.4, STRIPE_PAGE_W = 15.05, COVER_MS = 980, PAGE_MS = 900, FACE_MS = 480;
+// Closing settles in ~0.8 s on stripe.press (Review-B frames, 25 Nov), not the full 980 ms ease-out tail.
+const CLOSE_COVER_MS = 800, CLOSE_PAGE_MS = 720;
 const clamp01 = (x: number) => MathUtils.clamp(x, 0, 1);
 const smooth = (e0: number, e1: number, x: number) => { const c = clamp01((x - e0) / (e1 - e0)); return c * c * (3 - 2 * c); };
 /** A stripe.press per-frame lerp factor k, for a step of f 60 fps frames. */
@@ -70,22 +72,23 @@ export function createLookState(spread: number): LookState {
 }
 
 /**
- * The open and close timeline (06w9:16057-16166). Opening: the book turns to face you (480 ms), the cover over 980 ms (t²), then, once it is half open, the
- * pages over 900 ms (fan ease). Closing: both from where they are, together, easeOutCubic (980 and 900 ms), each frame's
- * step capped at 34 ms so a dropped frame slows the close instead of skipping it.
+ * The open and close timeline (06w9:16057-16166). Opening: the book turns to face you (480 ms) while the cover starts
+ * over 980 ms (t², so it barely moves before the turn is done), then, once it is half open, the pages over 900 ms (fan
+ * ease): about 1.6 s in all, as stripe.press measures. Closing: both from where they are, together, easeOutCubic (800
+ * and 720 ms), each frame's step capped at 34 ms so a dropped frame slows the close instead of skipping it.
  */
 export function stepLookTimeline(l: LookState, want: 1 | -1, dt: number) {
   if (want !== l.dir) { l.dir = want; l.luClock = 0; l.ldClock = 0; l.luFrom = l.lu; l.ldFrom = l.ld; l.ldRunning = want < 0; }
-  if (l.dir > 0 && l.face < 1) { l.face = Math.min(l.face + dt / 0.48, 1); l.luClock = 0; l.active = false; return; }
   if (l.dir > 0) {
+    if (l.face < 1) l.face = Math.min(l.face + dt * 1000 / FACE_MS, 1);
     if (l.lu < 1) { l.luClock += dt; const t = clamp01(l.luClock * 1000 / COVER_MS); l.lu = l.luFrom + (1 - l.luFrom) * t * t; }
     if (!l.ldRunning && l.lu >= 0.5) { l.ldRunning = true; l.ldClock = 0; l.ldFrom = l.ld; }
     if (l.ldRunning && l.ld < 1) { l.ldClock += dt; l.ld = l.ldFrom + (1 - l.ldFrom) * fanEase(clamp01(l.ldClock * 1000 / PAGE_MS)); }
   } else {
     const step = Math.min(dt, 0.034);
     l.luClock += step; l.ldClock += step;
-    l.lu = l.luFrom * (1 - easeOutCubic(clamp01(l.luClock * 1000 / COVER_MS)));
-    l.ld = l.ldFrom * (1 - easeOutCubic(clamp01(l.ldClock * 1000 / PAGE_MS)));
+    l.lu = l.luFrom * (1 - easeOutCubic(clamp01(l.luClock * 1000 / CLOSE_COVER_MS)));
+    l.ld = l.ldFrom * (1 - easeOutCubic(clamp01(l.ldClock * 1000 / CLOSE_PAGE_MS)));
     l.face = Math.min(l.face, l.lu);
   }
   l.active = l.dir > 0 && l.ld > 0.3;

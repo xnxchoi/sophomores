@@ -393,7 +393,7 @@ export function Book({ textures, signals, onOpen, small, storageKey, pageTexture
     if (sig.hitRect && root.current) fitHitRect(sig.hitRect, sig.overlay, root.current, state.camera as PerspectiveCamera, sw, sh, l.lu > 0 ? sig.spreadRect : null, sig.onGone);
 
     // Look inside (stripe.press, 06w9:16057-16166): the cover opens over 980 ms (t²) and, from half open, the pages fan
-    // in over 900 ms; closing runs both back together (easeOutCubic). The pages own the leaves (look-inside.tsx).
+    // in over 900 ms; closing runs both back together (easeOutCubic, ~0.8 s). The pages own the leaves (look-inside.tsx).
     const want = sig.look ? 1 : -1;
     // A phone opens on the left page, one page filling the width (stripe.press's read view).
     if (want !== l.dir && want > 0 && small) { sig.view.x = -W / 2; sig.view.reachX = W / 2; }
@@ -532,10 +532,11 @@ export function Book({ textures, signals, onOpen, small, storageKey, pageTexture
         MathUtils.lerp(MathUtils.lerp(REST_PITCH + s.pitch + s.tiltPitch - 1.2 * s.exitRot, 0, faced), -(small ? OPEN_TILT_TOUCH : OPEN_TILT) + s.openTilt, b),
         MathUtils.lerp(MathUtils.lerp(closedYaw + 0.3 * s.exitRot, 0, faced), 0, b),
         MathUtils.lerp(MathUtils.lerp(REST_ROLL - 0.3 * s.exitRot, 0, faced), 0, b));
-      // Open: the spine on the frame's centre and the spread about 60% of the window wide (stripe.press's ~870 px at
-      // 1440), free to spill past the stage; on a phone one page fills the width.
+      // Open: the spine on the frame's centre and the spread about 58% of the window wide, free to spill past the stage
+      // (Review-B, 25 Nov: stripe.press settles at ~864 px at 1440, ours at 0.604 measured ~900 with the tilt's
+      // perspective); on a phone one page fills the width.
       const fr = sig.frame ?? { left: 0, top: 0, width: sw, height: sh };
-      const spreadPx = small ? 2 * fr.width * 0.96 : Math.min(window.innerWidth * 0.604, fr.width * 1.25);
+      const spreadPx = small ? 2 * fr.width * 0.96 : Math.min(window.innerWidth * 0.58, fr.width * 1.25);
       const zOpen = MathUtils.clamp(54 - W * fr.height / (tan9 * Math.max(spreadPx, 1)), -60, 30);
       root.current.position.set(MathUtils.lerp(CLOSED_X, W / 2, b), MathUtils.lerp(CLOSED_Y + exitY, 0, b),
         MathUtils.lerp(closedZ + s.lift - dip - s.scroll * 6, zOpen, b));

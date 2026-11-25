@@ -327,7 +327,7 @@ test("focused desktop centers login heading and subtitle without shifting aligne
   assert.equal(heading.classList.contains("pr-14"), false);
   const input = ui.screen.getByLabelText("Email address") as HTMLInputElement;
   await ui.waitFor(() => assert.equal(input.disabled, false));
-  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Can’t sign in?" }));
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Lost access?" }));
   const recovery = await ui.screen.findByRole("heading", { name: "Account recovery" });
   assert.ok(recovery.classList.contains("text-center!"));
   assert.equal(recovery.classList.contains("pr-14"), false);
@@ -595,7 +595,7 @@ test("mobile auth has one stable dismissal rail and no phantom heading clearance
   assert.ok(panel.classList.contains("!pt-0"), "content must not add a second toolbar-sized top gap");
   const heading = ui.screen.getByRole("heading", { name: messages.AuthPhase.login });
   assert.equal(heading.classList.contains("pr-14"), false, "a close target above the content needs no phantom inline clearance");
-  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Can’t sign in?" }));
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Lost access?" }));
   const recovery = await ui.screen.findByRole("heading", { name: "Account recovery" });
   assert.equal(recovery.classList.contains("pr-14"), false);
   assert.ok(recovery.closest("[data-account-recovery]")?.classList.contains("pt-0!"), "recovery follows the same mobile title rhythm");
@@ -610,7 +610,7 @@ for (const width of [393, 1024]) {
     };
     ui.render(<Customer client={unavailableClient} initialFlow="login" />, { wrapper: MemberAuthProviders });
     const refresh = await ui.screen.findByRole("button", { name: "Refresh account status" });
-    const help = ui.screen.getByRole("button", { name: "Can’t sign in?" });
+    const help = ui.screen.getByRole("button", { name: "Lost access?" });
     assert.ok(help.classList.contains("mx-auto"), "the help action defines the secondary-action axis");
     assert.equal(refresh.classList.contains("mx-auto"), false, "refresh is beside its feedback, not a centered footer action");
     assert.ok(refresh.parentElement?.hasAttribute("data-account-feedback-row"), "one feedback row owns the refresh action");

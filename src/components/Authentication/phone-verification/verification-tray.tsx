@@ -43,6 +43,19 @@ const trayTransition = {
   duration: motionTokens.duration.normal,
   ease: motionTokens.easing.smooth
 };
+/**
+ * The phone tray's offset and height limit follow the visual viewport (the keyboard) at once. Easing them replayed a
+ * slide every time a field gained or lost focus (owner, 26 Nov: "reanimating every time focus changed"). Only real
+ * changes, width and radius, ease.
+ */
+const trayViewportTransition = { ...trayTransition, bottom: { duration: 0 }, maxHeight: { duration: 0 }, top: { duration: 0 } };
+/**
+ * The desktop modal opens centred, then keeps its top: content height changes (typing folding the other ways in, a
+ * lookup result, the next step) grow or shrink it downward instead of re-centring it (owner, 26 Nov; AGENTS: anchored,
+ * content-sized surfaces). Its top eases only when it must move: a smaller window, or content that would pass the
+ * bottom edge.
+ */
+const modalTransition = { ...trayTransition, bottom: { duration: 0 } };
 
 function TrayDismissButton({
   touch,
@@ -104,12 +117,30 @@ export function VerificationTray({
   const modal = Boolean(viewport && (viewport.width >= 640 || viewport.finePointer));
   const dismissible = !locked || !modal;
   const [contentHeight, setContentHeight] = useState(0);
-  const geometry = viewport
+  // The modal's held top, set on the first measure after it opens and cleared when it opens again.
+  const [modalTop, setModalTop] = useState<number | null>(null);
+  const [heldFor, setHeldFor] = useState(open);
+  if (heldFor !== open) {
+    setHeldFor(open);
+    if (open) setModalTop(null);
+  }
+  const placement = viewport ? authenticationViewportGeometry({ ...viewport, contentHeight }) : undefined;
+  let top: number | undefined;
+  if (viewport && placement && modal && contentHeight > 0) {
+    const height = Math.min(contentHeight, placement.maxHeight);
+    const centred = viewport.offsetTop + (viewport.viewportHeight - height) / 2;
+    const lowest = viewport.offsetTop + viewport.viewportHeight - viewport.gutter - height;
+    const held = Math.max(viewport.offsetTop + viewport.gutter, Math.min(modalTop ?? centred, lowest));
+    // A viewport that can't be read (NaN) keeps the centred placement; NaN never equals itself, so it would loop.
+    if (Number.isFinite(held)) {
+      top = held;
+      if (open && held !== modalTop) setModalTop(held);
+    }
+  }
+  const geometry = viewport && placement
     ? {
-        ...authenticationViewportGeometry({
-          ...viewport,
-          contentHeight
-        }),
+        ...(top === undefined ? { bottom: placement.bottom, top: "auto" } : { top, bottom: "auto" }),
+        maxHeight: placement.maxHeight,
         width: Math.min(modal && !compact ? locked ? 460 : 380 : 420, Math.max(0, viewport.width - 24))
       }
     : undefined;
@@ -171,7 +202,7 @@ export function VerificationTray({
                   : undefined
               }
               initial={false}
-              transition={trayTransition}
+              transition={modal ? modalTransition : trayViewportTransition}
             >
               <ContentHeight open={open} onMeasure={setContentHeight}>
                 <Bar

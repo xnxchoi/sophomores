@@ -9,6 +9,7 @@ import {
   type MemberClient
 } from "../../../lib/member-auth/client";
 import { BrandMark } from "../../../lib/brand";
+import { cn } from "../../../lib/utils";
 import { subscribeVisibility } from "@/utils/browser/visibility";
 import { normalizeLoginEmail } from "../../../lib/passwordless-login";
 import type { MemberCapabilities } from "../../../lib/member-auth/contracts";
@@ -23,7 +24,7 @@ import {
   PrimaryButton,
   SecondaryButton
 } from "../phone-verification/verification-ui";
-import { MemberAccountView, type MemberAccountViewProps } from "./account-view";
+import { MemberAccountView, SignUpProvidersNote, type MemberAccountViewProps } from "./account-view";
 import { AccountRecoveryView } from "./account-recovery-view";
 import { MemberPhoneStep } from "./phone-step";
 import {
@@ -304,6 +305,71 @@ export function MemberAccountPage({
   );
 }
 
+/**
+ * The sign-in page (owner, 26 Nov: "just make it not shitty"; the Vault login is his reference for the form). Every
+ * way in is on the page at once: the email code for members, Apple and Google (Kakao when on) for everyone. Sign-up is
+ * social only, so there is no chooser step. On wide screens the page is two parts, the Hideaway long-form shell's grid
+ * (DocsShell): a large light heading on the left, the form column on the right; on a phone they stack. The mechanism
+ * is MemberAccountFlow's login flow, unchanged; only its layout differs ("page" presentation). An account still in
+ * setup finishes it here, and a confirmed member leaves for `next`.
+ */
+export function MemberSignInPage({
+  next,
+  client,
+  initialCapabilities,
+  navigate = (url) => window.location.replace(url)
+}: {
+  next: string;
+  client?: MemberClient;
+  initialCapabilities?: Readonly<MemberCapabilities>;
+  navigate?: (url: string) => void;
+}) {
+  const t = useTranslations("MemberAuth");
+  const headingId = useId();
+  const resolvedClient = useMemo(() => client ?? createMemberClient(undefined, undefined, "sign-in", next), [client, next]);
+  // Back to a fresh form is the page's "start again" (the sheet's chooser and Cancel have no place here).
+  const [generation, setGeneration] = useState(0);
+  const [signedIn, setSignedIn] = useState(false);
+  // The providers the flow itself offers: the server's list first, then the live status's (Apple can fail to start).
+  const [capabilities, setCapabilities] = useState(initialCapabilities);
+  const left = useRef(false);
+  function onSnapshot(snapshot: MemberSnapshot) {
+    if (Boolean(snapshot.status?.authenticated) !== signedIn) setSignedIn(Boolean(snapshot.status?.authenticated));
+    // By the providers' flags, not the object: every status read is a new object, and re-setting it would loop.
+    const live = snapshot.status?.capabilities;
+    if (live && (["apple", "google", "kakao"] as const).some((provider) => Boolean(live[provider]) !== Boolean(capabilities?.[provider]))) setCapabilities(live);
+    if (left.current || !snapshot.status?.member) return;
+    left.current = true;
+    navigate(next);
+  }
+  return (
+    <main data-member-sign-in-page="" className="px-6 pt-[8em] pb-[6em] text-foreground sm:px-10 sm:pt-[11em] xl:px-16 2xl:px-32">
+      <div className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:gap-24 2xl:gap-32">
+        <header className="lg:pt-2">
+          <h1 className="m-0 text-5xl leading-[1.05] font-light tracking-tight text-balance lg:text-7xl 2xl:text-8xl">{t("logIn")}</h1>
+          {/* For visitors only: an account finishing setup is past choosing how to get in. */}
+          {!signedIn && <p className="mt-6 mb-0 max-w-[30ch] text-[15px] leading-6 text-pretty text-foreground/55 lg:mt-8 lg:text-base"><SignUpProvidersNote capabilities={capabilities} /></p>}
+        </header>
+        <div className="w-full max-w-[400px]">
+          <ArcRoles>
+            <MemberAccountFlow
+              key={generation}
+              client={resolvedClient}
+              initialCapabilities={initialCapabilities}
+              headingId={headingId}
+              flow="login"
+              presentation="page"
+              onSnapshot={onSnapshot}
+              onChooser={() => setGeneration((value) => value + 1)}
+              onExit={() => setGeneration((value) => value + 1)}
+            />
+          </ArcRoles>
+        </div>
+      </div>
+    </main>
+  );
+}
+
 export function MemberAccountFlow({
   ref,
   client,
@@ -326,7 +392,7 @@ export function MemberAccountFlow({
   flow: "login" | "signup";
   completionAction?: ReactNode;
   authenticatedAction?: ReactNode;
-  presentation?: "ticket-checkout";
+  presentation?: "ticket-checkout" | "page";
   noAccountMessage?: string;
   onSnapshot?: (snapshot: MemberSnapshot) => void;
   onVerifiedFocus?: () => void;

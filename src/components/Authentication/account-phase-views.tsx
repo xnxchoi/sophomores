@@ -260,7 +260,7 @@ function Intro({
             {icon}
           </span>
         )}
-        {renderHeading ? renderHeading(heading) : heading}
+        {renderHeading ? renderHeading(heading, title) : heading}
       </div>
       {children && (
         <div className="mt-2 text-[14px] leading-5 text-muted-foreground">

@@ -2,7 +2,7 @@
 
 import { createContext, type MouseEvent, type SyntheticEvent, useCallback, useContext } from "react";
 import { usePathname } from "next/navigation";
-import { memberSignInHref, memberSignInNext } from "@/lib/member-auth/paths";
+import { MEMBER_SIGN_IN_PATH, memberSignInHref, memberSignInNext } from "@/lib/member-auth/paths";
 
 // Kept apart from AccountSheetProvider so a sign-in button never pulls the sheet (and its copy) into a page's bundle:
 // the provider in the layout owns the sheet; buttons only reach it through this context.
@@ -18,7 +18,7 @@ export const AccountSheet = createContext<AccountSheetOpen | null>(null);
  * A sign-in button's props: the sign-in page's href (the no-JS and modifier-click path) and a click handler that opens
  * the sheet in place. Outside a provider, the click falls through to the link.
  */
-export function useAccountSheetTrigger(flow?: AccountSheetFlow): { href: string; onClick: (event: MouseEvent<HTMLElement>) => void } {
+export function useAccountSheetTrigger(flow?: AccountSheetFlow): { href: string; onClick: (event: MouseEvent<HTMLElement>) => void; onSignInPage: boolean } {
   const open = useContext(AccountSheet);
   const pathname = usePathname();
   const onClick = useCallback((event: MouseEvent<HTMLElement>) => {
@@ -26,7 +26,8 @@ export function useAccountSheetTrigger(flow?: AccountSheetFlow): { href: string;
     event.preventDefault();
     open(flow, event.currentTarget);
   }, [open, flow]);
-  return { href: memberSignInHref(memberSignInNext(pathname)), onClick };
+  // On the sign-in page itself the header's Sign in would only repeat the page (owner, 26 Nov: say "Sign in" once).
+  return { href: memberSignInHref(memberSignInNext(pathname)), onClick, onSignInPage: pathname === MEMBER_SIGN_IN_PATH };
 }
 
 /**

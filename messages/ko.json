@@ -360,6 +360,7 @@
     "closeAccountOptions": "계정 메뉴 닫기",
     "welcome": "환영합니다",
     "logInOrCreateAnAccount": "",
+    "signInPageNewHere": "",
     "checkThePhoneNumberAndContactEmailThenTryAgain": "휴대폰 번호와 연락처 이메일을 확인한 뒤 다시 시도해 주세요.",
     "weCouldntConfirmReceiptTheRequestTookTooLongPleaseTryAgain": "응답을 제때 받지 못해 요청이 정상 접수되었는지 확인하지 못했어요. 다시 시도해 주세요.",
     "weCouldntConfirmReceiptPleaseCheckYourConnectionAndTryAgain": "접수 여부를 확인하지 못했어요. 네트워크 연결을 확인한 뒤 다시 시도해 주세요.",

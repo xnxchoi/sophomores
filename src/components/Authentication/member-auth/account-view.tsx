@@ -26,7 +26,8 @@ import {
 } from "./account-controls";
 
 export type MemberAccountViewProps = {
-  presentation?: "ticket-checkout";
+  /** "page": the sign-in page lays the flow out itself (no panel padding, no sheet indents; its h1 names the step). */
+  presentation?: "ticket-checkout" | "page";
   noAccountMessage?: string;
   onVerifiedFocus?: () => void;
   emailEntry?: { email: string; state: "pending" | "error" | "existing" | "new"; retryAt?: number };
@@ -75,17 +76,32 @@ function enabledProviders(capabilities?: Readonly<Partial<Pick<MemberCapabilitie
   return (["apple", "google", "kakao"] as const).filter((provider) => capabilities?.[provider] === true);
 }
 
-/** Purchase rule: an email with no account is pointed to social sign-up; no code is offered. */
-function NoAccountMessage({ capabilities }: { capabilities?: Readonly<Partial<Pick<MemberCapabilities, MemberSocialProvider>>> }) {
+/**
+ * The switched-on sign-up providers as one "Apple or Google" phrase for `key`'s sentence, or null when none is on.
+ * An empty Korean string falls back to English (owner, 13 Nov). The joined list must be in the language the sentence
+ * is actually shown in, or it reads "continue with Apple 또는 Google".
+ */
+function useSignUpProviders(capabilities: Readonly<Partial<Pick<MemberCapabilities, MemberSocialProvider>>> | undefined, key: "noAccountForThisEmail" | "signInPageNewHere") {
   const t = useTranslations("MemberAuth");
   const locale = useLocale();
   const names = enabledProviders(capabilities).map((provider) => t(provider));
-  if (names.length === 0) return t("noAccountForThisEmailNoProviders");
-  // An empty Korean string falls back to English (owner, 13 Nov). The joined list must be in the language the sentence
-  // is actually shown in, or it reads "continue with Apple 또는 Google".
-  const shownInKorean = locale === "ko" && /[\uAC00-\uD7A3]/.test(t.raw("noAccountForThisEmail") as string);
-  const providers = new Intl.ListFormat(locale === "ko" && !shownInKorean ? "en" : locale, { type: "disjunction" }).format(names);
-  return t("noAccountForThisEmail", { providers });
+  if (names.length === 0) return null;
+  const shownInKorean = locale === "ko" && /[가-힣]/.test(t.raw(key) as string);
+  return new Intl.ListFormat(locale === "ko" && !shownInKorean ? "en" : locale, { type: "disjunction" }).format(names);
+}
+
+/** Purchase rule: an email with no account is pointed to social sign-up; no code is offered. */
+function NoAccountMessage({ capabilities }: { capabilities?: Readonly<Partial<Pick<MemberCapabilities, MemberSocialProvider>>> }) {
+  const t = useTranslations("MemberAuth");
+  const providers = useSignUpProviders(capabilities, "noAccountForThisEmail");
+  return providers ? t("noAccountForThisEmail", { providers }) : t("noAccountForThisEmailNoProviders");
+}
+
+/** The sign-in page's note for new visitors: the sign-up providers that are actually on, or that sign-up is off (Review-B, 26 Nov). */
+export function SignUpProvidersNote({ capabilities }: { capabilities?: Readonly<Partial<Pick<MemberCapabilities, MemberSocialProvider>>> }) {
+  const t = useTranslations("MemberAuth");
+  const providers = useSignUpProviders(capabilities, "signInPageNewHere");
+  return providers ? t("signInPageNewHere", { providers }) : t("signUpIsUnavailableTryAgainShortly");
 }
 
 export function MemberAccountView(props: MemberAccountViewProps) {
@@ -208,7 +224,7 @@ export function MemberAccountView(props: MemberAccountViewProps) {
     </Panel>;
   }
   return (
-    <Panel ref={capturePanel} data-authentication-presentation={presentation ?? undefined} className={cn(props.presentation === "ticket-checkout" ? "!px-0 !pt-0 !pb-0" : "!px-6 !pb-6 [font-family:system-ui] data-[authentication-presentation=modal]:[@media(max-height:600px)]:pt-4! data-[authentication-presentation=modal]:[@media(max-height:600px)]:pb-4!", props.presentation !== "ticket-checkout" && (mobileTray ? "!pt-0" : "!pt-6"))} data-member-account-flow="">
+    <Panel ref={capturePanel} data-authentication-presentation={presentation ?? undefined} className={cn(props.presentation === "ticket-checkout" ? "!px-0 !pt-0 !pb-0" : props.presentation === "page" ? "!px-0 !pt-0 !pb-0 [font-family:system-ui]" : "!px-6 !pb-6 [font-family:system-ui] data-[authentication-presentation=modal]:[@media(max-height:600px)]:pt-4! data-[authentication-presentation=modal]:[@media(max-height:600px)]:pb-4!", !props.presentation && (mobileTray ? "!pt-0" : "!pt-6"))} data-member-account-flow="">
       <motion.div
         key={phase}
         data-member-account-phase={phase}
@@ -221,14 +237,14 @@ export function MemberAccountView(props: MemberAccountViewProps) {
           <Heading
             id={props.headingId ?? "member-account-heading"}
             tabIndex={-1}
-            className={cn("!text-[24px] !leading-[30px] !font-medium", mobileTray || props.presentation === "ticket-checkout" ? "!mt-0" : "pl-14", pendingSetup && !embeddedPhone && "mt-0! mb-2!", status?.member && "!mt-0 !mb-4 flex items-center gap-2.5", embeddedPhone && "sr-only")}
+            className={cn("!text-[24px] !leading-[30px] !font-medium", mobileTray || props.presentation ? "!mt-0" : "pl-14", props.presentation === "page" && phase === "identity" && "sr-only", pendingSetup && !embeddedPhone && "mt-0! mb-2!", status?.member && "!mt-0 !mb-4 flex items-center gap-2.5", embeddedPhone && "sr-only")}
           >
             {status?.member && <Check aria-hidden="true" data-account-confirmed="" className="size-5 shrink-0 text-foreground" strokeWidth={1.5} />}
             {heading}
           </Heading>
         </VerificationTrayTitle>
       )}
-        <div className={cn(!sharedEmail && (status?.member ? "space-y-4" : "space-y-5"), !mobileTray && props.presentation !== "ticket-checkout" && "[&>p:first-child]:pl-14")}>
+        <div className={cn(!sharedEmail && (status?.member ? "space-y-4" : "space-y-5"), !mobileTray && !props.presentation && "[&>p:first-child]:pl-14")}>
           {embeddedPhone ? (
             <>
               <div hidden={props.reauthenticating} inert={props.reauthenticating}>
@@ -694,8 +710,12 @@ function IdentityStep(props: MemberAccountViewProps & { locked: boolean; reserve
         flow={props.presentation === "ticket-checkout" ? "login" : props.flow ?? "login"}
         locale="en"
         headingId={props.headingId ?? "member-account-heading"}
-        renderHeading={(heading) => (
-          props.reauthenticating ? <div className="sr-only">{heading}</div> : props.presentation === "ticket-checkout"
+        renderHeading={(heading, title) => (
+          // The sign-in page's h1 is the page's one heading for the entry step: the step keeps its focus target, but not
+          // as a second heading (Review-B, 26 Nov). Its later steps (the code) keep their own heading.
+          props.presentation === "page" && !snapshot.codeRequested && !props.reauthenticating
+            ? <div id={props.headingId ?? "member-account-heading"} tabIndex={-1} data-phase-focus="" className="sr-only">{title}</div>
+            : props.reauthenticating ? <div className="sr-only">{heading}</div> : props.presentation === "ticket-checkout"
             // The code step keeps the step's one heading.
             ? <Heading id={props.headingId ?? "member-account-heading"} tabIndex={-1} className="m-0 text-[length:var(--step-heading)] leading-tight font-normal tracking-normal sm:text-[length:var(--step-heading)]">{t("signIn")}</Heading>
             : <VerificationTrayTitle>{heading}</VerificationTrayTitle>

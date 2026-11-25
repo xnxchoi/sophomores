@@ -232,7 +232,7 @@ test("recovery keeps the focused root and Cancel clears claims without losing th
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign in" }));
   await ui.waitFor(() => assert.equal((ui.screen.getByLabelText("Email address") as HTMLInputElement).disabled, false));
   const dialog = ui.screen.getByRole("dialog");
-  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Can’t sign in?" }));
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Lost access?" }));
   await requestForm(); fill(); submit();
   assert.ok(ui.screen.getByRole("dialog") === dialog);
   assert.ok(!ui.screen.queryByRole("button", { name: /Use a passkey|Use email sign-in|Continue with linked Google/ }));
@@ -244,8 +244,8 @@ test("recovery keeps the focused root and Cancel clears claims without losing th
   assert.ok(ui.screen.getByLabelText("Caller ticket quantity") === caller);
   assert.equal((caller as HTMLInputElement).value, "3");
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign in" }));
-  await ui.waitFor(() => assert.equal((ui.screen.getByRole("button", { name: "Can’t sign in?" }) as HTMLButtonElement).disabled, false));
-  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Can’t sign in?" }));
+  await ui.waitFor(() => assert.equal((ui.screen.getByRole("button", { name: "Lost access?" }) as HTMLButtonElement).disabled, false));
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Lost access?" }));
   await requestForm();
   assert.equal((ui.screen.getByLabelText("Contact email") as HTMLInputElement).value, "");
   assert.equal(c.calls.includes("identify"), false);
@@ -264,7 +264,7 @@ test("returning from recovery preserves the email code phase, input and resend d
   await ui.waitFor(() => assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code)));
   ui.fireEvent.change(firstCodeCell(ui.screen), { target: { value: "A1B" } });
   const beforeRecovery = [...c.calls];
-  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Can’t sign in?" }));
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Lost access?" }));
   await requestForm();
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Back to sign in" }));
   await ui.waitFor(() => assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code)));

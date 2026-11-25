@@ -448,6 +448,7 @@ function AccountEntry({ member }: { member: Promise<HeaderMemberState> }) {
   // Log in opens the in-place sign-in sheet; the href is the no-JS and modifier-click path (owner, 24 Nov).
   const signIn = useAccountSheetTrigger();
   const icon = <UserIcon aria-hidden="true" className="size-3.5 shrink-0" />;
+  if (state.state === "signed-out" && signIn.onSignInPage) return null;
   return state.state === "signed-out"
     ? <HeaderLink href={signIn.href} onClick={signIn.onClick} label={t("logIn")} icon={icon} />
     : <HeaderLink href="/me" label={nav("account")} icon={icon} />;

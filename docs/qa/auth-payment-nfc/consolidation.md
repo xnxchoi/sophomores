@@ -730,6 +730,7 @@ Every change with its impact, newest first.
 
 | Date | Change | Touches | Breaks or kept | Status |
 | --- | --- | --- | --- | --- |
+| 2026-11-26 | Footer redesigned in the owner's palette (Imperial Plum Darker -2 + Mauve-Bone; footer-only tokens); the lifted page's bottom radius is 32 px, concentric with the frame (owner, 26 Nov) (Review-B PASS, 2fec79fb) | Site footer, footer locale switch, seller disclosure, global footer tokens | Colours change only in the footer | Landed |
 | 2026-11-26 | /sign-in uses PageFrame, one typeface, a step-aware heading and a recovery page (owner critique, 26 Nov) (Review-B PASS, e15f6408..99cd9617) | /sign-in, sign-in code step, recovery page | No footer jump; the code step's title is the page heading | Landed |
 | 2026-11-26 | /sign-in is a real page (all methods visible, provider-derived note); the desktop auth modal is anchored by its top (owner: modal re-animated) (Review-B PASS through e15f6408) | /sign-in, auth modal and phone tray, header Sign in | Header and control-bar Sign in hide on /sign-in | Landed |
 | 2026-11-26 | Shop: book3d removed; scene sounds on the owner's Kenney CC0 files, played only after a trusted gesture while the scene is mounted. The shop's scene hooks moved to .tsx (fixes the component-source-layout failure on f9042646) (Review-B PASS) | /shop scene, book sounds, src/components/commerce/book3d removed | book3d gone; sounds stop when the scene unmounts | Landed |

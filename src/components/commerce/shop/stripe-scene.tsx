@@ -119,16 +119,18 @@ function stripeBook({ id, title, stageArt, pages }: SceneBook) {
   };
 }
 
-/** Loads their code once with our books (first `featured` of them featured, as their `isFeatured`); null until ready. */
+/** Loads their code once with our books (first `featured` of them featured, as their `isFeatured`): `vendored` once
+ * ready, `failed` when a chunk did not load (the page then shows its plain list; a reload tries again). */
 export function useStripeScene(books: SceneBook[], featured: number) {
-  const [vendored, setVendored] = useState<Vendored | null>(null);
+  const [vendored, setVendored] = useState<Vendored | null>(null), [failed, setFailed] = useState(false);
   const first = useRef({ books, featured });
   useEffect(() => {
     let live = true;
-    load(first.current.books.map(stripeBook), first.current.featured).then((value) => { if (live) setVendored(value); }, () => undefined);
+    load(first.current.books.map(stripeBook), first.current.featured).then((value) => { if (live) setVendored(value); },
+      () => { if (live) setFailed(true); });
     return () => { live = false; };
   }, []);
-  return vendored;
+  return { vendored, failed };
 }
 
 /** Their BookStack, rendered into our element: their canvas container is fixed over the window (100vw × 100lvh), and

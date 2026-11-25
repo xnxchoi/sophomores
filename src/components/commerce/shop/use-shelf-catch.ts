@@ -41,7 +41,7 @@ export function useShelfCatch(hub: SceneHub, catalogue: SceneCatalogue, source: 
     let selectionBefore: number | null = null, lastY = -1, movedAt = -Infinity, hint = false, hinted = false, clearAt = -Infinity;
     let armed: boolean | null = null, lockedAt = -1, kind: "wheel" | "touch" = "wheel", inertia = false, minDelta = Infinity;
     let bigger = 0, wheelAt = -Infinity, wheelVelocity = 0, touchMoved = false, touchUntil = -Infinity, touchPending = false;
-    let sampleY: number | null = null, sampleAt = 0, velocity = 0, overflow = "", gutter = "";
+    let sampleY: number | null = null, sampleAt = 0, velocity = 0;
     const ih = () => window.innerHeight || 1;
     const onShelf = () => catalogue.E(hub.scrollProgressDirectLiveRef.current as number);
     const busy = () => source.current.held() || Boolean(hub.spineViewRestoringLiveRef.current)
@@ -76,9 +76,9 @@ export function useShelfCatch(hub: SceneHub, catalogue: SceneCatalogue, source: 
       glide = requestAnimationFrame(step);
     };
 
-    // Their lock is the html attribute (their touch momentum yields to it) with overflow hidden.
+    // Their lock is the html attribute (their touch momentum yields to it); globals.css hides the overflow under it.
     const unlock = () => {
-      lockedAt = -1; inertia = false; root.style.overflow = overflow; root.style.scrollbarGutter = gutter; root.removeAttribute("data-shelf-scroll-lock");
+      lockedAt = -1; inertia = false; root.removeAttribute("data-shelf-scroll-lock");
     };
     const near = () => { const target = source.current.seatY(); return target != null && Math.abs(window.scrollY - target) < 2 * ih(); };
     const canCatch = () => armed === true && lockedAt < 0 && near() && !busy() && !source.current.driving();
@@ -88,8 +88,7 @@ export function useShelfCatch(hub: SceneHub, catalogue: SceneCatalogue, source: 
     };
     const catchAt = (speed: number, by: "wheel" | "touch") => {
       armed = false; touchPending = false; touchUntil = -Infinity; activation = false;
-      overflow = root.style.overflow; gutter = root.style.scrollbarGutter;
-      root.style.overflow = "hidden"; root.style.scrollbarGutter = "stable"; root.setAttribute("data-shelf-scroll-lock", "");
+      root.setAttribute("data-shelf-scroll-lock", "");
       lockedAt = performance.now(); kind = by;
       if (by === "wheel") { inertia = true; minDelta = Infinity; bigger = 0; }
       glideTo(speed, true);

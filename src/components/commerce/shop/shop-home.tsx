@@ -25,9 +25,11 @@ type Item = { id: string; title: string; price: string; href: string; stageArt: 
   /** The book's details column (server-rendered: ProductInfo + ProductExtras), shown when it opens in the scene. */
   details?: ReactNode;
   /** The book's page images for "Open book", in reading order. */
-  pages?: string[] };
+  pages?: string[];
+  /** Its refund rule (RefundTerms), a line under its title wherever the shop lists it. */
+  refund?: ReactNode };
 type Labels = { featured: string; shelf: string; viewDetails: string; toShelf: string; openBook: string; closeBook: string;
-  previousPage: string; nextPage: string };
+  previousPage: string; nextPage: string; titles: string; sceneFailed: string; tryAgain: string };
 type Geometry = { lvh: number; mobile: boolean; top: number; height: number; offset: number; extents: number[];
   starts: number[]; lock: number[]; total: number };
 
@@ -35,8 +37,9 @@ export function ShopHome({ items, labels, initialOpen }: { items: Item[]; labels
   /** The product whose address the page was loaded on: it opens in place once the scene is ready. */
   initialOpen?: string }) {
   const books = useMemo<SceneBook[]>(() => items.map(({ id, title, stageArt, pages }) => ({ id, title, stageArt: stageArt?.url ?? null, pages })), [items]);
-  const vendored = useStripeScene(books, Math.min(FEATURED_MAX, items.length));
+  const { vendored, failed } = useStripeScene(books, Math.min(FEATURED_MAX, items.length));
   const first = items[0]?.stageArt;
+  if (failed) return <ShopFallback items={items} labels={labels} initialOpen={initialOpen} />;
   // Native wheel scrolling here, as on stripe.press: their scroll mapping, holds and shelf catch read the browser's own
   // scroll, and the site's Lenis smoothing would keep driving the page through the shelf's catch.
   return <section data-lenis-prevent-wheel aria-label={labels.featured} className="relative min-h-svh">
@@ -47,7 +50,32 @@ export function ShopHome({ items, labels, initialOpen }: { items: Item[]; labels
         <img src={first.url} alt={first.alt ?? ""} draggable={false} className="absolute inset-0 size-full object-cover" />
       </div>)}
     {/* Every book reachable without the scene (their hidden keyboard listbox of every book). */}
-    <ul className="sr-only">{items.map((entry) => <li key={entry.id}><Link href={entry.href}>{entry.title} {entry.price}</Link></li>)}</ul>
+    <ul className="sr-only">{items.map((entry) => <li key={entry.id}><Link href={entry.href}>{entry.title} {entry.price}</Link> {entry.refund}</li>)}</ul>
+  </section>;
+}
+
+/**
+ * When the scene's code doesn't load: the products as a plain list (title, price, refund rule, a link to each), with a
+ * product's own details first on its address, and a reload to try the scene again.
+ */
+function ShopFallback({ items, labels, initialOpen }: { items: Item[]; labels: Labels; initialOpen?: string }) {
+  const open = items.find((entry) => entry.id === initialOpen && entry.details);
+  return <section aria-label={labels.featured} className="min-h-svh pt-24 pb-24">
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+      <p>{labels.sceneFailed}</p>
+      <button type="button" onClick={() => window.location.reload()}
+        className="inline-flex min-h-11 items-center text-foreground underline-offset-4 transition-opacity hover:opacity-70">{labels.tryAgain}</button>
+    </div>
+    {open && <div className="mt-10 max-w-2xl">{open.details}</div>}
+    <ul className="mt-16 grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
+      {items.map((entry) => <li key={entry.id} className="min-w-0">
+        <Link href={entry.href} className="group block min-w-0 outline-offset-4 focus-visible:outline-2">
+          <h2 className="text-2xl leading-snug tracking-tight underline-offset-4 [overflow-wrap:anywhere] group-hover:underline">{entry.title}</h2>
+          <p className="mt-2 text-[15px] leading-[21px] tabular-nums">{entry.price}</p>
+        </Link>
+        {entry.refund && <div className="mt-2 text-sm leading-6">{entry.refund}</div>}
+      </li>)}
+    </ul>
   </section>;
 }
 
@@ -405,7 +433,7 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
     <p className="fixed top-[3.75rem] left-4 z-20 text-[11px] uppercase leading-4 tracking-[0.06em] text-muted-foreground">
       [ {onShelf ? labels.shelf : labels.featured} ]
     </p>
-    <TitleRail railRef={titles} titles={items.map((entry) => entry.title)} active={detail.open ?? selected ?? active}
+    <TitleRail railRef={titles} label={labels.titles} titles={items.map((entry) => entry.title)} refunds={items.map((entry) => entry.refund)} active={detail.open ?? selected ?? active}
       fade={detail.open != null ? 0 : Math.max(0, Math.min(1, (committed - K - 0.2) / 0.3))} detail={detail.open != null && !detail.leaving}
       onPick={(index) => detail.open != null ? openRef.current(index) : index < catalogue.t ? scrollTo(bookY(index), 1000) : scrollTo(shelfY(), 1833)} />
     {item && <ViewDetails href={item.href} label={labels.viewDetails} hidden={(onShelf || detail.open != null) && !look.home} onOpen={() => openRef.current(active)}
@@ -471,10 +499,12 @@ function Cards({ items, featured, geometry, progressRef, listeners, reading, J }
 
 /**
  * The title rail (FeaturedTitleList, 21ix): fixed at 70 px (63 on a phone), every title (three times over) in one line, the active one
- * upright and centred at 47.5 % of the width (500 ms ease-in-out), the rest italic at 0.8; "(Hardcover)" above each
- * title's end; the titles fade in 1.2 s after load and fade out as the shelf takes the screen.
+ * upright and centred at 47.5 % of the width (500 ms ease-in-out), the rest italic at 0.8; each title's refund rule on a
+ * line under it (owner, 25 Nov); the titles fade in 1.2 s after load and fade out as the shelf takes the screen.
  */
-function TitleRail({ railRef, titles, active, fade, detail, onPick }: { railRef: Ref<HTMLElement>; titles: string[]; active: number; fade: number;
+function TitleRail({ railRef, label, titles, refunds, active, fade, detail, onPick }: { railRef: Ref<HTMLElement>; label: string; titles: string[];
+  /** Each title's refund rule, a line under it. */
+  refunds: ReactNode[]; active: number; fade: number;
   detail: boolean; onPick: (index: number) => void }) {
   const items = useRef<(HTMLButtonElement | null)[]>([]);
   const [shift, setShift] = useState(0), [shown, setShown] = useState(false);
@@ -489,7 +519,7 @@ function TitleRail({ railRef, titles, active, fade, detail, onPick }: { railRef:
     window.addEventListener("resize", place);
     return () => window.removeEventListener("resize", place);
   }, [active, titles, detail]);
-  return <nav ref={railRef} aria-label="Titles" style={{ opacity: shown ? 1 - 2 * fade : 0 }}
+  return <nav ref={railRef} aria-label={label} style={{ opacity: shown ? 1 - 2 * fade : 0 }}
     className={cn("pointer-events-none fixed inset-x-0 top-[70px] z-20 overflow-hidden px-5 pt-5 pb-3 transition-[opacity,clip-path] duration-[1600ms] max-[899px]:top-[63px]",
       detail ? "[clip-path:inset(0_40%_0_0)] [transition-duration:1600ms,600ms] [transition-timing-function:ease,cubic-bezier(0.16,1,0.3,1)]" : "[clip-path:inset(0_0_0_0)]")}>
     <ul style={{ transform: "translateX(" + shift + "px)" }}
@@ -503,7 +533,7 @@ function TitleRail({ railRef, titles, active, fade, detail, onPick }: { railRef:
             middle && index === active ? "opacity-0 [transform:skewX(9deg)]" : "opacity-80")}>{title}</span>
           <span className={cn("absolute inset-0 not-italic transition-[opacity,transform] duration-[448ms] ease-[ease]",
             middle && index === active ? "opacity-100" : "opacity-0 [transform:skewX(-5deg)]")}>{title}</span>
-          <span className="absolute -top-[18px] right-0 translate-x-[calc(100%+8px)] text-[11px] font-normal tracking-normal not-italic text-muted-foreground max-[899px]:hidden">(Hardcover)</span>
+          {refunds[index] && <span className="mt-1 block font-sans text-sm leading-6 font-normal tracking-normal not-italic">{refunds[index]}</span>}
         </button>
       </li>; })}
     </ul>

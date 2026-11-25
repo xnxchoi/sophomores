@@ -25,10 +25,10 @@ export function BookControlBar({ shown, spread, leaves, magnifier, ink, onBack, 
   useEffect(() => { if (!copied) return; const id = setTimeout(() => setCopied(false), 2000); return () => clearTimeout(id); }, [copied]);
   const copy = () => { navigator.clipboard?.writeText(window.location.href).then(() => setCopied(true), () => {}); };
   // A tab on the stage's bottom edge (stripe.press's bar: square foot, 5 px top corners).
-  return <div data-book-ui data-shown={shown} inert={!shown} style={{ fontFamily: GeistMono.style.fontFamily }}
+  return <div data-book-ui data-shown={shown} inert={!shown}
     // Clicks on the bar never reach the book (stripe.press stops pointerdown and click on its inner bar).
     onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}
-    className={cn("pointer-events-auto flex items-center gap-1.5 rounded-t-[5px] bg-muted pt-2 pr-3.5 pb-3 pl-3.5 text-foreground transition-opacity duration-200 ease-out starting:opacity-0 data-[shown=false]:pointer-events-none data-[shown=false]:opacity-0 group-data-[hidden=true]/layer:pointer-events-none group-data-[hidden=true]/layer:opacity-0 max-lg:w-full max-lg:justify-between max-lg:gap-0.5 max-lg:rounded-none max-lg:border-b max-lg:border-current max-lg:py-2")}>
+    className={cn(GeistMono.className, "pointer-events-auto flex items-center gap-1.5 rounded-t-[5px] bg-muted pt-2 pr-3.5 pb-3 pl-3.5 text-foreground transition-opacity duration-200 ease-out starting:opacity-0 data-[shown=false]:pointer-events-none data-[shown=false]:opacity-0 group-data-[hidden=true]/layer:pointer-events-none group-data-[hidden=true]/layer:opacity-0 max-lg:w-full max-lg:justify-between max-lg:gap-0.5 max-lg:rounded-none max-lg:border-b max-lg:border-current max-lg:py-2")}>
     <Group>
       <BarItem index={0}><BarButton aria-label={t("previousPage")} onClick={onBack} className="lg:pl-1"><Bracketed><Arrow /></Bracketed></BarButton></BarItem>
       <BarItem index={1}><span className="flex items-center px-1 text-[10px] tracking-[0.03em] tabular-nums max-lg:px-0.5 max-lg:text-[11.2px]">
@@ -63,7 +63,9 @@ function Group({ children }: { children: ReactNode }) {
 
 /** Each item fades in on its own beat when the bar mounts (it remounts on every open, so the stagger replays). */
 function BarItem({ index, children }: { index: number; children: ReactNode }) {
-  return <span style={{ transitionDelay: 40 + 30 * index + "ms" }} className="flex items-center transition-opacity duration-[240ms] ease-out starting:opacity-0">{children}</span>;
+  return <span className={cn("flex items-center transition-opacity duration-[240ms] ease-out starting:opacity-0", index === 0 && "delay-[40ms]",
+    index === 1 && "delay-[70ms]", index === 2 && "delay-[100ms]", index === 3 && "delay-[130ms]", index === 4 && "delay-[160ms]",
+    index >= 5 && "delay-[190ms]")}>{children}</span>;
 }
 
 function BarButton({ className, ...props }: ComponentProps<"button">) {

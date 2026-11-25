@@ -869,7 +869,10 @@
       "highlighterYellow": "",
       "copyPageLink": "",
       "featured": "",
-      "viewDetails": ""
+      "viewDetails": "",
+      "titles": "",
+      "sceneFailed": "",
+      "tryAgain": ""
     },
     "components_commerce_checkout": {
       "customerSignInIsOffInThisReviewCopy": "",

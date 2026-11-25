@@ -34,10 +34,13 @@ export function CommerceShopView({ shop, contents = {}, initialOpen }: { shop: C
   return <PageInset as="main" className="pt-[4.5rem] pb-24 text-foreground">
     <h1 className="sr-only">{t("book")}</h1>
     <ShopHome initialOpen={initialOpen} labels={{ featured: t("featured"), shelf: t("allProducts"), viewDetails: t("viewDetails"), toShelf: t("allProducts"),
-      openBook: t("openBook"), closeBook: t("closeTheBook"), previousPage: t("previousPage"), nextPage: t("nextPage") }} items={entries.map(({ product, offer, content, title, price, href }) => ({
+      openBook: t("openBook"), closeBook: t("closeTheBook"), previousPage: t("previousPage"), nextPage: t("nextPage"),
+      titles: t("titles"), sceneFailed: t("sceneFailed"), tryAgain: t("tryAgain") }} items={entries.map(({ product, offer, content, title, price, href }) => ({
       id: product.productID, title, price, href, stageArt: content.stageArt ?? firstImage(product), pages: pageTextures(content),
       // The details column for this book, opened in the scene (the product page's own column, unchanged).
       details: <><ProductInfo product={product} offer={offer} content={content} /><ProductExtras content={content} /></>,
+      // Its refund rule, a line under its title wherever the shop lists it (owner, 25 Nov; Review-B r3).
+      refund: <RefundTerms terms={editionRefundTerms(offer.editionEntitlements)} as="span" />,
     }))} />
   </PageInset>;
 }

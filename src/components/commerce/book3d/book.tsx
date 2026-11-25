@@ -110,7 +110,8 @@ function fitHitRect(element: HTMLElement, overlay: HTMLElement | null, root: Gro
   // Gone: the whole book is outside its view (it has left through the top on the scroll exit).
   const gone = !full && (top + h <= 0 || top >= height);
   if (element.dataset.gone !== String(gone)) { element.dataset.gone = String(gone); onGone?.(gone); }
-  element.style.clipPath = full ? "none" : `inset(${top}px ${width - left - w}px ${height - top - h}px ${left}px)`;
+  const insets = full ? [0, 0, 0, 0] : [top, width - left - w, height - top - h, left];
+  (["t", "r", "b", "l"] as const).forEach((side, index) => element.style.setProperty("--clip-" + side, insets[index] + "px"));
 }
 
 // Proportions from the atlas: each cover 826×1264 px, the spine 224 px. World units; the camera sees 17.1 units tall.

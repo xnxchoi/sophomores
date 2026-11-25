@@ -32,6 +32,11 @@ test("the shop lists three separate products, each with its price and its own pa
   for (const id of ["book", "personal", "premium"]) assert.match(html, new RegExp('href="/shop/products/' + id + '"'));
   assert.match(html, /₩35,000/); assert.match(html, /₩82,000/); assert.match(html, /₩329,000/);
   // What each product includes is on its own page; the shop shows title and price under each book (stripe.press's home).
+  // Each product's refund rule is on its own line (owner, 25 Nov; Review-B r3): the book only, then two membership editions.
+  const lines = [...html.matchAll(/<span data-refund-terms="(\w+)" class="([^"]*)">([^<]*)<\/span>/g)];
+  assert.deepEqual(lines.map(([, kind, , text]) => [kind, text]), [["refundable", "Refundable."],
+    ["none", "Personalised with your membership. No refunds."], ["none", "Personalised with your membership. No refunds."]]);
+  for (const [, , classes] of lines) { assert.match(classes, /\btext-sm\b/); assert.match(classes, /\btext-foreground\b/); }
   assert.doesNotMatch(html, /<select\b|<input\b|role="radio|coin|Editions/i);
 });
 

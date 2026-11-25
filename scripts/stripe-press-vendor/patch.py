@@ -29,6 +29,22 @@ for f, old, new in CHANGES:
     p = os.path.join(OUT, f); s = open(p).read(); n = s.count(old)
     if n != 1: raise SystemExit(f"{f}: expected 1 match, found {n}: {old[:60]}")
     open(p, "w").write(s.replace(old, new))
+# 10. Sound (module 63913, 12s2): their sound module is an inert stub with the same eight exports (every original
+#     export already returns nothing before the first unlock), so no listener, Howl, audio path or Web Audio node is
+#     created; Howler (43469, imported only by 63913) is an empty module. Our own sounds come in slice S.
+def span(s, start, end):
+    i = s.find(start)
+    if i < 0 or s.count(start) != 1: raise SystemExit(f"12s2: start marker {start[:40]} not found once")
+    j = s.find(end, i)
+    if j < 0: raise SystemExit("12s2: end marker not found")
+    return i, j + len(end)
+p = os.path.join(OUT, "12s2cqzsl56ip.js"); s = open(p).read()
+i, j = span(s, '63913,e=>{var t=e.i(43469);let n="/audio/home"', '(O,"forward"===e?1.1+.7*n:.91+.26*n)}])}')
+s = s[:i] + '63913,e=>{let f=()=>{};e.s(["t",0,f,"B",0,f,"J",0,f,"D",0,f,"X",0,f,"G",0,f,"r",0,f,"z",0,f])}' + s[j:]
+i, j = span(s, '43469,(e,t,n)=>{!function(){"use strict";', 'rent.pause(e._id,!0).play(e._id,!0)}}()}')
+s = s[:i] + '43469,(e,t,n)=>{}' + s[j:]
+if "/audio/" in s or ".m4a" in s: raise SystemExit("12s2: audio paths remain")
+open(p, "w").write(s)
 # 4-6. Asset paths: their press logo (default page print) -> our blank; their model path -> our rest copy of the
 #      owner's model; the shared texture paths in the manifest -> our neutral maps.
 import re
@@ -43,4 +59,4 @@ import re
 for f in files:
     p = os.path.join(OUT, f); s = open(p).read()
     open(p, "w").write(re.sub(r"\bTURBOPACK", "SPTURBOPACK", s))
-print("patched", len(CHANGES) + 3, "changes into", len(files), "files")
+print("patched", len(CHANGES) + 4, "changes into", len(files), "files")

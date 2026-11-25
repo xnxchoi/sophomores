@@ -869,7 +869,10 @@
       "highlighterYellow": "Yellow highlighter",
       "copyPageLink": "Copy page link",
       "featured": "New and featured",
-      "viewDetails": "View details"
+      "viewDetails": "View details",
+      "titles": "Titles",
+      "sceneFailed": "The books didn't load.",
+      "tryAgain": "Try again"
     },
     "components_commerce_checkout": {
       "customerSignInIsOffInThisReviewCopy": "Customer sign-in is off in this review copy.",

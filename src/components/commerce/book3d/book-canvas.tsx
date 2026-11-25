@@ -5,6 +5,7 @@ import { useFrame } from "@react-three/fiber";
 import { Suspense, useEffect, useMemo, useRef, useState, type ComponentProps, type ReactNode, type RefObject } from "react";
 import { MathUtils, Mesh, PlaneGeometry, ShaderMaterial, Vector2, type Group, type SpotLight } from "three";
 import { Book, easeInOutQuad, type BookSignals, type BookTextures } from "./book";
+import { cn } from "@/lib/utils";
 
 
 /** Intro dolly (map §C1 #10): the camera starts 120 units further back and eases in over 2 s; the book rises into place. */
@@ -127,7 +128,9 @@ export default function BookView({ signals, textures, visible, dark, intro = tru
 } & Pick<ComponentProps<"div">, "className" | "inert" | "onPointerEnter" | "onPointerDown" | "onPointerMove" | "onPointerLeave">) {
   const small = typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
   const [source, setSource] = useState<HTMLElement>();
-  return <View visible={visible} aria-hidden="true" {...hit} style={{ clipPath: "inset(50%)" }}
+  // Its hit area is clipped to the book each frame (book.tsx writes the --clip-* insets); nothing until then.
+  return <View visible={visible} aria-hidden="true" {...hit}
+    className={cn("[clip-path:inset(var(--clip-t,50%)_var(--clip-r,50%)_var(--clip-b,50%)_var(--clip-l,50%))]", hit.className)}
     // drei re-attaches the ref on every render (useImperativeHandle without deps): keep the element, ignore the null.
     ref={(element: HTMLElement | null) => { if (element) { setSource(element); onElement?.(element); } }}>
     <PerspectiveCamera makeDefault fov={18} position={[0, 0, 174]} near={1} far={400} />

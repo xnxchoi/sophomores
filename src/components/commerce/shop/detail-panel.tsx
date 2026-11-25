@@ -21,6 +21,8 @@ import { DetailGallery } from "./detail-gallery";
  * - Then praise and the colophon band. From 900 px they run the full width of the window under the book (their
  *   DetailFullBleed); below 900 px they stay in the column, colophon first, praise to three quotes, and the colophon
  *   lists fold behind a [ Details ] toggle.
+ * The full-bleed bands and the screen-tall top block apply inside the scene's detail slots only (in-[[data-detail-panel-
+ * index]]), so the same panel sits plainly in the fallback list.
  * Ours, where theirs has no counterpart: the purchase row (purchase isn't open), the refund rule beside it (owner, 25
  * Nov), and our bracket labels' words. Labels are sans, not their mono (owner, 21 Nov: mono only where named); colours
  * are the site's (colour hold), with their proportions: rules at 45 %, muted text at 78 %. Detail mode plays no item
@@ -41,7 +43,7 @@ export function DetailPanel({ product, offer, content }: { product: EditionProdu
   const about = content.about && (content.about.body || content.about.links.length > 0) ? content.about : null;
 
   return <>
-    <div className="min-h-[100vh]">
+    <div className="in-[[data-detail-panel-index]]:min-h-[100vh]">
       <Rule />
       <Label>{content.kicker ?? t("book")}</Label>
       <h2 className="mt-2.5 mb-2 pl-3.5 font-display text-[length:calc(40px+16*(100vw-375px)/1353)] leading-[1.1] font-normal tracking-[-0.03em] text-balance [overflow-wrap:anywhere]">{product.title}</h2>
@@ -79,7 +81,7 @@ export function DetailPanel({ product, offer, content }: { product: EditionProdu
 
     {/* Below 900 px the colophon band comes before praise (theirs places it by a matchMedia; here by order). */}
     <div className="flex flex-col">
-      {content.praise.length > 0 && <section aria-label={t("praise")} className="relative pt-40 pb-40 max-[900px]:pt-0 max-[900px]:pb-[60px] min-[900px]:ml-[calc(-60vw-24px)] min-[900px]:w-screen min-[900px]:px-4">
+      {content.praise.length > 0 && <section aria-label={t("praise")} className="relative pt-40 pb-40 max-[900px]:pt-0 max-[900px]:pb-[60px] min-[900px]:in-[[data-detail-panel-index]]:ml-[calc(-60vw-24px)] min-[900px]:in-[[data-detail-panel-index]]:w-screen min-[900px]:in-[[data-detail-panel-index]]:px-4">
         <div data-book-exit-anchor aria-hidden="true" />
         <Rule className="mt-[124px] mb-1.5 max-[900px]:mt-[46px]" />
         <Label>{t("praise")}</Label>
@@ -108,7 +110,7 @@ function Production({ colophon, gallery, anchor, labels }: { colophon: { label: 
   anchor: boolean; labels: { colophon: string; expand: string; collapse: string } }) {
   const [collapsed, setCollapsed] = useState(true), [index, setIndex] = useState(0);
   const step = (direction: 1 | -1) => setIndex((current) => Math.max(0, Math.min(gallery.length - 1, current + direction)));
-  return <section aria-label={labels.colophon} className={cn("relative pt-[60px] pb-[120px] max-[900px]:-order-1 min-[900px]:ml-[calc(-60vw-24px)] min-[900px]:w-screen min-[900px]:px-4",
+  return <section aria-label={labels.colophon} className={cn("relative pt-[60px] pb-[120px] max-[900px]:-order-1 min-[900px]:in-[[data-detail-panel-index]]:ml-[calc(-60vw-24px)] min-[900px]:in-[[data-detail-panel-index]]:w-screen min-[900px]:in-[[data-detail-panel-index]]:px-4",
     collapsed ? "max-[900px]:pb-[19px]" : "max-[900px]:pb-[30px]")}>
     {anchor && <div data-book-exit-anchor aria-hidden="true" />}
     <div className="grid grid-cols-1 min-[900px]:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] min-[900px]:grid-rows-[auto_1fr_auto] min-[900px]:gap-x-16">

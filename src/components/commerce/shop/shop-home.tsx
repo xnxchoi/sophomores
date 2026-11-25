@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, 
 import { useTransitionRouter } from "next-transition-router";
 import { ArrowLeftIcon } from "@phosphor-icons/react/dist/ssr";
 import { Link } from "@/components/core/Link/Link";
+import { PageInset } from "@/components/core/PageInset/PageInset";
 import { cn } from "@/lib/utils";
 import { lockedProgressFor, scenePages, StripeScene, useStripeScene, type SceneBook, type Vendored } from "./stripe-scene";
 import { useLookInside, type LookInsideSource } from "./use-look-inside";
@@ -64,7 +65,7 @@ export function ShopHome({ items, labels, initialOpen }: { items: Item[]; labels
  */
 function ShopFallback({ items, labels, initialOpen }: { items: Item[]; labels: Labels; initialOpen?: string }) {
   const open = items.find((entry) => entry.id === initialOpen && entry.details);
-  return <section aria-label={labels.featured} className="min-h-svh pt-24 pb-24">
+  return <PageInset as="section" aria-label={labels.featured} className="min-h-svh pt-24 pb-24">
     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
       <p>{labels.sceneFailed}</p>
       <button type="button" onClick={() => window.location.reload()}
@@ -80,7 +81,7 @@ function ShopFallback({ items, labels, initialOpen }: { items: Item[]; labels: L
         {entry.refund && <div className="mt-2 text-sm leading-6">{entry.refund}</div>}
       </li>)}
     </ul>
-  </section>;
+  </PageInset>;
 }
 
 function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; items: Item[]; labels: Labels; initialOpen?: string }) {

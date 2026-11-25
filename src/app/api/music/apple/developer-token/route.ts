@@ -33,12 +33,8 @@ export async function GET(request: Request): Promise<Response> {
       isConfigured: true
     });
   } catch (error) {
-    return privateJson(
-      {
-        error: error instanceof Error ? error.message : "Failed to obtain developer token",
-        isConfigured: false
-      },
-      { status: 500 }
-    );
+    // Signing and configuration details stay in the server log.
+    console.error("Apple Music developer token failed", error);
+    return privateJson({ error: "Apple Music is unavailable right now." }, { status: 500 });
   }
 }

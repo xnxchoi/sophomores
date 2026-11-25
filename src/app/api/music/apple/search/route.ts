@@ -30,9 +30,8 @@ export async function GET(request: Request): Promise<Response> {
     const tracks = await searchAppleMusicSongs(query, limit, storefront);
     return privateJson({ tracks });
   } catch (error) {
-    return privateJson(
-      { error: error instanceof Error ? error.message : "Failed to search Apple Music catalog" },
-      { status: 500 }
-    );
+    // Provider and configuration details stay in the server log.
+    console.error("Apple Music search failed", error);
+    return privateJson({ error: "Search is unavailable right now." }, { status: 500 });
   }
 }

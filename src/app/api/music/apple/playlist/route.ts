@@ -5,7 +5,8 @@ import { guardMusicRoute, privateJson } from "@/lib/music/route-guard";
 export const runtime = "nodejs";
 
 // No page calls this route; server code reads playlists through the library.
-// Curators only, rate limited.
+// Curators only, rate limited. Public catalog playlists only: a library playlist
+// would be read with the shared server Music User Token, so it is never fetched here.
 export async function GET(request: Request): Promise<Response> {
   const denied = denyReviewCustomerOperation(request);
   if (denied) return denied;
@@ -19,12 +20,11 @@ export async function GET(request: Request): Promise<Response> {
   }
 
   try {
-    const playlist = await getAppleMusicPlaylist(idOrUrl);
+    const playlist = await getAppleMusicPlaylist(idOrUrl, undefined, { catalogOnly: true });
     return privateJson({ playlist });
   } catch (error) {
-    return privateJson(
-      { error: error instanceof Error ? error.message : "Failed to fetch Apple Music playlist" },
-      { status: 500 }
-    );
+    // Provider details, and a refused library identifier, stay in the server log.
+    console.error("Apple Music playlist failed", error);
+    return privateJson({ error: "Playlist is unavailable right now." }, { status: 500 });
   }
 }

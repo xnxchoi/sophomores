@@ -131,6 +131,8 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
   // Where the page scrolls to bring a featured book onto its card, or the shelf into place (easeInOutSine, as theirs).
   // One drive at a time; the shelf catch can stop it.
   const drive = useRef({ token: 0, active: false });
+  /** The idle advance's glide in flight (its own, so a wheel doesn't cut it short; theirs `n`/`o`). */
+  const gliding = useRef<{ at: number } | null>(null);
   const stopDriving = () => { drive.current.token += 1; drive.current.active = false; };
   const scrollTo = (target: number, ms: number) => {
     const from = window.scrollY, start = performance.now(), token = ++drive.current.token;
@@ -189,7 +191,7 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
   // Their shelf catch and the titles' clear line (use-shelf-catch.ts).
   const titles = useRef<HTMLElement>(null);
   const catchSource = useRef<ShelfCatchSource>({ seatY: () => null, driving: () => false, stopDriving: () => undefined, titles: () => null, held: () => false });
-  useEffect(() => { catchSource.current = { seatY, driving: () => drive.current.active, stopDriving, titles: () => titles.current, held: () => held.current }; });
+  useEffect(() => { catchSource.current = { seatY, driving: () => drive.current.active || gliding.current != null, stopDriving, titles: () => titles.current, held: () => held.current }; });
   useShelfCatch(hub, catalogue, catchSource);
 
   // Opening a book into its details inside the scene (use-book-detail.ts); the phone keeps the product page for now.
@@ -274,11 +276,28 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
     const item = items[index]; if (item) navigate.push(item.href);
   }; });
 
-  // Idle auto-advance (06w9:14528-14582): 1.5 s after mount, then after every 3 s of stillness, one book down (1 s;
-  // 1.83 s into the shelf), until the visitor does anything at all.
+  // Idle auto-advance (06w9:14528-14582, 14912-14925): from 1.5 s after mount, once the hero intro has settled (checked
+  // every 120 ms), one book down every 3 s, counted from the start of the last glide (1 s; 1.83 s into the shelf). A
+  // wheel or touch stops the next glides but not the one in flight: theirs runs it to the end on its own token
+  // (`lo`), which only opening a book bumps. Measured on stripe.press: first glide 5.9 s after load, 2.0 s pauses.
   useEffect(() => {
     let timer = 0, stopped = false;
     const stop = () => { stopped = true; window.clearTimeout(timer); };
+    // While it glides, a scroll more than 50 px off its own line (a hand on the page) stops the glides after it.
+    const glide = (target: number, ms: number) => {
+      const from = window.scrollY, start = performance.now();
+      gliding.current = { at: from };
+      const step = (now: number) => {
+        if (held.current) { gliding.current = null; return; }
+        const t = Math.min(1, (now - start) / ms), y = from + (target - from) * (0.5 - 0.5 * Math.cos(Math.PI * t));
+        gliding.current = { at: y };
+        window.scrollTo(0, y);
+        if (t < 1) requestAnimationFrame(step); else gliding.current = null;
+      };
+      requestAnimationFrame(step);
+    };
+    const drift = () => { const g = gliding.current; if (g && Math.abs(window.scrollY - g.at) > 50) stop(); };
+    window.addEventListener("scroll", drift, { passive: true });
     const arm = (delay: number) => {
       timer = window.setTimeout(() => {
         if (stopped) return;
@@ -286,14 +305,22 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
         const index = catalogue.a(Math.round(hub.scrollProgressDirectLiveRef.current as number));
         if (index == null || index >= catalogue.t) return;
         const move = motion.current;
-        if (index >= J) move.scrollTo(move.shelfY(), 1833); else move.scrollTo(move.bookY(index + 1), 1000);
-        arm(1833 + 3000);
+        if (index >= J) glide(move.shelfY(), 1833); else glide(move.bookY(index + 1), 1000);
+        arm(3000);
       }, delay);
     };
-    arm(1500 + 3000);
-    const events = ["wheel", "touchmove", "pointerdown", "keydown"] as const;
+    const wait = () => {
+      timer = window.setTimeout(() => {
+        if (stopped) return;
+        if (!hub.heroIntroSettledLiveRef.current) { wait(); return; }
+        arm(3000);
+      }, 120);
+    };
+    timer = window.setTimeout(wait, 1500 - 120);
+    // Theirs stops on wheel and touchmove only (a press or key elsewhere scrolls the page, which the drift check sees).
+    const events = ["wheel", "touchmove"] as const;
     events.forEach((event) => window.addEventListener(event, stop, { passive: true }));
-    return () => { stop(); events.forEach((event) => window.removeEventListener(event, stop)); };
+    return () => { stop(); gliding.current = null; window.removeEventListener("scroll", drift); events.forEach((event) => window.removeEventListener(event, stop)); };
   }, [catalogue, hub, J]);
 
   // Their gesture scopes (06w9:16955-16998): on the stack a vertical step moves one book and → opens it; on the shelf

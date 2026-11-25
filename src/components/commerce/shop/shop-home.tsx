@@ -26,7 +26,9 @@ export function ShopHome({ items, labels }: { items: Item[]; labels: Labels }) {
   const books = useMemo<SceneBook[]>(() => items.map(({ id, title, stageArt }) => ({ id, title, stageArt: stageArt?.url ?? null })), [items]);
   const vendored = useStripeScene(books, Math.min(FEATURED_MAX, items.length));
   const first = items[0]?.stageArt;
-  return <section aria-label={labels.featured} className="relative min-h-svh">
+  // Native wheel scrolling here, as on stripe.press: their scroll mapping, holds and shelf catch read the browser's own
+  // scroll, and the site's Lenis smoothing would keep driving the page through the shelf's catch.
+  return <section data-lenis-prevent-wheel aria-label={labels.featured} className="relative min-h-svh">
     {vendored && items.length > 0 ? <Home vendored={vendored} items={items} labels={labels} /> : first && (
       // The first card where theirs lands (162 px down, 16 px in, 24 px off the bottom) until their code is running.
       <div className="pointer-events-none fixed inset-x-4 top-[162px] bottom-6 z-0 overflow-hidden rounded-[8px] bg-muted max-[899px]:inset-x-2 max-[899px]:top-[140px]">

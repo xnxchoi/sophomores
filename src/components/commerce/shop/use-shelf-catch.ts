@@ -73,7 +73,10 @@ export function useShelfCatch(hub: SceneHub, catalogue: SceneCatalogue, source: 
       glide = requestAnimationFrame(step);
     };
 
-    const unlock = () => { lockedAt = -1; inertia = false; root.style.overflow = overflow; root.style.scrollbarGutter = gutter; };
+    // Their lock is the html attribute (their touch momentum yields to it) with overflow hidden.
+    const unlock = () => {
+      lockedAt = -1; inertia = false; root.style.overflow = overflow; root.style.scrollbarGutter = gutter; root.removeAttribute("data-shelf-scroll-lock");
+    };
     const near = () => { const target = source.current.seatY(); return target != null && Math.abs(window.scrollY - target) < 2 * ih(); };
     const canCatch = () => armed === true && lockedAt < 0 && near() && !busy() && !source.current.driving();
     const crosses = (y: number, delta: number) => {
@@ -83,7 +86,7 @@ export function useShelfCatch(hub: SceneHub, catalogue: SceneCatalogue, source: 
     const catchAt = (speed: number, by: "wheel" | "touch") => {
       armed = false; touchPending = false; touchUntil = -Infinity; activation = false;
       overflow = root.style.overflow; gutter = root.style.scrollbarGutter;
-      root.style.overflow = "hidden"; root.style.scrollbarGutter = "stable";
+      root.style.overflow = "hidden"; root.style.scrollbarGutter = "stable"; root.setAttribute("data-shelf-scroll-lock", "");
       lockedAt = performance.now(); kind = by;
       if (by === "wheel") { inertia = true; minDelta = Infinity; bigger = 0; }
       glideTo(speed, true);

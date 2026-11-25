@@ -4,11 +4,11 @@ import { join } from "node:path";
 import test from "node:test";
 import messages from "../../../messages/en.json";
 import { APPLE_PASS_TYPE_ID, appleWalletPass, loadAppleSigner, type AppleSignerError } from "@/lib/commerce/keys/apple-wallet-pass";
-import { appleSigningFixture, openPass, opensslAvailable } from "./fixtures/apple-signing";
+import { appleSigningFixture, openPass, toolsAvailable } from "./fixtures/apple-signing";
 
 // Our own Apple Wallet pass (owner GO, 26 Nov: "And the passkit generator please"). Signing material is checked before
 // anything is fetched; the pass is an event ticket carrying Unlock's QR and nothing personal.
-const skip = !opensslAvailable() && "openssl is not installed";
+const skip = !toolsAvailable() && "openssl or unzip is not installed";
 const event = { id: "e", name: "Launch night", startsAt: "2026-12-05T10:00:00.000Z", endsAt: "2026-12-05T14:00:00.000Z" };
 const barcode = "https://app.unlock-protocol.com/verification?data=%7B%7D&sig=0x" + "1".repeat(130);
 

@@ -9,7 +9,7 @@ import { deflateSync } from "node:zlib";
  * conversion commands as the owner's Staff manual (req -newkey with an encrypted key; the portal's DER .cer to PEM).
  * Nothing here is or resembles a real Sophomores or Apple credential.
  */
-export const opensslAvailable = () => spawnSync("openssl", ["version"]).status === 0;
+export const toolsAvailable = () => spawnSync("openssl", ["version"]).status === 0 && spawnSync("unzip", ["-v"]).status === 0;
 
 function openssl(cwd: string, ...args: string[]) {
   const run = spawnSync("openssl", args, { cwd, encoding: "utf8" });

@@ -7,7 +7,7 @@ import { assertCommerceBrowserAuthority } from "../access";
 import { readOwnedEventPassSource } from "./event-pass";
 import { appleWalletPass, loadAppleSigner, type AppleSigner } from "./apple-wallet-pass";
 import { googleWalletSaveURL, loadGoogleWalletIssuer, passSerial, type GoogleWalletIssuer, type PassEvent } from "./google-wallet-pass";
-import { hostedBarcode, LOCKSMITH_SIGNERS } from "./unlock/hosted-barcode";
+import { hostedBarcode, LOCKSMITH_SIGNERS, type BarcodeRefusal } from "./unlock/hosted-barcode";
 import { createPassHolderCheck, type PassHolderCheck, type PassKey } from "./unlock/pass-holder";
 
 const params = z.strictObject({ orderID: z.uuid(), admissionID: z.uuid(), platform: z.enum(["ios", "android"]) });
@@ -78,13 +78,15 @@ type OwnPass = { signer: { google: GoogleWalletIssuer } | { apple: AppleSigner }
   signers: readonly Address[] };
 
 /** Our own pass: Unlock's QR from its hosted Android answer, proved for this key and Safe, in a pass we sign. */
-async function serveOwnPass(response: Response, own: OwnPass, json: boolean, unavailable: Fail) {
+async function serveOwnPass(response: Response, own: OwnPass, json: boolean, unavailable: Fail,
+  log: (reason: BarcodeRefusal) => void) {
   if (!response.ok || response.headers.get("content-type")?.split(";")[0].trim() !== "application/json") {
     await response.body?.cancel();
     return unavailable(502);
   }
-  const barcode = await hostedBarcode((await readBounded(response, 20 * 1024)).toString("utf8"), own.key, own.signers);
-  if (!barcode) return unavailable(502);
+  const proved = await hostedBarcode((await readBounded(response, 20 * 1024)).toString("utf8"), own.key, own.signers);
+  if ("refused" in proved) { log(proved.refused); return unavailable(502); }
+  const barcode = proved.value;
   if ("google" in own.signer) {
     return sendSave(await googleWalletSaveURL(own.signer.google, { key: own.key, event: own.event, barcode, origin: own.origin }), json);
   }
@@ -154,7 +156,9 @@ export function createEventPassEndpoint({ getMemberRuntime = getPayloadMemberRun
       try {
         const upstream = await fetcher(source.url, { cache: "no-store", credentials: "omit", redirect: "error",
           signal: AbortSignal.timeout(5000) });
-        return own ? await serveOwnPass(upstream, own, json, fail) : await servePass(upstream, platform, json, fail);
+        // A refused QR is logged by its fixed reason only, so the first live refusal says which check failed.
+        const log = (reason: BarcodeRefusal) => req.payload.logger?.warn({ msg: "Own wallet pass: Unlock QR refused", cause: reason });
+        return own ? await serveOwnPass(upstream, own, json, fail, log) : await servePass(upstream, platform, json, fail);
       } catch {
         return fail(502);
       }

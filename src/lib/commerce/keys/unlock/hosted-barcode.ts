@@ -41,26 +41,35 @@ const verification = z.strictObject({
   timestamp: z.number().int().positive(),
 });
 
-/** The QR value from the hosted Android route's JSON, or null. Never throws; never returns anything it didn't prove. */
-export async function hostedBarcode(body: string, key: PassKey, signers: readonly Address[] = LOCKSMITH_SIGNERS): Promise<string | null> {
+/** Why a QR was refused: fixed codes only, safe to log (they carry nothing from the answer). */
+export type BarcodeRefusal = "save_url" | "jwt_shape" | "qr_url" | "qr_data" | "key_mismatch" | "account_mismatch" | "signer_unknown";
+
+/** The QR value from the hosted Android route's JSON, or why not. Never throws; never returns anything it didn't prove. */
+export async function hostedBarcode(body: string, key: PassKey, signers: readonly Address[] = LOCKSMITH_SIGNERS):
+  Promise<{ value: string } | { refused: BarcodeRefusal }> {
+  let step: BarcodeRefusal = "save_url";
   try {
     const { passObjectUrl } = saveURL.parse(JSON.parse(body));
     const save = new URL(passObjectUrl);
     const jwt = /^\/gp\/v\/save\/([\w-]+\.[\w-]+\.[\w-]+)$/.exec(save.pathname)?.[1];
-    if (save.origin !== "https://pay.google.com" || save.username || save.password || save.search || save.hash || !jwt) return null;
+    if (save.origin !== "https://pay.google.com" || save.username || save.password || save.search || save.hash || !jwt) return { refused: step };
+    step = "jwt_shape";
     const value = claims.parse(decodeJwt(jwt)).payload.genericObjects[0].barcode.value;
+    step = "qr_url";
     const qr = new URL(value);
     const names = [...qr.searchParams.keys()];
     const raw = qr.searchParams.get("data");
     const sig = qr.searchParams.get("sig");
     if (qr.origin !== UNLOCK_VERIFICATION_ORIGIN || qr.pathname !== "/verification" || qr.username || qr.password || qr.hash ||
-      names.length !== 2 || !names.includes("data") || !names.includes("sig") || !raw || !sig || !/^0x[0-9a-fA-F]{130}$/.test(sig)) return null;
+      names.length !== 2 || !names.includes("data") || !names.includes("sig") || !raw || !sig || !/^0x[0-9a-fA-F]{130}$/.test(sig)) return { refused: step };
+    step = "qr_data";
     const data = verification.parse(JSON.parse(raw));
-    if (data.tokenId !== key.tokenID || !isAddressEqual(data.lockAddress as Address, key.lock as Address) ||
-      !isAddressEqual(data.account as Address, key.recipient as Address)) return null;
+    if (data.tokenId !== key.tokenID || !isAddressEqual(data.lockAddress as Address, key.lock as Address)) return { refused: "key_mismatch" };
+    if (!isAddressEqual(data.account as Address, key.recipient as Address)) return { refused: "account_mismatch" };
+    step = "signer_unknown";
     const signer = await recoverMessageAddress({ message: raw, signature: sig as Hex });
-    return signers.some(known => isAddressEqual(known, signer)) ? value : null;
+    return signers.some(known => isAddressEqual(known, signer)) ? { value } : { refused: step };
   } catch {
-    return null;
+    return { refused: step };
   }
 }

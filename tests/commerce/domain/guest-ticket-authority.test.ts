@@ -7,7 +7,7 @@ import test from "node:test";
 import { exportPKCS8, generateKeyPair, jwtVerify, SignJWT } from "jose";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { loadAppleSigner, type AppleSigner } from "@/lib/commerce/keys/apple-wallet-pass";
-import { appleSigningFixture, openPass, opensslAvailable } from "../keys/fixtures/apple-signing";
+import { appleSigningFixture, openPass, toolsAvailable } from "../keys/fixtures/apple-signing";
 import { googleEventClassID, googleTicketObjectID, passSerial, loadGoogleWalletIssuer, type GoogleWalletIssuer, type GoogleWalletIssuerError } from "@/lib/commerce/keys/google-wallet-pass";
 import { checkInGuest, claimGuestAdmission, grantOrderAdmissions, issueGuestClaim } from "@/lib/commerce/guests";
 import { loadWalletConfig, predictMemberSafe } from "@/lib/member-auth/wallet/safe";
@@ -282,15 +282,17 @@ async function memberTicket(t: { after: (fn: () => void) => void }, deps: Partia
     ...deps,
   });
   // A click on the card's link is a same-origin top-level navigation.
+  const logs: unknown[] = [];
   const open = (platform: "ios" | "android", user: object | null = member, accept?: string) =>
     fake.transaction(member, async req => endpoint.handler(Object.assign(req, {
+      payload: Object.assign(req.payload, { logger: { warn: (entry: unknown) => logs.push(entry) } }),
       user, url: origin + "/api/commerce/wallet-pass", method: "GET",
       headers: new Headers({ "sec-fetch-site": "same-origin", ...(accept ? { accept } : { "sec-fetch-mode": "navigate" }) }),
       routeParams: { orderID: order.id, admissionID: admission.id, platform },
     })));
   const links = () => fake.transaction(member, req => readEventPassLinks(req, fake.rows["commerce-admissions"][0], order, buyerID));
   const back = `/shop/orders/${order.id}#wallet-pass-unavailable`;
-  return { fake, intent, open, links, calls, back, passOrigin, held, safe, origin, order, setUpstream: (next: () => Response) => { upstream = next; },
+  return { fake, intent, open, links, calls, back, passOrigin, held, safe, origin, order, logs, setUpstream: (next: () => Response) => { upstream = next; },
     setHolder: (next: () => Promise<boolean>) => { holder = next; },
     base: `/api/commerce/orders/${order.id}/admissions/${admission.id}/wallet-pass` };
 }
@@ -523,30 +525,40 @@ test("own passes: a holder that no longer proves out gets no pass and Unlock is 
 test("own passes: any QR that doesn't prove this key in this Safe, signed by Locksmith, builds no pass", async t => {
   const m = await ownPass(t);
   const stranger = privateKeyToAccount(generatePrivateKey());
-  const cases: [string, () => Promise<Response>][] = [
-    ["another network", async () => m.hosted(await m.qr({ network: 1 }))],
-    ["another lock", async () => m.hosted(await m.qr({ lockAddress: memberLock }))],
-    ["another token", async () => m.hosted(await m.qr({ tokenId: "8" }))],
-    ["another account", async () => m.hosted(await m.qr({ account: "0x" + "d".repeat(40) }))],
-    ["an extra field", async () => m.hosted(await m.qr({ name: "x" }))],
-    ["an unknown signer", async () => m.hosted(await m.qr({}, { signer: stranger }))],
-    ["data changed after signing", async () => m.hosted(await m.qr({}, { tamper: true }))],
-    ["another verifier host", async () => m.hosted(await m.qr({}, { url: "https://app.unlock-protocol.com.evil.invalid/verification" }))],
-    ["an extra parameter", async () => m.hosted(await m.qr({}, { extra: { next: "x" } }))],
-    ["no object", async () => m.hosted("", [])],
-    ["two objects", async () => m.hosted(await m.qr(), [{ barcode: { type: "QR_CODE", value: await m.qr() } }, { barcode: { type: "QR_CODE", value: await m.qr() } }])],
-    ["not a QR", async () => m.hosted("", [{ barcode: { type: "PDF_417", value: await m.qr() } }])],
-    ["a save URL elsewhere", async () => Response.json({ passObjectUrl: "https://pay.google.com.evil.invalid/gp/v/save/a.b.c" })],
-    ["no JWT", async () => Response.json({ passObjectUrl: "https://pay.google.com/gp/v/save/abc" })],
+  const cases: [string, string, () => Promise<Response>][] = [
+    ["another network", "qr_data", async () => m.hosted(await m.qr({ network: 1 }))],
+    ["another lock", "key_mismatch", async () => m.hosted(await m.qr({ lockAddress: memberLock }))],
+    ["another token", "key_mismatch", async () => m.hosted(await m.qr({ tokenId: "8" }))],
+    ["another account", "account_mismatch", async () => m.hosted(await m.qr({ account: "0x" + "d".repeat(40) }))],
+    ["an extra field", "qr_data", async () => m.hosted(await m.qr({ name: "x" }))],
+    ["an unknown signer", "signer_unknown", async () => m.hosted(await m.qr({}, { signer: stranger }))],
+    ["data changed after signing", "key_mismatch", async () => m.hosted(await m.qr({}, { tamper: true }))],
+    ["another verifier host", "qr_url", async () => m.hosted(await m.qr({}, { url: "https://app.unlock-protocol.com.evil.invalid/verification" }))],
+    ["an extra parameter", "qr_url", async () => m.hosted(await m.qr({}, { extra: { next: "x" } }))],
+    ["no object", "jwt_shape", async () => m.hosted("", [])],
+    ["two objects", "jwt_shape", async () => m.hosted(await m.qr(), [{ barcode: { type: "QR_CODE", value: await m.qr() } }, { barcode: { type: "QR_CODE", value: await m.qr() } }])],
+    ["not a QR", "jwt_shape", async () => m.hosted("", [{ barcode: { type: "PDF_417", value: await m.qr() } }])],
+    ["a save URL elsewhere", "save_url", async () => Response.json({ passObjectUrl: "https://pay.google.com.evil.invalid/gp/v/save/a.b.c" })],
+    ["no JWT", "save_url", async () => Response.json({ passObjectUrl: "https://pay.google.com/gp/v/save/abc" })],
   ];
-  for (const [name, make] of cases) {
+  for (const [name, cause, make] of cases) {
     const answer = await make();
     m.setUpstream(() => answer.clone());
     const opened = await m.open("android");
     assert.equal(opened.status, 303, name);
     assert.equal(opened.headers.get("location"), m.back, name);
+    assert.deepEqual(m.logs.at(-1), { msg: "Own wallet pass: Unlock QR refused", cause }, name);
   }
-  assert.equal(m.calls.length, cases.length, "each case read Unlock once and stopped there");
+  assert.equal(m.logs.length, cases.length, "one fixed-reason line per refusal, nothing else");
+  // A tampered token is refused before the signature (its data names another key); a tampered timestamp reaches it.
+  const signed = await m.qr();
+  const forged = new URL(signed);
+  forged.searchParams.set("data", forged.searchParams.get("data")!.replace(/"timestamp":\d+/, '"timestamp":1'));
+  const tampered = await m.hosted(forged.href);
+  m.setUpstream(() => tampered.clone());
+  assert.equal((await m.open("android")).status, 303);
+  assert.deepEqual(m.logs.at(-1), { msg: "Own wallet pass: Unlock QR refused", cause: "signer_unknown" }, "edited data no longer recovers the signer");
+  assert.equal(m.calls.length, cases.length + 1, "each case read Unlock once and stopped there");
 });
 
 test("own passes: an event with no name can't make a pass, so the ticket shows none", async t => {
@@ -587,7 +599,7 @@ test("our Google issuer file: owner-only, well formed, and every failure a fixed
   assert.equal(String(thrown).includes(dir), false, "no path or content in the error");
 });
 
-test("own Apple pass: behind its own switch, the same proved QR in a pass we sign", { skip: !opensslAvailable() && "no openssl" }, async t => {
+test("own Apple pass: behind its own switch, the same proved QR in a pass we sign", { skip: !toolsAvailable() && "openssl or unzip is not installed" }, async t => {
   const f = await appleSigningFixture();
   t.after(f.cleanup);
   const signer = await loadAppleSigner({ files: f.files, artDirectory: f.art, wwdr: f.wwdr });

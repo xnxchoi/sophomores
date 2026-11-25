@@ -4,6 +4,7 @@ import { isReviewCopyRequest } from "@/lib/auth/review-editor-policy";
 import { getPayloadMemberRuntime } from "@/lib/member-auth/payload-runtime";
 import { assertCommerceBrowserAuthority } from "../access";
 import { readOwnedEventPassSource } from "./event-pass";
+import { createPassHolderCheck, type PassHolderCheck } from "./unlock/pass-holder";
 
 const params = z.strictObject({ orderID: z.uuid(), admissionID: z.uuid(), platform: z.enum(["ios", "android"]) });
 const privateHeaders = {
@@ -70,9 +71,12 @@ async function servePass(response: Response, platform: "ios" | "android", json: 
 type Dependencies = {
   getMemberRuntime?: () => { config: { origin: string }; toMemberPrincipal: (request: Request) => Promise<{ userId: string; emailVerified: boolean } | null> } | null;
   fetcher?: typeof fetch;
+  /** Serve-time chain proof that the member's Safe still holds the valid key; fails closed (pass-holder.ts). */
+  keyHeld?: PassHolderCheck;
 };
 
-export function createEventPassEndpoint({ getMemberRuntime = getPayloadMemberRuntime, fetcher = (...args) => fetch(...args) }: Dependencies = {}): Endpoint {
+export function createEventPassEndpoint({ getMemberRuntime = getPayloadMemberRuntime, fetcher = (...args) => fetch(...args),
+  keyHeld = createPassHolderCheck() }: Dependencies = {}): Endpoint {
   const rates = new Map<string, { count: number; until: number }>();
   return {
     path: "/commerce/orders/:orderID/admissions/:admissionID/wallet-pass/:platform",
@@ -83,7 +87,7 @@ export function createEventPassEndpoint({ getMemberRuntime = getPayloadMemberRun
       const { orderID, admissionID, platform } = parsed.data;
       const fail = failureFor(req, orderID);
       if (!req.url || req.user?.collection !== "users") return fail(404);
-      let source: string | null | undefined;
+      let source: Awaited<ReturnType<typeof readOwnedEventPassSource>>;
       try {
         const request = new Request(req.url, { headers: req.headers });
         const runtime = getMemberRuntime();
@@ -102,8 +106,10 @@ export function createEventPassEndpoint({ getMemberRuntime = getPayloadMemberRun
         return fail(404);
       }
       if (!source) return fail(404);
+      // Live on Polygon, right before Unlock is asked: a key that moved, expired or was cancelled gets no pass.
+      try { if (!(await keyHeld(source.key))) return fail(404); } catch { return fail(404); }
       try {
-        const upstream = await fetcher(source, { cache: "no-store", credentials: "omit", redirect: "error",
+        const upstream = await fetcher(source.url, { cache: "no-store", credentials: "omit", redirect: "error",
           signal: AbortSignal.timeout(5000) });
         return await servePass(upstream, platform, req.headers.get("accept") === "application/json", fail);
       } catch {

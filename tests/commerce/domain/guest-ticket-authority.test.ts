@@ -111,7 +111,7 @@ test("a verified buyer gets distinct Apple and Google URLs for each matching gra
   const buyerID = "123e4567-e89b-42d3-a456-426614174001";
   const safeOwner = "0x" + "c".repeat(40);
   const passOrigin = "https://passes.example.invalid";
-  for (const [key, value] of Object.entries({ UNLOCK_HOSTED_PASSES_ENABLED: "1", UNLOCK_PASS_ORIGIN: passOrigin,
+  for (const [key, value] of Object.entries({ UNLOCK_HOSTED_PASSES_ENABLED: "1", UNLOCK_GOOGLE_WALLET_PASSES_ENABLED: "1", UNLOCK_PASS_ORIGIN: passOrigin,
     UNLOCK_SHARED_TICKET_EVENT_ID: "e", MEMBER_WALLET_CHAIN_ID: "137",
     MEMBER_WALLET_LOCK_ADDRESS: memberLock, MEMBER_WALLET_OWNER_ADDRESS: safeOwner })) {
     const previous = process.env[key];
@@ -156,7 +156,7 @@ test("a verified buyer gets distinct Apple and Google URLs for each matching gra
   };
   const endpoint = createEventPassEndpoint({
     getMemberRuntime: () => ({ config: { origin }, toMemberPrincipal: async () => ({ userId: buyerID, emailVerified: true }) }),
-    fetcher,
+    fetcher, keyHeld: async () => true,
   });
   const get = (admissionID: string, platform: string, accept?: string, site = "same-origin", user = sponsor) =>
     fake.transaction(user, async req => endpoint.handler(Object.assign(req, {
@@ -211,7 +211,7 @@ test("a verified buyer gets distinct Apple and Google URLs for each matching gra
   ]) {
     const bad = createEventPassEndpoint({
       getMemberRuntime: () => ({ config: { origin }, toMemberPrincipal: async () => ({ userId: buyerID, emailVerified: true }) }),
-      fetcher: async () => upstream,
+      fetcher: async () => upstream, keyHeld: async () => true,
     });
     const denied = await fake.transaction(sponsor, async req => bad.handler(Object.assign(req, {
       url: origin + "/api/commerce/wallet-pass", method: "GET", headers: new Headers({ "sec-fetch-site": "same-origin" }),
@@ -227,7 +227,7 @@ test("a verified buyer gets distinct Apple and Google URLs for each matching gra
 async function memberTicket(t: { after: (fn: () => void) => void }) {
   const buyerID = "123e4567-e89b-42d3-a456-426614174011";
   const passOrigin = "https://passes.example.invalid";
-  for (const [key, value] of Object.entries({ UNLOCK_HOSTED_PASSES_ENABLED: "1", UNLOCK_PASS_ORIGIN: passOrigin,
+  for (const [key, value] of Object.entries({ UNLOCK_HOSTED_PASSES_ENABLED: "1", UNLOCK_GOOGLE_WALLET_PASSES_ENABLED: "1", UNLOCK_PASS_ORIGIN: passOrigin,
     UNLOCK_SHARED_TICKET_EVENT_ID: "e", MEMBER_WALLET_CHAIN_ID: "137",
     MEMBER_WALLET_LOCK_ADDRESS: memberLock, MEMBER_WALLET_OWNER_ADDRESS: "0x" + "c".repeat(40) })) {
     const previous = process.env[key];
@@ -265,9 +265,12 @@ async function memberTicket(t: { after: (fn: () => void) => void }) {
   const origin = "https://shop.example.invalid";
   const calls: string[] = [];
   let upstream: () => Response = () => new Response(null, { status: 500 });
+  const held: unknown[] = [];
+  let holder: () => Promise<boolean> = async () => true;
   const endpoint = createEventPassEndpoint({
     getMemberRuntime: () => ({ config: { origin }, toMemberPrincipal: async () => ({ userId: buyerID, emailVerified: true }) }),
     fetcher: async url => { calls.push(String(url)); return upstream(); },
+    keyHeld: async key => { held.push(key); return holder(); },
   });
   // A click on the card's link is a same-origin top-level navigation.
   const open = (platform: "ios" | "android", user: object | null = member, accept?: string) =>
@@ -278,7 +281,8 @@ async function memberTicket(t: { after: (fn: () => void) => void }) {
     })));
   const links = () => fake.transaction(member, req => readEventPassLinks(req, fake.rows["commerce-admissions"][0], order, buyerID));
   const back = `/shop/orders/${order.id}#wallet-pass-unavailable`;
-  return { fake, intent, open, links, calls, back, passOrigin, setUpstream: (next: () => Response) => { upstream = next; },
+  return { fake, intent, open, links, calls, back, passOrigin, held, safe, setUpstream: (next: () => Response) => { upstream = next; },
+    setHolder: (next: () => Promise<boolean>) => { holder = next; },
     base: `/api/commerce/orders/${order.id}/admissions/${admission.id}/wallet-pass` };
 }
 
@@ -352,4 +356,60 @@ test("a Locksmith failure while opening a pass returns the member to the ticket 
     const json = await m.open("android", undefined, "application/json");
     assert.equal(json.status, 502);
   }
+});
+
+// Review-A HOLD (msg_8076f4870ae9): before the switch can go on, a fail-closed serve-time check that the member's Safe
+// still holds a valid key, refusing with zero provider fetches.
+test("a pass is fetched only while the member's Safe still holds the valid key on chain", async t => {
+  const m = await memberTicket(t);
+  m.setUpstream(() => new Response(Uint8Array.of(0x50, 0x4b, 3, 4), { headers: { "Content-Type": "application/vnd.apple.pkpass" } }));
+  assert.equal((await m.open("ios")).status, 200);
+  assert.deepEqual(m.held, [{ lock: guestLock, tokenID: "7", recipient: m.safe.safeAddress }]);
+  for (const refusal of [async () => false, async () => { throw new Error("rpc down"); }]) {
+    m.setHolder(refusal);
+    const before = m.calls.length;
+    for (const platform of ["ios", "android"] as const) {
+      const opened = await m.open(platform);
+      assert.equal(opened.status, 303);
+      assert.equal(opened.headers.get("location"), m.back);
+      assert.equal((await m.open(platform, undefined, "application/json")).status, 404);
+    }
+    assert.equal(m.calls.length, before, "a refused or unproven holder never reaches Unlock");
+  }
+});
+
+test("the per-member pass rate limit allows 20 a minute, refuses the 21st without Unlock, and resets", async t => {
+  const m = await memberTicket(t);
+  let now = Date.UTC(2026, 10, 25, 12);
+  t.mock.method(Date, "now", () => now);
+  m.setUpstream(() => new Response(Uint8Array.of(0x50, 0x4b, 3, 4), { headers: { "Content-Type": "application/vnd.apple.pkpass" } }));
+  for (let i = 0; i < 20; i++) assert.equal((await m.open("ios", undefined, "application/json")).status, 200, `request ${i + 1}`);
+  assert.equal(m.calls.length, 20);
+  assert.equal((await m.open("ios", undefined, "application/json")).status, 429);
+  const nav = await m.open("ios");
+  assert.equal(nav.status, 303);
+  assert.equal(nav.headers.get("location"), m.back);
+  assert.equal(m.calls.length, 20, "refused requests never reach Unlock");
+  now += 59_999;
+  assert.equal((await m.open("ios", undefined, "application/json")).status, 429, "still inside the minute");
+  now += 1;
+  assert.equal((await m.open("ios", undefined, "application/json")).status, 200, "a new minute starts a new count");
+  assert.equal(m.calls.length, 21);
+});
+
+// Cordy ruling (msg_ae4f93b66e96): Google Wallet behind its own switch, default off for both tiers. Unlock's Google object
+// ID is <issuer>.<class>.<keyId> with no lock or network, so it collides across locks.
+test("with passes on but the Google switch off, only Apple is offered and the Google route never reaches Unlock", async t => {
+  const m = await memberTicket(t);
+  const previous = process.env.UNLOCK_GOOGLE_WALLET_PASSES_ENABLED;
+  t.after(() => { if (previous === undefined) delete process.env.UNLOCK_GOOGLE_WALLET_PASSES_ENABLED; else process.env.UNLOCK_GOOGLE_WALLET_PASSES_ENABLED = previous; });
+  for (const off of [undefined, "0", "true"]) {
+    if (off === undefined) delete process.env.UNLOCK_GOOGLE_WALLET_PASSES_ENABLED; else process.env.UNLOCK_GOOGLE_WALLET_PASSES_ENABLED = off;
+    assert.deepEqual(await m.links(), { walletPass: "ready", applePassURL: m.base + "/ios", androidPassURL: null }, String(off));
+    const opened = await m.open("android");
+    assert.equal(opened.status, 303);
+    assert.equal(opened.headers.get("location"), m.back);
+  }
+  assert.equal(m.calls.length, 0);
+  assert.equal(m.held.length, 0, "a hidden Google route does not even read the chain");
 });

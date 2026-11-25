@@ -4,10 +4,17 @@ import { guestTicketTarget, matchesFrozenEventTicket, sameTicketTarget, sharedTi
 import { purchaseSnapshotSchema } from "../purchase-snapshot";
 import { isTxHash, keyGrantOperationKey, keyGrantStates, memberEventGrantOperationKey, MEMBER_EVENT_GRANT, parseKeyGrantTarget, ticketTokenIdentity } from "./contracts";
 import { loadWalletConfig, predictMemberSafe } from "../../member-auth/wallet/safe";
+import type { PassKey } from "./unlock/pass-holder";
 
 /** Not yet granted and not cancelled: the existing key_pending ticket state (keyStatusOf). */
 const issuing = new Set<string>(keyGrantStates.filter(state => state !== "granted" && state !== "cancelled"));
-type PassSources = { kind: "ready"; applePassURL: string; androidPassURL: string | null };
+type PassSources = { kind: "ready"; applePassURL: string; androidPassURL: string | null; key: PassKey };
+
+/**
+ * Google Wallet has its own switch, off by default for both tiers (Cordy, 25 Nov): Unlock builds the Google object ID
+ * as <issuer>.<class>.<keyId>, with no lock or network, so it collides across locks (locksmith createPassObject.ts).
+ */
+const googleWalletEnabled = () => process.env.UNLOCK_GOOGLE_WALLET_PASSES_ENABLED === "1";
 
 /**
  * Called only after the order and admission have been scoped to the verified buyer. No provider requests.
@@ -52,6 +59,7 @@ async function resolveEventPassSources(req: PayloadRequest, admission: CommerceD
   if (!isTxHash(intent.settledTxHash) || !Number.isFinite(Date.parse(intent.grantedAt ?? "")) ||
     !intent.tokenID || !/^(0|[1-9][0-9]{0,77})$/.test(intent.tokenID) ||
     BigInt(intent.tokenID) >= 1n << 256n) return null;
+  let recipient: string;
   try {
     const target = parseKeyGrantTarget(intent.target);
     if (target.chainID !== 137 || target.lock !== pinned.data.lock || (target.ticketTier === "guest") !== (tier === "guest")) return null;
@@ -66,13 +74,17 @@ async function resolveEventPassSources(req: PayloadRequest, admission: CommerceD
     if (wallets.totalDocs !== 1 || !wallet || wallet.status !== "active" || relationshipID(wallet.member) !== buyer ||
       target.recipient !== safe.safeAddress || wallet.walletKey !== `137:${safe.safeAddress}` ||
       !Object.entries(safe).every(([key, value]) => Reflect.get(wallet, key) === value)) return null;
+    recipient = safe.safeAddress;
   } catch { return null; }
   const route = `/v2/pass/137/${pinned.data.lock}/${intent.tokenID}`;
   return {
     kind: "ready",
     applePassURL: new URL(route + "/ios", origin).href,
-    // Google Wallet: shared Guest tickets, and member tickets (owner ruling, 25 Nov: "and add the wallet pass now", option (a)).
-    androidPassURL: (shared && tier === "guest") || tier === "member" ? new URL(route + "/android", origin).href : null,
+    // Google Wallet: shared Guest tickets, and member tickets (owner ruling, 25 Nov: "and add the wallet pass now", option (a)),
+    // only behind its own switch.
+    androidPassURL: googleWalletEnabled() && ((shared && tier === "guest") || tier === "member") ? new URL(route + "/android", origin).href : null,
+    // What the serve-time chain check must still find (pass-holder.ts): this key, valid, owned by the member's Safe.
+    key: { lock: pinned.data.lock, tokenID: intent.tokenID, recipient },
   };
 }
 
@@ -87,7 +99,8 @@ export async function readEventPassLinks(req: PayloadRequest, admission: Commerc
   return { walletPass: "ready", applePassURL: route + "/ios", androidPassURL: sources.androidPassURL ? route + "/android" : null };
 }
 
-export async function readOwnedEventPassSource(req: PayloadRequest, buyer: string, orderID: string, admissionID: string, platform: "ios" | "android") {
+export async function readOwnedEventPassSource(req: PayloadRequest, buyer: string, orderID: string, admissionID: string,
+  platform: "ios" | "android"): Promise<{ url: string; key: PassKey } | null> {
   const order = await req.payload.findByID({ collection: "orders", id: orderID, overrideAccess: false,
     disableErrors: true, depth: 0, req });
   if (!order || order.id !== orderID || order.commerceVersion !== "commerce-v1" || relationshipID(order.customer) !== buyer) return null;
@@ -95,5 +108,6 @@ export async function readOwnedEventPassSource(req: PayloadRequest, buyer: strin
   if (admission.id !== admissionID) return null;
   const sources = await resolveEventPassSources(req, admission, { ...order }, buyer);
   if (!sources || sources === "pending") return null;
-  return platform === "ios" ? sources.applePassURL : sources.androidPassURL;
+  const url = platform === "ios" ? sources.applePassURL : sources.androidPassURL;
+  return url ? { url, key: sources.key } : null;
 }

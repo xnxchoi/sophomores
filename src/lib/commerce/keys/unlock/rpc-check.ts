@@ -12,6 +12,11 @@ import { readOwnerOnly, signerDirectory } from "./signer";
 
 /** Where the owner keeps the RPC URL on the tick host: KEY_GRANT_POLYGON_RPC_URL=https://..., mode 0600. */
 export const polygonRpcFile = join(signerDirectory, "polygon-rpc.env");
+/**
+ * The web app's own read-only Polygon key, separate from the key job's (Cordy, 25 Nov: least privilege; the web app is
+ * the more exposed surface): WALLET_PASS_POLYGON_RPC_URL=https://..., mode 0600, same checks and allowlist.
+ */
+export const walletPassRpcFile = join(signerDirectory, "polygon-wallet-pass-rpc.env");
 
 export const RPC_FILE_CODES = ["rpc_file_missing", "rpc_file_symlink", "rpc_file_not_regular", "rpc_file_not_owner_only",
   "rpc_file_unparsable", "rpc_url_not_allowed"] as const;
@@ -34,7 +39,8 @@ export function polygonRpcUrlAllowed(value: string): boolean {
  * The Alchemy URL from the owner-only file, through the same checks as the signer file (regular file, not a
  * symlink, owned by this user, mode 0600). Every failure is a fixed code; nothing from the file is ever in an error.
  */
-export async function loadPolygonRpcUrl(file = polygonRpcFile, uid = process.getuid?.()): Promise<string> {
+export async function loadPolygonRpcUrl(file = polygonRpcFile, uid = process.getuid?.(),
+  variable: "KEY_GRANT_POLYGON_RPC_URL" | "WALLET_PASS_POLYGON_RPC_URL" = "KEY_GRANT_POLYGON_RPC_URL"): Promise<string> {
   let text: string;
   try { text = await readOwnerOnly(file, uid); } catch (error) {
     const message = error instanceof Error ? error.message : "";
@@ -42,7 +48,7 @@ export async function loadPolygonRpcUrl(file = polygonRpcFile, uid = process.get
       : /owned by|mode 0600/.test(message) ? "rpc_file_not_owner_only" : "rpc_file_missing");
   }
   let url: string | undefined;
-  try { url = parseEnv(text).KEY_GRANT_POLYGON_RPC_URL; } catch { throw new RpcFileError("rpc_file_unparsable"); }
+  try { url = parseEnv(text)[variable]; } catch { throw new RpcFileError("rpc_file_unparsable"); }
   if (!url || !polygonRpcUrlAllowed(url)) throw new RpcFileError("rpc_url_not_allowed");
   return url;
 }

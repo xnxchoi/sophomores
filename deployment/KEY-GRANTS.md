@@ -66,8 +66,11 @@ The code is `src/lib/commerce/keys/` (worker passes, `grant-catch-up.ts`, `unloc
      nothing else may settle it.
   4. On the tick host, with the tick's env, run it under a wall-clock limit:
      `timeout 30m node --import tsx scripts/key-grant-reconcile-one.ts --intent <id> --tx <hash> --walk <blocks>`.
-     If the limit hits or you abort, nothing has been written (the write comes only at the end, fenced). The lock is
-     released when the process's database connection closes. Run it again later, or escalate.
+     A timeout or abort does **not** prove nothing was written: the fenced write can commit just before the process
+     is stopped, losing only its output line. The lock is released when the process's database connection closes.
+     After a timeout, an abort or any unclear result: keep live dispatch off, read the named intent in the admin
+     (its `state`, `txHash`/`sends` and `settledTxHash`) to see whether it moved, and escalate anything unclear before
+     running it again or turning the switch back on.
   5. Read its one line:
      - `{"outcome":"settled","state":"granted"}`: it **wrote the database** (the same fenced write as the tick). It
        made no chain writes.
@@ -98,6 +101,15 @@ The code is `src/lib/commerce/keys/` (worker passes, `grant-catch-up.ts`, `unloc
 There is **no lock-manager key on any of our hosts** (ADR-0008, ADR-0011). The owner's own wallet is the lock manager.
 
 ## Go-live (the owner)
+**Live gates still open (25 Nov), each recorded here before the switch goes on:**
+1. **RPC:** the owner's choice of `KEY_GRANT_POLYGON_RPC_URL` (RPC trust, above), then a read-only validation of it
+   (step 3: chain 137, `finalized` a few blocks behind `latest`, the block numbered at the finalized height has the
+   finalized hash, and a short `parentHash` walk by hash succeeds without rate limiting).
+2. **Over-cap alert through the real scheduler:** on the tick host, under the actual scheduler (systemd timer or cron),
+   run a synthetic over-cap tick and confirm both the result line's `overCap` and the
+   `{"event":"key_grant_over_cap",...}` line reach the scheduler's log and the alert. The unit test proved it only
+   under a cron-style redirect and pipes on macOS.
+
 1. **Signer file.** Put the grant signer's file in place on the tick host, `~/.config/sphmrs/polygon-key-granter.env`. Use the same file and names as the one-grant test. Set it to mode 0600, owned by the tick's user.
 2. **Budget.** Approve the fee budget (ADR-0026: USD 0.10 per transaction, converted to POL at approval time).
    - Take the POL/USD spot price, for example from `https://api.coinbase.com/v2/prices/POL-USD/spot`.

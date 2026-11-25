@@ -335,7 +335,9 @@ export function MemberSignInPage({
   const left = useRef(false);
   function onSnapshot(snapshot: MemberSnapshot) {
     if (Boolean(snapshot.status?.authenticated) !== signedIn) setSignedIn(Boolean(snapshot.status?.authenticated));
-    if (snapshot.status?.capabilities && snapshot.status.capabilities !== capabilities) setCapabilities(snapshot.status.capabilities);
+    // By the providers' flags, not the object: every status read is a new object, and re-setting it would loop.
+    const live = snapshot.status?.capabilities;
+    if (live && (["apple", "google", "kakao"] as const).some((provider) => Boolean(live[provider]) !== Boolean(capabilities?.[provider]))) setCapabilities(live);
     if (left.current || !snapshot.status?.member) return;
     left.current = true;
     navigate(next);

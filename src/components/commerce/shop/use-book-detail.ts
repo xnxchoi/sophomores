@@ -7,8 +7,10 @@ const idle = (): Transition => ({ active: false, index: -1, progress: 0, activeP
 const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
 const inOutQuad = (x: number) => (x < 0.5 ? 2 * x * x : 1 - (-2 * x + 2) ** 2 / 2);
 
-/** What the hook needs from its page: raw scroll progress, the hrefs to show in the address bar, and where the shop is. */
+/** What the hook needs from its page: raw scroll progress, the hrefs to show in the address bar, where the shop is, and
+ * where the page scrolls to bring a featured book onto its card (their `ut`) or the shelf's row into its seat (`nK`). */
 export type BookDetailSource = { rawProgress: () => number; hrefOf: (index: number) => string | null; home: string;
+  placeOf: (index: number) => number; shelfAt: () => number | null;
   /** Commit the scene's progress to the open book (theirs: `e6(e)` when the detail settles) and release it on close. */
   pin: (index: number) => void; unpin: () => void };
 
@@ -17,7 +19,10 @@ export type BookDetailSource = { rawProgress: () => number; hrefOf: (index: numb
  * - Open (`openBookDetail` h$, on-shelf branch, 15069-15150): the transition ref on a rAF clock (neighbours fall over
  *   BOOK_OPEN_BOOKS_MOVE_MS, the book after BOOK_OPEN_ACTIVE_DELAY_MS, the next card revealed from
  *   BOOK_OPEN_BG_REVEAL_START_MS), the detail presentation from the active delay (the scene shifts −20vw over 640 ms,
- *   17079-17100), the detail state at the end. A featured book opens in place (no carry), as theirs does after its scroll.
+ *   17079-17100), the detail state at the end.
+ * - Off the shelf, theirs scrolls first: a book that isn't featured goes to the shelf, waits for the row to assemble and
+ *   settle (at most 900 ms), then carries from there (14968-15016); a featured book scrolls onto its card (ease-out quad,
+ *   320–1200 ms by distance) and then opens in place (15151-15172).
  * - Close (`pR` → `pb` / `pE`, 16424-16562): from the shelf, the reverse carry at half speed after the column fades
  *   (motion tokens P + i); otherwise the column slides out over DETAIL_EXIT_SLIDE_MS.
  * - The URL: pushed to the product's address on open (native history, kept in sync by Next), back to the shop on close;
@@ -30,6 +35,8 @@ export function useBookDetail(hub: SceneHub, catalogue: SceneCatalogue, router: 
   const [leaving, setLeaving] = useState(false);
   const clock = useRef({ token: 0, frame: 0 }), fromShelf = useRef(false), pushed = useRef(false);
   const transition = () => hub.bookOpenTransitionLiveRef as { current: Transition };
+  const openRef = useRef<(index: number) => boolean>(() => false), isOpen = useRef(false);
+  useEffect(() => { isOpen.current = open != null; }, [open]);
 
   const cancel = () => { clock.current.token += 1; if (clock.current.frame) cancelAnimationFrame(clock.current.frame); clock.current.frame = 0; };
   const settle = useCallback((index: number) => {
@@ -46,12 +53,62 @@ export function useBookDetail(hub: SceneHub, catalogue: SceneCatalogue, router: 
     if (window.innerWidth < 900) return false;                                    // phone: row 20, not this slice
     cancel();
     const raw = source.current.rawProgress(), onShelf = !arrived && raw >= catalogue.J + 0.5 && raw < catalogue.K + 1;
+    // Already reading a book: the next one opens in place, with no scroll (theirs, 15063).
+    if (isOpen.current && !arrived) {
+      const href = source.current.hrefOf(index);
+      if (href) window.history.replaceState(null, "", href);
+      setPresenting(true); settle(index); return true;
+    }
+    // Their pre-scroll to the shelf for a book that isn't featured (14968-15016): ease-out quad onto the row's seat
+    // (re-read every frame), then wait for the row to assemble and its selection to settle, then open again from there.
+    const seat = source.current.shelfAt();
+    if (!arrived && !onShelf && index >= catalogue.t && seat != null) {
+      const token = ++clock.current.token;
+      const ms = Math.min(1200, Math.max(320, Math.round((Math.abs(seat - window.scrollY) / Math.max(1, window.innerHeight)) * 1000)));
+      let from: number | null = null, start = 0, arrivedAt = 0, landed = 0;
+      const step = (now: number) => {
+        if (token !== clock.current.token) return;
+        if (from == null) { from = window.scrollY; start = now; }
+        if (!arrivedAt) {
+          const target = source.current.shelfAt() ?? seat, t = Math.min(1, (now - start) / ms);
+          window.scrollTo(0, from + (target - from) * (1 - (1 - t) * (1 - t)));
+          if (t >= 1) { arrivedAt = now; landed = window.scrollY; }
+          clock.current.frame = requestAnimationFrame(step); return;
+        }
+        if (Math.abs(window.scrollY - landed) > 8) { clock.current.frame = 0; return; }   // the visitor took the scroll
+        const selection = hub.spineSelectionLiveRef.current as { settled?: boolean } | null;
+        if (!((hub.spineRowAssembleLiveRef.current as number) > 0.98 && selection?.settled) && now - arrivedAt < 900) {
+          clock.current.frame = requestAnimationFrame(step); return;
+        }
+        clock.current.frame = 0; openRef.current(index);
+      };
+      clock.current.frame = requestAnimationFrame(step);
+      return true;
+    }
     fromShelf.current = onShelf;
     const href = source.current.hrefOf(index);
     if (arrived) pushed.current = true;
     else if (href && !pushed.current) { window.history.pushState(null, "", href); pushed.current = true; }
     else if (href) window.history.replaceState(null, "", href);
-    if (!onShelf) { setPresenting(true); settle(index); return true; }
+    if (!onShelf) {
+      // Their scroll onto a featured book's card before it opens (15151-15172), unless the page is already there.
+      const target = Math.min(Math.max(0, document.documentElement.scrollHeight - window.innerHeight), source.current.placeOf(index));
+      const distance = arrived ? 0 : Math.abs(target - window.scrollY);
+      const ms = distance < 1 ? 0 : Math.min(1200, Math.max(320, Math.round((distance / Math.max(1, window.innerHeight)) * 1000)));
+      if (ms <= 16) { setPresenting(true); settle(index); return true; }
+      const token = ++clock.current.token;
+      let from: number | null = null, start = 0;
+      const step = (now: number) => {
+        if (token !== clock.current.token) return;
+        if (from == null) { from = window.scrollY; start = now; }
+        const t = Math.min(1, (now - start) / ms);
+        window.scrollTo(0, from + (target - from) * (1 - (1 - t) * (1 - t)));
+        if (t < 1) { clock.current.frame = requestAnimationFrame(step); return; }
+        clock.current.frame = 0; setPresenting(true); settle(index);
+      };
+      clock.current.frame = requestAnimationFrame(step);
+      return true;
+    }
     const token = ++clock.current.token;
     const delay = constant.BOOK_OPEN_ACTIVE_DELAY_MS, move = constant.BOOK_OPEN_BOOKS_MOVE_MS;
     const revealStart = constant.BOOK_OPEN_BG_REVEAL_START_MS, reveal = constant.BOOK_OPEN_BG_REVEAL_MS;
@@ -85,6 +142,7 @@ export function useBookDetail(hub: SceneHub, catalogue: SceneCatalogue, router: 
     clock.current.frame = requestAnimationFrame(step);
     return true;
   }, [hub, catalogue, settle, source]);   // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { openRef.current = openBook; }, [openBook]);
 
   const closeState = useCallback(() => { setOpen(null); setPresenting(false); setLeaving(false); source.current.unpin(); }, [source]);
 

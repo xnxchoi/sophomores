@@ -176,17 +176,25 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
   useShelfCatch(hub, catalogue, catchSource);
 
   // Opening a book into its details inside the scene (use-book-detail.ts); the phone keeps the product page for now.
-  const detailSource = useRef<BookDetailSource>({ rawProgress: () => 0, hrefOf: () => null, home: "/shop", pin: () => undefined, unpin: () => undefined });
+  const detailSource = useRef<BookDetailSource>({ rawProgress: () => 0, hrefOf: () => null, home: "/shop", placeOf: () => 0, shelfAt: () => null,
+    pin: () => undefined, unpin: () => undefined });
   useEffect(() => { detailSource.current = { rawProgress: () => hub.scrollProgressDirectLiveRef.current as number,
-    hrefOf: (index) => items[index]?.href ?? null, home: "/shop",
-    // The scene poses an open book by the progress in its details: at the open book's own index, the top of them.
+    hrefOf: (index) => items[index]?.href ?? null, home: "/shop", placeOf: bookY, shelfAt: seatY,
+    // The scene poses an open book by the progress in its details: at the open book's own index, the top of them. As
+    // theirs (06w9:15271-15273), the scene's row smoother snaps to it (snap 6 frames, row seed 3) instead of easing
+    // through the stack between the shelf and the book's own place.
     pin: (index) => {
       held.current = true; stopDriving();
       progressRef.current = index; hub.scrollProgressDirectLiveRef.current = index;
       hub.spineViewProgressLiveRef.current = hub.spineViewProgressFor(index); setCommitted(index);
+      hub.backgroundSnapScrollLiveRef.current = 6; hub.bookRowSeedLiveRef.current = 3;
     },
-    // Back to the page's own scroll (it held still while open).
-    unpin: () => { held.current = false; window.dispatchEvent(new Event("scroll")); } }; });
+    // Back to the page's own scroll (it held still while open), snapped the same way (their restore, 15284-15286).
+    unpin: () => {
+      held.current = false;
+      hub.backgroundSnapScrollLiveRef.current = 6; hub.bookRowSeedLiveRef.current = 6;
+      window.dispatchEvent(new Event("scroll"));
+    } }; });
   const detail = useBookDetail(hub, catalogue, router, tokens, detailSource);
   const openRef = useRef((index: number) => { const item = items[index]; if (item) navigate.push(item.href); });
   const arrived = useRef(initialOpen);
@@ -252,11 +260,14 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
   }, [router, hub, catalogue, count, items, navigate, J]);
 
   // Their BookStack reads the books from its prop; ours are also their catalogue now (change 7): the same list.
-  const sceneProps = useMemo(() => ({
+  // A product's address opens with its details already up, so the scene skips its intro (theirs: skipIntro for a book
+  // address, 06w9:13210, 17840); otherwise the open book would reset and fly in beside its column a second later.
+  const skipIntro = useRef(Boolean(initialOpen)).current;
+  const sceneProps = useMemo(() => ({ skipIntro,
     books: (window as unknown as { __SPBOOKS: unknown }).__SPBOOKS, scrollProgress: committed, scrollProgressLiveRef: progressRef,
     activeBookIndex: active, stackMode: "browse", onBookOpen: (index: number) => openRef.current(index),
     isDetailOpen: detail.open != null, detailBookIndex: detail.open ?? -1,
-  }), [committed, active, detail.open]);
+  }), [skipIntro, committed, active, detail.open]);
 
   // The spine row seats against, and lifts out ahead of, the section after the shelf (their #home-section-films, read
   // through homeWebsitesSectionElLiveRef); without one the scene treats the row as already gone. As theirs, the content

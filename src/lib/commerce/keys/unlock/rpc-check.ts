@@ -54,8 +54,8 @@ export async function loadPolygonRpcUrl(file = polygonRpcFile, uid = process.get
 }
 
 /** The transport every Polygon caller uses: no retries, a 10 s timeout, and a redirect is an error (never followed). */
-export function polygonRpcTransport(url: string): Transport {
-  return http(url, { retryCount: 0, timeout: 10_000, fetchOptions: { redirect: "error" } });
+export function polygonRpcTransport(url: string, { fetchFn, timeout = 10_000 }: { fetchFn?: typeof fetch; timeout?: number } = {}): Transport {
+  return http(url, { retryCount: 0, timeout, fetchOptions: { redirect: "error" }, ...(fetchFn ? { fetchFn } : {}) });
 }
 
 /** Finalized lag above this many blocks fails the check: Polygon finalizes within a few blocks. */

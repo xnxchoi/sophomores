@@ -1034,7 +1034,10 @@
       "refundable": "Refundable.",
       "refundableUntil": "Refundable until {cutoff} (Seoul time).",
       "refundsClosed": "Refunds for this event closed {cutoff} (Seoul time).",
-      "refundsClosedNoDate": "Refunds for this event have closed."
+      "refundsClosedNoDate": "Refunds for this event have closed.",
+      "changedBeforePay": "The refund terms changed. Check them, then pay again.",
+      "changedBeforeResume": "The refund terms changed. Check them, then resume again.",
+      "unconfirmed": "This attempt's refund terms can't be confirmed, so it can't be resumed. Check payment status instead."
     },
     "components_commerce_shipping_address": {
       "deliveryAddress": "Delivery address",

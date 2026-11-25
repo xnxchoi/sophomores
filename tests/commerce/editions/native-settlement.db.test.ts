@@ -25,6 +25,7 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
   const { createLocalReq } = await import("payload");
   const { sql } = await import("@payloadcms/db-postgres");
   const { inCommerceTransaction, inPaymentTransaction } = await import("../../../src/lib/commerce/_shared/transaction");
+  const { refundPolicy, refundTerms } = await import("../../../src/lib/commerce/refund-policy");
   const { up, down } = await import("../../../src/payload/migrations/20261122_160100_native_edition_settlement");
   const { down: downTicketTargets } = await import("../../../src/payload/migrations/20261123_040000_event_ticket_targets");
   isolateTransport(t, target.port);
@@ -103,6 +104,9 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
     const member = await seedMember(payload);
     const guest = await seedCheckoutCart(payload, { user: member, customerID: z.uuid().parse(member.id) as ReturnType<typeof randomUUID> });
     const eventID = guest.eventID;
+    // The refund terms a guest quote shows beside Pay, as the page derives them (Review-B r3: the server re-derives them).
+    const guestTerms = async () => refundTerms(refundPolicy({ version: 3, kind: "guest-ticket-v1", eventID }),
+      (await payload.findByID({ collection: "commerce-events", id: eventID, depth: 0, overrideAccess: true }) as { partIStartsAt?: unknown }).partIStartsAt);
     const lock = "0x" + "b".repeat(40);
     const ticketTarget = { chainID: 137, lock, mode: "shared" as const };
     const priorEvent = process.env.UNLOCK_SHARED_TICKET_EVENT_ID;
@@ -136,7 +140,7 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
       }
       process.env.MEMBER_WALLET_OWNER_ADDRESS = "0x" + "c".repeat(40);
       await assert.rejects(initiateThroughEndpoint(payload, member, {
-        cartID: guest.cartID, shippingAddress: guest.shippingAddress, guestQuote: { productID: guest.productID, quantity: 1, totalAmount: 10_000 },
+        cartID: guest.cartID, shippingAddress: guest.shippingAddress, guestQuote: { productID: guest.productID, quantity: 1, totalAmount: 10_000, refundTerms: await guestTerms() },
       }), /initiate answered (403|500)/);
       assert.deepEqual((await control.query("SELECT id FROM transactions WHERE cart_id=$1", [guest.cartID])).rows, []);
       assert.deepEqual((await control.query(
@@ -152,7 +156,7 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
       delete process.env.UNLOCK_TICKET_EMAIL_CONSENT_ENABLED;
       const g = await initiateThroughEndpoint(payload, member, {
         cartID: guest.cartID, shippingAddress: guest.shippingAddress,
-        guestQuote: { productID: guest.productID, quantity: 1, totalAmount: 10_000 },
+        guestQuote: { productID: guest.productID, quantity: 1, totalAmount: 10_000, refundTerms: await guestTerms() },
         ticketEmailConsent: "unlock-ticket-email-v1",
       }) as { transactionID: ReturnType<typeof randomUUID>; paymentID: string };
       const withoutConsent = await payload.findByID({ collection: "transactions", id: g.transactionID, overrideAccess: true, depth: 0 });
@@ -290,17 +294,23 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
         process.env.UNLOCK_TICKET_EMAIL_CONSENT_ENABLED = "1";
         const checkout = { cartID: reloaded.id, shippingAddress: guest.shippingAddress };
         for (const guestQuote of [
-          { productID: guest.productID, quantity: 1, totalAmount: 10_000 },
-          { productID: guest.productID, quantity: 2, totalAmount: 18_000 },
-          { productID: randomUUID(), quantity: 2, totalAmount: 20_000 },
+          { productID: guest.productID, quantity: 1, totalAmount: 10_000, refundTerms: await guestTerms() },
+          { productID: guest.productID, quantity: 2, totalAmount: 18_000, refundTerms: await guestTerms() },
+          { productID: randomUUID(), quantity: 2, totalAmount: 20_000, refundTerms: await guestTerms() },
           undefined,
         ]) {
           assert.deepEqual(await initiateThroughEndpoint(payload, sponsor, { ...checkout, guestQuote }), { message: "Guest quote changed", outcome: "guest-quote-changed" });
           assert.deepEqual((await control.query("SELECT id FROM transactions WHERE cart_id=$1", [reloaded.id])).rows, []);
           assert.deepEqual((await control.query("SELECT id FROM commerce_reservations WHERE customer_id=$1", [sponsor.id])).rows, []);
         }
+        // Stale refund terms (the page showed other terms than apply now): nothing is written, and the answer carries the
+        // current terms for the page to show before a new press (Review-B r3).
+        assert.deepEqual(await initiateThroughEndpoint(payload, sponsor, { ...checkout,
+          guestQuote: { productID: guest.productID, quantity: 2, totalAmount: 20_000, refundTerms: { kind: "refundable" } } }),
+          { message: "Guest quote changed", outcome: "guest-quote-changed", refundTerms: await guestTerms() });
+        assert.deepEqual((await control.query("SELECT id FROM transactions WHERE cart_id=$1", [reloaded.id])).rows, []);
         const attempt = await initiateThroughEndpoint(payload, sponsor, { ...checkout,
-          guestQuote: { productID: guest.productID, quantity: 2, totalAmount: 20_000 },
+          guestQuote: { productID: guest.productID, quantity: 2, totalAmount: 20_000, refundTerms: await guestTerms() },
           ticketEmailConsent: "unlock-ticket-email-v1" }) as { transactionID: string };
         const stored = await payload.findByID({ collection: "transactions", id: attempt.transactionID, overrideAccess: true, depth: 0 });
         assert.equal((stored.portone.snapshot as Record<string, unknown>).ticketEmailConsent, "unlock-ticket-email-v1");
@@ -341,7 +351,7 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
           data: { items: [{ product: guest.productID, quantity: 1, ticketKind: "shared-event-guest" }], currency: "KRW" } });
         const prepared = await initiateThroughEndpoint(payload, sponsor, {
           cartID: cart.id, shippingAddress: guest.shippingAddress,
-          guestQuote: { productID: guest.productID, quantity: 1, totalAmount: 10_000 },
+          guestQuote: { productID: guest.productID, quantity: 1, totalAmount: 10_000, refundTerms: await guestTerms() },
         }) as { transactionID: ReturnType<typeof randomUUID>; paymentID: string };
         delete process.env.UNLOCK_SEPARATE_GUEST_LOCK_ENABLED;
         assert.equal((await offer())?.ticketTarget?.lock, lock);

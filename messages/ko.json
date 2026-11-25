@@ -1034,7 +1034,10 @@
       "refundable": "",
       "refundableUntil": "",
       "refundsClosed": "",
-      "refundsClosedNoDate": ""
+      "refundsClosedNoDate": "",
+      "changedBeforePay": "",
+      "changedBeforeResume": "",
+      "unconfirmed": ""
     },
     "components_commerce_shipping_address": {
       "deliveryAddress": "배송지 주소",

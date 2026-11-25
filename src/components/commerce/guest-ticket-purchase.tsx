@@ -25,7 +25,9 @@ export function GuestTicketPurchase(props: GuestOffer) {
   </CommerceProvider>;
 }
 
-function PurchaseForm({ customerID, productID, title, priceKRW, available, limit, locale, offerTicketEmailConsent, refundTerms }: GuestOffer) {
+function PurchaseForm({ customerID, productID, title, priceKRW, available, limit, locale, offerTicketEmailConsent, refundTerms: servedTerms }: GuestOffer) {
+  // The server may find newer terms at Pay (the cutoff passed, the event moved): they replace these, and Pay waits for a new press.
+  const [refundTerms, setRefundTerms] = useState(servedTerms);
   const t = useTranslations("Customer.app_site_shop_invitations_page");
   const { cart, isLoading, refreshCart } = useCart();
   const { user, onLogin } = useEcommerce();
@@ -95,7 +97,8 @@ function PurchaseForm({ customerID, productID, title, priceKRW, available, limit
     <RefundTerms terms={refundTerms} />
     <CommercePayment productID={productID} shippingAddress={address}
       offerTicketEmailConsent={offerTicketEmailConsent && orderReady}
-      guestQuote={orderReady ? { productID, quantity: savedQuantity, totalAmount: priceKRW * savedQuantity } : undefined}
+      guestQuote={orderReady ? { productID, quantity: savedQuantity, totalAmount: priceKRW * savedQuantity, refundTerms } : undefined}
+      onRefundTermsChanged={setRefundTerms}
       disabled={disabled || !orderReady || !shippingAddressSchema.safeParse(address).success}
       onBusyChange={setPaymentBusy} onAttemptChange={setPaymentLocked} />
   </section>;

@@ -33,8 +33,11 @@ test("the shop lists three separate products, each linking to its own page, with
   assert.match(html, /₩35,000/); assert.match(html, /₩82,000/); assert.match(html, /₩329,000/);
   assert.match(html, /The book only\. No membership token or ticket\./);
   assert.equal((html.match(/Includes the book, one membership token and one free Member Ticket\./g) ?? []).length, 2);
-  // The refund rule is told on the product page and at checkout, beside the buy row, not in the list (Review-B r2).
-  assert.doesNotMatch(html, /Refundable|No refunds/);
+  // Each card states its refund rule on its own line (owner, 25 Nov; Review-B r3): the book only, then two membership editions.
+  const lines = [...html.matchAll(/<p data-refund-terms="(\w+)" class="([^"]*)">([^<]*)<\/p>/g)];
+  assert.deepEqual(lines.map(([, kind, , text]) => [kind, text]), [["refundable", "Refundable."],
+    ["none", "Personalised with your membership. No refunds."], ["none", "Personalised with your membership. No refunds."]]);
+  for (const [, , classes] of lines) { assert.match(classes, /\btext-sm\b/); assert.match(classes, /\btext-foreground\b/); }
   assert.doesNotMatch(html, /<select\b|<input\b|role="radio|coin|Editions/i);
 });
 
@@ -108,6 +111,8 @@ test("checkout states the refund rule before payment: book only refundable, memb
   const bookHTML = render(<NativeCheckoutSummary title={book.product.title} offer={book.offer} />);
   assert.match(bookHTML, /Release pending[\s\S]*?<p data-refund-terms="refundable" class="[^"]*\btext-sm\b[^"]*\btext-foreground\b[^"]*">Refundable\.<\/p>/);
   assert.doesNotMatch(bookHTML, /No refunds/);
+  // Once in the checkout summary, beside the buy row; never twice.
+  assert.equal((bookHTML.match(/data-refund-terms=/g) ?? []).length, 1);
   const personalHTML = render(<NativeCheckoutSummary title={personal.product.title} offer={personal.offer} />);
   assert.match(personalHTML, /Release pending[\s\S]*?<p data-refund-terms="none"[^>]*>Personalised with your membership\. No refunds\.<\/p>/);
   assert.doesNotMatch(personalHTML, /Refundable\./);

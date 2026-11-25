@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { refundTermsSchema } from "./refund-policy";
 
 const identifier = z.string().trim().min(1).max(128);
 const amount = z.int().min(0).max(Number.MAX_SAFE_INTEGER);
@@ -49,6 +50,8 @@ export const guestCheckoutQuoteSchema = z.strictObject({
   productID: z.uuid(),
   quantity: z.int().min(1).max(MAX_ORDER_UNITS),
   totalAmount: amount.positive(),
+  // The refund terms shown beside Pay; the server re-derives them and refuses a stale quote (Review-B r3).
+  refundTerms: refundTermsSchema,
 });
 export type GuestCheckoutQuote = Readonly<z.infer<typeof guestCheckoutQuoteSchema>>;
 

@@ -10,12 +10,16 @@ import { createResultEndpoint } from './result'
 import { ReconciliationCompletionUnknown, runReconciliation, settleIfProviderPaid } from './admission'
 import { withPaidReviewDecision, withSignedRiskEvidence } from './accounting'
 import { channelType } from './proof'
+import { refundTermsSchema } from '../refund-policy'
+import { currentRefundTerms, sameRefundTerms } from './refund-terms'
 
 const verifiedWebhooks = new WeakMap<PayloadRequest, { id: string; type: string }>()
 /** A capability held for one verified native request dispatch, never req.context/body. */
 export const isVerifiedCommerceWebhook = (req: PayloadRequest): boolean => verifiedWebhooks.has(req)
 export const verifiedCommerceEvent = (req: PayloadRequest) => verifiedWebhooks.get(req)
 const resumeSchema = z.strictObject({ transactionID: z.uuid(), paymentID: providerPaymentId, cartID: z.string().optional() })
+// Resume also carries the refund terms the page showed beside it (Review-B r3); retire never needs them.
+const resumeRequestSchema = resumeSchema.extend({ refundTerms: refundTermsSchema.optional() })
 const webhookSchema = z.object({ type: z.enum(['Transaction.Paid', 'Transaction.Cancelled', 'Transaction.PartialCancelled', 'Transaction.DisputeCreated', 'Transaction.DisputeResolved']),
   data: z.object({ paymentId: providerPaymentId, storeId: z.string() }) })
 
@@ -75,7 +79,7 @@ export function createAdapterEndpoints(deps: AdapterDependencies,
     try {
       principal = await authorizeMutation(req)
       const config = adapterConfig(deps)
-      const input = resumeSchema.parse(req.data ?? JSON.parse(await boundedText(req, 2048)))
+      const input = resumeRequestSchema.parse(req.data ?? JSON.parse(await boundedText(req, 2048)))
       const row = await readOwnedPortOneTransaction(req, input.paymentID, principal)
       if (row.id !== input.transactionID || row.portone.snapshot.customerID !== String(req.user?.id)
         || input.cartID && input.cartID !== row.portone.snapshot.cartID
@@ -86,6 +90,11 @@ export function createAdapterEndpoints(deps: AdapterDependencies,
         if (row.status !== 'pending') return statusOnly()
         // Recovery may observe an existing v2 payment but must not open checkout.
         if (row.portone.snapshot.version === 2 && !deps.allowNativeEditions) return statusOnly()
+        // The terms shown beside Resume must still apply, re-derived now (Review-B r3). If not, nothing opens and PortOne
+        // isn't asked: the page shows the new terms and waits for a new press.
+        const terms = await currentRefundTerms(req, row.portone.snapshot)
+        if (!sameRefundTerms(input.refundTerms, terms)) return response(200, { message: 'Refund terms changed', outcome: 'terms-changed',
+          transactionID: row.id, paymentID: input.paymentID, refundTerms: terms })
         const evidence = await providerPayment(deps, input.paymentID, req)
         return withPaidReviewDecision(req, row.portone.snapshot.customerID, async local => {
           const current = await readPortOneTransaction(local, input.paymentID)

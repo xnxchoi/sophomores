@@ -159,3 +159,27 @@ test('each attempt carries the refund terms of its frozen snapshot; a guest tick
     assert.equal(eventReads, 1)
   }
 })
+
+test('current refund terms are re-derived from the clock and the event start: crossing the cutoff, or a moved start, changes them', async () => {
+  const { currentRefundTerms, sameRefundTerms } = await import('../../../src/lib/commerce/portone/refund-terms')
+  const eventID = '91b6495b-479b-4306-98f1-83b729807b10'
+  const day = 24 * 60 * 60 * 1000
+  let partIStartsAt = '2026-12-11T10:00:00.000Z'
+  const req = { payload: { findByID: async () => ({ id: eventID, partIStartsAt }) } } as unknown as PayloadRequest
+  const guest = { version: 3, kind: 'guest-ticket-v1', eventID }
+  const cutoff = Date.parse(partIStartsAt) - 3 * day
+  const shown = await currentRefundTerms(req, guest, cutoff - 1)
+  assert.deepEqual(shown, { kind: 'until', cutoffAt: '2026-12-08T10:00:00.000Z' })
+  assert.equal(sameRefundTerms(shown, await currentRefundTerms(req, guest, cutoff - 1)), true)
+  // The cutoff passes while the page is open.
+  const crossed = await currentRefundTerms(req, guest, cutoff)
+  assert.deepEqual(crossed, { kind: 'closed', cutoffAt: '2026-12-08T10:00:00.000Z' })
+  assert.equal(sameRefundTerms(shown, crossed), false)
+  // The event start moves a day later.
+  partIStartsAt = '2026-12-12T10:00:00.000Z'
+  const moved = await currentRefundTerms(req, guest, cutoff - 1)
+  assert.deepEqual(moved, { kind: 'until', cutoffAt: '2026-12-09T10:00:00.000Z' })
+  assert.equal(sameRefundTerms(shown, moved), false)
+  // Nothing shown is never the same as anything.
+  assert.equal(sameRefundTerms(undefined, moved), false)
+})

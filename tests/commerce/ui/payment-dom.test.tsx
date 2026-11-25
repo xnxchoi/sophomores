@@ -45,6 +45,8 @@ let cartAvailable = true
 let confirmationStatus = 200
 let resumeOutcome = 'status-only'
 let preparationOutcome = 'prepared'
+/** Refund terms the stand-in server answers with on a stale quote or resume (Review-B r3). */
+let serverTerms: unknown
 let accountStatus = 200
 let accountID = 'customer-1'
 let ownAccountRead: (() => Promise<Response>) | undefined
@@ -113,9 +115,10 @@ before(async () => {
     if (url.pathname === '/api/addresses') return Response.json({ docs: [] })
     if (url.origin === 'http://localhost' && url.pathname === '/api/payments/portone/pending') return Response.json({ attempts: discovered })
     if (url.pathname === '/api/carts/cart-1') return Response.json({ id: 'cart-1', currency: 'KRW', items: [{ id: 'item-1', product: 'product-1', quantity: 1 }] })
-    if (url.pathname.endsWith('/initiate') && preparationOutcome === 'guest-quote-changed') return Response.json({ message: 'Guest quote changed', outcome: preparationOutcome })
+    if (url.pathname.endsWith('/initiate') && preparationOutcome === 'guest-quote-changed') return Response.json({ message: 'Guest quote changed', outcome: preparationOutcome, ...(serverTerms ? { refundTerms: serverTerms } : {}) })
     if (url.pathname.endsWith('/initiate')) return Response.json({ transactionID, paymentID, outcome: preparationOutcome, ...(preparationOutcome === 'prepared' ? { paymentRequest: sdkRequest } : {}) })
     if (url.pathname.endsWith('/confirm-order')) return confirmationStatus === 200 ? Response.json({ orderID, transactionID }) : Response.json({ message: 'Unconfirmed' }, { status: confirmationStatus })
+    if (url.pathname.endsWith('/resume') && resumeOutcome === 'terms-changed') return Response.json({ message: 'Refund terms changed', transactionID, paymentID, outcome: resumeOutcome, refundTerms: serverTerms })
     if (url.pathname.endsWith('/resume')) return Response.json({ transactionID, paymentID, outcome: resumeOutcome, ...(resumeOutcome === 'resumable' ? { paymentRequest: sdkRequest } : {}) })
     if (url.pathname.endsWith('/retire')) return Response.json({ outcome: 'retired', transactionID: retiredTransactionID, paymentID }, { status: retirementStatus })
     if (url.pathname.endsWith('/result')) {
@@ -137,7 +140,7 @@ afterEach(() => {
   membership = activeMember
   retirementStatus = 200; retiredTransactionID = transactionID; resultOutcome = 'local-unresolved'
   ownAccountRead = undefined; providerAccountRead = undefined; dom.window.localStorage.clear()
-  ui.cleanup(); dom.window.sessionStorage.clear(); calls = []; cartAvailable = true; confirmationStatus = 200; resumeOutcome = 'status-only'; preparationOutcome = 'prepared'; discovered = []; accountStatus = 200; accountID = 'customer-1'
+  ui.cleanup(); dom.window.sessionStorage.clear(); calls = []; cartAvailable = true; confirmationStatus = 200; resumeOutcome = 'status-only'; preparationOutcome = 'prepared'; serverTerms = undefined; discovered = []; accountStatus = 200; accountID = 'customer-1'
 })
 
 test('explicit review mode renders a settled notice without mounting the commerce session or requesting auth', async () => {
@@ -313,6 +316,7 @@ test('the checkout route gates private checkout on fresh membership and retains 
 
 test('a verified failed attempt is retired only after an explicit confirm, unlocks checkout and never opens payment', async () => {
   dom.window.sessionStorage.setItem(storageKey, JSON.stringify(intent))
+  discovered = [discoveredIntent()]
   resumeOutcome = 'retirable'
   let opens = 0
   render(async () => { opens++; return undefined })
@@ -324,6 +328,7 @@ test('a verified failed attempt is retired only after an explicit confirm, unloc
   assert.equal((await ui.screen.findAllByText('Cancel this attempt?')).length > 0, true)
   assert.equal(calls.some((call) => call.path.endsWith('/retire')), false)
   await ui.act(() => new Promise((resolve) => setTimeout(resolve, 320))) // past ConfirmMorph's 280 ms double-tap guard
+  discovered = [] // once retired, discovery no longer lists it
   ui.fireEvent.click(await ui.screen.findByRole('button', { name: 'Cancel attempt' }))
   const pay = await ui.screen.findByRole('button', { name: 'Pay by card' })
   await ui.waitFor(() => assert.equal((pay as HTMLButtonElement).disabled, false))
@@ -335,6 +340,7 @@ test('a verified failed attempt is retired only after an explicit confirm, unloc
 
 for (const failure of ['unavailable', 'mismatch']) test(`retirement ${failure} preserves the retained attempt`, async () => {
   dom.window.sessionStorage.setItem(storageKey, JSON.stringify(intent))
+  discovered = [discoveredIntent()]
   resumeOutcome = 'retirable'
   if (failure === 'unavailable') retirementStatus = 409
   else retiredTransactionID = orderID
@@ -425,7 +431,7 @@ for (const consent of [false, true]) {
 test('a stale Guest quote never opens the SDK or retains a rejected fresh attempt', async () => {
   preparationOutcome = 'guest-quote-changed'
   let opens = 0
-  const quote = { productID: orderID, quantity: 2, totalAmount: 20_000 }
+  const quote = { productID: orderID, quantity: 2, totalAmount: 20_000, refundTerms: { kind: 'until', cutoffAt: '2026-12-08T01:00:00.000Z' } } as const
   render(async () => { opens++; return undefined }, false, quote)
   const pay = await ui.screen.findByRole('button', { name: 'Pay by card' })
   await ui.waitFor(() => assert.equal((pay as HTMLButtonElement).disabled, false))
@@ -959,17 +965,57 @@ test('a native body failure after boundary unmount is ignored without new identi
   assert.equal(document.querySelector('[data-commerce-identity-state]') === null, true)
 })
 
-test('resume never reopens the payment window for a saved attempt whose refund terms are not on screen', async () => {
+test('without the saved attempt\'s refund terms, Resume stays off and says why; Check stays available', async () => {
   dom.window.sessionStorage.setItem(storageKey, JSON.stringify(intent))
   resumeOutcome = 'resumable'
   let opens = 0
   render(async () => { opens++; return undefined }, true)
-  const resume = await ui.screen.findByRole('button', { name: 'Resume same payment' })
-  await ui.waitFor(() => assert.equal((resume as HTMLButtonElement).disabled, false))
-  ui.fireEvent.click(resume)
-  await ui.screen.findByText('This attempt cannot be reopened. Check payment status or contact support.')
+  await ui.screen.findByText("This attempt's refund terms can't be confirmed, so it can't be resumed. Check payment status instead.")
+  assert.equal((ui.screen.getByRole('button', { name: 'Resume same payment' }) as HTMLButtonElement).disabled, true)
+  await ui.waitFor(() => assert.equal((ui.screen.getByRole('button', { name: 'Check payment' }) as HTMLButtonElement).disabled, false))
   assert.equal(opens, 0)
-  assert.equal(ui.screen.queryByText(/Refundable|No refunds|Refunds for this event/) === null, true)
+  assert.equal(calls.some((call) => call.path.endsWith('/resume')), false)
+})
+
+test('resume sends the terms on screen; when the server finds others it shows them and opens nothing until a new press', async () => {
+  dom.window.sessionStorage.setItem(storageKey, JSON.stringify(intent))
+  discovered = [discoveredIntent()]
+  resumeOutcome = 'terms-changed'
+  serverTerms = { kind: 'closed', cutoffAt: '2026-12-08T01:00:00.000Z' }
+  let opens = 0
+  render(async () => { opens++; return undefined }, true)
+  ui.fireEvent.click(await enabledResume())
+  // The cutoff passed while the page was open: the new terms replace the old ones before anything can open.
+  await ui.screen.findByText('The refund terms changed. Check them, then resume again.')
+  assert.ok(await ui.screen.findByText(/^Refunds for this event closed .+ \(Seoul time\)\.$/))
+  assert.equal(ui.screen.queryByText(/^Refundable until/) === null, true)
+  assert.equal(opens, 0)
+  assert.deepEqual(calls.find((call) => call.path.endsWith('/resume'))?.body.refundTerms, { kind: 'until', cutoffAt: '2026-12-08T01:00:00.000Z' })
+  // The next press sends the terms now on screen; with them current, the same payment opens once.
+  resumeOutcome = 'resumable'
+  ui.fireEvent.click(await enabledResume())
+  await ui.screen.findByText('Payment confirmed. Your order has been received.')
+  assert.equal(opens, 1)
+  assert.deepEqual(calls.filter((call) => call.path.endsWith('/resume')).at(-1)?.body.refundTerms, serverTerms)
+})
+
+test('a guest Pay with stale refund terms opens nothing, hands the page the new terms and asks for a new press', async () => {
+  preparationOutcome = 'guest-quote-changed'
+  serverTerms = { kind: 'until', cutoffAt: '2026-12-09T01:00:00.000Z' }
+  const changed: unknown[] = []
+  let opens = 0
+  const quote = { productID: orderID, quantity: 1, totalAmount: 10_000, refundTerms: { kind: 'until', cutoffAt: '2026-12-08T01:00:00.000Z' } } as const
+  ui.render(<EnglishMessages><Provider><Payment shippingAddress={address} guestQuote={quote} onRefundTermsChanged={(terms) => changed.push(terms)}
+    requestPayment={async () => { opens++; return undefined }} /></Provider></EnglishMessages>)
+  const pay = await ui.screen.findByRole('button', { name: 'Pay by card' })
+  await ui.waitFor(() => assert.equal((pay as HTMLButtonElement).disabled, false))
+  ui.fireEvent.click(pay)
+  // The event start moved: the server's terms differ from the quote's. Nothing opens; the page gets the new terms.
+  await ui.screen.findByText('The refund terms changed. Check them, then pay again.')
+  assert.deepEqual(changed, [serverTerms])
+  assert.equal(opens, 0)
+  assert.deepEqual(calls.find((call) => call.path.endsWith('/initiate'))?.body.guestQuote, quote)
+  assert.equal(dom.window.sessionStorage.getItem(storageKey), null)
 })
 
 test('a closed guest event says so on the saved attempt before Resume', async () => {

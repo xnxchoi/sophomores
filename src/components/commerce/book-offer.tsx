@@ -34,6 +34,8 @@ function ProductCard({ product, offer }: ShopEntry) {
       <ProductCover product={product} />
       <h2 className="mt-5 text-2xl leading-snug tracking-tight underline-offset-4 [overflow-wrap:anywhere] group-hover:underline">{product.title}</h2>
       <ProductFacts offer={offer} className="mt-3" />
+      {/* The refund rule in the list too, its own line (Review-B r3); the checkout summary has its own beside the buy row. */}
+      <RefundTerms terms={editionRefundTerms(offer.editionEntitlements)} className="mt-3" />
     </Link>
   </li>;
 }

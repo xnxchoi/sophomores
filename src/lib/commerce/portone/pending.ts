@@ -4,7 +4,8 @@ import { assertCommerceBrowserRead } from '../access'
 import { hasUnresolvedPaidReview, loadOwnPaidReviewAttempts } from './review'
 import { isClosedByVerifiedCancellation } from './accounting'
 import { paymentIdFromOrderId, providerPaymentId } from '../../tickets/portone/payment-id'
-import { refundPolicy, refundTerms, type RefundTerms } from '../refund-policy'
+import type { RefundTerms } from '../refund-policy'
+import { currentRefundTerms } from './refund-terms'
 
 const uuid = z.uuid().transform((value) => value.toLowerCase())
 const relation = z.union([uuid, z.object({ id: uuid })]).transform((value) => typeof value === 'string' ? value : value.id)
@@ -49,19 +50,11 @@ export function createPendingEndpoint(authorize: (req: PayloadRequest) => Promis
           status: true, commerceReviewHold: true, commerceResolutionConflict: true, items: true, portone: { paymentID: true, snapshotHash: true, snapshot: true } } })
       // Never silently select one attempt or omit a hidden overflow tail.
       if (found.docs.length > 100) throw new APIError('Too many attempts require review', 503)
-      // The refund terms each attempt was bought under, from its frozen snapshot (owner, 25 Nov: told before the sale,
-      // including before a resumed payment). SERVER: only the event's start is read, once per event, and only the
-      // derived terms leave; an unreadable event gives "closed", as staff refunds decide.
+      // The refund terms each attempt is under now, from its frozen snapshot (owner, 25 Nov: told before the sale,
+      // including before a resumed payment); one event read per event, and only the derived terms leave.
       const now = Date.now()
       const starts = new Map<string, Promise<unknown>>()
-      const termsOf = async (snapshot: unknown): Promise<RefundTerms> => {
-        const policy = refundPolicy(snapshot)
-        if (!policy.refundable || policy.cutoff === 'none') return refundTerms(policy, null, now)
-        const eventID = String((snapshot as { eventID?: unknown }).eventID)
-        if (!starts.has(eventID)) starts.set(eventID, req.payload.findByID({ collection: 'commerce-events', id: eventID, depth: 0,
-          overrideAccess: true, select: { partIStartsAt: true }, req }).then((event) => (event as { partIStartsAt?: unknown }).partIStartsAt, () => null))
-        return refundTerms(policy, await starts.get(eventID), now)
-      }
+      const termsOf = (snapshot: unknown): Promise<RefundTerms> => currentRefundTerms(req, snapshot, now, starts)
       const ordinaryAttempts = []
       for (const document of found.docs) {
         const row = attemptSchema.parse(document)

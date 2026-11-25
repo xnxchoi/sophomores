@@ -562,7 +562,9 @@ test('in-flight resume and retire cannot use stale provider proof after authenti
         customer: { id: f.identity.customerID }, currency: 'KRW', amount: { total: 100, paid: 0, cancelled: 0 }, disputes: [] }
     } }
     const handler = createAdapterEndpoints(deps, async () => f.identity.customerID).find(e => e.path === '/' + kind)!
-    f.req.data = f.input
+    // Resume carries the refund terms the page showed (Review-B r3), so this reaches the provider read.
+    const { currentRefundTerms } = await import('../../../src/lib/commerce/portone/refund-terms')
+    f.req.data = kind === 'resume' ? { ...f.input, refundTerms: await currentRefundTerms(f.req, f.row.portone.snapshot) } : f.input
     const res = await handler.handler(f.req)
     assert.equal(res.status, 409)
     assert.deepEqual(await res.json(), { outcome: 'review-required' })

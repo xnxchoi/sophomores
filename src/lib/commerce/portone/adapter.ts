@@ -17,6 +17,7 @@ import { classifyReconciliationPayment, minimalPaymentRiskProof } from './proof'
 import { createAdapterEndpoints } from './endpoints'
 import { accountedProviderGet, assertReconciliationFence, appendSettlementObservation, assertOrdinaryReconciliation, retainReconciliationRisk, readUnresolvedSettlementProof, paidReviewCustomerLock } from './accounting'
 import { assertPurchaseWithoutPaidReview, deferPaymentRisk } from './review'
+import { currentRefundTerms, sameRefundTerms } from './refund-terms'
 export { isVerifiedCommerceWebhook } from './endpoints'
 
 const uuid = z.uuid()
@@ -261,6 +262,13 @@ export function createPortOneAdapter(deps: AdapterDependencies = {}): PaymentAda
           if (snapshot.version === 3
             ? !expected || expected.productID !== snapshot.productID || expected.quantity !== snapshot.quantity || expected.totalAmount !== snapshot.totalAmount
             : expected) return { message: 'Guest quote changed', outcome: 'guest-quote-changed' }
+          // The refund terms beside Pay must still be the ones that apply: re-derived now, against the event's current
+          // start (Review-B r3). A change (the cutoff passed, the start moved) opens nothing; the page shows the new
+          // terms and waits for a new press.
+          if (snapshot.version === 3) {
+            const terms = await currentRefundTerms(req, snapshot)
+            if (!sameRefundTerms(expected?.refundTerms, terms)) return { message: 'Guest quote changed', outcome: 'guest-quote-changed', refundTerms: terms }
+          }
           const variant = snapshot.version === 2 ? { variantID: snapshot.variantID,
             productVersion: snapshot.productVersion, variantVersion: snapshot.variantVersion } : undefined
           if (snapshot.customerID !== String(req.user!.id) || snapshot.cartID !== String(data.cart.id)) throw new Error('Snapshot owner mismatch')

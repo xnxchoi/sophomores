@@ -142,3 +142,55 @@ test("a valid held v2 resume is status-only; foreign and mismatched attempts can
   assert.equal(providerCalls, 0);
   assert.equal(writes, 0);
 });
+
+test("resume reopens payment only for the refund terms the page showed; other or missing terms open nothing", async (t) => {
+  const native = await nativeTransactionFixture();
+  t.after(native.cleanup);
+  const snapshot = nativePurchaseSnapshotSchema.parse({
+    version: 2, kind: "native-edition-v1", customerID, cartID, productID: item.product,
+    releaseID: "book", eventID: null, productVersion: "1", variantID: item.variant,
+    variantVersion: "1", optionID: "option", variantTypeID: "type", editionLabel: "Book",
+    editionKind: "book-only", editionRuleVersion: 1, maximumQuantity: 1,
+    editionEntitlements: { membershipSignet: false, freeLaunchTicket: false },
+    termsRevision: "1", disclosureRevision: "1", fulfillmentRevision: "1", benefitRevision: "1",
+    quantity: 1, currency: "KRW", unitAmount: 35000, shippingAmount: 0, totalAmount: 35000, orderName: "Book", shippingAddress,
+  });
+  const snapshotHash = commerceSnapshotHash(snapshot);
+  const row = { id: transactionID, status: "pending", customer: customerID, cart: cartID,
+    amount: 35000, currency: "KRW", paymentMethod: "portone", items: [item],
+    portone: { paymentID, snapshot, snapshotHash, prepareKey: "a".repeat(64),
+      storeID: config.storeId, channelKey: config.channelKey } };
+  const failWrite = async () => { throw new Error("Unexpected business write"); };
+  Object.assign(native.req.payload, {
+    findByID: async ({ collection }: { collection: string }) => {
+      assert.equal(collection, "transactions");
+      return structuredClone(row);
+    },
+    find: async ({ collection }: { collection: string }) => {
+      const docs = collection === "commerce-reservations" ? [{ attemptID: transactionID, snapshotHash,
+        customer: customerID, product: item.product, releaseID: snapshot.releaseID,
+        quantity: 1, event: null, state: "reserved" }] : [];
+      return { docs, totalDocs: docs.length };
+    },
+    create: failWrite, update: failWrite, delete: failWrite,
+  });
+  installEndpointLedger(native.req);
+  let providerCalls = 0;
+  const resume = createAdapterEndpoints({ config, allowNativeEditions: true, getPayment: async () => { providerCalls++; return { type: "PAYMENT_NOT_FOUND" }; } },
+    authorize).find((endpoint) => endpoint.path === "/resume")!;
+  const resumePath = "/payments/portone/resume";
+  const endpoint = secureCommerceEndpoint({ ...resume, path: resumePath }, authorize);
+  const input = { transactionID, paymentID, cartID };
+  // The book-only edition is refundable: missing or other terms answer with the current terms, before PortOne is asked
+  // and with no payment request.
+  for (const shown of [undefined, { kind: "none", reason: "personalised-edition" }]) {
+    const stale = await endpoint.handler(browserRequest(native, resumePath, shown ? { ...input, refundTerms: shown } : input));
+    assert.equal(stale.status, 200);
+    assert.deepEqual(await stale.json(), { message: "Refund terms changed", outcome: "terms-changed", transactionID, paymentID, refundTerms: { kind: "refundable" } });
+  }
+  assert.equal(providerCalls, 0);
+  // The terms on screen still apply: resume goes on to PortOne (this stand-in stops after that, short of a payment request).
+  const fresh = await endpoint.handler(browserRequest(native, resumePath, { ...input, refundTerms: { kind: "refundable" } }));
+  assert.equal(providerCalls, 1);
+  assert.notEqual((await fresh.json() as { outcome?: string }).outcome, "terms-changed");
+});

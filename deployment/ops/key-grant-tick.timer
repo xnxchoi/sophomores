@@ -1,0 +1,11 @@
+# Runs key-grant-tick.service once a minute. With KEY_GRANT_POLYGON_LIVE unset each run prints {"outcome":"off"}.
+[Unit]
+Description=Run the Sophomores key-grant tick every minute
+
+[Timer]
+OnCalendar=*-*-* *:*:00
+AccuracySec=1s
+Persistent=false
+
+[Install]
+WantedBy=timers.target

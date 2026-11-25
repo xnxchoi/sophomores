@@ -1,0 +1,17 @@
+# Polygon key-grant tick, one run (deployment/KEY-GRANTS.md). Template: replace <runner>, <release>, <grant env files>.
+# The RPC URL and the signer key are NOT here: the tick reads ~<runner>/.config/sphmrs/polygon-rpc.env and
+# polygon-key-granter.env itself (0600, owned by <runner>) and refuses if KEY_GRANT_POLYGON_RPC_URL is in its env.
+[Unit]
+Description=Sophomores Polygon key-grant tick (one run)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=<runner>
+WorkingDirectory=<release>
+EnvironmentFile=<grant env files: database, KEY_GRANT_POLYGON_MAX_COST_WEI, KEY_GRANT_POLYGON_EVENT_LOCKS, KEY_GRANT_POLYGON_LIVE>
+ExecStart=/usr/bin/env node --import tsx scripts/key-grant-tick.ts
+TimeoutStartSec=55
+NoNewPrivileges=yes
+PrivateTmp=yes

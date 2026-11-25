@@ -1,0 +1,21 @@
+# Emails the owner about key-grant tick lines a person must act on (scripts/key-grant-alert.ts; owner, 25 Nov:
+# "email alerts via Zoho is fine"). At most one email per kind per hour. Template: replace <runner>, <release>,
+# <mail env file> (MEMBER_AUTH_MAIL_MODE=smtp, MEMBER_AUTH_SMTP_*, KEY_GRANT_ALERT_TO).
+[Unit]
+Description=Sophomores key-grant alert mail
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=<runner>
+SupplementaryGroups=systemd-journal
+WorkingDirectory=<release>
+EnvironmentFile=<mail env file>
+ExecStart=/bin/sh -c 'exec journalctl -f -n 0 -o cat -u key-grant-tick.service -u key-grant-overcap-proof.service | node --import tsx scripts/key-grant-alert.ts'
+Restart=always
+RestartSec=30
+NoNewPrivileges=yes
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target

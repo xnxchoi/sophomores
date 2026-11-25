@@ -1,9 +1,8 @@
 import { isReviewCopyRequest } from "@/lib/auth/review-editor-policy";
 import { NextResponse } from "next/server";
 import { getPayload } from "@/payload";
-import { currentUser } from "@/lib/auth/server";
-import { isCmsStaff } from "@/lib/auth/access";
 import { getAppleMusicPlaylist } from "@/lib/music/apple-music";
+import { setlistLocalRequest } from "@/lib/music/local-request";
 import { inRunningOrder, runningOrder } from "@/lib/music/running-order";
 import type { ContributedTrackView } from "@/lib/music/types";
 
@@ -17,29 +16,24 @@ export async function GET(
 ): Promise<NextResponse> {
   const { slug } = await params;
   const payload = await getPayload();
-  const user = await currentUser();
-  const staffAuth = await payload.auth({ headers: _request.headers });
+  // One request carrying the caller's Payload principal: both reads below run through
+  // collection access, so a private setlist is visible to CMS staff only.
+  const req = await setlistLocalRequest(payload, _request);
 
-  // 1. Fetch Setlist by Slug
+  // 1-2. Fetch the setlist by slug through Setlists access. Missing and not visible
+  // to this caller answer the same 404.
   const query = await payload.find({
     collection: "setlists",
     depth: 0,
     where: { slug: { equals: slug } },
-    limit: 1
+    limit: 1,
+    overrideAccess: false,
+    req
   });
 
   const setlist = query.docs[0];
   if (!setlist) {
     return NextResponse.json({ error: "Setlist not found" }, { status: 404 });
-  }
-
-  // 2. Check Visibility (If private, only staff can view)
-  const isStaff = isCmsStaff(staffAuth.user);
-  if (setlist.isPublic !== true && !isStaff) {
-    return NextResponse.json(
-      { error: "This setlist is private and no longer accessible." },
-      { status: 403 }
-    );
   }
 
   // 3. Fetch Base tracks from Apple Music (if playlist configured)
@@ -71,7 +65,7 @@ export async function GET(
   const tracksResult = await payload.find({
     collection: "tracks",
     overrideAccess: false,
-    user: user ?? undefined,
+    req,
     where: { setlist: { equals: setlist.id } },
     pagination: false,
     depth: 1

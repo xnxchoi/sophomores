@@ -139,6 +139,28 @@ describe("Setlists & Eligibility Logic", () => {
     assert.equal(result.canEdit, false);
   });
 
+  for (const [name, change, reason] of [
+    ["a draft", { status: "draft" }, "setlist_locked"],
+    ["an unknown status", { status: "open" }, "setlist_locked"],
+    ["an unreadable deadline", { deadline: "not-a-date" }, "deadline_passed"]
+  ] as const) {
+    test(`rejects submissions on ${name}`, async () => {
+      const setlist = {
+        id: "setlist-1",
+        deadline: new Date(Date.now() + 86400000).toISOString(),
+        status: "active",
+        maxSlotsPerUser: 2,
+        event: { id: "event-1" },
+        ...change
+      };
+      const user: Partial<User> = { id: "user-1", email: "attendee@example.com", emailVerified: true };
+      const result = await evaluateUserEligibility(mockPayload, user as User, setlist);
+      assert.equal(result.isEligible, false);
+      assert.equal(result.reason, reason);
+      assert.equal(result.canEdit, false);
+    });
+  }
+
   test("grants 2 slots to an activated account with a live admission for the setlist's event", async () => {
     const setlist = {
       id: "setlist-1",

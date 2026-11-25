@@ -141,9 +141,12 @@ export async function evaluateUserEligibility(
 
   const usedSlots = existingTracks.totalDocs;
 
-  // 1. Check Setlist Status & Deadline
-  const isPastDeadline = new Date() >= new Date(setlist.deadline);
-  if (setlist.status === "locked" || setlist.status === "finalized") {
+  // 1. Check Setlist Status & Deadline. Only an active setlist takes entries (a draft,
+  // locked or finalized one is closed, as the page shows), and only before a valid deadline:
+  // a missing or unreadable deadline counts as passed.
+  const deadline = new Date(setlist.deadline).getTime();
+  const isPastDeadline = !Number.isFinite(deadline) || Date.now() >= deadline;
+  if (setlist.status !== "active") {
     return {
       isEligible: false,
       reason: "setlist_locked",

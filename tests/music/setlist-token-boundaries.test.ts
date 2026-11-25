@@ -67,6 +67,8 @@ function freshState() {
     playlistArgs: [] as unknown[][],
     playlistTracks: [] as Array<{ id: string; title: string; artist: string }>,
     eligibilityCalls: 0,
+    // Runs the shipped evaluateUserEligibility instead of the always-eligible stub.
+    realEligibility: false,
     slotCalls: 0,
     nativeSlots: false,
     helperActive: false,
@@ -85,6 +87,7 @@ function freshState() {
 let state = freshState();
 let nativeAfterRead: (args: Record<string, unknown>) => Promise<Record<string, unknown>>;
 let getNativeSlots: typeof import("../../src/lib/music/eligibility").getUserSetlistSlots;
+let realEvaluate: typeof import("../../src/lib/music/eligibility").evaluateUserEligibility;
 async function nativeDocument(collection: "tracks" | "setlists", doc: Record<string, unknown>, depth = 2, currentDepth = 1) {
   return nativeAfterRead({
     collection: collection === "tracks" ? Tracks : Setlists,
@@ -198,8 +201,9 @@ const payload = {
 const harness = {
   payload,
   user: () => state.user,
-  eligibility() {
+  eligibility(...args: Parameters<typeof realEvaluate>) {
     state.eligibilityCalls++;
+    if (state.realEligibility) return realEvaluate(...args);
     return { isEligible: true, canEdit: true, maxSlots: 2 };
   },
   async slots(...args: Parameters<typeof getNativeSlots>) {
@@ -271,7 +275,7 @@ before(async () => {
         source = `export const getAppleMusicPlaylist=(...args)=>${target}.playlist(...args); export const addTracksToApplePlaylist=(...args)=>${target}.push(...args);`;
       }
       if (specifier === "@/lib/music/eligibility") {
-        source = `export const evaluateUserEligibility=async()=>${target}.eligibility(); export const getUserSetlistSlots=(...args)=>${target}.slots(...args); export const isAccountActivated=()=>true; export const entryCap=(s)=>s.maxSlotsPerUser===1?1:2;`;
+        source = `export const evaluateUserEligibility=async(...args)=>${target}.eligibility(...args); export const getUserSetlistSlots=(...args)=>${target}.slots(...args); export const isAccountActivated=()=>true; export const entryCap=(s)=>s.maxSlotsPerUser===1?1:2;`;
       }
       if (parent.endsWith("/app/(site)/setlists/[slug]/page.tsx")) {
         if (specifier === "next/headers") source = "export const headers=async()=>new Headers();";
@@ -299,7 +303,7 @@ before(async () => {
   ({ GET: mySlotsGET } = await import("@/app/api/setlists/[slug]/my-slots/route"));
   ({ POST: slotsPOST } = await import("@/app/api/setlists/[slug]/slots/route"));
   ({ DELETE: slotsDELETE, PATCH: slotsPATCH } = await import("@/app/api/setlists/[slug]/slots/[entryId]/route"));
-  ({ getUserSetlistSlots: getNativeSlots } = await import("../../src/lib/music/eligibility"));
+  ({ getUserSetlistSlots: getNativeSlots, evaluateUserEligibility: realEvaluate } = await import("../../src/lib/music/eligibility"));
   const entry = pathToFileURL(createRequire(import.meta.url).resolve("payload"));
   ({ afterRead: nativeAfterRead } = await import(new URL("./fields/hooks/afterRead/index.js", entry).href));
   ({ default: page } = await import("@/app/(site)/setlists/[slug]/page"));
@@ -412,8 +416,10 @@ for (const actor of actors) {
     state.user = actor.user;
     state.setlist = { ...fixture(), isPublic: false };
     const response = await publicGET(new Request("https://example.test/private-setlist"), context());
-    assert.equal(state.cmsStaffAuthCalls, 1);
-    assert.equal(response.status, actor.user?.collection === "admins" ? 200 : 403);
+    // One access-checked read with the caller's principal; not visible answers the same 404 as missing.
+    assert.equal(state.calls[0].overrideAccess, false);
+    assert.equal((state.calls[0].req?.user as Actor | undefined) ?? null, actor.user);
+    assert.equal(response.status, actor.user?.collection === "admins" ? 200 : 404);
     const body = await response.json();
     assert.equal(JSON.stringify(body).includes(syntheticToken), false);
     if (response.status === 200) assertPublicGroup(body.setlist.appleMusic);
@@ -700,6 +706,8 @@ for (const actor of actors) {
     state.user = actor.user;
     state.setlist = { ...fixture(), isPublic: false };
     const response = await mySlotsGET(new Request("https://example.test/slots"), context());
+    assert.equal(response.headers.get("cache-control"), "private, no-store");
+    assert.equal(state.calls[0].overrideAccess, false);
     if (actor.user?.collection === "admins") {
       assert.equal(response.status, 200);
       assert.equal(state.eligibilityCalls, 1);
@@ -1020,4 +1028,44 @@ test("apple-token POST answers malformed JSON shapes with 400, never 500", async
     assert.equal(result.status, 400, body);
   }
   assert.equal(state.calls.some((call) => call.data), false);
+});
+
+// Review-B setlist audit (25 Nov): only an active setlist with a valid future deadline takes
+// entries, through the shipped eligibility, whatever isPublic says.
+const entryParams = () => ({ params: Promise.resolve({ slug: "synthetic-setlist", entryId: "track-1" }) });
+const entryWrites = () => [
+  slotsPOST(new Request("https://example.test/slots", { method: "POST", body: JSON.stringify({ track: { id: "song-9", title: "T", artist: "A" } }) }), context()),
+  slotsPATCH(new Request("https://example.test/slots/track-1", { method: "PATCH", body: JSON.stringify({ note: "n" }) }), entryParams()),
+  slotsDELETE(new Request("https://example.test/slots/track-1", { method: "DELETE" }), entryParams())
+];
+const closedSetlists: Array<[string, Partial<SyntheticSetlist>, string]> = [
+  ["a public draft", { status: "draft" }, "setlist_locked"],
+  ["a public locked setlist", { status: "locked" }, "setlist_locked"],
+  ["a public finalized setlist", { status: "finalized" }, "setlist_locked"],
+  ["an active setlist with an unreadable deadline", { deadline: "not-a-date" }, "deadline_passed"],
+  ["an active setlist with no deadline", { deadline: null }, "deadline_passed"],
+  ["an active setlist past its deadline", { deadline: "2000-01-01T00:00:00.000Z" }, "deadline_passed"]
+];
+for (const [name, change, reason] of closedSetlists) {
+  test(`member POST/PATCH/DELETE on ${name} is refused before any write`, async () => {
+    state.realEligibility = true;
+    state.user = actors[1].user;
+    state.setlist = { ...fixture(), ...change } as SyntheticSetlist;
+    for (const response of await Promise.all(entryWrites())) {
+      assert.equal(response.status, 403);
+      assert.equal((await response.json()).reason, reason);
+    }
+    assert.equal(state.calls.some((call) => call.data !== undefined), false, "no create, update or delete ran");
+    assert.equal(state.eligibilityCalls, 3);
+  });
+}
+
+test("an active public setlist with a future deadline passes the status gate (later gates still decide)", async () => {
+  state.realEligibility = true;
+  state.user = actors[1].user;
+  for (const response of await Promise.all(entryWrites())) {
+    const { reason } = await response.json();
+    assert.notEqual(reason, "setlist_locked");
+    assert.notEqual(reason, "deadline_passed");
+  }
 });

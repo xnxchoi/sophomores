@@ -103,8 +103,25 @@ test("desktop entrance scale cannot leave the content wrapper five percent too s
   ui.render(content(), { wrapper: EnglishMessages });
   await settledHeight(520);
   const { shell } = surface();
-  await ui.waitFor(() => assert.ok(Math.abs(parseFloat(shell.style.bottom) - 124) < 0.01, "centering uses the same untransformed natural height"));
+  await ui.waitFor(() => assert.ok(Math.abs(parseFloat(shell.style.top) - 124) < 0.01, "centering uses the same untransformed natural height"));
   assert.equal(shell.dataset.authenticationPresentation, "modal");
+});
+
+test("the desktop modal keeps its top while its content shrinks or grows (no re-centring)", async () => {
+  // Owner, 26 Nov ("reanimating"): typing folds the other ways in and a lookup adds a line; the modal must not move.
+  ui.render(content(), { wrapper: EnglishMessages });
+  await settledHeight(520);
+  const { shell } = surface();
+  await ui.waitFor(() => assert.ok(Math.abs(parseFloat(shell.style.top) - 124) < 0.01, "opens centred"));
+  await logicalResize(380.25);
+  await settledHeight(381);
+  assert.ok(Math.abs(parseFloat(shell.style.top) - 124) < 0.01, "shrinking keeps the top; received " + shell.style.top);
+  await logicalResize(600);
+  await settledHeight(600);
+  assert.ok(Math.abs(parseFloat(shell.style.top) - 124) < 0.01, "growing within the window keeps the top; received " + shell.style.top);
+  await logicalResize(700);
+  await settledHeight(700);
+  await ui.waitFor(() => assert.ok(Math.abs(parseFloat(shell.style.top) - 44) < 0.01, "content that would pass the bottom gutter moves it up only as far as needed; received " + shell.style.top));
 });
 
 test("fractional observer sizes round outward instead of leaving a subpixel overflow", async () => {
@@ -139,7 +156,7 @@ test("genuine desktop overflow retains its full content height and a capped scro
   await settledHeight(900);
   const { shell } = surface();
   await ui.waitFor(() => assert.ok(Math.abs(parseFloat(shell.style.maxHeight) - 720) < 0.01));
-  await ui.waitFor(() => assert.ok(Math.abs(parseFloat(shell.style.bottom) - 24) < 0.01));
+  await ui.waitFor(() => assert.ok(Math.abs(parseFloat(shell.style.top) - 24) < 0.01));
   assert.ok(shell.classList.contains("overflow-y-auto"));
   assert.ok(shell.classList.contains("data-[authentication-presentation=modal]:[scrollbar-width:thin]!"));
   assert.ok(shell.classList.contains("data-[authentication-presentation=modal]:scroll-pt-14"));

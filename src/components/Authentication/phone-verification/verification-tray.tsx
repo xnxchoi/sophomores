@@ -130,8 +130,12 @@ export function VerificationTray({
     const height = Math.min(contentHeight, placement.maxHeight);
     const centred = viewport.offsetTop + (viewport.viewportHeight - height) / 2;
     const lowest = viewport.offsetTop + viewport.viewportHeight - viewport.gutter - height;
-    top = Math.max(viewport.offsetTop + viewport.gutter, Math.min(modalTop ?? centred, lowest));
-    if (open && top !== modalTop) setModalTop(top);
+    const held = Math.max(viewport.offsetTop + viewport.gutter, Math.min(modalTop ?? centred, lowest));
+    // A viewport that can't be read (NaN) keeps the centred placement; NaN never equals itself, so it would loop.
+    if (Number.isFinite(held)) {
+      top = held;
+      if (open && held !== modalTop) setModalTop(held);
+    }
   }
   const geometry = viewport && placement
     ? {

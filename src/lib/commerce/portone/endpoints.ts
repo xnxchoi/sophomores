@@ -117,6 +117,11 @@ export function createAdapterEndpoints(deps: AdapterDependencies,
             return response(200, { message: 'Failed payment may be retired', outcome: 'retirable', transactionID: row.id,
               paymentID: input.paymentID, status: 'failed' })
           }
+          // Again at the decision to reopen (Review-B r4): the event as read now and a clock sampled after the provider
+          // read. A late change opens nothing.
+          const late = await currentRefundTerms(local, row.portone.snapshot)
+          if (!sameRefundTerms(input.refundTerms, late)) return response(200, { message: 'Refund terms changed', outcome: 'terms-changed',
+            transactionID: row.id, paymentID: input.paymentID, refundTerms: late })
           return response(200, { message: 'Same payment may be resumed', outcome: 'resumable', transactionID: row.id,
             paymentID: input.paymentID, paymentRequest: paymentRequest(config, row, { email: req.user!.email, name: req.user!.name }) })
         })

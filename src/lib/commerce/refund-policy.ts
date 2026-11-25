@@ -63,6 +63,17 @@ export function refundTerms(policy: RefundPolicy, partIStartsAt: unknown, now = 
   return now < cutoff ? { kind: "until", cutoffAt: new Date(cutoff).toISOString() } : { kind: "closed", cutoffAt: new Date(cutoff).toISOString() };
 }
 
+/** Same terms, field by field: what the customer saw is still what applies. */
+export function sameRefundTerms(a: RefundTerms | undefined, b: RefundTerms): boolean {
+  const flat = (terms: RefundTerms) => [terms.kind, "cutoffAt" in terms ? terms.cutoffAt : null, "reason" in terms ? terms.reason : null].join("|");
+  return a !== undefined && flat(a) === flat(b);
+}
+
+/** Thrown under the event lock when the terms shown beside Pay no longer apply; the purchase rolls back (Review-B r4). */
+export class RefundTermsChanged extends Error {
+  constructor(readonly terms: RefundTerms) { super("Refund terms changed"); this.name = "RefundTermsChanged"; }
+}
+
 /** An edition offer's terms, before any order exists. */
 export function editionRefundTerms(included: Readonly<{ membershipSignet: boolean; freeLaunchTicket: boolean }>): RefundTerms {
   return editionRefundable(included) ? { kind: "refundable" } : { kind: "none", reason: "personalised-edition" };

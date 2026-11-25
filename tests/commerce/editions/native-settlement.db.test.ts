@@ -309,6 +309,46 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
           guestQuote: { productID: guest.productID, quantity: 2, totalAmount: 20_000, refundTerms: { kind: "refundable" } } }),
           { message: "Guest quote changed", outcome: "guest-quote-changed", refundTerms: await guestTerms() });
         assert.deepEqual((await control.query("SELECT id FROM transactions WHERE cart_id=$1", [reloaded.id])).rows, []);
+        // The event's start is edited while this Pay is in flight, after the fast check has passed (a committed edit on
+        // another connection, made from the fast check's own read): the check under the event lock sees the new start and
+        // the whole preparation rolls back. No attempt, no reservation, every counter as it was (Review-B r4).
+        const counters = async () => ({
+          event: (await control.query("SELECT reserved_quantity::int, committed_quantity::int FROM commerce_events WHERE id=$1", [eventID])).rows,
+          product: (await control.query("SELECT reserved_quantity::int FROM products WHERE id=$1", [guest.productID])).rows,
+          allowances: (await control.query("SELECT release_i_d, reserved_quantity::int, paid_quantity::int FROM commerce_allowances WHERE customer_id=$1 ORDER BY release_i_d", [sponsor.id])).rows,
+        });
+        const before = await counters();
+        const shown = await guestTerms();
+        const original = (await control.query("SELECT part_i_starts_at FROM commerce_events WHERE id=$1", [eventID])).rows[0].part_i_starts_at as Date;
+        const moved = new Date(original.getTime() + 24 * 60 * 60 * 1000);
+        const hooks = payload.collections["commerce-events"].config.hooks;
+        let edited = false;
+        // Fires on the fast check's own read (it selects only the start), after that read returned the old start.
+        let fastCheckSaw: unknown;
+        const editDuringRead = async ({ doc }: { doc: Record<string, unknown> }) => {
+          if (!edited && "partIStartsAt" in doc && !("name" in doc)) {
+            edited = true; fastCheckSaw = doc.partIStartsAt;
+            await control.query("UPDATE commerce_events SET part_i_starts_at=$2 WHERE id=$1", [eventID, moved]);
+          }
+          return doc;
+        };
+        hooks.afterRead.push(editDuringRead as never);
+        try {
+          const raced = await initiateThroughEndpoint(payload, sponsor, { ...checkout,
+            guestQuote: { productID: guest.productID, quantity: 2, totalAmount: 20_000, refundTerms: shown } });
+          assert.equal(edited, true);
+          // The fast check saw the old start, so it passed; only the check under the event lock could refuse.
+          assert.equal(new Date(String(fastCheckSaw)).getTime(), original.getTime());
+          const now = await guestTerms();
+          assert.notDeepEqual(now, shown);
+          assert.deepEqual(raced, { message: "Guest quote changed", outcome: "guest-quote-changed", refundTerms: now });
+        } finally {
+          hooks.afterRead.splice(hooks.afterRead.indexOf(editDuringRead as never), 1);
+          await control.query("UPDATE commerce_events SET part_i_starts_at=$2 WHERE id=$1", [eventID, original]);
+        }
+        assert.deepEqual((await control.query("SELECT id FROM transactions WHERE cart_id=$1", [reloaded.id])).rows, []);
+        assert.deepEqual((await control.query("SELECT id FROM commerce_reservations WHERE customer_id=$1", [sponsor.id])).rows, []);
+        assert.deepEqual(await counters(), before);
         const attempt = await initiateThroughEndpoint(payload, sponsor, { ...checkout,
           guestQuote: { productID: guest.productID, quantity: 2, totalAmount: 20_000, refundTerms: await guestTerms() },
           ticketEmailConsent: "unlock-ticket-email-v1" }) as { transactionID: string };

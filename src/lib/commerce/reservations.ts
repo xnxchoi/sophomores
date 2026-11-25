@@ -6,8 +6,9 @@ import { assertGuestSponsorMembership } from "./membership";
 import { optionalRelationshipID, purchaseSnapshotSchema, reservationAllowance } from "./purchase-snapshot";
 import { resolveEventTicketTarget, guestTicketTarget, sameTicketTarget, usesUnlockEvents, unlockEventTicketConfiguration, sharedTicketMode, sharedTicketTarget, sharedEventTicketsEnabled, sharedGuestSalePin, SHARED_GUEST_LIMIT } from "./event-tickets";
 import { counter, createCommerce, findCommerce, lockCommerce, readCommerce, relationshipID, updateCommerce, type CommerceDocument } from "./_shared/transaction";
+import { RefundTermsChanged, refundPolicy, refundTerms, sameRefundTerms, type RefundTerms } from "./refund-policy";
 
-type ReservationInput = { req: PayloadRequest; attemptID: string; customerID: string; releaseID: string; productID: string; eventID: string | null; variantID?: string; quantity: number; accountLimit: number; snapshotHash: string; productVersion?: string; variantVersion?: string; ticketTarget?: unknown; memberTicketTarget?: unknown };
+type ReservationInput = { /** The refund terms shown beside Pay, for a guest purchase (Review-B r4). */ refundTerms?: RefundTerms; req: PayloadRequest; attemptID: string; customerID: string; releaseID: string; productID: string; eventID: string | null; variantID?: string; quantity: number; accountLimit: number; snapshotHash: string; productVersion?: string; variantVersion?: string; ticketTarget?: unknown; memberTicketTarget?: unknown };
 type ReservationAction = { req: PayloadRequest; attemptID: string };
 export type VerifiedReleaseReason = "confirmed-cancel" | "accepted-return" | "verified-failure";
 
@@ -210,6 +211,13 @@ export async function reservePurchase(input: ReservationInput): Promise<Commerce
   // Single membership token per account (owner, 22 Nov), under the snapshot's recorded limit.
   if (reserved + paid + quantity > accountLimit) throw new Error("Account membership allowance exceeded");
   if (namespace === MEMBERSHIP_RELEASE) await assertNoLiveMembershipKey(req, customerID);
+  // The refund terms shown beside Pay, checked again under the event lock against the event as read here and a clock
+  // sampled after every read above (Review-B r4): a change (an edited start, a cutoff crossed while this request waited)
+  // throws before any write, so the attempt and its reservation roll back together.
+  if (ticket && input.refundTerms !== undefined) {
+    const terms = refundTerms(refundPolicy({ version: 3, kind: "guest-ticket-v1", eventID }), event?.partIStartsAt, Date.now());
+    if (!sameRefundTerms(input.refundTerms, terms)) throw new RefundTermsChanged(terms);
+  }
   if (allowance) await updateCommerce(req, "commerce-allowances", allowance.id, { reservedQuantity: reserved + quantity });
   else await createCommerce(req, "commerce-allowances", { accountReleaseKey: key, customer: customerID, releaseID: namespace, reservedQuantity: quantity, paidQuantity: 0 });
   await req.payload.db.updateOne({ collection: "products", id: productID, data: { reservedQuantity: { $inc: quantity } }, req });

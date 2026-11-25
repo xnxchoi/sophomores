@@ -17,7 +17,8 @@ import { classifyReconciliationPayment, minimalPaymentRiskProof } from './proof'
 import { createAdapterEndpoints } from './endpoints'
 import { accountedProviderGet, assertReconciliationFence, appendSettlementObservation, assertOrdinaryReconciliation, retainReconciliationRisk, readUnresolvedSettlementProof, paidReviewCustomerLock } from './accounting'
 import { assertPurchaseWithoutPaidReview, deferPaymentRisk } from './review'
-import { currentRefundTerms, sameRefundTerms } from './refund-terms'
+import { currentRefundTerms, noteRefundTermsChange, sameRefundTerms } from './refund-terms'
+import { RefundTermsChanged } from '../refund-policy'
 export { isVerifiedCommerceWebhook } from './endpoints'
 
 const uuid = z.uuid()
@@ -285,11 +286,18 @@ export function createPortOneAdapter(deps: AdapterDependencies = {}): PaymentAda
               amount: snapshot.totalAmount, currency: snapshot.currency, status: 'pending', paymentMethod: 'portone',
               items: [{ product: snapshot.productID, quantity: snapshot.quantity, ...(variant ? { variant: variant.variantID } : {}) }], portone: { paymentID, prepareKey,
                 snapshot, snapshotHash: commerceSnapshotHash(snapshot), storeID: config.storeId, channelKey: config.channelKey } } as never })
+          try {
           await reservePurchase({ req, attemptID: id, customerID: snapshot.customerID, releaseID: snapshot.releaseID,
+            ...(snapshot.version === 3 ? { refundTerms: expected?.refundTerms } : {}),
             productID: snapshot.productID, eventID: snapshot.eventID, quantity: snapshot.quantity,
             accountLimit: snapshot.version === 2 ? snapshot.maximumQuantity : snapshot.accountLimit,
             ...(snapshot.version === 3 ? { ticketTarget: snapshot.ticketTarget } : snapshot.version === 2 ? { memberTicketTarget: snapshot.memberTicketTarget } : {}),
             snapshotHash: commerceSnapshotHash(snapshot), ...variant })
+          } catch (error) {
+            // Changed under the event lock: note the new terms and throw, so nothing written here survives.
+            if (error instanceof RefundTermsChanged) noteRefundTermsChange(req, error.terms)
+            throw error
+          }
           const row = await readPortOneTransaction(req, paymentID, transactionsSlug)
           const request = paymentRequest(config, row, { email: req.user!.email, name: req.user!.name })
           return { message: 'Payment prepared', transactionID: id, paymentID, paymentRequest: request, outcome: 'prepared' }

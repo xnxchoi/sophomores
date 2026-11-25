@@ -14,7 +14,9 @@ import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 const walletPassPath = z.string().regex(/^\/api\/commerce\/orders\/[a-f0-9-]{36}\/admissions\/[a-f0-9-]{36}\/wallet-pass\/(ios|android)$/i);
 const admissionSchema = z.object({ admissionID: z.uuid(), unit: z.int().min(1).max(3), name: z.string().max(100).nullable(),
   status: z.enum(["available", "claimed", "checked-in", "revoked"]), claimed: z.boolean(), reviewRequired: z.boolean(),
-  ticketTier: z.enum(["member", "guest"]).optional(), applePassURL: walletPassPath.nullish(), androidPassURL: walletPassPath.nullish() });
+  ticketTier: z.enum(["member", "guest"]).optional(), walletPass: z.enum(["ready", "pending", "unavailable"]).optional(),
+  applePassURL: walletPassPath.nullish(), androidPassURL: walletPassPath.nullish() });
+const passFailedMarker = "#wallet-pass-unavailable";
 const admissionsSchema = z.array(admissionSchema).max(3);
 const issuedClaimSchema = z.object({ token: z.string().regex(/^[A-Za-z0-9_-]{43}$/), expiresAt: z.iso.datetime({ offset: true }) });
 
@@ -22,6 +24,13 @@ export function OrderAdmissions({ orderID }: { orderID: string }) {
   const t = useTranslations('Customer.components_commerce_order_admissions');
   const [state, setState] = useState<{ status: "loading" | "error" | "ready"; admissions: z.infer<typeof admissionsSchema> }>({ status: "loading", admissions: [] });
   const [retry, setRetry] = useState(0);
+  const [passFailed, setPassFailed] = useState(false);
+  useEffect(() => {
+    // The pass endpoint sends a failed Wallet pass back here with one fixed marker; show one line and drop the marker.
+    if (window.location.hash !== passFailedMarker) return;
+    setPassFailed(true);
+    window.history.replaceState(window.history.state, "", window.location.pathname + window.location.search);
+  }, []);
   useEffect(() => {
     const abort = new AbortController();
     setState({ status: "loading", admissions: [] });
@@ -38,6 +47,7 @@ export function OrderAdmissions({ orderID }: { orderID: string }) {
         <p className="mt-2 text-sm leading-6 text-muted-foreground">{t('aGuestWhoCompletesTheirOwnVerifiedRegistrationAnd')}</p>
       </>}
     </div>
+    {passFailed && <p role="status" className="flex min-h-12 items-center text-sm text-foreground">{t('walletPassFailed')}</p>}
     {state.status === "loading" && <p role="status" className="flex min-h-12 items-center text-sm text-muted-foreground">{t('loadingYourAdmissions')}</p>}
     {state.status === "error" && <div className="space-y-4 rounded-2xl border border-border bg-card p-5 text-card-foreground sm:p-6"><p role="status" className="text-sm leading-6 text-muted-foreground">{t('theseAdmissionsCouldNotBeLoadedCheckThatYou')}</p>
       <Button variant="outline" type="button" onClick={() => setRetry((value) => value + 1)} className="h-auto min-h-12 w-full rounded-xl px-5 py-3 text-sm whitespace-normal focus-visible:border-foreground focus-visible:ring-foreground/30 sm:w-auto">{t('retryAdmissions')}</Button></div>}
@@ -88,7 +98,7 @@ function AdmissionCard({ admission }: { admission: z.infer<typeof admissionSchem
         {admission.androidPassURL && <a className="group/focus inline-flex min-h-12 items-center underline" href={admission.androidPassURL} referrerPolicy="no-referrer"><FocusShape className="group-focus-visible/focus:outline-current">{t('googleWalletPass')}</FocusShape></a>}
         {admission.ticketTier === "guest" && admission.androidPassURL && <ShareGooglePass key={admission.androidPassURL} path={admission.androidPassURL} />}
       </div>
-      {!admission.applePassURL && !admission.androidPassURL && <p>{t('walletPassUnavailable')}</p>}
+      {!admission.applePassURL && !admission.androidPassURL && <p>{t(admission.walletPass === "pending" ? 'walletPassPending' : 'walletPassUnavailable')}</p>}
       {admission.ticketTier === "guest" && (admission.applePassURL || admission.androidPassURL) && <p>{t('forwardGuestQR')}</p>}
     </div>}
     {!admission.ticketTier && <>

@@ -126,7 +126,7 @@ export async function buyerAdmissions({ req, orderID }: { req: PayloadRequest; o
     admissionID: admission.id, unit: Number(admission.unit), name: String(admission.guestName ?? ""),
     status: String(admission.status), reviewRequired: admission.benefitReview === true, claimed: !!admission.claimedAccount,
     ...(admission.ticketTier === "guest" || admission.ticketTier === "member" ? {
-      ticketTier: admission.ticketTier, ...(await readEventPassLinks(req, admission, order, customerID) ?? { applePassURL: null, androidPassURL: null }),
+      ticketTier: admission.ticketTier, ...await readEventPassLinks(req, admission, order, customerID),
     } : {}),
   })));
 }

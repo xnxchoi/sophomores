@@ -14,6 +14,7 @@ let actions: Record<string, unknown>[] = []
 let claimed = false
 let admissionsUnavailable = false
 let sharedTickets = false
+let memberTicket: 'ready' | 'pending' | 'unavailable' | 'foreign' | null = null
 let claimResponse: Promise<Response> | undefined
 let requests: { path: string; method: string; credentials?: RequestCredentials; cache?: RequestCache; headers: Headers }[] = []
 const capabilities = { emailOtp: true, magicLink: false, google: false, passkey: false }
@@ -41,9 +42,15 @@ before(async () => {
       assert.equal(new Headers(options?.headers).get("accept"), "application/json")
       return Response.json({ passObjectUrl: "https://pay.google.com/gp/v/save/one.two.three" })
     }
+    if (path.endsWith('/admissions') && memberTicket === 'foreign') return Response.json({ error: 'Order admissions unavailable' }, { status: 404 })
+    if (path.endsWith('/admissions') && memberTicket) return Response.json([{
+      admissionID, unit: 1, name: "", status: "available", claimed: false, reviewRequired: false, ticketTier: "member", walletPass: memberTicket,
+      applePassURL: memberTicket === 'ready' ? `/api/commerce/orders/${orderID}/admissions/${admissionID}/wallet-pass/ios` : null,
+      androidPassURL: memberTicket === 'ready' ? `/api/commerce/orders/${orderID}/admissions/${admissionID}/wallet-pass/android` : null,
+    }])
     if (path.endsWith('/admissions') && sharedTickets) return Response.json([admissionID, admissionID.slice(0, -1) + "3"].map((id, i) => ({
       admissionID: id, unit: i + 1, name: "", status: "available",
-      claimed: false, reviewRequired: false, ticketTier: "guest",
+      claimed: false, reviewRequired: false, ticketTier: "guest", walletPass: "ready",
       applePassURL: `/api/commerce/orders/${orderID}/admissions/${id}/wallet-pass/ios`,
       androidPassURL: `/api/commerce/orders/${orderID}/admissions/${id}/wallet-pass/android`,
     })))
@@ -66,7 +73,7 @@ before(async () => {
   MemberAuthProviders = (await import('../../member-auth/fixtures/providers')).MemberAuthProviders
 })
 afterEach(() => {
-  ui.cleanup(); actions = []; requests = []; claimed = false; admissionsUnavailable = false; sharedTickets = false; claimResponse = undefined
+  ui.cleanup(); actions = []; requests = []; claimed = false; admissionsUnavailable = false; sharedTickets = false; memberTicket = null; claimResponse = undefined
   dom.window.sessionStorage.clear(); dom.window.localStorage.clear()
   dom.window.history.replaceState(null, '', '/shop/orders/' + orderID)
 })
@@ -214,7 +221,7 @@ test("each shared Guest ticket exposes its own buyer hop; sharing copies Google,
   sharedTickets = true
   ui.render(<EnglishMessages><Admissions orderID={orderID} /></EnglishMessages>)
   const apple = await ui.screen.findAllByRole("link", { name: "Add to Apple Wallet" })
-  const google = ui.screen.getAllByRole("link", { name: "Google Wallet pass" })
+  const google = ui.screen.getAllByRole("link", { name: "Add to Google Wallet" })
   const ids = [admissionID, admissionID.slice(0, -1) + "3"]
   assert.deepEqual(apple.map(link => link.getAttribute("href")?.split("/").slice(-3)), ids.map(id => [id, "wallet-pass", "ios"]))
   assert.deepEqual(google.map(link => link.getAttribute("href")?.split("/").slice(-3)), ids.map(id => [id, "wallet-pass", "android"]))
@@ -233,4 +240,44 @@ test("each shared Guest ticket exposes its own buyer hop; sharing copies Google,
   assert.equal(actions.length, 0)
   ui.cleanup()
   await ui.act(() => new Promise(resolve => setTimeout(resolve, 80)))
+})
+
+// Owner ruling, 25 Nov (Cordy): option (a), Add to Apple Wallet and Add to Google Wallet on the member ticket page.
+test("an issued member ticket shows Add to Apple Wallet and Add to Google Wallet, and calls nothing until clicked", async () => {
+  memberTicket = 'ready'
+  ui.render(<EnglishMessages><Admissions orderID={orderID} /></EnglishMessages>)
+  const apple = await ui.screen.findByRole("link", { name: "Add to Apple Wallet" })
+  const google = ui.screen.getByRole("link", { name: "Add to Google Wallet" })
+  assert.equal(apple.getAttribute("href"), `/api/commerce/orders/${orderID}/admissions/${admissionID}/wallet-pass/ios`)
+  assert.equal(google.getAttribute("href"), `/api/commerce/orders/${orderID}/admissions/${admissionID}/wallet-pass/android`)
+  assert.ok([apple, google].every(link => link.getAttribute("referrerpolicy") === "no-referrer"))
+  assert.equal(ui.screen.queryByRole("button", { name: "Get a shareable Google Wallet link" }) === null, true)
+  assert.equal(requests.some(r => r.path.includes("/wallet-pass/")), false)
+})
+
+for (const [state, line] of [["pending", "Your ticket is still being issued."], ["unavailable", "A Wallet pass is not available yet."]] as const) {
+  test(`a member ticket that is ${state} says so inline, with no pass links`, async () => {
+    memberTicket = state
+    ui.render(<EnglishMessages><Admissions orderID={orderID} /></EnglishMessages>)
+    await ui.screen.findByText(line)
+    assert.equal(ui.screen.queryByRole("link", { name: "Add to Apple Wallet" }) === null, true)
+    assert.equal(ui.screen.queryByRole("link", { name: "Add to Google Wallet" }) === null, true)
+  })
+}
+
+test("someone else's order shows the plain admissions result and no pass", async () => {
+  memberTicket = 'foreign'
+  ui.render(<EnglishMessages><Admissions orderID={orderID} /></EnglishMessages>)
+  await ui.screen.findByRole("button", { name: /retry/i })
+  assert.equal(ui.screen.queryByRole("link", { name: "Add to Apple Wallet" }) === null, true)
+})
+
+test("coming back from a failed pass shows one plain line and clears the marker", async () => {
+  memberTicket = 'ready'
+  dom.window.history.replaceState(null, '', '/shop/orders/' + orderID + '#wallet-pass-unavailable')
+  ui.render(<EnglishMessages><Admissions orderID={orderID} /></EnglishMessages>)
+  await ui.screen.findByText("We couldn't get that Wallet pass. Try again.")
+  assert.equal(dom.window.location.hash, '')
+  assert.equal(dom.window.location.pathname, '/shop/orders/' + orderID)
+  await ui.screen.findByRole("link", { name: "Add to Apple Wallet" })
 })

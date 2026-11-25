@@ -151,11 +151,11 @@ const buyerAdmissionsEndpoint: Endpoint = {
       const runtime = getPayloadMemberRuntime();
       const request = req.url ? new Request(req.url, { headers: req.headers }) : null;
       const principal = runtime && request && await runtime.toMemberPrincipal(request);
-      if (!principal?.emailVerified || req.user?.collection !== "users" || principal.userId !== String(req.user.id)) return Response.json({ error: "Authentication required" }, { status: 401 });
-      return Response.json(await buyerAdmissions({ req, orderID: id.parse(req.routeParams?.orderID) }), { headers: { "Cache-Control": "no-store" } });
+      if (!principal?.emailVerified || req.user?.collection !== "users" || principal.userId !== String(req.user.id)) return Response.json({ error: "Authentication required" }, { status: 401, headers: { "Cache-Control": "private, no-store" } });
+      return Response.json(await buyerAdmissions({ req, orderID: id.parse(req.routeParams?.orderID) }), { headers: { "Cache-Control": "private, no-store" } });
     } catch (error) {
       req.payload.logger.error({ err: error, msg: "Buyer admissions unavailable" });
-      return Response.json({ error: "Order admissions unavailable" }, { status: 404, headers: { "Cache-Control": "no-store" } });
+      return Response.json({ error: "Order admissions unavailable" }, { status: 404, headers: { "Cache-Control": "private, no-store" } });
     }
   },
 };

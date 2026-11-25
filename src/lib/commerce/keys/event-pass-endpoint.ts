@@ -13,6 +13,17 @@ const privateHeaders = {
   Vary: "Accept, Cookie, Authorization",
 };
 const unavailable = (status: number) => Response.json({ error: "Wallet pass unavailable" }, { status, headers: privateHeaders });
+type Fail = (status: number) => Response;
+/**
+ * A click on the card's link is a top-level navigation: any refusal or Locksmith failure sends the member back to the
+ * ticket page with one fixed marker (the card shows a plain line), built from the validated order UUID only. Fetches
+ * (Accept: application/json) keep the JSON error.
+ */
+function failureFor(req: { headers: Headers }, orderID: string): Fail {
+  if (req.headers.get("sec-fetch-mode") !== "navigate" || req.headers.get("accept") === "application/json") return unavailable;
+  const back = `/shop/orders/${orderID}#wallet-pass-unavailable`;
+  return () => new Response(null, { status: 303, headers: { ...privateHeaders, Location: back } });
+}
 const appleType = "application/vnd.apple.pkpass";
 const googleResponse = z.object({ passObjectUrl: z.string().max(16_384) });
 
@@ -35,7 +46,7 @@ async function readBounded(response: Response, limit: number) {
   }
 }
 
-async function servePass(response: Response, platform: "ios" | "android", json: boolean) {
+async function servePass(response: Response, platform: "ios" | "android", json: boolean, unavailable: Fail) {
   const contentType = response.headers.get("content-type")?.split(";")[0].trim();
   if (!response.ok || contentType !== (platform === "ios" ? appleType : "application/json")) {
     await response.body?.cancel();
@@ -68,33 +79,35 @@ export function createEventPassEndpoint({ getMemberRuntime = getPayloadMemberRun
     method: "get",
     handler: async req => {
       const parsed = params.safeParse(req.routeParams);
-      if (!parsed.success || !req.url || req.user?.collection !== "users") return unavailable(404);
+      if (!parsed.success) return unavailable(404);
       const { orderID, admissionID, platform } = parsed.data;
+      const fail = failureFor(req, orderID);
+      if (!req.url || req.user?.collection !== "users") return fail(404);
       let source: string | null | undefined;
       try {
         const request = new Request(req.url, { headers: req.headers });
         const runtime = getMemberRuntime();
-        if (!runtime || request.url.includes("?") || isReviewCopyRequest(request)) return unavailable(404);
+        if (!runtime || request.url.includes("?") || isReviewCopyRequest(request)) return fail(404);
         assertCommerceBrowserAuthority(req, runtime.config.origin, "read");
         const buyer = String(req.user.id);
         const principal = await runtime.toMemberPrincipal(request);
-        if (!principal?.emailVerified || principal.userId !== buyer) return unavailable(404);
+        if (!principal?.emailVerified || principal.userId !== buyer) return fail(404);
         const now = Date.now();
         for (const [id, rate] of rates) if (rate.until <= now) rates.delete(id);
         const rate = rates.get(buyer);
-        if (rate ? rate.count >= 20 : rates.size >= 1024) return unavailable(429);
+        if (rate ? rate.count >= 20 : rates.size >= 1024) return fail(429);
         rates.set(buyer, { count: (rate?.count ?? 0) + 1, until: rate?.until ?? now + 60_000 });
         source = await readOwnedEventPassSource(req, buyer, orderID, admissionID, platform);
       } catch {
-        return unavailable(404);
+        return fail(404);
       }
-      if (!source) return unavailable(404);
+      if (!source) return fail(404);
       try {
         const upstream = await fetcher(source, { cache: "no-store", credentials: "omit", redirect: "error",
           signal: AbortSignal.timeout(5000) });
-        return await servePass(upstream, platform, req.headers.get("accept") === "application/json");
+        return await servePass(upstream, platform, req.headers.get("accept") === "application/json", fail);
       } catch {
-        return unavailable(502);
+        return fail(502);
       }
     },
   };

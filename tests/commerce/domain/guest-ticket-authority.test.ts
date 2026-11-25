@@ -5,7 +5,7 @@ import { checkInGuest, claimGuestAdmission, grantOrderAdmissions, issueGuestClai
 import { loadWalletConfig, predictMemberSafe } from "@/lib/member-auth/wallet/safe";
 import { readEventPassLinks } from "@/lib/commerce/keys/event-pass";
 import { createEventPassEndpoint } from "@/lib/commerce/keys/event-pass-endpoint";
-import { keyGrantOperationKey, ticketTokenIdentity } from "@/lib/commerce/keys/contracts";
+import { keyGrantOperationKey, MEMBER_EVENT_GRANT, memberEventGrantOperationKey, ticketTokenIdentity } from "@/lib/commerce/keys/contracts";
 import { recordKeyGrantIntents } from "@/lib/commerce/keys/intents";
 import { guestPurchaseSnapshotSchema } from "@/lib/commerce/purchase-snapshot";
 import { commerceSnapshotHash } from "@/lib/commerce/snapshot-hash";
@@ -168,7 +168,7 @@ test("a verified buyer gets distinct Apple and Google URLs for each matching gra
     for (const admission of admissions) {
       const base = `/api/commerce/orders/${order.id}/admissions/${admission.id}/wallet-pass`;
       assert.deepEqual(await readEventPassLinks(req, admission, order, buyerID),
-        { applePassURL: base + "/ios", androidPassURL: base + "/android" });
+        { walletPass: "ready", applePassURL: base + "/ios", androidPassURL: base + "/android" });
     }
   });
   assert.equal(calls.length, 0, "listing admissions must not call Unlock");
@@ -219,5 +219,137 @@ test("a verified buyer gets distinct Apple and Google URLs for each matching gra
     })));
     assert.equal(denied.status, 502);
     assert.equal(denied.headers.get("location"), null);
+  }
+});
+
+// Owner ruling, 25 Nov (Cordy): "and add the wallet pass now" = option (a): Add to Apple Wallet and Add to Google Wallet on
+// the member ticket page; our server proves the signed-in member owns the key before it fetches Unlock's pass.
+async function memberTicket(t: { after: (fn: () => void) => void }) {
+  const buyerID = "123e4567-e89b-42d3-a456-426614174011";
+  const passOrigin = "https://passes.example.invalid";
+  for (const [key, value] of Object.entries({ UNLOCK_HOSTED_PASSES_ENABLED: "1", UNLOCK_PASS_ORIGIN: passOrigin,
+    UNLOCK_SHARED_TICKET_EVENT_ID: "e", MEMBER_WALLET_CHAIN_ID: "137",
+    MEMBER_WALLET_LOCK_ADDRESS: memberLock, MEMBER_WALLET_OWNER_ADDRESS: "0x" + "c".repeat(40) })) {
+    const previous = process.env[key];
+    t.after(() => { if (previous === undefined) delete process.env[key]; else process.env[key] = previous; });
+    process.env[key] = value;
+  }
+  const safe = await predictMemberSafe(loadWalletConfig()!, buyerID);
+  const sharedTarget = { chainID: 137, lock: guestLock, mode: "shared" as const };
+  const seed = saleSeed();
+  const order = { ...seed.orders[0], id: "123e4567-e89b-42d3-a456-426614174190", customer: buyerID, commerceSnapshot: {
+    version: 2, kind: "native-edition-v1", customerID: buyerID, cartID: "cart", productID: "edition", releaseID: "edition", eventID: "e",
+    productVersion: "1", variantID: "personal", variantVersion: "1", optionID: "personal", variantTypeID: "edition-type", editionLabel: "Personal",
+    editionKind: "personal", editionRuleVersion: 1, editionEntitlements: { membershipSignet: true, freeLaunchTicket: true }, maximumQuantity: 1,
+    termsRevision: "t", disclosureRevision: "d", fulfillmentRevision: "f", benefitRevision: "b", quantity: 1, currency: "KRW",
+    unitAmount: 82_000, shippingAmount: 0, totalAmount: 82_000, orderName: "Personal",
+    shippingAddress: { country: "KR", recipientName: "Fixture", phone: "01012345678", postalCode: "12345", addressLine1: "Fixture" },
+    memberTicketTarget: sharedTarget,
+  } };
+  const admission = { id: "123e4567-e89b-42d3-a456-426614174191", unit: 1, buyer: buyerID, transaction: "transaction", order: order.id,
+    event: "e", ticketTier: "member", ticketTarget: sharedTarget, status: "available" };
+  const intent = { id: "member-intent", state: "granted", tokenID: "7", entitlement: admission.id, beneficiaryUser: buyerID, order: order.id,
+    payment: "transaction", purpose: MEMBER_EVENT_GRANT, operationKey: memberEventGrantOperationKey(order.id, 1), recipientMode: "member_safe",
+    grantedAt: new Date().toISOString(), settledTxHash: "0x" + "a".repeat(64), ticketTokenKey: ticketTokenIdentity(137, guestLock, "7"),
+    target: { chainID: 137, lock: guestLock, recipient: safe.safeAddress, ticketMode: "shared", ticketTier: "member" } };
+  const fake = commerceStorageFake({
+    ...seed,
+    "commerce-events": [{ ...seed["commerce-events"][0], checkInAuthority: "unlock-events",
+      unlockTicketConfiguration: { version: 1, mode: "shared", chainID: 137, eventLock: guestLock, guestProductID: "g" } }],
+    orders: [order], "commerce-admissions": [admission],
+    transactions: [{ ...seed.transactions[0], order: order.id, customer: buyerID }],
+    "commerce-key-grant-intents": [intent],
+    "member-wallets": [{ id: "wallet", ...safe, member: buyerID, activeSlot: buyerID, status: "active", walletKey: `137:${safe.safeAddress}` }],
+  });
+  const member = { collection: "users", id: buyerID };
+  const origin = "https://shop.example.invalid";
+  const calls: string[] = [];
+  let upstream: () => Response = () => new Response(null, { status: 500 });
+  const endpoint = createEventPassEndpoint({
+    getMemberRuntime: () => ({ config: { origin }, toMemberPrincipal: async () => ({ userId: buyerID, emailVerified: true }) }),
+    fetcher: async url => { calls.push(String(url)); return upstream(); },
+  });
+  // A click on the card's link is a same-origin top-level navigation.
+  const open = (platform: "ios" | "android", user: object | null = member, accept?: string) =>
+    fake.transaction(member, async req => endpoint.handler(Object.assign(req, {
+      user, url: origin + "/api/commerce/wallet-pass", method: "GET",
+      headers: new Headers({ "sec-fetch-site": "same-origin", ...(accept ? { accept } : { "sec-fetch-mode": "navigate" }) }),
+      routeParams: { orderID: order.id, admissionID: admission.id, platform },
+    })));
+  const links = () => fake.transaction(member, req => readEventPassLinks(req, fake.rows["commerce-admissions"][0], order, buyerID));
+  const back = `/shop/orders/${order.id}#wallet-pass-unavailable`;
+  return { fake, intent, open, links, calls, back, passOrigin, setUpstream: (next: () => Response) => { upstream = next; },
+    base: `/api/commerce/orders/${order.id}/admissions/${admission.id}/wallet-pass` };
+}
+
+test("a member ticket with an issued key offers Add to Apple Wallet and Add to Google Wallet", async t => {
+  const m = await memberTicket(t);
+  assert.deepEqual(await m.links(), { walletPass: "ready", applePassURL: m.base + "/ios", androidPassURL: m.base + "/android" });
+  assert.equal(m.calls.length, 0, "listing must not call Unlock");
+  const google = "https://pay.google.com/gp/v/save/one.two.three";
+  m.setUpstream(() => Response.json({ passObjectUrl: google }));
+  const saved = await m.open("android");
+  assert.equal(saved.status, 302);
+  assert.equal(saved.headers.get("location"), google);
+  m.setUpstream(() => new Response(Uint8Array.of(0x50, 0x4b, 3, 4), { headers: { "Content-Type": "application/vnd.apple.pkpass" } }));
+  const pass = await m.open("ios");
+  assert.equal(pass.status, 200);
+  assert.equal(pass.headers.get("cache-control"), "private, no-store");
+  assert.deepEqual(m.calls, [`${m.passOrigin}/v2/pass/137/${guestLock}/7/android`, `${m.passOrigin}/v2/pass/137/${guestLock}/7/ios`]);
+});
+
+test("a member ticket whose key is not yet issued says so, with no pass links", async t => {
+  const m = await memberTicket(t);
+  for (const state of ["awaiting_wallet", "pending", "submitted", "failed_retryable", "ambiguous"]) {
+    m.fake.rows["commerce-key-grant-intents"] = [{ ...m.intent, state, tokenID: undefined, grantedAt: undefined, settledTxHash: undefined }];
+    assert.deepEqual(await m.links(), { walletPass: "pending", applePassURL: null, androidPassURL: null }, state);
+    const opened = await m.open("ios");
+    assert.equal(opened.status, 303, state);
+    assert.equal(opened.headers.get("location"), m.back);
+  }
+  assert.equal(m.calls.length, 0);
+});
+
+test("a member ticket with no key, or a cancelled one, has no Wallet pass", async t => {
+  const m = await memberTicket(t);
+  m.fake.rows["commerce-key-grant-intents"] = [];
+  assert.deepEqual(await m.links(), { walletPass: "unavailable", applePassURL: null, androidPassURL: null });
+  m.fake.rows["commerce-key-grant-intents"] = [{ ...m.intent, state: "cancelled" }];
+  assert.deepEqual(await m.links(), { walletPass: "unavailable", applePassURL: null, androidPassURL: null });
+  m.fake.rows["commerce-key-grant-intents"] = [{ ...m.intent, cancelRequested: true }];
+  assert.deepEqual(await m.links(), { walletPass: "unavailable", applePassURL: null, androidPassURL: null });
+  const opened = await m.open("android");
+  assert.equal(opened.status, 303);
+  assert.equal(opened.headers.get("location"), m.back);
+  assert.equal(m.calls.length, 0);
+});
+
+test("someone else, or a signed-out visitor, opening the pass link gets the plain result and Unlock is never called", async t => {
+  const m = await memberTicket(t);
+  for (const user of [{ collection: "users", id: "123e4567-e89b-42d3-a456-426614174099" }, null]) {
+    for (const platform of ["ios", "android"] as const) {
+      const opened = await m.open(platform, user);
+      assert.equal(opened.status, 303);
+      assert.equal(opened.headers.get("location"), m.back);
+      assert.equal(opened.headers.get("cache-control"), "private, no-store");
+    }
+  }
+  const json = await m.open("android", null, "application/json");
+  assert.equal(json.status, 404, "the JSON mode keeps its plain error");
+  assert.equal(m.calls.length, 0);
+});
+
+test("a Locksmith failure while opening a pass returns the member to the ticket with a plain result", async t => {
+  const m = await memberTicket(t);
+  for (const failure of [() => new Response(null, { status: 500 }), () => { throw new Error("offline"); },
+    () => new Response("<html>", { headers: { "Content-Type": "text/html" } })]) {
+    m.setUpstream(failure);
+    for (const platform of ["ios", "android"] as const) {
+      const opened = await m.open(platform);
+      assert.equal(opened.status, 303, platform);
+      assert.equal(opened.headers.get("location"), m.back);
+    }
+    const json = await m.open("android", undefined, "application/json");
+    assert.equal(json.status, 502);
   }
 });

@@ -949,6 +949,8 @@
       "googleWalletPassFailed": "",
       "appleWalletPass": "",
       "walletPassUnavailable": "",
+      "walletPassPending": "",
+      "walletPassFailed": "",
       "purchaseIncludesOneAdmissionAddTheGuest": "",
       "aGuestWhoCompletesTheirOwnVerifiedRegistrationAnd": "게스트가 직접 가입과 인증을 마치고 초대를 등록하면 Part I 음료 4잔과 Part I → Part II 이동 혜택을 받아요. 계정당 행사별로 게스트 혜택 1개를 받을 수 있어요.",
       "loadingYourAdmissions": "입장권 정보를 불러오고 있어요…",

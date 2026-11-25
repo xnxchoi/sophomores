@@ -106,8 +106,8 @@ test("queue receipt: listed by intent, target checked, the signer's in-flight in
   const { payload, rows } = fakePayload([
     owed(A, { recipientMode: "member_safe", beneficiaryUser: "m1", nonce: 4, txHash: "0xaa", sends: [{}], state: "submitted", signer: caip }),
     owed(B, { recipientMode: "member_safe", beneficiaryUser: "m2" }),
-    owed("c", { target: { chainID: 8453, lock: lockAddress, recipient }, state: "ambiguous", signer: caip }),
-    owed("d", { target: { chainID: 8453, lock: lockAddress, recipient } }),
+    owed("c", { target: { chainID: 84532, lock: lockAddress, recipient }, state: "ambiguous", signer: caip }),
+    owed("d", { target: { chainID: 84532, lock: lockAddress, recipient } }),
     owed("e", { target: null }),
     owed("f", { state: "granted" }),
   ]);

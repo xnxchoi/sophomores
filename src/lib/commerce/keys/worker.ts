@@ -700,7 +700,7 @@ async function replaceStuck(payload: Payload, operation: Operation, chain: Repla
   const rows = await findAll(payload, scopedWhere({ and: [
     operation.inFlight(chain.signer), { [fields.lastSentAt]: { less_than_equal: recheck } },
     { or: [{ lastErrorCode: { exists: false } }, { lastErrorCode: { not_in: [...operation.stopCodes, ...operation.settledCodes] } }] },
-  ] }, scope), undefined, fields.lastSentAt, () => pastDeadline(deadline, now));
+  ] }, scope) as Where, undefined, fields.lastSentAt, () => pastDeadline(deadline, now));
   let replaced = 0;
   for (const row of rows) {
     if (replaced >= limit || pastDeadline(deadline, now)) break;

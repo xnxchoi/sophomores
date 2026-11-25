@@ -77,7 +77,7 @@ function setup() {
   chmodSync(GUARD, 0o755);
   const guard = (...args: string[]) => {
     const result = spawnSync("bash", [GUARD, ...args], { encoding: "utf8", env: {
-      PATH: `${bin}:${process.env.PATH}`, KJ_ROOT: kj, KJ_RUN: join(root, "run"), STUB: stub, INVOCATION_ID: INVOCATION } });
+      PATH: `${bin}:${process.env.PATH}`, KJ_ROOT: kj, KJ_RUN: join(root, "run"), STUB: stub, INVOCATION_ID: INVOCATION } as unknown as NodeJS.ProcessEnv });
     return { status: result.status, out: result.stdout.trim().split("\n").at(-1) ?? "" };
   };
   const log = () => existsSync(join(stub, "log")) ? readFileSync(join(stub, "log"), "utf8") : "";

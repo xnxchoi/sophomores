@@ -83,11 +83,15 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
   // refs; React only hears the locked index (±0.65 hysteresis, then a 200 ms debounce), whether the shelf is up, and,
   // 100 ms after the scroll settles, the committed progress.
   const progressRef = useRef(0);
+  // True while a book is open: the page holds still, so the scroll reader, the idle advance and the shelf catch stand
+  // down and the scene keeps the progress the detail pinned (theirs: readScroll and the idle timer skip detail).
+  const held = useRef(false);
   const [committed, setCommitted] = useState(0), [active, setActive] = useState(0), [onShelf, setOnShelf] = useState(false);
   const listeners = useRef(new Set<() => void>());
   useEffect(() => {
     let settle = 0, debounce = 0, index = 0;
     const read = () => {
+      if (held.current) return;
       const { extents, height, lock, offset } = geo.current;
       const raw = scroll.m(window.scrollY, extents);
       const locked = lockedProgressFor(raw, { bookScrollExtentsPx: extents, canvasHeightPx: height, browseLockScrollPx: lock, canvasCenterOffset: offset }, catalogue);
@@ -167,8 +171,8 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
 
   // Their shelf catch and the titles' clear line (use-shelf-catch.ts).
   const titles = useRef<HTMLElement>(null);
-  const catchSource = useRef<ShelfCatchSource>({ seatY: () => null, driving: () => false, stopDriving: () => undefined, titles: () => null });
-  useEffect(() => { catchSource.current = { seatY, driving: () => drive.current.active, stopDriving, titles: () => titles.current }; });
+  const catchSource = useRef<ShelfCatchSource>({ seatY: () => null, driving: () => false, stopDriving: () => undefined, titles: () => null, held: () => false });
+  useEffect(() => { catchSource.current = { seatY, driving: () => drive.current.active, stopDriving, titles: () => titles.current, held: () => held.current }; });
   useShelfCatch(hub, catalogue, catchSource);
 
   // Opening a book into its details inside the scene (use-book-detail.ts); the phone keeps the product page for now.
@@ -177,11 +181,12 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
     hrefOf: (index) => items[index]?.href ?? null, home: "/shop",
     // The scene poses an open book by the progress in its details: at the open book's own index, the top of them.
     pin: (index) => {
+      held.current = true; stopDriving();
       progressRef.current = index; hub.scrollProgressDirectLiveRef.current = index;
       hub.spineViewProgressLiveRef.current = hub.spineViewProgressFor(index); setCommitted(index);
     },
     // Back to the page's own scroll (it held still while open).
-    unpin: () => window.dispatchEvent(new Event("scroll")) }; });
+    unpin: () => { held.current = false; window.dispatchEvent(new Event("scroll")); } }; });
   const detail = useBookDetail(hub, catalogue, router, tokens, detailSource);
   const openRef = useRef((index: number) => { const item = items[index]; if (item) navigate.push(item.href); });
   const arrived = useRef(initialOpen);
@@ -203,6 +208,7 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
     const arm = (delay: number) => {
       timer = window.setTimeout(() => {
         if (stopped) return;
+        if (held.current) { arm(3000); return; }
         const index = catalogue.a(Math.round(hub.scrollProgressDirectLiveRef.current as number));
         if (index == null || index >= catalogue.t) return;
         const move = motion.current;

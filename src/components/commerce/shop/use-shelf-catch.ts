@@ -5,6 +5,8 @@ type Selection = { to?: number; settled?: boolean };
 /** What the hook reads from its page on every frame: the seat's scroll position, whether the page itself is driving
  * the scroll (and how to stop it), and the title rail to measure. */
 export type ShelfCatchSource = { seatY: () => number | null; driving: () => boolean; stopDriving: () => void;
+  /** True while the page holds still (a book is open): the catch stands down. */
+  held: () => boolean;
   titles: () => HTMLElement | null };
 
 /** The bottom of the title rail's lowest line of text (their `ap`, 06w9:10032-10051). */
@@ -42,7 +44,8 @@ export function useShelfCatch(hub: SceneHub, catalogue: SceneCatalogue, source: 
     let sampleY: number | null = null, sampleAt = 0, velocity = 0, overflow = "", gutter = "";
     const ih = () => window.innerHeight || 1;
     const onShelf = () => catalogue.E(hub.scrollProgressDirectLiveRef.current as number);
-    const busy = () => Boolean(hub.spineViewRestoringLiveRef.current) || Boolean((hub.bookOpenTransitionLiveRef.current as { active?: boolean } | null)?.active);
+    const busy = () => source.current.held() || Boolean(hub.spineViewRestoringLiveRef.current)
+      || Boolean((hub.bookOpenTransitionLiveRef.current as { active?: boolean } | null)?.active);
 
     const stopGlide = () => { if (glide) cancelAnimationFrame(glide); glide = 0; wrote = null; glideTarget = null; };
     const input = () => { inputAt = performance.now(); if (lockedAt < 0) stopGlide(); };

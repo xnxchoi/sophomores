@@ -9,29 +9,36 @@ import { FooterLocaleSwitch } from "./footer-locale-switch";
 import { SellerPolicyLinks } from "./seller-disclosure";
 import { SellerFactsGate } from "./seller-facts-gate";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
+import { cn } from "@/lib/utils";
 
 /**
- * Full width, left-aligned (Osklen study, owner 20 Nov: "legal only"): Terms · Privacy · Refund, then one thin strip of
- * business facts with EN / KO at its end. Help and Shipping live in the Help pill and the site menu, not here.
- * The legal links and the switch don't depend on the business-info read; the facts stream into the strip.
- * `bg-background` (owner, 21 Nov: "Use the seamless color"): the page's own colour, so nothing bands where the page ends.
- * Mersi's grain (texture-grain) lies over it, so the footer reads apart from the page while keeping its colour.
+ * The layer the lifted page reveals (Osklen study, owner 20 Nov: "legal only"): Terms · Privacy · Refund with EN / KO at
+ * the row's end, then the business facts under one hairline. Help and Shipping live in the Help pill and the site menu.
+ * The legal links and the switch don't depend on the business-info read; the facts stream into their own section.
+ * Redesigned 26 Nov (owner: "It looks fucking ugly. I already gave you the freaking colors, so, you know, just fucking
+ * pick something"): its own ground from his palette (globals.css --color-footer, Imperial Plum Darker -2 under
+ * Mauve-Bone ink), the same in both themes, so the page visibly lifts off it. Quiet Host volume, with the contrast in
+ * styling: the legal links large and light (the sans at 300), the facts tiny-labelled in a ruled grid.
+ * Children that ask for text-foreground get the ink: the footer sets --foreground for its own subtree.
  */
 export function BusinessFooterView({ children }: { children?: ReactNode }) {
   return (
-    <footer data-themed="background-color" className="relative isolate bg-background px-gutter pt-10 pb-6 text-foreground md:pt-14 md:pb-8">
-      <SellerPolicyLinks />
-      <div className="mt-4 flex flex-col gap-2 border-t border-current/20 pt-3 md:flex-row md:items-start md:justify-between md:gap-10">
-        <div className="min-w-0 flex-1 empty:hidden md:empty:block">{children}</div>
-        <div className="-mx-3 shrink-0"><FooterLocaleSwitch /></div>
+    // From md the frame's 30 px bottom rail covers the footer's foot, so md:pb-16 leaves about 34 px under the last line.
+    // On touch phones the bottom bar's spacer (client-layout) follows the footer with the page colour and the 36 px bar
+    // leaves a sliver of it showing: the after layer carries the footer colour through that spacer, at its exact height.
+    <footer className="relative isolate bg-footer px-gutter pt-8 pb-8 text-foreground [--foreground:var(--color-footer-ink)] phone:after:absolute phone:after:inset-x-0 phone:after:top-full phone:after:h-[calc(max(var(--bar-target),var(--frame-bottom))_+_env(safe-area-inset-bottom))] phone:after:bg-footer md:pt-20 md:pb-16">
+      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between md:gap-10">
+        {/* Large and light, so a hairline underline (1 px, 30 % ink) is enough to mark them as links. */}
+        <SellerPolicyLinks className="flex-col gap-x-8 gap-y-0 text-[22px] leading-tight font-light tracking-[-0.02em] sm:flex-row md:text-[28px] lg:text-[34px] [&_a]:decoration-current/30 [&_a]:decoration-1 [&_a]:underline-offset-[0.18em] [&_a]:hover:decoration-current" />
+        <div className="-mx-3 shrink-0 self-start md:self-auto"><FooterLocaleSwitch /></div>
       </div>
-      {/* Mersi's grain over the page colour (--texture-grain), footer only. Mersi dodges it over a creme page; on our pages dodge
-          can't show (white in light, near-black in dark), so light multiplies and dark screens. isolate keeps the blend in the footer,
-          and -z-1 puts the grain under the text, over only the footer's colour (Review-B: over the text it cost ~7 % contrast).
-          Two layers, the second half a tile off (owner, 21 Nov: "a bit more texture"), so the speckles don't coincide: about a
-          third more texture than one layer. A contrast filter barely moved it; one layer stacked on itself nearly doubled it. */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-1 bg-(image:--texture-grain) bg-size-[150px] bg-center mix-blend-multiply dark:mix-blend-screen" />
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-1 bg-(image:--texture-grain) bg-size-[150px] bg-position-[75px_75px] mix-blend-multiply dark:mix-blend-screen" />
+      <div className="mt-6 min-w-0 border-t border-current/15 pt-5 empty:hidden md:mt-10 md:pt-6">{children}</div>
+      {/* Mersi's grain (--texture-grain), footer only, at the owner's values: 150 px tiles, two layers, the second half a
+          tile off (owner, 21 Nov: "a bit more texture"). isolate keeps the blend in the footer, and -z-1 puts it under the
+          text, over only the footer's colour (Review-B: over the text it cost ~7 % contrast). Screen in both themes: the
+          ground is dark in both now, and dark grounds screened before (multiply only suited the light page colour). */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-1 bg-(image:--texture-grain) bg-size-[150px] bg-center mix-blend-screen" />
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-1 bg-(image:--texture-grain) bg-size-[150px] bg-position-[75px_75px] mix-blend-screen" />
     </footer>
   );
 }
@@ -65,29 +72,40 @@ export function BusinessFooterFacts({ facts }: { facts: FooterSellerFacts | null
   if (!facts) return null;
   return (
     <section id="seller-information" aria-label={t("section")} className="scroll-mt-header">
-      <dl className="flex flex-wrap items-center gap-x-5 text-xs leading-relaxed text-foreground/65">
+      {/* Four across from lg in the Korean form's order; the address takes two columns, so the seven close two rows. */}
+      <dl className="grid gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-4">
         {facts.tradeName && <FooterFact label={t("name")}>{facts.tradeName}</FooterFact>}
         {facts.representative && <FooterFact label={t("representative")}>{facts.representative}</FooterFact>}
         {facts.businessRegistrationNumber && <FooterFact label={t("registrationNumber")}>{facts.businessRegistrationNumber}</FooterFact>}
         {facts.mailOrderRegistration && <FooterFact label={t("mailOrderRegistrationNumber")}>{facts.mailOrderRegistration}</FooterFact>}
-        {facts.businessAddress && <FooterFact label={t("address")}>{facts.businessAddress}</FooterFact>}
+        {facts.businessAddress && <FooterFact label={t("address")} wide>{facts.businessAddress}</FooterFact>}
         {facts.customerServicePhone && <FooterFact label={t("phone")}>
-          <a href={"tel:" + facts.customerServicePhone.replace(/[^\d+]/g, "")} className="group/focus inline-flex min-h-11 items-center underline decoration-current/40 underline-offset-4 hover:decoration-current"><FocusShape className="outline-offset-4">{facts.customerServicePhone}</FocusShape></a>
+          <FooterFactLink href={"tel:" + facts.customerServicePhone.replace(/[^\d+]/g, "")}>{facts.customerServicePhone}</FooterFactLink>
         </FooterFact>}
         {facts.customerServiceEmail && <FooterFact label={t("email")}>
-          <a href={"mailto:" + facts.customerServiceEmail} className="group/focus inline-flex min-h-11 max-w-full items-center break-all underline decoration-current/40 underline-offset-4 hover:decoration-current"><FocusShape className="outline-offset-4">{facts.customerServiceEmail}</FocusShape></a>
+          <FooterFactLink href={"mailto:" + facts.customerServiceEmail}>{facts.customerServiceEmail}</FooterFactLink>
         </FooterFact>}
       </dl>
     </section>
   );
 }
 
-function FooterFact({ label, children }: { label: string; children: ReactNode }) {
+/** A tiny label over its value (DESIGN.md Label: 11 px, uppercase, 0.06em), at 60 % ink so it holds about 4:1 on the ground. */
+function FooterFact({ label, wide, children }: { label: string; wide?: boolean; children: ReactNode }) {
   return (
-    <div className="flex min-h-11 min-w-0 items-center gap-1.5">
-      <dt className="opacity-70">{label}</dt>
-      <dd className="min-w-0 break-words text-foreground/90">{children}</dd>
+    <div className={cn("flex min-w-0 flex-col gap-1", wide && "sm:col-span-2")}>
+      <dt className="text-[11px] leading-4 tracking-[0.06em] text-foreground/60 uppercase">{label}</dt>
+      <dd className="min-w-0 text-[13px] leading-5 break-words text-foreground">{children}</dd>
     </div>
+  );
+}
+
+/** A 44 px target around a 20 px line: the negative margin keeps the rows as tight as the plain facts. */
+function FooterFactLink({ href, children }: { href: string; children: ReactNode }) {
+  return (
+    <a href={href} className="group/focus -my-3 inline-flex min-h-11 max-w-full items-center break-all underline decoration-current/40 underline-offset-4 hover:decoration-current">
+      <FocusShape className="outline-offset-4">{children}</FocusShape>
+    </a>
   );
 }
 

@@ -148,6 +148,16 @@
   --texture-grain: url("/assets/textures/texture-grain.webp");
   --texture-travertine: url("/assets/textures/texture-travertine.webp");
 }
+/* The business footer: the layer the lifted page reveals (owner, 26 Nov: "I already gave you the freaking colors, so,
+   you know, just fucking pick something"). One pair from his palette (src/styles/sophomores-palette.css; not imported,
+   since its theme blocks are the held Palette r2 change): Imperial Plum Darker -2 (#430024) as the ground and
+   Mauve-Bone (#E8DCE0) as the ink, the palette's own matched hue (355). Not a green: the footer also shows under
+   /sign-in and the purchase steps, which stay monochrome with no green. The same in both themes: it is the layer under
+   the page, not a theme surface. Not inline, so the footer can hand the ink to its children as --foreground. */
+@theme {
+  --color-footer: oklch(25% 0.103 355);
+  --color-footer-ink: oklch(90.5% 0.014 355);
+}
 /* Teaser-specific roles retain the approved palette independently of the app theme. */
 
 @theme static {

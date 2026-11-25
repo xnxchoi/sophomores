@@ -1,21 +1,27 @@
 import { randomBytes } from "node:crypto";
 import { constants } from "node:fs";
-import { open, readdir, readFile, rename, rm, writeFile } from "node:fs/promises";
+import { link, open, readdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { parkedCancelCodes, parkedGrantCodes } from "./contracts";
 import { RPC_FILE_CODES } from "./unlock/rpc-check";
 
 /*
  * Email alerts for the key-grant tick (owner, 25 Nov, verbatim: "email alerts via Zoho is fine"; Review-A, 25 Nov).
- * - Intake is durable: the tick (and the systemd OnFailure unit) writes each alert as one file into a spool directory.
- *   Nothing reads the journal.
+ * - Intake is durable: the tick (and the systemd OnFailure unit) writes each alert's canonical fields into one of 500
+ *   exclusive slot files in a spool directory. Nothing reads the journal.
  * - Every alert passes a per-event schema: intent IDs are UUIDs; codes and reasons come from fixed sets; counts are
- *   bounded integers. Anything else becomes "unrecognised", so nothing token-shaped reaches an email.
+ *   bounded integers. Anything else becomes "unrecognised". The spool is a trust boundary: delivery re-validates every
+ *   field and renders only canonical fields, so nothing token-shaped reaches an email.
  * - A separate mailer (its own user, run once a minute) delivers the spool: at most one email per kind per hour, a
  *   file deleted only after its email is sent, failures retried with backoff, window and backoff kept on disk.
  */
 export type TickAlertKind = "over_cap" | "parked" | "seat_sweep_failed" | "tick_failure";
-export type TickAlert = Readonly<{ kind: TickAlertKind; detail: string }>;
+/** Structured, canonical fields only; `unrecognised` stands for any value outside the allowlists. */
+export type TickAlert =
+  | Readonly<{ kind: "over_cap"; intent: string }>
+  | Readonly<{ kind: "parked"; intent: string; code: string }>
+  | Readonly<{ kind: "seat_sweep_failed"; count: string }>
+  | Readonly<{ kind: "tick_failure"; reason: string }>;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const PARK_CODES: ReadonlySet<string> = new Set([
@@ -29,6 +35,36 @@ const FAILURE_REASONS: ReadonlySet<string> = new Set([
 const UNRECOGNISED = "unrecognised";
 const uuid = (value: unknown) => typeof value === "string" && UUID.test(value) ? value : UNRECOGNISED;
 const oneOf = (value: unknown, allowed: ReadonlySet<string>) => typeof value === "string" && allowed.has(value) ? value : UNRECOGNISED;
+const count = (value: unknown) => {
+  const number = typeof value === "string" && /^[0-9]{1,5}$/.test(value) ? Number(value) : value;
+  return Number.isSafeInteger(number) && (number as number) >= 1 && (number as number) <= 10_000 ? String(number) : UNRECOGNISED;
+};
+
+/**
+ * The one validator for every alert, from a tick line or from the spool (a trust boundary, Review-A, 25 Nov): each
+ * field through its allowlist or bounded check, unknown fields dropped, an unknown kind a failure "unrecognised".
+ */
+export function canonicalAlert(value: unknown): TickAlert {
+  const record = value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+  switch (record.kind) {
+    case "over_cap": return { kind: "over_cap", intent: uuid(record.intent) };
+    case "parked": return { kind: "parked", intent: uuid(record.intent), code: oneOf(record.code, PARK_CODES) };
+    case "seat_sweep_failed": return { kind: "seat_sweep_failed", count: count(record.count) };
+    case "tick_failure": return { kind: "tick_failure", reason: oneOf(record.reason, FAILURE_REASONS) };
+    default: return { kind: "tick_failure", reason: UNRECOGNISED };
+  }
+}
+
+/** The mail line for an alert, rendered only from its canonical fields. */
+export function alertDetail(alert: TickAlert): string {
+  const canonical = canonicalAlert(alert);
+  switch (canonical.kind) {
+    case "over_cap": return `intent ${canonical.intent}`;
+    case "parked": return `intent ${canonical.intent}: ${canonical.code}`;
+    case "seat_sweep_failed": return `count ${canonical.count}`;
+    case "tick_failure": return `reason ${canonical.reason}`;
+  }
+}
 
 /** The alert in one tick line (JSON), or null for every line that is not one of the four alert shapes. */
 export function tickAlertFromLine(line: string): TickAlert | null {
@@ -37,51 +73,53 @@ export function tickAlertFromLine(line: string): TickAlert | null {
   try { value = JSON.parse(line.trim()); } catch { return null; }
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const record = value as Record<string, unknown>;
-  if (record.event === "key_grant_over_cap") return { kind: "over_cap", detail: `intent ${uuid(record.intent)}` };
-  if (record.event === "key_grant_parked") return { kind: "parked", detail: `intent ${uuid(record.intent)}: ${oneOf(record.code, PARK_CODES)}` };
-  if (record.event === "seat_sweep_failed") {
-    const count = Number.isSafeInteger(record.count) && (record.count as number) >= 1 && (record.count as number) <= 10_000 ? String(record.count) : UNRECOGNISED;
-    return { kind: "seat_sweep_failed", detail: `count ${count}` };
-  }
-  if (record.outcome === "failure") return { kind: "tick_failure", detail: `reason ${oneOf(record.reason, FAILURE_REASONS)}` };
+  if (record.event === "key_grant_over_cap") return canonicalAlert({ kind: "over_cap", intent: record.intent });
+  if (record.event === "key_grant_parked") return canonicalAlert({ kind: "parked", intent: record.intent, code: record.code });
+  if (record.event === "seat_sweep_failed") return canonicalAlert({ kind: "seat_sweep_failed", count: record.count });
+  if (record.outcome === "failure") return canonicalAlert({ kind: "tick_failure", reason: record.reason });
   return null;
 }
 
-/** Re-checks a spooled alert: only what tickAlertFromLine could have produced passes. */
-function spooledAlert(value: unknown): TickAlert {
-  const record = value && typeof value === "object" ? value as Record<string, unknown> : {};
-  const detail = typeof record.detail === "string" ? record.detail : "";
-  const patterns: Record<TickAlertKind, RegExp> = {
-    over_cap: /^intent ([0-9a-f-]{36}|unrecognised)$/,
-    parked: /^intent ([0-9a-f-]{36}|unrecognised): [a-z_]{1,60}$/,
-    seat_sweep_failed: /^count ([0-9]{1,5}|unrecognised)$/,
-    tick_failure: /^reason [a-z_]{1,60}$/,
-  };
-  const kind = record.kind as TickAlertKind;
-  if (Object.hasOwn(patterns, kind) && patterns[kind].test(detail)) return { kind, detail };
-  return { kind: "tick_failure", detail: `reason ${UNRECOGNISED}` };
+/** Alert slots: at most this many alerts wait; the cap holds across concurrent writers (exclusive slot names). */
+export const SPOOL_MAX_FILES = 500;
+const SLOT = /^slot-[0-9]{3}\.alert\.json$/;
+const slotName = (index: number) => `slot-${String(index).padStart(3, "0")}.alert.json`;
+const MAX_ALERT_BYTES = 512;
+export type SpoolResult = "written" | "full" | "io_failed";
+
+/**
+ * Writes one alert's canonical fields into a free slot: a private temporary file, fsync, then link() to a slot name,
+ * which fails if the slot is taken, so concurrent producers never exceed SPOOL_MAX_FILES. All slots taken: an
+ * `overflow` marker instead ("full"). Any other error: "io_failed". Never throws.
+ */
+export async function spoolTickAlert(dir: string, alert: TickAlert): Promise<SpoolResult> {
+  const temporary = join(dir, `.${randomBytes(8).toString("hex")}.tmp`);
+  try {
+    const handle = await open(temporary, constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW, 0o660);
+    try { await handle.writeFile(JSON.stringify(canonicalAlert(alert))); await handle.sync(); } finally { await handle.close(); }
+    const start = randomBytes(2).readUInt16BE() % SPOOL_MAX_FILES;
+    for (let step = 0; step < SPOOL_MAX_FILES; step++) {
+      try { await link(temporary, join(dir, slotName((start + step) % SPOOL_MAX_FILES))); return "written"; }
+      catch (error) { if ((error as NodeJS.ErrnoException).code !== "EEXIST") return "io_failed"; }
+    }
+    await writeFile(join(dir, "overflow"), "", { mode: 0o660 });
+    return "full";
+  } catch {
+    return "io_failed";
+  } finally {
+    await rm(temporary, { force: true }).catch(() => {});
+  }
 }
 
-/** Most alert files kept waiting; past it, one `overflow` marker stands for the dropped ones. */
-export const SPOOL_MAX_FILES = 500;
-
-/** Writes one alert into the spool atomically (temporary file, then rename). Never throws: the tick goes on. */
-export async function spoolTickAlert(dir: string, alert: TickAlert, now = () => Date.now()): Promise<boolean> {
+/** One spooled alert: a regular file only (no symlink is followed), at most MAX_ALERT_BYTES, through canonicalAlert. */
+async function readSpooled(path: string): Promise<TickAlert> {
+  let handle;
+  try { handle = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK); } catch { return canonicalAlert(null); }
   try {
-    const waiting = (await readdir(dir)).filter((name) => name.endsWith(".alert.json")).length;
-    if (waiting >= SPOOL_MAX_FILES) {
-      await writeFile(join(dir, "overflow"), "", { mode: 0o660 });
-      return false;
-    }
-    const name = `${String(now()).padStart(15, "0")}-${randomBytes(6).toString("hex")}`;
-    const temporary = join(dir, `.${name}.tmp`);
-    const handle = await open(temporary, constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL, 0o660);
-    try { await handle.writeFile(JSON.stringify(alert)); await handle.sync(); } finally { await handle.close(); }
-    await rename(temporary, join(dir, `${name}.alert.json`));
-    return true;
-  } catch {
-    return false;
-  }
+    const info = await handle.stat();
+    if (!info.isFile() || info.size > MAX_ALERT_BYTES) return canonicalAlert(null);
+    return canonicalAlert(JSON.parse((await handle.readFile("utf8")).slice(0, MAX_ALERT_BYTES)));
+  } catch { return canonicalAlert(null); } finally { await handle.close(); }
 }
 
 const subjects: Record<TickAlertKind, string> = {
@@ -132,16 +170,16 @@ export async function deliverTickAlerts({ dir, statePath, send, now = () => Date
   dir: string; statePath: string; send: (email: TickAlertEmail) => Promise<void>; now?: () => number; windowMs?: number;
 }): Promise<DeliveryResult> {
   const state = await readState(statePath);
-  const names = (await readdir(dir)).filter((name) => name.endsWith(".alert.json")).sort().slice(0, SPOOL_MAX_FILES);
-  const overflow = (await readdir(dir)).includes("overflow");
+  const entries = await readdir(dir);
+  const names = entries.filter((name) => SLOT.test(name)).sort();
+  const overflow = entries.includes("overflow");
   if (now() < state.nextAttemptAt) return { sent: 0, waiting: names.length, backingOff: true };
   const byKind = new Map<TickAlertKind, { files: string[]; details: Set<string> }>();
   for (const name of names) {
-    let alert: TickAlert;
-    try { alert = spooledAlert(JSON.parse(await readFile(join(dir, name), "utf8"))); } catch { alert = spooledAlert(null); }
+    const alert = await readSpooled(join(dir, name));
     const group = byKind.get(alert.kind) ?? { files: [], details: new Set<string>() };
     group.files.push(name);
-    group.details.add(alert.detail);
+    group.details.add(alertDetail(alert));
     byKind.set(alert.kind, group);
   }
   if (overflow) {
@@ -169,7 +207,7 @@ export async function deliverTickAlerts({ dir, statePath, send, now = () => Date
     if (kind === "tick_failure" && overflow) await rm(join(dir, "overflow"), { force: true });
     sent += 1;
   }
-  const waiting = (await readdir(dir)).filter((name) => name.endsWith(".alert.json")).length;
+  const waiting = (await readdir(dir)).filter((name) => SLOT.test(name)).length;
   return { sent, waiting, backingOff: false };
 }
 
@@ -185,15 +223,21 @@ export function boundedSend<T>(sending: Promise<T>, ms: number): Promise<T> {
  * `settled()` waits for the spool writes; the tick awaits it before it prints its result and exits.
  */
 export function createTickAlertLog(spoolDir: string | undefined, writeLine: (line: string) => void) {
-  const writes: Promise<boolean>[] = [];
+  const writes: Promise<void>[] = [];
   return {
     log(line: string) {
       writeLine(line);
       const alert = spoolDir ? tickAlertFromLine(line) : null;
-      if (spoolDir && alert) writes.push(spoolTickAlert(spoolDir, alert));
+      if (spoolDir && alert) writes.push(spoolTickAlert(spoolDir, alert).then((result) => reportSpool(result, writeLine)));
     },
     settled: () => Promise.all(writes),
   };
+}
+
+/** A spool write that did not land is never silent: one fixed stderr line, overflow and I/O failure kept distinct. */
+export function reportSpool(result: SpoolResult, writeLine: (line: string) => void): void {
+  if (result === "full") writeLine(JSON.stringify({ event: "alert_spool_full" }));
+  if (result === "io_failed") writeLine(JSON.stringify({ event: "alert_spool_failed" }));
 }
 
 /** The spool directory from the environment: an absolute path, or undefined when alerts are not spooled. */

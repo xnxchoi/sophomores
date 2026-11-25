@@ -18,8 +18,8 @@ async function run(): Promise<Record<string, unknown>> {
   const dir = alerts.alertSpoolDir();
   if (!dir || process.argv.length !== 3) return { outcome: "refused", reason: "bad_args_or_spool" };
   if (mode === "systemd-failed") {
-    const ok = await alerts.spoolTickAlert(dir, { kind: "tick_failure", detail: "reason systemd_failed" });
-    return { outcome: ok ? "spooled" : "spool_failed" };
+    const result = await alerts.spoolTickAlert(dir, { kind: "tick_failure", reason: "systemd_failed" });
+    return { outcome: result === "written" ? "spooled" : result === "full" ? "spool_full" : "spool_failed" };
   }
   if (mode !== "deliver") return { outcome: "refused", reason: "bad_args_or_spool" };
   const statePath = process.env.KEY_GRANT_ALERT_STATE;
@@ -48,5 +48,5 @@ async function run(): Promise<Record<string, unknown>> {
 }
 
 void run().then(
-  (result) => { writeSync(1, JSON.stringify(result) + "\n"); process.exit(result.outcome === "refused" || result.outcome === "spool_failed" ? 1 : 0); },
+  (result) => { writeSync(1, JSON.stringify(result) + "\n"); process.exit(result.outcome === "refused" || result.outcome === "spool_failed" || result.outcome === "spool_full" ? 1 : 0); },
   () => { writeSync(1, JSON.stringify({ outcome: "refused", reason: "unexpected" }) + "\n"); process.exit(1); });

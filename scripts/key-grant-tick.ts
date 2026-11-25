@@ -83,6 +83,6 @@ void tick().then(result => { writeSync(1, JSON.stringify(result) + "\n"); proces
     const line = JSON.stringify({ outcome: "failure", reason: error instanceof TickRefusal ? error.reason : "unexpected" });
     writeSync(1, line + "\n");
     // A failure is also an alert: spooled (when configured) before the process exits.
-    try { const alerts = await loadAlerts(); const alert = alerts.tickAlertFromLine(line); const dir = alerts.alertSpoolDir(); if (alert && dir) await alerts.spoolTickAlert(dir, alert); } catch { /* stderr and exit code remain */ }
+    try { const alerts = await loadAlerts(); const alert = alerts.tickAlertFromLine(line); const dir = alerts.alertSpoolDir(); if (alert && dir) alerts.reportSpool(await alerts.spoolTickAlert(dir, alert), (text) => writeSync(2, text + "\n")); } catch { writeSync(2, JSON.stringify({ event: "alert_spool_failed" }) + "\n"); }
     process.exit(1);
   });

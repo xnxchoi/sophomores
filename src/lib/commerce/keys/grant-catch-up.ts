@@ -25,8 +25,12 @@ import { dispatchKeyGrants, logOverCap, reconcileKeyGrants, reconcileOwnerCancel
  * exclusive run lock (the tick script uses a PostgreSQL advisory lock) or return null, and a busy tick does nothing.
  */
 export const KEY_GRANT_TICK_LIMIT = 10;
-/** Reconcile starts no new row after this long; each row's ancestry walk is itself time-bounded (transactions.ts). */
-export const RECONCILE_BUDGET_MS = 6 * 60_000;
+/**
+ * One deadline for the whole tick: no pass starts a new row, hash or step after this long; unfinished work stays due
+ * and comes first next tick. With one in-flight row's walk (WALK_BUDGET_MS, 2 min) and RPC timeouts, a run ends well
+ * inside the unit's TimeoutStartSec (15 min).
+ */
+export const TICK_BUDGET_MS = 10 * 60_000;
 
 export type KeyGrantTickResult =
   | Readonly<{ outcome: "off" | "busy" }>
@@ -43,10 +47,10 @@ export type KeyGrantTick = {
   now?: () => Date;
   /** Where the fixed alert lines go (stderr by default; the tick script writes them synchronously and spools them). */
   log?: (line: string) => void;
-  reconcileBudgetMs?: number;
+  budgetMs?: number;
 };
 
-export async function runKeyGrantTick({ payload, grant, acquire, env = process.env, limit = KEY_GRANT_TICK_LIMIT, now, log = (line) => console.error(line), reconcileBudgetMs = RECONCILE_BUDGET_MS }: KeyGrantTick): Promise<KeyGrantTickResult> {
+export async function runKeyGrantTick({ payload, grant, acquire, env = process.env, limit = KEY_GRANT_TICK_LIMIT, now, log = (line) => console.error(line), budgetMs = TICK_BUDGET_MS }: KeyGrantTick): Promise<KeyGrantTickResult> {
   if (!polygonKeyGrantsLive(env)) return { outcome: "off" };
   const release = await acquire();
   if (!release) return { outcome: "busy" };
@@ -54,15 +58,16 @@ export async function runKeyGrantTick({ payload, grant, acquire, env = process.e
     // Over-cap grants are alerted twice: the fixed stderr line, and their intent IDs in the result line, which the tick
     // script writes synchronously before it exits (Review-A, 25 Nov: an alert must not be lost at exit).
     const overCap: string[] = [];
-    // Reconcile starts no new row after RECONCILE_BUDGET_MS, so a tick with slow reads still ends well inside the
-    // unit's timeout; rows not reached keep their due time and come first next tick (Review-A, 25 Nov).
-    const deadline = (now?.() ?? new Date()).getTime() + reconcileBudgetMs;
+    // One shared deadline (TICK_BUDGET_MS) across every pass (Review-A, 25 Nov).
+    const clock = now ?? (() => new Date());
+    const deadline = clock().getTime() + budgetMs;
     const reconciled = await reconcileKeyGrants({ payload, adapter: grant, limit, now, deadline, onOverCap: (intentID) => { overCap.push(intentID); logOverCap(intentID, log); } });
-    const replaced = await replaceStuckKeyGrants({ payload, adapter: grant, limit, now, log });
-    const dispatched = await dispatchKeyGrants({ payload, adapter: grant, limit, now, log });
-    const cancelled = await reconcileOwnerCancels({ payload, reader: grant, limit, now });
+    const replaced = await replaceStuckKeyGrants({ payload, adapter: grant, limit, now, log, deadline });
+    const dispatched = await dispatchKeyGrants({ payload, adapter: grant, limit, now, log, deadline });
+    const cancelled = await reconcileOwnerCancels({ payload, reader: grant, limit, now, deadline });
     let seatsReleased = 0, seatSweepFailures = 0;
-    try {
+    // The seat sweep is the last step; past the deadline it waits for the next tick (it is idempotent and cursored).
+    if (clock().getTime() <= deadline) try {
       const req = { payload, context: {} } as unknown as PayloadRequest;
       ({ released: seatsReleased, failed: seatSweepFailures } = await releaseInvalidatedSeatsSweep({ req, limit, now: (now?.() ?? new Date()).getTime() }));
     } catch {

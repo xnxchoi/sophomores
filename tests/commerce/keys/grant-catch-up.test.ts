@@ -204,7 +204,7 @@ test("with KEY_GRANT_ALERT_SPOOL set, the exit edge also leaves the over-cap ale
     assert.equal(run.status, 0);
     const files = readdirSync(folder).filter((name) => name.endsWith(".alert.json"));
     assert.equal(files.length, 1);
-    assert.deepEqual(JSON.parse(readFileSync(join(folder, files[0]), "utf8")), { kind: "over_cap", detail: "intent 00000000-0000-4000-8000-0000000000a1" });
+    assert.deepEqual(JSON.parse(readFileSync(join(folder, files[0]), "utf8")), { kind: "over_cap", intent: "00000000-0000-4000-8000-0000000000a1" });
   } finally {
     rmSync(folder, { recursive: true, force: true });
   }
@@ -214,7 +214,7 @@ test("with KEY_GRANT_ALERT_SPOOL set, the exit edge also leaves the over-cap ale
 // reached keep their due time and settle on the next tick.
 test("past the reconcile deadline no row is started, and the next tick settles it", async () => {
   const { grant, payload, rows } = settlingTick();
-  const stopped = await runKeyGrantTick({ payload, grant, acquire: runLock().acquire, env: live, now, reconcileBudgetMs: -1 });
+  const stopped = await runKeyGrantTick({ payload, grant, acquire: runLock().acquire, env: live, now, budgetMs: -1 });
   assert.equal(stopped.outcome === "ran" && stopped.reconciled, 0);
   assert.equal(rows["commerce-key-grant-intents"][0].state, "submitted");
   assert.equal(rows["commerce-key-grant-intents"][0].nextAttemptAt, undefined, "not deferred: first in line next tick");
@@ -234,3 +234,37 @@ function settlingTick() {
   const { payload, rows } = fakePayload([{ id: "00000000-0000-4000-8000-0000000000a1", operationKey: "unlock-grant:v1:order-d:1", entitlement: "adm", state: "submitted", attempts: 1, attemptID: "a1", txHash: `0x${"c".repeat(64)}`, target }]);
   return { grant, payload, rows };
 }
+
+// Review-A, 25 Nov (r3): one deadline shared by hashes and passes. A multi-hash row whose budget runs out after a
+// revert, with another hash unread, is left exactly as it was; later work waits; the next tick settles it correctly.
+test("a multi-hash row interrupted by the tick deadline is left due, later passes wait, and the next tick settles it", async () => {
+  const [older, latest] = [`0x${"a".repeat(64)}`, `0x${"b".repeat(64)}`];
+  let clock = Date.parse("2026-11-25T12:00:00Z");
+  let slowOnce = true;
+  const tickNow = () => new Date(clock);
+  const account = privateKeyToAccount(generatePrivateKey());
+  const chain = mockChain(healthyChain({
+    eth_chainId: () => numberToHex(137),
+    eth_blockNumber: () => numberToHex(101),
+    // The latest send reverted (slowly, past the deadline); the older send at the same nonce is the one that mined.
+    eth_getTransactionReceipt: ([hash]) => {
+      if (hash === latest) { if (slowOnce) { slowOnce = false; clock += 20 * 60_000; } return { ...receipt("0x0", []), transactionHash: latest }; }
+      return { ...receipt("0x1", [transferLog(42n)]), transactionHash: older };
+    },
+  }));
+  const grant = createUnlockKeyGrantAdapter({ chainID: 137, account, transport: chain.transport, now: tickNow, env: live, polygon: { lock: lockAddress, granter: account.address } });
+  const send = (txHash: string) => ({ txHash, maxFeePerGas: "1", maxPriorityFeePerGas: "1", sentAt: "2026-11-25T11:00:00.000Z", accepted: true });
+  const { payload, rows } = fakePayload([
+    { id: "00000000-0000-4000-8000-0000000000b1", operationKey: "unlock-grant:v1:order-m:1", entitlement: "adm", state: "submitted", attempts: 1, attemptID: "a1", txHash: latest, signer: grant.signer, nonce: 3, sends: [send(older), send(latest)], target },
+    owed("later", 1),
+  ]);
+  const first = await runKeyGrantTick({ payload, grant, acquire: runLock().acquire, env: live, now: tickNow });
+  assert.equal(first.outcome === "ran" && first.reconciled, 0);
+  assert.equal(first.outcome === "ran" && first.dispatched, 0, "later work waits for the next tick");
+  const [multi, later] = rows["commerce-key-grant-intents"];
+  assert.deepEqual([multi.state, multi.lastErrorCode, multi.nextAttemptAt], ["submitted", undefined, undefined], "not reverted, not deferred");
+  assert.equal(later.state, "pending");
+  const second = await runKeyGrantTick({ payload, grant, acquire: runLock().acquire, env: live, now: tickNow });
+  assert.equal(second.outcome === "ran" && second.reconciled, 1);
+  assert.deepEqual([multi.state, rows["commerce-key-grant-intents"][0].tokenID, rows["commerce-key-grant-intents"][0].settledTxHash], ["submitted", "42", older].map((value, index) => index === 0 ? "granted" : value));
+});

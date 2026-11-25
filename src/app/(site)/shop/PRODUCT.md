@@ -69,7 +69,8 @@ the way stripe.press presents its books: as objects in a 3D scene, opened and re
 - Product records (names, prices, what each edition includes, refund terms) in Payload.
 - The owner's book model (`public/assets/three/book/book.glb`), generated neutral textures and a placeholder cover.
 - The owner's book sounds (`public/assets/three/book/audio/`, with PROVENANCE.md).
-- No testimonials, reviews, press, sales figures or customer stories exist. Never invent them, praise included.
+- Testimonials, reviews, press, sales figures and customer stories have not been supplied or verified for use in the
+  shop. Never invent them, praise included.
 
 ## Product Principles
 

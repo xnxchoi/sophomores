@@ -1,7 +1,7 @@
 "use client";
 
 import { easing } from "maath";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 
 /**
  * The colophon band's big image (their ProductionGallery `e3`, 06w:1473-1524; notes slice-G-detail-layout.md §3.6, §4):
@@ -11,6 +11,9 @@ import { useEffect, useRef, useState } from "react";
  * A horizontal wheel steps once per gesture after 36 px, a horizontal swipe of 40 px (|dx| ≥ 1.5·|dy|) steps once
  * (their `e0`, 06w:1202-1258). Their wheel-gesture tracker (module 15124) wasn't traced: here a 200 ms pause in wheel
  * events starts a new gesture.
+ * A layer wipes in only once its image has loaded (no frames run while one waits); an image that fails is dropped and
+ * the one already showing stays. The wipe's runtime values are custom properties (--wipe-clip, --wipe-transform) read
+ * by static utilities.
  */
 type Layer = { id: number; index: number; src: string; alt: string; direction: 1 | -1; t: number; loaded: boolean };
 type Image = { url: string; alt: string };
@@ -35,24 +38,30 @@ export function DetailGallery({ images, index, onStep }: { images: Image[]; inde
 
   const paint = () => live.current.forEach((layer, at) => {
     const node = nodes.current.get(layer.id);
-    if (node?.layer) node.layer.style.clipPath = clipFor(layer);
-    if (node?.content) node.content.style.transform = transformFor(layer, live.current[at + 1]);
+    node?.layer?.style.setProperty("--wipe-clip", clipFor(layer));
+    node?.content?.style.setProperty("--wipe-transform", transformFor(layer, live.current[at + 1]));
   });
   const tick = (now: number) => {
     const dt = last.current == null ? 1 / 60 : Math.min(0.05, (now - last.current) / 1000);
     last.current = now;
     let moving = false;
     for (const layer of live.current.slice(1)) {
-      if (!layer.loaded) { moving = true; continue; }
+      if (!layer.loaded) continue;
       if (easing.damp(layer, "t", 1, 0.14, dt)) moving = true; else layer.t = 1;
     }
     // Layers under the topmost fully revealed one are covered: drop them.
-    const covered = live.current.reduce((at, layer, i) => (layer.t === 1 ? i : at), 0);
+    const covered = live.current.reduce((at, layer, i) => (layer.loaded && layer.t === 1 ? i : at), 0);
     if (covered > 0) { live.current = live.current.slice(covered); setLayers(live.current); }
     paint();
     if (moving) frameId.current = requestAnimationFrame(tick); else { frameId.current = 0; last.current = null; }
   };
   const run = () => { if (!frameId.current) frameId.current = requestAnimationFrame(tick); };
+  const loaded = (layer: Layer) => { if (!layer.loaded) { layer.loaded = true; run(); } };
+  // A failed incoming image is dropped; the image under it stays as it was. The first image has nothing under it.
+  const failed = (layer: Layer) => {
+    if (layer.id === live.current[0]?.id) return;
+    live.current = live.current.filter((other) => other.id !== layer.id); setLayers(live.current); paint();
+  };
   useEffect(() => () => cancelAnimationFrame(frameId.current), []);
 
   // A new index pushes a layer that wipes in from its side (forward from the right, back from the left).
@@ -60,7 +69,7 @@ export function DetailGallery({ images, index, onStep }: { images: Image[]; inde
     const top = live.current[live.current.length - 1], image = images[index];
     if (!image || (top && top.index === index && top.src === image.url)) return;
     const layer: Layer = { id: nextId.current++, index, src: image.url, alt: image.alt, direction: index >= (top?.index ?? 0) ? 1 : -1, t: 0, loaded: false };
-    live.current = [...live.current, layer]; setLayers(live.current); run();
+    live.current = [...live.current, layer]; setLayers(live.current);
   }, [index, images]);   // eslint-disable-line react-hooks/exhaustive-deps
 
   // Their stepper: horizontal wheel (one step per gesture after 36 px) and horizontal swipe.
@@ -100,14 +109,14 @@ export function DetailGallery({ images, index, onStep }: { images: Image[]; inde
 
   const topId = layers[layers.length - 1]?.id;
   return <div ref={frame} className="relative aspect-[1075/1433] w-full touch-pan-y overflow-hidden rounded-[6px] bg-foreground/10 select-none">
-    {layers.map((layer, at) => <div key={layer.id} className="absolute -inset-px overflow-hidden" style={{ clipPath: clipFor(layer) }}
+    {layers.map((layer, at) => <div key={layer.id} className="absolute -inset-px overflow-hidden [clip-path:var(--wipe-clip)]" style={{ "--wipe-clip": clipFor(layer) } as CSSProperties}
       ref={(element) => { const node = nodes.current.get(layer.id) ?? { layer: null, content: null }; node.layer = element; nodes.current.set(layer.id, node); }}>
-      <div className="absolute inset-0" style={{ transform: transformFor(layer, layers[at + 1]) }}
+      <div className="absolute inset-0 [transform:var(--wipe-transform)]" style={{ "--wipe-transform": transformFor(layer, layers[at + 1]) } as CSSProperties}
         ref={(element) => { const node = nodes.current.get(layer.id) ?? { layer: null, content: null }; node.content = element; nodes.current.set(layer.id, node); }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={layer.src} alt={layer.id === topId ? layer.alt : ""} aria-hidden={layer.id !== topId || undefined} draggable={false}
           loading={layer.id === 0 ? "lazy" : "eager"} className="block size-full object-cover"
-          onLoad={() => { if (!layer.loaded) { layer.loaded = true; run(); } }} onError={() => { if (!layer.loaded) { layer.loaded = true; run(); } }} />
+          onLoad={() => loaded(layer)} onError={() => failed(layer)} />
       </div>
     </div>)}
   </div>;

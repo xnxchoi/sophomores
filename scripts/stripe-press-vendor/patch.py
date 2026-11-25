@@ -30,7 +30,7 @@ for f, old, new in CHANGES:
     if n != 1: raise SystemExit(f"{f}: expected 1 match, found {n}: {old[:60]}")
     open(p, "w").write(s.replace(old, new))
 # 10. Sound (module 63913, 12s2): their sound module is replaced by the same eight exports, each forwarding its call to
-#     globalThis.__SPSOUND (our sounds, set by the shop: src/components/commerce/shop/use-book-sounds.ts) and doing
+#     globalThis.__SPSOUND (our sounds, set by the shop: src/components/commerce/shop/use-book-sounds.tsx) and doing
 #     nothing without it. No listener, Howl, audio path or Web Audio node of theirs is created; Howler (43469,
 #     imported only by 63913) is an empty module.
 def span(s, start, end):

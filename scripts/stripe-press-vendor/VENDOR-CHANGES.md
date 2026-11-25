@@ -38,7 +38,7 @@ our catalogue requests none of them (checked in the harness request log).
 10. `12s2cqzsl56ip.js` (module 63913, their sound): the same eight exports (`t B J D X G r z`), each forwarding its
     call to `globalThis.__SPSOUND[letter]` and doing nothing when that is unset (every original export already returned
     nothing before its first unlock, so callers are unaffected). The shop sets `__SPSOUND` to our sounds, the owner's
-    Kenney files (`src/components/commerce/shop/use-book-sounds.ts`, slice S). The vendored code has no capture
+    Kenney files (`src/components/commerce/shop/use-book-sounds.tsx`, slice S). The vendored code has no capture
     listener, Howl, audio path or Web Audio node of its own. Howler (43469), imported only by 63913, is an empty module,
     which also drops its two 48-byte WAV probes. After this no vendored file contains `/audio/` or `.m4a`
     (tests/commerce/ui/vendor-silence.test.ts).

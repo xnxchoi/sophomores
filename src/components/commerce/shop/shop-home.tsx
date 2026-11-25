@@ -218,13 +218,13 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
   const motion = useRef({ scrollTo, bookY, shelfY });
   useEffect(() => { motion.current = { scrollTo, bookY, shelfY }; });
 
-  // Their shelf catch and the titles' clear line (use-shelf-catch.ts).
+  // Their shelf catch and the titles' clear line (use-shelf-catch.tsx).
   const titles = useRef<HTMLElement>(null);
   const catchSource = useRef<ShelfCatchSource>({ seatY: () => null, driving: () => false, stopDriving: () => undefined, titles: () => null, held: () => false });
   useEffect(() => { catchSource.current = { seatY, driving: () => drive.current.active || gliding.current != null, stopDriving, titles: () => titles.current, held: () => held.current }; });
   useShelfCatch(hub, catalogue, catchSource);
 
-  // Opening a book into its details inside the scene (use-book-detail.ts), at every width.
+  // Opening a book into its details inside the scene (use-book-detail.tsx), at every width.
   const detailSource = useRef<BookDetailSource>({ rawProgress: () => 0, hrefOf: () => null, home: "/shop", placeOf: () => 0, shelfAt: () => null,
     pin: () => undefined, unpin: () => undefined, pagesOpen: () => false });
   useEffect(() => { detailSource.current = { rawProgress: () => hub.scrollProgressDirectLiveRef.current as number,
@@ -255,7 +255,7 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
   useEffect(() => { openIndex.current = detail.open; }, [detail.open]);
   const origin = useRef<{ y: number; index: number; fromShelf: boolean } | null>(null), returning = useRef<{ y: number | null } | null>(null);
 
-  // The reading scroll (use-reading-scroll.ts): while a book is open the page scrolls every book's details, and that
+  // The reading scroll (use-reading-scroll.tsx): while a book is open the page scrolls every book's details, and that
   // scroll moves the scene (the reading book's exit, the next one's arrival) and the cards; the address follows.
   const readingSource = useRef<ReadingSource>({ hrefOf: () => null, onIndex: () => undefined, onProgress: () => undefined, onCommit: () => undefined });
   useEffect(() => { readingSource.current = { hrefOf: (index) => items[index]?.href ?? null, onIndex: (index) => detail.setReading(index),
@@ -271,7 +271,7 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
   }, []);
   const readingRef = useRef(reading);
   useEffect(() => { readingRef.current = reading; });
-  // "Open book" (use-look-inside.ts): in the details the open book's pages open in place; on the home the book comes
+  // "Open book" (use-look-inside.tsx): in the details the open book's pages open in place; on the home the book comes
   // forward first. The home scrolls onto the book (their `ut`, or the shelf's seat) before it comes forward.
   const lookSource = useRef<LookInsideSource>({ place: () => undefined, book: () => null });
   useEffect(() => { lookSource.current = {

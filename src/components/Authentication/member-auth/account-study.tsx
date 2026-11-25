@@ -340,12 +340,12 @@ export function MemberSignInPage({
   return (
     <main data-member-sign-in-page="" className="px-6 pt-[8em] pb-[6em] text-foreground sm:px-10 sm:pt-[11em] xl:px-16 2xl:px-32">
       <div className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:gap-24 2xl:gap-32">
-        {/* While signed in (an account finishing setup), the flow's own step heading takes over. */}
-        <header className={cn("lg:pt-2", signedIn && "hidden")}>
+        <header className="lg:pt-2">
           <h1 className="m-0 text-5xl leading-[1.05] font-light tracking-tight text-balance lg:text-7xl 2xl:text-8xl">{t("logIn")}</h1>
-          <p className="mt-6 mb-0 max-w-[30ch] text-[15px] leading-6 text-pretty text-foreground/55 lg:mt-8 lg:text-base">{t("signInPageNewHere")}</p>
+          {/* For visitors only: an account finishing setup is past choosing how to get in. */}
+          {!signedIn && <p className="mt-6 mb-0 max-w-[30ch] text-[15px] leading-6 text-pretty text-foreground/55 lg:mt-8 lg:text-base">{t("signInPageNewHere")}</p>}
         </header>
-        <div className={cn("w-full max-w-[400px]", signedIn && "lg:col-span-2 lg:mx-auto")}>
+        <div className="w-full max-w-[400px]">
           <ArcRoles>
             <MemberAccountFlow
               key={generation}

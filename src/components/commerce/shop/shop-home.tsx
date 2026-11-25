@@ -94,7 +94,7 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
     return index >= 0 ? index : null;
   });
   const progressRef = useRef(landing ?? 0);
-  // What the art cards follow: the locked progress on the home, the reading book plus its exit while reading.
+  // What the art cards follow: the locked progress, on the home and while reading.
   const cardsRef = useRef(landing ?? 0);
   // True while a book is open: the page holds still, so the scroll reader, the idle advance and the shelf catch stand
   // down and the scene keeps the progress the detail pinned (theirs: readScroll and the idle timer skip detail).
@@ -220,9 +220,16 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
   // scroll moves the scene (the reading book's exit, the next one's arrival) and the cards; the address follows.
   const readingSource = useRef<ReadingSource>({ hrefOf: () => null, onIndex: () => undefined, onProgress: () => undefined, onCommit: () => undefined });
   useEffect(() => { readingSource.current = { hrefOf: (index) => items[index]?.href ?? null, onIndex: (index) => detail.setReading(index),
-    onProgress: (locked, cards) => { progressRef.current = locked; cardsRef.current = cards; listeners.current.forEach((listener) => listener()); },
+    onProgress: (locked) => { progressRef.current = cardsRef.current = locked; listeners.current.forEach((listener) => listener()); },
     onCommit: (locked) => setCommitted(locked) }; });
-  const reading = useReadingScroll(hub, scroll, detail.open, geometry, count, readingSource);
+  const page = useRef<HTMLDivElement>(null);
+  const reading = useReadingScroll(hub, scroll, detail.open, geometry, count, readingSource, page);
+  // As theirs: the page places itself (a product's address parks on its details); the browser's restore would fight it.
+  useEffect(() => {
+    const before = window.history.scrollRestoration;
+    window.history.scrollRestoration = "manual";
+    return () => { window.history.scrollRestoration = before; };
+  }, []);
   const readingRef = useRef(reading);
   useEffect(() => { readingRef.current = reading; });
   // The scene hears the book being read 200 ms late (their `uK`), the first one at once.
@@ -343,7 +350,7 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
   // While reading, the page is the stack of every book's details (their sections, then half a screen); otherwise the
   // home's own scroll.
   const readingHeight = reading.layout.total + Math.round(geometry.lvh / 2);
-  return <div className="relative overflow-x-clip">
+  return <div ref={page} className="relative overflow-x-clip">
     {readingOpen ? <div style={{ height: readingHeight }} /> : <>
       <div style={{ height: Math.max(0, geometry.total - Math.round(0.81 * geometry.lvh)) }} />
       <div aria-hidden="true" className="pointer-events-none h-[calc(171.1lvh-40px)]" />
@@ -372,7 +379,7 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
  */
 function Cards({ items, featured, geometry, progressRef, listeners, reading, J }: { items: Item[]; featured: number; geometry: Geometry;
   progressRef: { current: number }; listeners: { current: Set<() => void> };
-  /** True while reading: the cards follow the reading book (its card leaves as the book does, the next follows). */
+  /** True while reading: the cards follow the reading progress (the last card does not lift away). */
   reading: { current: boolean }; J: number }) {
   const plates = useRef<(HTMLDivElement | null)[]>([]), photos = useRef<(HTMLImageElement | null)[]>([]);
   const [shown, setShown] = useState(false);
@@ -487,15 +494,15 @@ function DetailStack({ shown, height, toShelf, onClose, children }: { shown: boo
 /**
  * One book's details in the stack (BookDetailSlot, 06w9:7348-7366): placed at its section top, 118 px down and 260 px
  * of tail; its content measured (height + 300, theirs) for the reading scroll's sections, and its exit anchor
- * registered: the top of its full-width section (praise, details), or its end when it has none.
+ * registered: the top of its full-width section (praise, details), when it has one.
  */
 function DetailSlot({ index, top, onMeasured, anchors, children }: { index: number; top: number; onMeasured: (index: number, px: number) => void;
   anchors: { current: Map<number, HTMLElement> }; children: ReactNode }) {
-  const content = useRef<HTMLDivElement>(null), end = useRef<HTMLDivElement>(null);
+  const content = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const element = content.current;
     if (!element) return;
-    const anchor = element.querySelector<HTMLElement>("[data-book-exit-anchor]") ?? end.current;
+    const anchor = element.querySelector<HTMLElement>("[data-book-exit-anchor]");
     if (anchor) anchors.current.set(index, anchor);
     const report = () => onMeasured(index, Math.round(element.getBoundingClientRect().height + 300));
     report();
@@ -504,6 +511,6 @@ function DetailSlot({ index, top, onMeasured, anchors, children }: { index: numb
     return () => { observer.disconnect(); anchors.current.delete(index); };
   }, [index, onMeasured, anchors]);
   return <div className="absolute inset-x-0 top-0 px-6 pt-[118px] pb-[260px]" style={{ transform: "translateY(" + top + "px)" }}>
-    <div ref={content} data-detail-panel-index={index}>{children}<div ref={end} aria-hidden="true" /></div>
+    <div ref={content} data-detail-panel-index={index}>{children}</div>
   </div>;
 }

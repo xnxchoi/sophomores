@@ -10,9 +10,9 @@ import type { SceneHub, SceneScroll } from "./stripe-scene";
  * - Progress (readScroll 14714-14822): scroll maps to section progress; their detail lock (`aZ`, 10393-10406) holds it
  *   on a book while its content is read and lets it rise to the next one over the last stretch; the reading index
  *   follows with ±0.65 hysteresis (13139-13146) and the address follows it (shallow replace).
- * - Exit (14799-14822): each nearby book's exit runs from its anchor (the top of the full-width section under the
- *   product's column, or the panel's end) 220 px below the fold, over (0.5/1.3)·3 screens: the book rises and turns
- *   away, and its card leaves with it.
+ * - Exit (14799-14822): each nearby book's exit runs from its anchor (theirs: the praise label; ours: the top of the
+ *   full-width section under the product's column) 220 px below the fold, over (0.5/1.3)·3 screens: the book rises and
+ *   turns away. A book without one leaves when the next one takes over, as theirs does without praise.
  * - Open (15254-15275, 15224-15236): the page parks on the book's section and keeps it there while it measures, and for
  *   2 s does not let it drift above it.
  */
@@ -22,8 +22,8 @@ export type ReadingSource = {
   hrefOf: (index: number) => string | null;
   /** The book being read changed (the address already follows). */
   onIndex: (index: number) => void;
-  /** Every scroll: the locked progress for the scene, and the reading book plus its exit for the art cards. */
-  onProgress: (locked: number, cards: number) => void;
+  /** Every scroll: the locked progress for the scene (and the art cards). */
+  onProgress: (locked: number) => void;
   /** 100 ms after the scroll settles: the locked progress for React. */
   onCommit: (locked: number) => void;
 };
@@ -51,7 +51,9 @@ function lockedFor(progress: number, layout: ReadingLayout, canvasHeight: number
 }
 
 export function useReadingScroll(hub: SceneHub, scroll: SceneScroll, open: number | null, geometry: Geometry, count: number,
-  source: { current: ReadingSource }) {
+  source: { current: ReadingSource },
+  /** The stack's own top: theirs starts at the top of the document, ours under the site header's place. */
+  root: { current: HTMLElement | null }) {
   const [heights, setHeights] = useState<number[]>(() => Array.from({ length: count }, () => 0));
   const scrolling = useRef(false);
   // Their `tg`: ignore changes under 2 px, and under 400 px while the page is scrolling.
@@ -66,11 +68,13 @@ export function useReadingScroll(hub: SceneHub, scroll: SceneScroll, open: numbe
   const anchors = useRef(new Map<number, HTMLElement>());
   const index = useRef({ shown: 0, raw: 0 }), pending = useRef<number | null>(null), guard = useRef({ index: -1, until: 0 });
   const [opened, setOpened] = useState(0);
-  const park = (at: number, tops: number[]) => Math.max(0, (tops[at] ?? 0) + HEADER_TRIM - scroll.p(scroll.X()));
+  const base = () => (root.current ? root.current.getBoundingClientRect().top + window.scrollY : 0);
+  const park = (at: number, tops: number[]) => Math.max(0, base() + (tops[at] ?? 0) + HEADER_TRIM - scroll.p(scroll.X()));
 
   const reading = open != null;
   useLayoutEffect(() => {
-    hub.detailSectionTopsLiveRef.current = reading ? layout.tops : null;
+    const offset = base();
+    hub.detailSectionTopsLiveRef.current = reading ? layout.tops.map((top) => top + offset) : null;
     return () => { hub.detailSectionTopsLiveRef.current = null; };
   }, [hub, reading, layout]);
 
@@ -82,9 +86,9 @@ export function useReadingScroll(hub: SceneHub, scroll: SceneScroll, open: numbe
     const [praise, card, cardAt, turn, reveal] = arrays;
     let settle = 0, still = 0;
     const run = () => {
-      const { layout: L, geometry: G, count: n } = live.current, y = window.scrollY, vh = window.innerHeight || 1;
+      const { layout: L, geometry: G, count: n } = live.current, y = window.scrollY, vh = window.innerHeight || 1, top = base();
       scrolling.current = true; window.clearTimeout(still); still = window.setTimeout(() => { scrolling.current = false; }, 120);
-      const progress = scroll.m(y, L.extents);
+      const progress = scroll.m(y - top, L.extents);
       hub.scrollProgressDirectLiveRef.current = progress;
       hub.spineViewProgressLiveRef.current = hub.spineViewProgressFor(progress);
       const locked = lockedFor(progress, L, G.height), centred = locked - G.offset, at = index.current;
@@ -107,12 +111,12 @@ export function useReadingScroll(hub: SceneHub, scroll: SceneScroll, open: numbe
       }
       const exit = (praise?.[r] as number | undefined) ?? 0;
       hub.detailPraiseExitProgressLiveRef.current = exit;
-      source.current.onProgress(locked, r + exit);
+      source.current.onProgress(locked);
       window.clearTimeout(settle); settle = window.setTimeout(() => source.current.onCommit(locked), 100);
       // For 2 s after an open the page may not drift above the book it opened on (theirs: hA).
       const g = guard.current;
       if (g.index >= 0 && performance.now() < g.until) {
-        const floor = Math.max(0, Math.min((L.tops[g.index] ?? 0) - 44, park(g.index, L.tops)));
+        const floor = Math.max(0, Math.min(top + (L.tops[g.index] ?? 0) - 44, park(g.index, L.tops)));
         if (y < floor - 0.5) window.scrollTo(0, floor);
       }
     };
@@ -141,7 +145,7 @@ export function useReadingScroll(hub: SceneHub, scroll: SceneScroll, open: numbe
     const target = park(at, layout.tops);
     window.scrollTo(0, target);
     guard.current = { index: at, until: performance.now() + 2000 };
-    const progress = scroll.m(target, layout.extents);
+    const progress = scroll.m(target - base(), layout.extents);
     hub.scrollProgressDirectLiveRef.current = progress; hub.spineViewProgressLiveRef.current = hub.spineViewProgressFor(progress);
     hub.backgroundSnapScrollLiveRef.current = 6; hub.bookRowSeedLiveRef.current = 3;
     read.current();

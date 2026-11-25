@@ -352,9 +352,10 @@ export function MemberSignInPage({
     // The note is for the entry step only: recovery and an account finishing setup are past choosing how to get in.
     <PageFrame title={title} introduction={signedIn || title !== t("logIn") ? undefined : note} displayTitle className="min-h-svh">
       {/* One typeface for the whole form: the shared panel's Manrope (loaded at 400 only) and the phase views'
-          system-ui give way to the site's sans on this page; the sheet keeps its own. The entry step's intro holds
-          only the hidden focus target here, so it drops its margin and the field lines up with the title. */}
-      <div data-member-sign-in-page="" className="w-full max-w-[400px] **:font-sans! [&_[data-phase-intro]:has([data-phase-focus])]:mb-0">
+          system-ui give way to the site's sans on this page; the sheet keeps its own. An intro that holds only the
+          hidden focus target (the entry step) drops its margin, so the field lines up with the title; the code step's
+          intro keeps it under its help text. */}
+      <div data-member-sign-in-page="" className="w-full max-w-[400px] **:font-sans! [&_[data-phase-intro]:has(>:only-child_[data-phase-focus])]:mb-0">
         <ArcRoles>
           <MemberAccountFlow
             key={generation}

@@ -166,8 +166,11 @@ export function MemberAccountView(props: MemberAccountViewProps) {
       : props.flow === "signup"
         ? t("signUp")
         : t("logIn");
+  // The page's h1 also follows the email-code step, which happens inside the identity phase (Review-B, 26 Nov).
+  const phaseT = useTranslations("AuthPhase");
+  const pageTitle = phase === "identity" && props.snapshot.codeRequested ? phaseT("emailHeading") : heading;
   const { onTitle } = props;
-  useEffect(() => { onTitle?.(heading); }, [onTitle, heading]);
+  useEffect(() => { onTitle?.(pageTitle); }, [onTitle, pageTitle]);
   useLayoutEffect(() => {
     if ((phase === "setup" || phase === "member") && document.visibilityState !== "hidden")
       document.getElementById(props.headingId ?? "member-account-heading")?.focus({ preventScroll: true });
@@ -719,9 +722,9 @@ function IdentityStep(props: MemberAccountViewProps & { locked: boolean; reserve
         locale="en"
         headingId={props.headingId ?? "member-account-heading"}
         renderHeading={(heading, title) => (
-          // The sign-in page's h1 is the page's one heading for the entry step: the step keeps its focus target, but not
-          // as a second heading (Review-B, 26 Nov). Its later steps (the code) keep their own heading.
-          props.presentation === "page" && !snapshot.codeRequested && !props.reauthenticating
+          // On the sign-in page the h1 is the one heading for the entry and code steps alike: each step keeps its focus
+          // target, not a second heading (Review-B, 26 Nov); the code step's help and email stay visible.
+          props.presentation === "page" && !props.reauthenticating
             ? <div id={props.headingId ?? "member-account-heading"} tabIndex={-1} data-phase-focus="" className="sr-only">{title}</div>
             : props.reauthenticating ? <div className="sr-only">{heading}</div> : props.presentation === "ticket-checkout"
             // The code step keeps the step's one heading.

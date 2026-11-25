@@ -6,13 +6,13 @@ import { PageInset } from "@/components/core/PageInset/PageInset";
 import { Badge } from "@/components/arc/badge/badge";
 import { ArcRoles } from "./arc-roles";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
-import { ShopHome } from "./shop/shop-front";
+import { ShopHome } from "./shop/shop-home";
 import { firstImage } from "./product-page/product-page";
 import { readProductPageContent, type ProductPageContent } from "./product-page/_shared/content";
 
 /**
  * Book shop: each edition is its own product (owner), listed separately with no picker. Display facts only. Laid out as
- * stripe.press's home, with their book scene copied verbatim (shop/shop-front.tsx ShopHome, shop/stripe-scene.tsx).
+ * stripe.press's home, with their book scene copied verbatim (shop/shop-home.tsx, shop/stripe-scene.tsx).
  * Order follows each product's shelf order, then the shop's own order.
  * `contents`: each product's page fields by product ID (art, book textures, shelf title); a product without them shows
  * its first image and a plain book.
@@ -29,7 +29,7 @@ export function CommerceShopView({ shop, contents = {} }: { shop: CommerceEditio
       price: money.format(entry.offer.priceKRW), href: "/shop/products/" + encodeURIComponent(entry.product.productID) }));
   return <PageInset as="main" className="pt-[4.5rem] pb-24 text-foreground">
     <h1 className="sr-only">{t("book")}</h1>
-    <ShopHome label={t("featured")} viewDetails={t("viewDetails")} items={entries.map(({ product, content, title, price, href }) => ({
+    <ShopHome labels={{ featured: t("featured"), shelf: t("allProducts"), viewDetails: t("viewDetails") }} items={entries.map(({ product, content, title, price, href }) => ({
       id: product.productID, title, price, href, stageArt: content.stageArt ?? firstImage(product),
     }))} />
   </PageInset>;

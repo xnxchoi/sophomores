@@ -25,3 +25,7 @@ rotation as the closed cover); pages2 back to rest without the stack baked in at
 
 Other `/images/...` strings remain in their catalogue and dev code (zine pages, artifacts, test backgrounds); browse with
 our catalogue requests none of them (checked in the harness request log).
+7. `3aodgiaju4hkl.js` (module 67168, catalogue): if `globalThis.__SPBOOKS` is set (our books in their built shape) the
+   exported book list (`I`, `Y`) is ours, and `globalThis.__SPFEATURED` is the featured count (their `isFeatured` count),
+   so the scene's featured/shelf indices (t, J, K, segment helpers) follow our catalogue. Set by shop/stripe-scene.tsx
+   before their modules first run.

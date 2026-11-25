@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /**
  * stripe.press's book scene, copied verbatim (owner, 25 Nov: "only copy over the 3D parts verbatim … Dont build webgl
- * stuff from ground up"). Their shipped chunks live in public/vendor/stripe-press with six recorded changes
+ * stuff from ground up"). Their shipped chunks live in public/vendor/stripe-press with seven recorded changes
  * (scripts/stripe-press-vendor/VENDOR-CHANGES.md) and run in their own Turbopack runtime and React copy, beside the
- * site's. This island loads them once, then renders their BookStack (module 76489, export I) into our element; the
- * page (shop-home.tsx, ours) feeds it props and the live scroll ref.
+ * site's. `useStripeScene` loads them once with our catalogue and hands the page (shop-home.tsx, ours) what their home
+ * page itself uses: BookStack to render, the live-ref hub (module 50016), the scroll helpers (73900), the catalogue
+ * helpers (67168) and the gesture router (11743).
  */
 const BASE = "/vendor/stripe-press/", DIR = BASE + "static/immutable/chunks/", RUNTIME = "turbopack-2_04ewhudzrza.js";
 const CHUNKS = ["04ud9hjinltfg.js", "0o8wbxikbqj64.js", "02r0qv9ged3vb.js", "14l5yxhvu5ecr.js", "0_xwvg_h93t1m.js", "0al_0m9d4_k3k.js",
@@ -16,9 +17,32 @@ const CHUNKS = ["04ud9hjinltfg.js", "0o8wbxikbqj64.js", "02r0qv9ged3vb.js", "14l
 const TEX = "/assets/three/book/";
 
 type Props = Record<string, unknown>;
-type Mounted = { render: (props: Props) => void; unmount: () => void };
-type Context = { i: (id: number) => Record<string, unknown> };
-let loaded: Promise<(element: HTMLElement) => Mounted> | null = null;
+type Ref<T> = { current: T };
+/** Their live-ref hub (module 50016): the refs and spine-row handlers their home page writes and calls. */
+export type SceneHub = Record<string, Ref<unknown>> & {
+  spineViewProgressFor: (progress: number) => number;
+  stepSpineSelection: (step: number, count: number, options?: { repeat?: boolean }) => void;
+  beginSpineDrag: unknown; moveSpineDrag: unknown; endSpineDrag: unknown;
+  SCENE_CARD_BOTTOM_INSET_CSS_PX: number;
+};
+/** Their scroll helpers (module 73900): lvh/width probes, canvas geometry, scrollYToProgress (m), prefix sums (e). */
+export type SceneScroll = {
+  d: (listener: () => void) => () => void; C: () => number; X: () => number; B: () => number;
+  p: (viewportWidth: number) => number; $: (viewportHeight: number, canvasTop: number) => number;
+  m: (scrollY: number, extents: number[]) => number; e: (extents: number[]) => number[];
+};
+/** Their catalogue helpers (module 67168), built from our catalogue (change 7). */
+export type SceneCatalogue = {
+  t: number; J: number; K: number; a: (segment: number) => number | null; D: (index: number) => number;
+  F: (count: number, canvasHeight: number, lockPx: number[], shelfScreens: number) => number[];
+};
+/** Their gesture router (module 11743): `e()` installs it, `v(scope, handlers)` registers a scope. */
+export type SceneRouter = { e: () => (() => void) | void; v: (scope: string, handlers: Props) => () => void };
+export type Vendored = { mount: (element: HTMLElement) => { render: (props: Props) => void; unmount: () => void };
+  hub: SceneHub; scroll: SceneScroll; catalogue: SceneCatalogue; router: SceneRouter };
+type Context = { i: (id: number) => unknown };
+
+let loaded: Promise<Vendored> | null = null;
 
 function script(src: string) {
   return new Promise<void>((resolve, reject) => {
@@ -28,23 +52,28 @@ function script(src: string) {
   });
 }
 
-/** Their runtime, then their chunks, then our one module (990001), which reaches their React, ReactDOM and BookStack. */
-function load() {
+/** Their runtime, their chunks, then our one module (990001). Our catalogue goes in first: their modules read it once. */
+function load(books: unknown[], featured: number) {
   loaded ??= (async () => {
     const global = window as unknown as Record<string, unknown>;
     global.SPTURBOPACK_CHUNK_BASE_PATH = BASE;
+    global.__SPBOOKS = books; global.__SPFEATURED = featured;
     await script(DIR + RUNTIME);
     await Promise.all(CHUNKS.map((file) => script(DIR + file)));
-    return new Promise<(element: HTMLElement) => Mounted>((resolve) => {
+    return new Promise<Vendored>((resolve) => {
       const queue = global.SPTURBOPACK as { push: (item: unknown) => void };
       const entry = "static/immutable/chunks/sophomores-entry.js";
       queue.push([entry, 990001, (context: Context) => {
         const jsx = context.i(91398) as { jsx: (type: unknown, props: Props) => unknown };
         const dom = context.i(57647) as { createRoot: (element: HTMLElement) => { render: (node: unknown) => void; unmount: () => void } };
         const stack = context.i(76489) as { I: unknown };
-        resolve((element) => {
-          const root = dom.createRoot(element);
-          return { render: (props) => root.render(jsx.jsx(stack.I, props)), unmount: () => root.unmount() };
+        resolve({
+          mount: (element) => {
+            const root = dom.createRoot(element);
+            return { render: (props) => root.render(jsx.jsx(stack.I, props)), unmount: () => root.unmount() };
+          },
+          hub: context.i(50016) as SceneHub, scroll: context.i(73900) as SceneScroll,
+          catalogue: context.i(67168) as SceneCatalogue, router: context.i(11743) as SceneRouter,
         });
       }]);
       queue.push([entry, { otherChunks: [], runtimeModuleIds: [990001] }]);
@@ -55,7 +84,7 @@ function load() {
 
 export type SceneBook = { id: string; title: string; stageArt: string | null };
 
-/** One of our products in their book shape: our placeholder cover and neutral maps (no cover art exists yet). */
+/** One of our products in their built book shape: our placeholder cover and neutral maps (no cover art exists yet). */
 function stripeBook({ id, title, stageArt }: SceneBook) {
   const blank = TEX + "shared/blank.png";
   return {
@@ -74,28 +103,59 @@ function stripeBook({ id, title, stageArt }: SceneBook) {
   };
 }
 
-/**
- * Their scene layer. Their canvas container is fixed over the window (100vw × 100lvh); `isolate` on our element keeps
- * their z-indexes (10050–20200) inside this layer, under the site header.
- */
-export function StripeScene({ books, progress, progressRef, active, onOpen, className }: {
-  books: SceneBook[]; progress: number; progressRef: RefObject<number>; active: number; onOpen: (index: number) => void; className?: string;
-}) {
-  const host = useRef<HTMLDivElement>(null), scene = useRef<Mounted | null>(null), open = useRef(onOpen);
-  const [ready, setReady] = useState(false);
-  const shaped = useMemo(() => books.map(stripeBook), [books]);
-  useEffect(() => { open.current = onOpen; }, [onOpen]);
+/** Loads their code once with our books (first `featured` of them featured, as their `isFeatured`); null until ready. */
+export function useStripeScene(books: SceneBook[], featured: number) {
+  const [vendored, setVendored] = useState<Vendored | null>(null);
+  const first = useRef({ books, featured });
   useEffect(() => {
     let live = true;
-    load().then((mount) => { if (live && host.current) { scene.current = mount(host.current); setReady(true); } }, () => undefined);
-    return () => { live = false; scene.current?.unmount(); scene.current = null; };
+    load(first.current.books.map(stripeBook), first.current.featured).then((value) => { if (live) setVendored(value); }, () => undefined);
+    return () => { live = false; };
   }, []);
+  return vendored;
+}
+
+/** Their BookStack, rendered into our element: their canvas container is fixed over the window (100vw × 100lvh), and
+ * `isolate` on our element keeps their z-indexes (10050–20200) inside this layer, under the site header. */
+export function StripeScene({ vendored, props, className }: { vendored: Vendored; props: Props; className?: string }) {
+  const host = useRef<HTMLDivElement>(null), scene = useRef<ReturnType<Vendored["mount"]> | null>(null);
   useEffect(() => {
-    if (!ready) return;
-    scene.current?.render({
-      books: shaped, scrollProgress: progress, scrollProgressLiveRef: progressRef, activeBookIndex: active, stackMode: "browse",
-      onBookOpen: (index: number) => open.current(index),
-    });
-  }, [ready, shaped, progress, progressRef, active]);
+    if (!host.current) return;
+    scene.current = vendored.mount(host.current);
+    return () => { scene.current?.unmount(); scene.current = null; };
+  }, [vendored]);
+  useEffect(() => { scene.current?.render(props); }, [props]);
   return <div ref={host} aria-hidden="true" className={className} />;
+}
+
+type LockContext = { bookScrollExtentsPx: number[]; canvasHeightPx: number; browseLockScrollPx: number[]; canvasCenterOffset: number };
+
+/**
+ * Their `lockedProgressFor` (06w9 `aZ`, with `aX` and `aJ`; 06w9880t9_kp9.js:10338-10406), browse branch, verbatim
+ * apart from names: each featured book holds on its card for about `browseLockScrollPx` of scroll, then a raised-cosine
+ * catch-up carries progress to the next book's anchor. Shelf and later segments pass through unchanged.
+ */
+export function lockedProgressFor(progress: number, context: LockContext, catalogue: SceneCatalogue) {
+  const anchor = (segment: number, offset: number) => (0 === segment || segment === catalogue.J ? 0 : Math.max(0.01, Math.min(0.99, offset)));
+  const creep = (segment: number, extent: number) => {
+    const rate = 0.15 / Math.max(1, context.canvasHeightPx), at = anchor(segment, context.canvasCenterOffset);
+    return at > 0 ? Math.min(rate, 0.25 / (at * extent)) : rate;
+  };
+  const segment = Math.floor(Math.max(0, progress)), fraction = progress - segment, book = catalogue.a(segment);
+  if (null == book || book >= catalogue.t) return progress;
+  const height = Math.max(1, context.canvasHeightPx), extent = Math.max(1, context.bookScrollExtentsPx[segment] ?? height);
+  const a = creep(book, extent), l = anchor(book, context.canvasCenterOffset);
+  if (fraction <= l) return segment - a * (l - fraction) * extent;
+  const nextSegment = segment + 1, next = catalogue.a(nextSegment);
+  const nextExtent = Math.max(1, context.bookScrollExtentsPx[nextSegment] ?? height), featuredNext = null != next && next < catalogue.t;
+  const h = featuredNext ? creep(next, nextExtent) : 0;
+  const target = featuredNext ? nextSegment - h * anchor(next, context.canvasCenterOffset) * nextExtent : nextSegment;
+  const m = (1 - l) * extent, g = Math.max(0.001, target - segment);
+  let v = (a * m) / g, w = ((featuredNext ? h : 1 / nextExtent) * m) / g;
+  if (v + w > 1.6) { const scale = 1.6 / (v + w); v *= scale; w *= scale; }
+  const x = context.browseLockScrollPx[book] ?? 150;
+  const b = 0.5 * Math.max(0, Math.min(0.95, (Math.min(0.985, Math.max(0.01, Math.min(0.99, context.canvasCenterOffset)) + x / extent) - l) / (1 - l)));
+  const y = (2 - v - w) / (1 - b), k = (fraction - l) / (1 - l);
+  const S = k <= b ? 0 : (k - b) / 2 - ((1 - b) / (4 * Math.PI)) * Math.sin((2 * Math.PI * (k - b)) / (1 - b));
+  return segment + g * (v * k + ((w - v) * k * k) / 2 + y * S);
 }

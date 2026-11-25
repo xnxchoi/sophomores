@@ -13,6 +13,10 @@ CHANGES = [
     # 2. Textures: a texture "name" that is already a path ("/...") is used as that path, so our products can name
     #    their own files without entries in the manifest.
     ("0bl3vphd9w8zl.js", 'let i=n.get(e);if(null==i){', 'let i=n.get(e)??("string"==typeof e&&e.startsWith("/")?e:null);if(null==i){'),
+    # 7. Catalogue (module 67168): when the page sets globalThis.__SPBOOKS (our books, in their built shape) and
+    #    __SPFEATURED (how many lead the list as featured), the scene's book list and featured/shelf indices are ours.
+    ("3aodgiaju4hkl.js", 'd=h.j.books.filter(e=>e.isFeatured).length+ +!!u,', 'd=globalThis.__SPBOOKS?globalThis.__SPFEATURED:h.j.books.filter(e=>e.isFeatured).length+ +!!u,'),
+    ("3aodgiaju4hkl.js", 'w=u?[...H.slice(0,2),', 'w=globalThis.__SPBOOKS?globalThis.__SPBOOKS:u?[...H.slice(0,2),'),
 ]
 for f, old, new in CHANGES:
     p = os.path.join(OUT, f); s = open(p).read(); n = s.count(old)
@@ -32,4 +36,4 @@ import re
 for f in files:
     p = os.path.join(OUT, f); s = open(p).read()
     open(p, "w").write(re.sub(r"\bTURBOPACK", "SPTURBOPACK", s))
-print("patched", len(CHANGES) + 4, "changes into", len(files), "files")
+print("patched", len(CHANGES) + 3, "changes into", len(files), "files")

@@ -13,13 +13,22 @@ import { normalizeLoginEmail } from "../../../lib/passwordless-login";
 import { VerificationPresentation, VerificationTrayTitle } from "../phone-verification/verification-tray";
 import { Heading, Panel } from "../phone-verification/verification-ui";
 import { AccountButton, AccountInput, AccountPrimaryButton, AccountTextButton } from "./account-controls";
+import { DrawnField } from "@/components/ui/input";
 
+/**
+ * Account recovery. On the sign-in page ("page" presentation) it is laid out like the entry step: no panel inset,
+ * the page's h1 carries its title (reported through onTitle), its own title stays only as the focus target, and the
+ * fields are the same underlined DrawnField as the email field (critique, 26 Nov). The sheet keeps its panel.
+ */
 export function AccountRecoveryView({
-  headingId, onBack
+  headingId, presentation, onTitle, onBack
 }: {
   headingId: string;
+  presentation?: "page";
+  onTitle?: (title: string) => void;
   onBack: () => void;
 }) {
+  const page = presentation === "page";
   const t = useTranslations("MemberAuth");
   const mobileTray = useContext(VerificationPresentation) === "tray";
   const [step, setStep] = useState<"request" | "receipt">("request");
@@ -31,13 +40,15 @@ export function AccountRecoveryView({
   const [retryAvailableAt, setRetryAvailableAt] = useState(0);
   const [timerNow, setTimerNow] = useState(Date.now);
   const retryRemaining = Math.max(0, Math.ceil((retryAvailableAt - timerNow) / 1000));
-  const heading = useRef<HTMLHeadingElement>(null);
+  const heading = useRef<HTMLElement | null>(null);
   const phoneInput = useRef<HTMLInputElement>(null);
   const request = useRef<AbortController | null>(null);
   const deadline = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     (step === "request" ? phoneInput.current : heading.current)?.focus({ preventScroll: true });
   }, [step]);
+  const title = step === "request" ? t("accountRecovery") : t("requestReceived");
+  useEffect(() => { onTitle?.(title); }, [onTitle, title]);
   useEffect(() => () => {
     request.current?.abort();
     request.current = null;
@@ -139,24 +150,36 @@ export function AccountRecoveryView({
   }
 
   return (
-    <Panel className={cn("px-6! pb-6! [font-family:system-ui]", mobileTray ? "pt-0!" : "pt-6!")} data-account-recovery={step}>
+    <Panel className={cn(page ? "px-0! pt-0! pb-0!" : "px-6! pb-6! [font-family:system-ui]", !page && (mobileTray ? "pt-0!" : "pt-6!"))} data-account-recovery={step}>
       <motion.div key={step} initial={mobileTray ? { opacity: 0 } : { opacity: 0, y: 6 }} animate={mobileTray ? { opacity: 1 } : { opacity: 1, y: 0 }} transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }} className="space-y-4">
-        <VerificationTrayTitle>
-          <Heading ref={heading} id={headingId} tabIndex={-1} className="mt-0! mb-4! text-center! text-[24px]! leading-[30px]! font-medium! tracking-[-0.025em]!">
-            {step === "request" ? t("accountRecovery") : t("requestReceived")}
-          </Heading>
-        </VerificationTrayTitle>
+        {page ? (
+          <div ref={(element) => { heading.current = element; }} id={headingId} tabIndex={-1} data-phase-focus="" className="sr-only">{title}</div>
+        ) : (
+          <VerificationTrayTitle>
+            <Heading ref={(element) => { heading.current = element; }} id={headingId} tabIndex={-1} className="mt-0! mb-4! text-center! text-[24px]! leading-[30px]! font-medium! tracking-[-0.025em]!">
+              {title}
+            </Heading>
+          </VerificationTrayTitle>
+        )}
         {step === "request" ? (
           <>
             <form noValidate onSubmit={(event) => { void submit(event); }} className="space-y-4" aria-busy={busy}>
               <div>
-                <label htmlFor={`${headingId}-phone`} className="text-[13px] text-muted-foreground">{t("registeredMobileNumber")}</label>
-                <AccountInput className="tracking-normal!" ref={phoneInput} id={`${headingId}-phone`} type="tel" inputMode="tel" autoComplete="off" placeholder={t("01012345678")} maxLength={32} value={phone} disabled={busy} aria-invalid={invalid.phone} aria-describedby={invalid.phone ? `${headingId}-phone-error` : `${headingId}-claims`} onChange={(event) => { setPhone(event.target.value); setInvalid((value) => ({ ...value, phone: false })); }} />
+                {page ? <DrawnField steady label={t("registeredMobileNumber")} ref={phoneInput} id={`${headingId}-phone`} type="tel" inputMode="tel" autoComplete="off" maxLength={32} value={phone} disabled={busy} aria-invalid={invalid.phone} aria-describedby={invalid.phone ? `${headingId}-phone-error` : `${headingId}-claims`} onChange={(event) => { setPhone(event.target.value); setInvalid((value) => ({ ...value, phone: false })); }} /> : (
+                  <>
+                    <label htmlFor={`${headingId}-phone`} className="text-[13px] text-muted-foreground">{t("registeredMobileNumber")}</label>
+                    <AccountInput className="tracking-normal!" ref={phoneInput} id={`${headingId}-phone`} type="tel" inputMode="tel" autoComplete="off" placeholder={t("01012345678")} maxLength={32} value={phone} disabled={busy} aria-invalid={invalid.phone} aria-describedby={invalid.phone ? `${headingId}-phone-error` : `${headingId}-claims`} onChange={(event) => { setPhone(event.target.value); setInvalid((value) => ({ ...value, phone: false })); }} />
+                  </>
+                )}
                 {invalid.phone && <p id={`${headingId}-phone-error`} className="mt-2 text-[13px] leading-5 text-muted-foreground">{t("enterAValidKorean010MobileNumber")}</p>}
               </div>
               <div>
-                <label htmlFor={`${headingId}-email`} className="text-[13px] text-muted-foreground">{t("contactEmail")}</label>
-                <AccountInput className="tracking-normal!" id={`${headingId}-email`} type="email" inputMode="email" autoComplete="off" autoCapitalize="none" spellCheck={false} maxLength={254} value={contactEmail} disabled={busy} aria-invalid={invalid.email} aria-describedby={invalid.email ? `${headingId}-email-error` : `${headingId}-claims`} onChange={(event) => { setContactEmail(event.target.value); setInvalid((value) => ({ ...value, email: false })); }} />
+                {page ? <DrawnField steady label={t("contactEmail")} id={`${headingId}-email`} type="email" inputMode="email" autoComplete="off" autoCapitalize="none" spellCheck={false} maxLength={254} value={contactEmail} disabled={busy} aria-invalid={invalid.email} aria-describedby={invalid.email ? `${headingId}-email-error` : `${headingId}-claims`} onChange={(event) => { setContactEmail(event.target.value); setInvalid((value) => ({ ...value, email: false })); }} /> : (
+                  <>
+                    <label htmlFor={`${headingId}-email`} className="text-[13px] text-muted-foreground">{t("contactEmail")}</label>
+                    <AccountInput className="tracking-normal!" id={`${headingId}-email`} type="email" inputMode="email" autoComplete="off" autoCapitalize="none" spellCheck={false} maxLength={254} value={contactEmail} disabled={busy} aria-invalid={invalid.email} aria-describedby={invalid.email ? `${headingId}-email-error` : `${headingId}-claims`} onChange={(event) => { setContactEmail(event.target.value); setInvalid((value) => ({ ...value, email: false })); }} />
+                  </>
+                )}
                 {invalid.email && <p id={`${headingId}-email-error`} className="mt-2 text-[13px] leading-5 text-muted-foreground">{t("enterAnEmailAddressYouCanAccess")}</p>}
               </div>
               <p id={`${headingId}-claims`} className="text-[13px] leading-5 text-muted-foreground">{t("detailsAreUnverifiedThisRequestWontChangeYourAccountStaffMustVerifyOwnershipRestorationIsntGuaranteed")}</p>
@@ -174,7 +197,7 @@ export function AccountRecoveryView({
                 {busy ? t("submittingRequest") : t("requestStaffReview")}
               </AccountPrimaryButton>
             </form>
-            <AccountTextButton type="button" className="min-h-11 px-1" onClick={backToLogin}>{t("backToLogIn")}</AccountTextButton>
+            <AccountTextButton type="button" className={cn("min-h-11 px-1", page && "mx-auto flex px-3")} onClick={backToLogin}>{t("backToLogIn")}</AccountTextButton>
           </>
         ) : (
           <>

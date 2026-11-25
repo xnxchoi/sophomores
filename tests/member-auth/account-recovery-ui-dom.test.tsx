@@ -78,7 +78,7 @@ test("request validates unverified claims and pending submission grants no accou
   assert.equal(phone.getAttribute("placeholder"), "010-1234-5678");
   assert.ok(phone.classList.contains("tracking-normal!"));
   assert.ok(ui.screen.getByLabelText("Contact email").classList.contains("tracking-normal!"));
-  assert.ok(ui.screen.queryByText("Details are unverified. This request won’t change your account. Staff must verify ownership; restoration isn’t guaranteed."));
+  assert.ok(ui.screen.queryByText("Nothing changes until staff confirm the account is yours, and restoring access isn’t guaranteed."));
   submit();
   assert.equal(calls.length, 0);
   assert.equal(phone.getAttribute("aria-invalid"), "true");

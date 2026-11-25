@@ -290,10 +290,12 @@ function Submit({
     props.pendingAction !== "passkey" &&
     props.pendingAction !== "magic-link";
   return (
-    // Arc's primary button, as in Arc's Sign in block (owner, 23 Nov: "Arc block, underlined field").
+    // Arc's primary button, as in Arc's Sign in block (owner, 23 Nov: "Arc block, underlined field"). Until an email is
+    // typed, the entry step's Continue is secondary, so Apple's required white button isn't a second white primary in
+    // dark mode (critique, 26 Nov); it fills once there is something to continue with.
     <Button
       type="submit"
-      variant="primary"
+      variant={props.phase === "entry" && !props.email.trim() ? "secondary" : "primary"}
       size="lg"
       loading={busy}
       data-phase-action="submit"

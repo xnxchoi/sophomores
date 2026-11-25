@@ -24,7 +24,8 @@ import {
   PrimaryButton,
   SecondaryButton
 } from "../phone-verification/verification-ui";
-import { MemberAccountView, SignUpProvidersNote, type MemberAccountViewProps } from "./account-view";
+import { MemberAccountView, useSignUpProvidersNote, type MemberAccountViewProps } from "./account-view";
+import { PageFrame } from "@/components/commerce/page-frame";
 import { AccountRecoveryView } from "./account-recovery-view";
 import { MemberPhoneStep } from "./phone-step";
 import {
@@ -308,10 +309,12 @@ export function MemberAccountPage({
 /**
  * The sign-in page (owner, 26 Nov: "just make it not shitty"; the Vault login is his reference for the form). Every
  * way in is on the page at once: the email code for members, Apple and Google (Kakao when on) for everyone. Sign-up is
- * social only, so there is no chooser step. On wide screens the page is two parts, the Hideaway long-form shell's grid
- * (DocsShell): a large light heading on the left, the form column on the right; on a phone they stack. The mechanism
- * is MemberAccountFlow's login flow, unchanged; only its layout differs ("page" presentation). An account still in
- * setup finishes it here, and a confirmed member leaves for `next`.
+ * social only, so there is no chooser step. It sits in the site's page frame, the one /me and the shop's pages use
+ * (owner, 26 Nov: "the layout is just fucking ugly"): the display title over its rule with the new-visitor note in the
+ * left column, the form in the right; stacked on a phone. The frame is at least the viewport's height, so the footer
+ * never jumps while the form changes size. The form uses the site's sans throughout. The mechanism is
+ * MemberAccountFlow's login flow, unchanged; only its layout differs ("page" presentation). An account still in setup
+ * finishes it here, and a confirmed member leaves for `next`.
  */
 export function MemberSignInPage({
   next,
@@ -332,6 +335,9 @@ export function MemberSignInPage({
   const [signedIn, setSignedIn] = useState(false);
   // The providers the flow itself offers: the server's list first, then the live status's (Apple can fail to start).
   const [capabilities, setCapabilities] = useState(initialCapabilities);
+  const note = useSignUpProvidersNote(capabilities);
+  // The page's one heading follows the step: Sign in, Account recovery, or the setup step's own title.
+  const [title, setTitle] = useState<string>(() => t("logIn"));
   const left = useRef(false);
   function onSnapshot(snapshot: MemberSnapshot) {
     if (Boolean(snapshot.status?.authenticated) !== signedIn) setSignedIn(Boolean(snapshot.status?.authenticated));
@@ -343,30 +349,27 @@ export function MemberSignInPage({
     navigate(next);
   }
   return (
-    <main data-member-sign-in-page="" className="px-6 pt-[8em] pb-[6em] text-foreground sm:px-10 sm:pt-[11em] xl:px-16 2xl:px-32">
-      <div className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:gap-24 2xl:gap-32">
-        <header className="lg:pt-2">
-          <h1 className="m-0 text-5xl leading-[1.05] font-light tracking-tight text-balance lg:text-7xl 2xl:text-8xl">{t("logIn")}</h1>
-          {/* For visitors only: an account finishing setup is past choosing how to get in. */}
-          {!signedIn && <p className="mt-6 mb-0 max-w-[30ch] text-[15px] leading-6 text-pretty text-foreground/55 lg:mt-8 lg:text-base"><SignUpProvidersNote capabilities={capabilities} /></p>}
-        </header>
-        <div className="w-full max-w-[400px]">
-          <ArcRoles>
-            <MemberAccountFlow
-              key={generation}
-              client={resolvedClient}
-              initialCapabilities={initialCapabilities}
-              headingId={headingId}
-              flow="login"
-              presentation="page"
-              onSnapshot={onSnapshot}
-              onChooser={() => setGeneration((value) => value + 1)}
-              onExit={() => setGeneration((value) => value + 1)}
-            />
-          </ArcRoles>
-        </div>
+    // The note is for the entry step only: recovery and an account finishing setup are past choosing how to get in.
+    <PageFrame title={title} introduction={signedIn || title !== t("logIn") ? undefined : note} displayTitle className="min-h-svh">
+      {/* One typeface for the whole form: the shared panel's Manrope (loaded at 400 only) and the phase views'
+          system-ui give way to the site's sans on this page; the sheet keeps its own. */}
+      <div data-member-sign-in-page="" className="w-full max-w-[400px] **:font-sans!">
+        <ArcRoles>
+          <MemberAccountFlow
+            key={generation}
+            client={resolvedClient}
+            initialCapabilities={initialCapabilities}
+            headingId={headingId}
+            flow="login"
+            presentation="page"
+            onSnapshot={onSnapshot}
+            onTitle={setTitle}
+            onChooser={() => setGeneration((value) => value + 1)}
+            onExit={() => setGeneration((value) => value + 1)}
+          />
+        </ArcRoles>
       </div>
-    </main>
+    </PageFrame>
   );
 }
 
@@ -382,6 +385,7 @@ export function MemberAccountFlow({
   noAccountMessage,
   onSnapshot,
   onVerifiedFocus,
+  onTitle,
   onChooser = () => {},
   onExit = () => {}
 }: {
@@ -396,6 +400,8 @@ export function MemberAccountFlow({
   noAccountMessage?: string;
   onSnapshot?: (snapshot: MemberSnapshot) => void;
   onVerifiedFocus?: () => void;
+  /** The current step's title, for a page that shows it as its own heading ("page" presentation). */
+  onTitle?: (title: string) => void;
   onChooser?: () => void;
   onExit?: () => void;
 }) {
@@ -610,6 +616,8 @@ export function MemberAccountFlow({
     return (
       <AccountRecoveryView
         headingId={headingId}
+        presentation={presentation === "page" ? "page" : undefined}
+        onTitle={onTitle}
         onBack={() => setRecovering(false)}
       />
     );
@@ -617,6 +625,7 @@ export function MemberAccountFlow({
   return (
     <MemberAccountView
       presentation={presentation}
+      onTitle={onTitle}
       noAccountMessage={noAccountMessage}
       emailEntry={emailEntry?.email === normalizedEmail ? emailEntry : undefined}
       onLookupRetry={() => { void checkEmailEntry(); }}

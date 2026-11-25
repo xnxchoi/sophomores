@@ -149,7 +149,30 @@ A refund marks the order's key `cancelRequested`. Nothing on our hosts can cance
    - in your wallet (MetaMask), call `expireAndRefundFor(tokenId, 0)` on the lock, with a refund of 0. The payment refund is done separately.
 3. **Let the tick reconcile.** The tick checks each one and marks it `cancelled` (evidence `key_not_valid`) once the key is no longer valid at the finalized block. Until then, the request stays recorded.
 
-## Checks
+## Moving a member's Signet to their own wallet ("ask us", the owner)
+Owner decision, 25 Nov, verbatim: "ask us is fine". A member's Signet key sits in their member Safe, which we manage.
+The Signet lock has **transfers turned off** (`transferFeeBasisPoints` 10000, read 25 Nov) and allows **one key per
+address** (`maxKeysPerAddress` 1). The member-wallet owner is not a lock manager. So a move is a cancel and a reissue,
+done by the owner from the wallet that manages the Signet lock. Nothing on our hosts does it.
+1. **Request.** The member asks from their signed-in account (or the support address on file for it) and gives the
+   address they want. Note their member ID and the key's token ID (admin, the order's grant intent).
+2. **Prove they control the address.** Send them this exact message to sign with that wallet (a plain message
+   signature, `personal_sign`; it costs nothing and moves nothing):
+   `Sophomores: move my Signet membership key to <address>. Request <member ID short ref>, <date>.`
+   Check the signature recovers to `<address>` (Etherscan's "Verify Signature" page, or `cast wallet verify`). Any
+   mismatch: stop.
+3. **Check the destination.** On Polygon, `balanceOf(<address>)` on the Signet lock must be 0 (one key per
+   address). The address should be a wallet they hold, not an exchange deposit address.
+4. **Move, from the lock-manager wallet (Unlock dashboard or a block explorer's write tab):**
+   - read the current key's `keyExpirationTimestampFor(<token ID>)`;
+   - `grantKeys([<address>], [<that same expiry>], [0x0000000000000000000000000000000000000000])` (same expiry, so the
+     member neither gains nor loses time);
+   - once that is final, `expireAndRefundFor(<token ID>, 0)` on the old key in their member Safe.
+   Grant first, then cancel, so the member is never without a key.
+5. **Record it.** Our records still point at the old token in the member Safe; there is no admin action for a move
+   yet (open item). Until there is, note the new token ID and address on the order in the admin, and tell the
+   coordinator so the record can be updated properly. A refund later must cancel the **new** token.
+
 - `{"outcome":"failure","reason":...}`:
   - `rpc_url_in_env`: `KEY_GRANT_POLYGON_RPC_URL` is set in the environment; remove it (the file is the only source).
   - `rpc_file_missing`, `rpc_file_symlink`, `rpc_file_not_regular`, `rpc_file_not_owner_only`, `rpc_file_unparsable`, `rpc_url_not_allowed`: the RPC file is absent, unsafe or not the Alchemy shape; `scripts/key-grant-rpc-check.ts` gives the same code.

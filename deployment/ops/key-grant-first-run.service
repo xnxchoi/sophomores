@@ -17,5 +17,5 @@ RuntimeDirectoryPreserve=yes
 ExecStart=/usr/local/sbin/kj-guard run first-run
 ExecStopPost=/usr/local/sbin/kj-guard reap first-run
 TimeoutStartSec=900
-TimeoutStopSec=120
+TimeoutStopSec=300
 NoNewPrivileges=yes

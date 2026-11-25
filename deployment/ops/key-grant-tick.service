@@ -22,5 +22,5 @@ ExecStopPost=/usr/local/sbin/kj-guard reap tick
 # 900 s is systemd's HARD STOP: it kills the docker client (reported via OnFailure as systemd_failed); the reap above
 # then removes the container or fences. Graceful completion is in the code (grant-catch-up.ts TICK_BUDGET_MS).
 TimeoutStartSec=900
-TimeoutStopSec=120
+TimeoutStopSec=300
 NoNewPrivileges=yes

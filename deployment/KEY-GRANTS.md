@@ -147,15 +147,17 @@ host guard `deployment/ops/kj-guard.sh` (installed as `/usr/local/sbin/kj-guard`
 it; its settings are `KJ/config/guard.conf` (root 0600, no secrets; `key-grant-guard.conf.example`).
 `KJ=/var/lib/sophomores-key-grant` (root 0700): `rpc/` and `signer/` hold the two owner files (1000:1000 0600, separate
 mounts); `config/key-job.env` (DATABASE_URI with the key job's own role, its secrets, the budget and event locks);
-`mail/alert-mail.env` (2002:2002 0400); `alerts/spool`, `alerts/mailer`; `fence/` (one marker per fence generation).
+`config/queue-read.env` (the receipt's read role); `mail/alert-mail.env` (2002:2002 0400); `alerts/spool`, `alerts/mailer`; `fence/` (one marker per fence generation).
 Env files are mounted read-only and loaded in-process with `node --env-file`, never `docker --env-file`.
 
 - **Run modes.** `key-grant-tick.service` (the timer's) runs in scheduled mode. Its `KEY_GRANT_POLYGON_LIVE` comes only
   from `KJ/config/scheduled.env`, which exists only after K6g and its own owner go. `key-grant-first-run.service` is
   the one supervised first run: it reads `KJ/config/live.env` (LIVE plus the allowlist), is started by hand with the
   timer disabled, and its ExecStopPost deletes `live.env` whatever happened.
-- **Queue receipt, before every supervised run:** `node --import tsx scripts/key-grant-queue-read.ts --signer <the
-  grant signer's address from gate 1>`, as the read-only role. One line per intent the tick could act on (UUID, state,
+- **Queue receipt, before every supervised run:** `kj-guard receipt <the grant signer's address from gate 1>`. It runs
+  `scripts/key-grant-queue-read.ts` in a container on the DB network only, with no signer or RPC mount, from
+  `KJ/config/queue-read.env` (1000:1000 0400: `DATABASE_URI` with the read-only role `sophomores_key_grant_read`, plus
+  the Payload secrets and `KEY_GRANT_POLYGON_EVENT_LOCKS`). One line per intent the tick could act on (UUID, state,
   attempts, nonce, hash flags, target check), then `{"receipt":"complete",...}`. `receipt_incomplete` (exit 1) means
   it proves nothing: stop. The allowlist must equal exactly the owner-approved intents on this receipt.
 - **Admission.** `kj-guard run` refuses a chain-capable start (tick, first run) while any fence marker or

@@ -27,7 +27,8 @@ if [ -f "$STUB/stat_$b" ]; then cat "$STUB/stat_$b"; exit 0; fi
 case "$fmt" in '%u:%a') echo 0:600 ;; *) case "$b" in polygon-rpc.env|polygon-key-granter.env) echo "1000:1000 600" ;; alert-mail.env) echo "2002:2002 400" ;; *) echo "1000:1000 400" ;; esac ;; esac`,
   docker: `echo "docker $*" >>"$STUB/log"
 case "$1" in
-  image) echo "${IMAGE}" ;;
+  image|inspect) echo "${IMAGE}" ;;
+  run) exit 0 ;;
   info) exit 0 ;;
   ps) [ -e "$STUB/ps_fail" ] && exit 1
       case "$*" in *"--filter id="*) [ -f "$STUB/ps_id" ] && cat "$STUB/ps_id" ;; *) [ -f "$STUB/ps" ] && cat "$STUB/ps" ;; esac; exit 0 ;;
@@ -169,6 +170,28 @@ test("unfence holds when any tick or first-run container is still listed after t
   writeFileSync(join(stub, "ps"), `${"c".repeat(64)} tick\n`);
   assert.equal(event(guard("unfence", n!).out), "container_present");
   assert.deepEqual(markers(), [n]);
+});
+
+test("a fence needs no guard.conf: the marker and the table go in even when the configuration is missing", () => {
+  const { kj, guard, markers, tables } = setup();
+  rmSync(join(kj, "config/guard.conf"));
+  const fenced = guard("fence", "fence_unknown_quiescence");
+  assert.equal(markers().length, 1, "the intent is durable first");
+  assert.deepEqual(tables(), markers(), "the drop is installed with the K2 bridge name");
+  assert.equal(event(fenced.out), "fence_incomplete", "no owned-definition hash to verify against: escalated, marker kept");
+  assert.equal(event(guard("run", "tick").out), "conf_missing");
+});
+
+test("receipt: read role only, the DB network only, no signer or RPC mount", () => {
+  const { kj, guard, log } = setup();
+  assert.equal(event(guard("receipt", "nope").out), "signer_invalid");
+  assert.equal(event(guard("receipt", `0x${"2".repeat(40)}`).out), "receipt_env_refused");
+  writeFileSync(join(kj, "config/queue-read.env"), "DATABASE_URI=x\nPAYLOAD_SECRET=x\n");
+  assert.equal(guard("receipt", `0x${"2".repeat(40)}`).status, 0);
+  const run = log().split("\n").find((line) => line.startsWith("docker run")) ?? "";
+  assert.match(run, /--network sophomores-review-db -v \S+\/config\/queue-read\.env:\/run\/kj\/queue-read\.env:ro/);
+  assert.doesNotMatch(run, /polygon-(rpc|key-granter)|sophomores-key-grant-egress|key-job\.env/);
+  assert.match(run, /scripts\/key-grant-queue-read\.ts --signer 0x2{40}$/);
 });
 
 test("the mailer still runs while fenced; a reap whose query fails fences a chain-capable unit", () => {

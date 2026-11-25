@@ -45,7 +45,7 @@ export function ShopHome({ items, labels, initialOpen }: { items: Item[]; labels
   return <section data-lenis-prevent-wheel aria-label={labels.featured} className="relative min-h-svh">
     {vendored && items.length > 0 ? <Home vendored={vendored} items={items} labels={labels} initialOpen={initialOpen} /> : first && (
       // The first card where theirs lands (162 px down, 16 px in, 24 px off the bottom) until their code is running.
-      <div className="pointer-events-none fixed inset-x-4 top-[162px] bottom-6 z-0 overflow-hidden rounded-[8px] bg-muted max-[899px]:inset-x-2 max-[899px]:top-[140px]">
+      <div className="pointer-events-none fixed inset-x-4 top-[162px] bottom-6 z-0 overflow-hidden rounded-[8px] bg-muted max-[899px]:top-[140px]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={first.url} alt={first.alt ?? ""} draggable={false} className="absolute inset-0 size-full object-cover" />
       </div>)}
@@ -115,10 +115,10 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
   // Scroll → progress on every scroll event (their readScroll): raw, locked and spine-row progress go to the scene's
   // refs; React only hears the locked index (±0.65 hysteresis, then a 200 ms debounce), whether the shelf is up, and,
   // 100 ms after the scroll settles, the committed progress.
-  // Loaded on a product's address (desktop): the scene's first frame already has that book open at its own index, as
+  // Loaded on a product's address: the scene's first frame already has that book open at its own index, as
   // theirs opens the deep link before its scene mounts (06w9:15177-15183); otherwise it would ease into the detail pose.
   const [landing, setLanding] = useState(() => {
-    const index = initialOpen && window.innerWidth >= 900 ? items.findIndex((entry) => entry.id === initialOpen && entry.details) : -1;
+    const index = initialOpen ? items.findIndex((entry) => entry.id === initialOpen && entry.details) : -1;
     if (index >= 0) {
       hub.scrollProgressDirectLiveRef.current = index; hub.spineViewProgressLiveRef.current = hub.spineViewProgressFor(index);
       hub.backgroundSnapScrollLiveRef.current = 6; hub.bookRowSeedLiveRef.current = 3;
@@ -222,7 +222,7 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
   useEffect(() => { catchSource.current = { seatY, driving: () => drive.current.active || gliding.current != null, stopDriving, titles: () => titles.current, held: () => held.current }; });
   useShelfCatch(hub, catalogue, catchSource);
 
-  // Opening a book into its details inside the scene (use-book-detail.ts); the phone keeps the product page for now.
+  // Opening a book into its details inside the scene (use-book-detail.ts), at every width.
   const detailSource = useRef<BookDetailSource>({ rawProgress: () => 0, hrefOf: () => null, home: "/shop", placeOf: () => 0, shelfAt: () => null,
     pin: () => undefined, unpin: () => undefined, pagesOpen: () => false });
   useEffect(() => { detailSource.current = { rawProgress: () => hub.scrollProgressDirectLiveRef.current as number,
@@ -230,7 +230,7 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
     // The scene poses an open book by the progress in its details: at the open book's own index, the top of them. As
     // theirs (06w9:15271-15273), the scene's row smoother snaps to it (snap 6 frames, row seed 3) instead of easing
     // through the stack between the shelf and the book's own place.
-    pin: (index, arrived) => {
+    pin: (index, arrived, instant) => {
       // Where closing returns to (their origin snapshot `te`): the home scroll the book opened from; none for an address.
       const raw = hub.scrollProgressDirectLiveRef.current as number;
       if (arrived) origin.current = null;
@@ -239,8 +239,9 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
       progressRef.current = cardsRef.current = index; hub.scrollProgressDirectLiveRef.current = index;
       hub.spineViewProgressLiveRef.current = hub.spineViewProgressFor(index); setCommitted(index);
       hub.backgroundSnapScrollLiveRef.current = 6; hub.bookRowSeedLiveRef.current = 3;
-      readingRef.current?.begin(index);
+      readingRef.current?.begin(index, instant);
     },
+    landingExits: (index) => readingRef.current?.landingExits(index),
     // Back to the home scroll once the reading stack is gone (their `hJ`, 15872-15918): a featured book not opened from
     // the shelf returns onto its own card; the book it opened from returns where it was; any other to the shelf.
     unpin: (index) => {
@@ -248,6 +249,8 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
       returning.current = { y: index < catalogue.t && !from?.fromShelf ? bookY(index) : from && from.index === index ? from.y : null };
     } }; });
   const detail = useBookDetail(hub, catalogue, router, tokens, detailSource);
+  const openIndex = useRef<number | null>(null);
+  useEffect(() => { openIndex.current = detail.open; }, [detail.open]);
   const origin = useRef<{ y: number; index: number; fromShelf: boolean } | null>(null), returning = useRef<{ y: number | null } | null>(null);
 
   // The reading scroll (use-reading-scroll.ts): while a book is open the page scrolls every book's details, and that
@@ -419,6 +422,7 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
 
   const item = items[active] ?? items[0];
   const readingOpen = detail.open != null;
+  const phoneDetail = geometry.mobile && readingOpen && !detail.leaving;
   // While reading, the page is the stack of every book's details (their sections, then half a screen); otherwise the
   // home's own scroll.
   const readingHeight = reading.layout.total + Math.round(geometry.lvh / 2);
@@ -428,13 +432,24 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
       <div aria-hidden="true" className="pointer-events-none h-[calc(171.1lvh-40px)]" />
     </>}
     <div ref={next} aria-hidden="true" className="h-[40lvh]" />
-    <Cards items={items} featured={catalogue.t} geometry={geometry} progressRef={cardsRef} listeners={listeners} reading={held} J={J} />
+    <Cards items={items} featured={catalogue.t} geometry={geometry} progressRef={cardsRef} listeners={listeners} reading={held} J={J}
+      hub={hub} openRef={openIndex} />
     <StripeScene vendored={vendored} props={sceneProps} className="pointer-events-none fixed inset-0 isolate z-10" />
-    <p className="fixed top-[3.75rem] left-4 z-20 text-[11px] uppercase leading-4 tracking-[0.06em] text-muted-foreground">
-      [ {onShelf ? labels.shelf : labels.featured} ]
-    </p>
+    {/* On a phone the return link takes the label's place while a book is open (their Nav__FeaturedSlot: the label slides
+        −10 px and fades, the link comes in from +10 px 100 ms later, 300 ms each). */}
+    <div className="fixed top-[3.75rem] left-4 z-20 grid text-[11px] uppercase leading-4 tracking-[0.06em] text-muted-foreground">
+      <p className={cn("col-start-1 row-start-1 transition-[opacity,translate] duration-300", phoneDetail ? "-translate-x-2.5 opacity-0" : "delay-100")}>
+        [ {onShelf ? labels.shelf : labels.featured} ]
+      </p>
+      <button type="button" tabIndex={phoneDetail ? 0 : -1} aria-hidden={!phoneDetail} onClick={() => detail.closeBook()}
+        className={cn("col-start-1 row-start-1 -my-3.5 inline-flex min-h-11 items-center self-start text-left uppercase transition-[opacity,translate,color] duration-300 hover:text-foreground",
+          phoneDetail ? "pointer-events-auto delay-100" : "pointer-events-none translate-x-2.5 opacity-0")}>
+        <ArrowLeftIcon aria-hidden="true" className="mr-1.5 size-3.5" />{labels.toShelf}
+      </button>
+    </div>
     <TitleRail railRef={titles} label={labels.titles} titles={items.map((entry) => entry.title)} refunds={items.map((entry) => entry.refund)} active={detail.open ?? selected ?? active}
       fade={detail.open != null ? 0 : Math.max(0, Math.min(1, (committed - K - 0.2) / 0.3))} detail={detail.open != null && !detail.leaving}
+      hidden={phoneDetail}
       onPick={(index) => detail.open != null ? openRef.current(index) : index < catalogue.t ? scrollTo(bookY(index), 1000) : scrollTo(shelfY(), 1833)} />
     {item && <ViewDetails href={item.href} label={labels.viewDetails} hidden={(onShelf || detail.open != null) && !look.home} onOpen={() => openRef.current(active)}
       book={{ label: look.open && look.home ? labels.closeBook : labels.openBook, open: look.open && look.home,
@@ -459,22 +474,39 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
  * a phone), sliding with the locked progress, so a book's hold is its card's pause; the photo counter-moves 70 % and
  * zooms to ~1.06 one book away; the last card lifts out as the shelf arrives. Written per scroll, outside React.
  */
-function Cards({ items, featured, geometry, progressRef, listeners, reading, J }: { items: Item[]; featured: number; geometry: Geometry;
+function Cards({ items, featured, geometry, progressRef, listeners, reading, J, hub, openRef }: { items: Item[]; featured: number; geometry: Geometry;
   progressRef: { current: number }; listeners: { current: Set<() => void> };
   /** True while reading: the cards follow the reading progress (the last card does not lift away). */
-  reading: { current: boolean }; J: number }) {
+  reading: { current: boolean }; J: number;
+  /** The scene's refs (a phone's card exits) and the open book. */
+  hub: Vendored["hub"]; openRef: { current: number | null } }) {
   const plates = useRef<(HTMLDivElement | null)[]>([]), photos = useRef<(HTMLImageElement | null)[]>([]);
   const [shown, setShown] = useState(false);
   useEffect(() => { const timer = window.setTimeout(() => setShown(true), 50); return () => window.clearTimeout(timer); }, []);
   useEffect(() => {
-    const { height, mobile } = geometry, gap = mobile ? 8 : CARD_GAP, set = listeners.current;
+    const { height, mobile } = geometry, set = listeners.current;
+    // A phone (0wim:331-470): 8 px apart while browsing, 16 in the details; there each card leaves upward with its book's
+    // card exit, linearly (1.3 cards plus the gap at 1), books already read fully gone; during the carry it rides the
+    // landing's exit with the open book.
+    const exitOf = (index: number) => {
+      const open = openRef.current, transition = hub.bookOpenTransitionLiveRef.current as { active?: boolean; returning?: boolean;
+        activeProgress?: number; landingExits?: { bg?: number } } | null;
+      if (open != null && reading.current) {
+        const at = (hub.detailBgExitAtByIndexLiveRef.current as (((y: number) => number) | undefined)[])[index];
+        const value = at ? at(window.scrollY) : (hub.detailBgExitByIndexLiveRef.current as (number | undefined)[])[index];
+        return value ?? (index < open ? 1 : 0);
+      }
+      return transition?.active && !transition.returning && transition.landingExits
+        ? (transition.landingExits.bg ?? 0) * Math.max(0, Math.min(1, transition.activeProgress ?? 0)) : 0;
+    };
     const write = () => {
-      const locked = progressRef.current;
+      const locked = progressRef.current, gap = mobile ? (reading.current ? 16 : 8) : CARD_GAP;
       for (let index = 0; index < featured; index += 1) {
         const plate = plates.current[index], photo = photos.current[index];
         if (!plate) continue;
         const lift = index === J && !reading.current ? 1.25 * height * Math.max(0, Math.min(1, (locked - J) / (0.35 / 0.6))) : 0;
-        const y = (index - locked) * (height + gap) - lift;
+        const exit = mobile ? exitOf(index) * (1.3 * height + gap) : 0;
+        const y = (index - locked) * (height + gap) - lift - exit;
         plate.style.transform = "translate3d(0," + y + "px,0)";
         const c = Math.max(0, Math.min(1, (locked - index + 1) / 2)), e = (0.48 * (1 + Math.cos(2 * Math.PI * c))) / 2;
         if (photo) photo.style.transform = "translate3d(0," + -0.7 * y + "px,0) scale(" + 1 / (0.5 / 2 ** (0.38 * e) + 0.5) + ")";
@@ -482,10 +514,15 @@ function Cards({ items, featured, geometry, progressRef, listeners, reading, J }
     };
     write();
     set.add(write);
-    return () => { set.delete(write); };
-  }, [geometry, featured, progressRef, listeners, reading, J]);
-  return <div aria-hidden="true" style={{ top: geometry.top, height: geometry.height - CARD_INSET_BOTTOM }}
-    className="pointer-events-none fixed inset-x-4 z-0 overflow-hidden rounded-[8px] max-[899px]:inset-x-2">
+    // On a phone the carry and the open's 450 ms blend move the cards without a scroll: they follow every frame there.
+    let frame = 0;
+    const follow = () => { write(); frame = requestAnimationFrame(follow); };
+    if (mobile) frame = requestAnimationFrame(follow);
+    return () => { set.delete(write); cancelAnimationFrame(frame); };
+  }, [geometry, featured, progressRef, listeners, reading, J, hub, openRef]);
+  // The card's box: 8 px off the bottom on desktop, 25 on a phone (theirs, 1jyk:64-77, without the URL-bar terms).
+  return <div aria-hidden="true" style={{ top: geometry.top, height: geometry.height - (geometry.mobile ? 25 : CARD_INSET_BOTTOM) }}
+    className="pointer-events-none fixed inset-x-4 z-0 overflow-hidden rounded-[8px] max-[899px]:z-[2]">
     {items.slice(0, featured).map((entry, index) => <div key={entry.id} ref={(plate) => { plates.current[index] = plate; }}
       className={cn("absolute inset-0 overflow-hidden rounded-[8px] bg-muted transition-opacity duration-[450ms] will-change-transform",
         shown ? "opacity-100" : "opacity-0", index === 0 ? "delay-[1100ms]" : "delay-[1600ms]")}>
@@ -502,10 +539,12 @@ function Cards({ items, featured, geometry, progressRef, listeners, reading, J }
  * upright and centred at 47.5 % of the width (500 ms ease-in-out), the rest italic at 0.8; each title's refund rule on a
  * line under it (owner, 25 Nov); the titles fade in 1.2 s after load and fade out as the shelf takes the screen.
  */
-function TitleRail({ railRef, label, titles, refunds, active, fade, detail, onPick }: { railRef: Ref<HTMLElement>; label: string; titles: string[];
+function TitleRail({ railRef, label, titles, refunds, active, fade, detail, hidden, onPick }: { railRef: Ref<HTMLElement>; label: string; titles: string[];
   /** Each title's refund rule, a line under it. */
   refunds: ReactNode[]; active: number; fade: number;
-  detail: boolean; onPick: (index: number) => void }) {
+  detail: boolean;
+  /** A phone's open book: the rail fades out over 300 ms (theirs `footerFade`, no delay). */
+  hidden: boolean; onPick: (index: number) => void }) {
   const items = useRef<(HTMLButtonElement | null)[]>([]);
   const [shift, setShift] = useState(0), [shown, setShown] = useState(false);
   useEffect(() => { const timer = window.setTimeout(() => setShown(true), 1200); return () => window.clearTimeout(timer); }, []);
@@ -519,9 +558,9 @@ function TitleRail({ railRef, label, titles, refunds, active, fade, detail, onPi
     window.addEventListener("resize", place);
     return () => window.removeEventListener("resize", place);
   }, [active, titles, detail]);
-  return <nav ref={railRef} aria-label={label} style={{ opacity: shown ? 1 - 2 * fade : 0 }}
+  return <nav ref={railRef} aria-label={label} aria-hidden={hidden || undefined} inert={hidden} style={{ opacity: shown && !hidden ? 1 - 2 * fade : 0 }}
     className={cn("pointer-events-none fixed inset-x-0 top-[70px] z-20 overflow-hidden px-5 pt-5 pb-3 transition-[opacity,clip-path] duration-[1600ms] max-[899px]:top-[63px]",
-      detail ? "[clip-path:inset(0_40%_0_0)] [transition-duration:1600ms,600ms] [transition-timing-function:ease,cubic-bezier(0.16,1,0.3,1)]" : "[clip-path:inset(0_0_0_0)]")}>
+      hidden ? "duration-300" : detail ? "[clip-path:inset(0_40%_0_0)] [transition-duration:1600ms,600ms] [transition-timing-function:ease,cubic-bezier(0.16,1,0.3,1)]" : "[clip-path:inset(0_0_0_0)]")}>
     <ul style={{ transform: "translateX(" + shift + "px)" }}
       className="flex w-max gap-x-[72px] transition-transform duration-500 ease-in-out max-[899px]:gap-x-[30px]">
       {/* Three copies, the middle one active, so the active title always has neighbours on both sides (theirs: 21ix). */}
@@ -574,16 +613,16 @@ function LookInsideBar({ shown, wide, page, leaves, labels, onBack, onForward, o
   labels: Labels; onBack: () => void; onForward: () => void; onClose: () => void }) {
   const left = Math.max(1, 2 * page - 1), right = Math.min(2 * leaves, 2 * page);
   return <div data-look-inside-bar aria-hidden={!shown} inert={!shown}
-    className={cn("fixed bottom-4 left-4 z-30 flex h-9 items-center justify-between text-xs uppercase tracking-[-0.02em] transition-opacity duration-300 max-[899px]:hidden",
-      wide ? "right-4" : "right-[calc(40%+16px)]", shown ? "opacity-100" : "pointer-events-none opacity-0")}>
+    className={cn("fixed bottom-4 left-4 z-30 flex h-9 items-center justify-between text-xs uppercase tracking-[-0.02em] transition-opacity duration-300 max-[899px]:bottom-7 max-[899px]:h-11",
+      wide ? "right-4" : "right-[calc(40%+16px)] max-[899px]:right-4", shown ? "opacity-100" : "pointer-events-none opacity-0")}>
     <button type="button" aria-label={labels.previousPage} disabled={page <= 0} onClick={(event) => { event.stopPropagation(); onBack(); }}
-      className="min-h-9 px-2 transition-opacity hover:opacity-70 disabled:opacity-30">[ &lt; ]</button>
+      className="min-h-9 px-2 transition-opacity hover:opacity-70 disabled:opacity-30 max-[899px]:min-h-11 max-[899px]:min-w-11">[ &lt; ]</button>
     <span className="tabular-nums">{page <= 0 ? "" : left === right ? left : left + "–" + right}</span>
     <div className="flex items-center gap-2">
       <button type="button" aria-label={labels.nextPage} disabled={page >= leaves} onClick={(event) => { event.stopPropagation(); onForward(); }}
-        className="min-h-9 px-2 transition-opacity hover:opacity-70 disabled:opacity-30">[ &gt; ]</button>
+        className="min-h-9 px-2 transition-opacity hover:opacity-70 disabled:opacity-30 max-[899px]:min-h-11 max-[899px]:min-w-11">[ &gt; ]</button>
       <button type="button" aria-label={labels.closeBook} onClick={(event) => { event.stopPropagation(); onClose(); }}
-        className="min-h-9 px-2 transition-opacity hover:opacity-70">[ X ]</button>
+        className="min-h-9 px-2 transition-opacity hover:opacity-70 max-[899px]:min-h-11 max-[899px]:min-w-11">[ X ]</button>
     </div>
   </div>;
 }
@@ -597,11 +636,14 @@ function LookInsideBar({ shown, wide, page, leaves, labels, onBack, onForward, o
 function DetailStack({ shown, height, toShelf, onClose, children }: { shown: boolean; height: number; toShelf: string; onClose: () => void;
   children: ReactNode }) {
   return <aside aria-hidden={!shown} inert={!shown} style={{ height }}
-    className={cn("absolute top-0 right-0 z-30 w-[40%] rounded-l-[8px] bg-background text-foreground max-[899px]:hidden",
-      shown ? "translate-x-0 transition-transform duration-600 ease-[cubic-bezier(0.16,1,0.3,1)]" : "translate-x-full transition-transform duration-300 ease-[cubic-bezier(0.32,0,0.67,0)]")}>
-    <div className={cn("relative h-full transition-transform duration-[810ms] ease-out", shown ? "translate-x-0" : "translate-x-[5vw]")}>
-      {/* Under the site header (which overlays the top 72 px), where their 46 px under their own nav would be covered. */}
-      <div className="sticky top-[88px] z-10 px-6">
+    className={cn("absolute top-0 right-0 z-30 w-[40%] rounded-l-[8px] bg-background text-foreground",
+      // A phone (0ckg:125-183): full width, under the card and the book (their slot 10099 < card 10200 < canvas 10300), no slide.
+      "max-[899px]:z-[1] max-[899px]:w-full max-[899px]:rounded-none max-[899px]:translate-x-0 max-[899px]:transition-opacity max-[899px]:duration-300",
+      shown ? "translate-x-0 transition-transform duration-600 ease-[cubic-bezier(0.16,1,0.3,1)]" : "translate-x-full transition-transform duration-300 ease-[cubic-bezier(0.32,0,0.67,0)] max-[899px]:opacity-0")}>
+    <div className={cn("relative h-full transition-transform duration-[810ms] ease-out max-[899px]:translate-x-0", shown ? "translate-x-0" : "translate-x-[5vw]")}>
+      {/* Under the site header (which overlays the top 72 px), where their 46 px under their own nav would be covered. On a
+          phone the link sits in the label's slot instead. */}
+      <div className="sticky top-[88px] z-10 px-6 max-[899px]:hidden">
         <button type="button" onClick={onClose}
           className="inline-flex min-h-8 items-center bg-background text-[11px] uppercase tracking-[0.04em] text-muted-foreground transition-colors hover:text-foreground">
           <ArrowLeftIcon aria-hidden="true" className="mr-1.5 size-3.5" />{toShelf}
@@ -631,7 +673,12 @@ function DetailSlot({ index, top, onMeasured, anchors, children }: { index: numb
     observer.observe(element);
     return () => { observer.disconnect(); anchors.current.delete(index); };
   }, [index, onMeasured, anchors]);
-  return <div className="absolute inset-x-0 top-0 px-6 pt-[118px] pb-[260px]" style={{ transform: "translateY(" + top + "px)" }}>
-    <div ref={content} data-detail-panel-index={index}>{children}</div>
+  return <div className="absolute inset-x-0 top-0 px-6 pt-[118px] pb-[260px] max-[899px]:px-4" style={{ transform: "translateY(" + top + "px)" }}>
+    {/* A phone: the details start under a window for the book (MobileBookViewGap, calc(94vh − 185px)), inside the
+        measured block, which is at least a screen tall (theirs). */}
+    <div ref={content} data-detail-panel-index={index} className="max-[899px]:min-h-[100vh]">
+      <div aria-hidden="true" className="hidden h-[calc(94vh-185px)] max-[899px]:block" />
+      {children}
+    </div>
   </div>;
 }

@@ -11,13 +11,16 @@ const inOutQuad = (x: number) => (x < 0.5 ? 2 * x * x : 1 - (-2 * x + 2) ** 2 / 
  * where the page scrolls to bring a featured book onto its card (their `ut`) or the shelf's row into its seat (`nK`). */
 export type BookDetailSource = { rawProgress: () => number; hrefOf: (index: number) => string | null; home: string;
   placeOf: (index: number) => number; shelfAt: () => number | null;
-  /** Commit the scene's progress to the open book (theirs: `e6(e)` when the detail settles) and release it on close. */
-  pin: (index: number, arrived: boolean) => void; unpin: (index: number) => void;
+  /** Commit the scene's progress to the open book (theirs: `e6(e)` when the detail settles) and release it on close.
+   * `instant`: opened from the shelf or on its own address (a phone's exits then start at once). */
+  pin: (index: number, arrived: boolean, instant: boolean) => void; unpin: (index: number) => void;
+  /** A phone's carry: the open book's exits at its landing (their `landingExits`); undefined on desktop. */
+  landingExits?: (index: number) => unknown;
   /** True while the book's pages are open ("Open book"): ← turns a page then, it does not leave the details. */
   pagesOpen: () => boolean };
 
 /**
- * Their book detail (06w9), desktop: a click on a shelf spine carries that book into its details inside the scene.
+ * Their book detail (06w9), at every width: a click on a shelf spine carries that book into its details inside the scene.
  * - Open (`openBookDetail` h$, on-shelf branch, 15069-15150): the transition ref on a rAF clock (neighbours fall over
  *   BOOK_OPEN_BOOKS_MOVE_MS, the book after BOOK_OPEN_ACTIVE_DELAY_MS, the next card revealed from
  *   BOOK_OPEN_BG_REVEAL_START_MS), the detail presentation from the active delay (the scene shifts −20vw over 640 ms,
@@ -42,7 +45,7 @@ export function useBookDetail(hub: SceneHub, catalogue: SceneCatalogue, router: 
 
   const cancel = () => { clock.current.token += 1; if (clock.current.frame) cancelAnimationFrame(clock.current.frame); clock.current.frame = 0; };
   const settle = useCallback((index: number, arrived = false) => {
-    source.current.pin(index, arrived);
+    source.current.pin(index, arrived, arrived || fromShelf.current);
     setOpen(index); setLeaving(false);
     window.dispatchEvent(new Event("resize"));
   }, []);
@@ -52,7 +55,6 @@ export function useBookDetail(hub: SceneHub, catalogue: SceneCatalogue, router: 
   const openBook = useCallback((index: number, arrived = false) => {
     const current = transition().current;
     if (current.active && !current.returning && current.index === index) return true;
-    if (window.innerWidth < 900) return false;                                    // phone: row 20, not this slice
     cancel();
     const raw = source.current.rawProgress(), onShelf = !arrived && raw >= catalogue.J + 0.5 && raw < catalogue.K + 1;
     // Already reading a book: the next one opens in place, with no scroll (theirs, 15063).
@@ -116,7 +118,9 @@ export function useBookDetail(hub: SceneHub, catalogue: SceneCatalogue, router: 
     const delay = constant.BOOK_OPEN_ACTIVE_DELAY_MS, move = constant.BOOK_OPEN_BOOKS_MOVE_MS;
     const revealStart = constant.BOOK_OPEN_BG_REVEAL_START_MS, reveal = constant.BOOK_OPEN_BG_REVEAL_MS;
     const total = Math.max(move, revealStart + reveal, delay + move);
-    transition().current = { active: true, index, progress: 0, activeProgress: 0, activeProgressY: 0, returning: false, landingFrac: 0 };
+    // A phone's carry also slides the book and the card by its exits at the landing (06w9:15085-15086).
+    transition().current = { active: true, index, progress: 0, activeProgress: 0, activeProgressY: 0, returning: false, landingFrac: 0,
+      landingExits: window.innerWidth < 900 ? source.current.landingExits?.(index) : undefined };
     hub.shelfReturnRevealLiveRef.current = -1; hub.bookOpenRevealLiveRef.current = 0;
     hub.canvasShiftAnimatingUntilRef.current = performance.now() + total + 200;
     const start = performance.now();
@@ -207,8 +211,10 @@ export function useBookDetail(hub: SceneHub, catalogue: SceneCatalogue, router: 
     }, motion.P + motion.i);
   }, [open, hub, motion, closeState]);   // eslint-disable-line react-hooks/exhaustive-deps
 
-  // The scene shift (17079-17100): −20vw while the detail is presented, eased over 640 ms on every change.
-  const shift = presenting || (open != null && !leaving) ? -20 : 0, lastShift = useRef(0);
+  // The scene shift (17079-17100): −20vw while the detail is presented, eased over 640 ms on every change; none on a
+  // phone, where the details run full width under the book.
+  const phone = typeof window !== "undefined" && window.innerWidth < 900;
+  const shift = !phone && (presenting || (open != null && !leaving)) ? -20 : 0, lastShift = useRef(0);
   useEffect(() => {
     hub.detailCanvasShiftVwLiveRef.current = shift;
     if (lastShift.current === shift) return;

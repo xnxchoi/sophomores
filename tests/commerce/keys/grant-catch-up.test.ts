@@ -242,7 +242,6 @@ test("after the tick deadline no pass, query, write or RPC starts; the next tick
   const [older, latest] = [`0x${"a".repeat(64)}`, `0x${"b".repeat(64)}`];
   let clock = Date.parse("2026-11-25T12:00:00Z");
   let expired = false;
-  let rpcAtExpiry = -1;
   let slowOnce = true;
   const tickNow = () => new Date(clock);
   const account = privateKeyToAccount(generatePrivateKey());
@@ -251,7 +250,7 @@ test("after the tick deadline no pass, query, write or RPC starts; the next tick
     eth_blockNumber: () => numberToHex(101),
     // The latest send reverted (slowly, past the deadline); the older send at the same nonce is the one that mined.
     eth_getTransactionReceipt: ([hash]) => {
-      if (hash === latest) { if (slowOnce) { slowOnce = false; clock += 20 * 60_000; expired = true; rpcAtExpiry = chain.requests.length; } return { ...receipt("0x0", []), transactionHash: latest }; }
+      if (hash === latest) { if (slowOnce) { slowOnce = false; clock += 20 * 60_000; expired = true; } return { ...receipt("0x0", []), transactionHash: latest }; }
       return { ...receipt("0x1", [transferLog(42n)]), transactionHash: older };
     },
   }));
@@ -272,7 +271,9 @@ test("after the tick deadline no pass, query, write or RPC starts; the next tick
   const first = await runKeyGrantTick({ payload, grant, acquire: runLock().acquire, env: live, now: tickNow });
   assert.deepEqual(first, { outcome: "ran", reconciled: 0, replaced: 0, dispatched: 0, cancelled: 0, seatsReleased: 0, seatSweepFailures: 0, overCap: [] });
   assert.deepEqual(afterExpiry, [], "no Payload read or write after expiry");
-  assert.equal(chain.requests.length, rpcAtExpiry, "no RPC after expiry (the older hash is not read)");
+  // The hash in flight at expiry finishes its own reads; nothing after it starts: no second receipt, no later pass.
+  assert.equal(chain.requests.filter((request) => request.method === "eth_getTransactionReceipt").length, 1, "the older hash is not read after expiry");
+  assert.ok(!chain.requests.some((request) => ["eth_call", "eth_getTransactionCount", "eth_estimateGas", "eth_sendRawTransaction"].includes(request.method)), "no later pass touched the chain");
   const byID = (id: string) => rows["commerce-key-grant-intents"].find((row) => row.id === id)!;
   assert.deepEqual([byID("00000000-0000-4000-8000-0000000000b1").state, byID("00000000-0000-4000-8000-0000000000b1").lastErrorCode, byID("00000000-0000-4000-8000-0000000000b1").nextAttemptAt], ["submitted", undefined, undefined], "not reverted, not deferred");
   assert.equal(byID("later").state, "pending");

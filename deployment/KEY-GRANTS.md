@@ -111,6 +111,9 @@ There is **no lock-manager key on any of our hosts** (ADR-0008, ADR-0011). The o
    chain 137; the `latest`, `safe` and `finalized` tags; `finalized` a few blocks behind `latest` (at most 128); the
    block numbered at the finalized height carrying the finalized hash; a 10-block `parentHash` walk by hash; and
    latency. It prints the URL's host, never its path, and uses no account. Record the result line here.
+   - **25 Nov, 14:1x KST: pass.** File `-rw-------`, 94 bytes. `{"host":"polygon-mainnet.g.alchemy.com","outcome":"pass",
+     "chainId":137,"safe":"unsupported","latest":"97918787","finalized":"97918785","finalizedLagBlocks":2,"walked":10,
+     "latencyMs":{"calls":15,"median":165,"max":584}}`. Gate 1 is closed.
 2. **Over-cap alert through the real scheduler:** on the tick host, under the actual scheduler (systemd timer or cron),
    run a synthetic over-cap tick and confirm both the result line's `overCap` and the
    `{"event":"key_grant_over_cap",...}` line reach the scheduler's log and the alert. The unit test proved it only

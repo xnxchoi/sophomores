@@ -9,8 +9,8 @@ Harness-only (not code changes): `harness/main.js` is our one module (990001); i
 harness server maps `/3d/book.glb` to the owner's model and every `/images/...` texture to our own files.
 
 Model (owner, 25 Nov, "let's do b for now"): `fix-model.py` writes `assets/book-rest.glb` from the owner's book.glb:
-root pose cleared, cover bones back to bind pose (their code reads the loaded bone rotation as the closed cover),
-`crash` renamed `spine`. Retire it when the owner re-exports at rest.
+root keeps its own offset but loses the saved tilt; cover bones back to bind pose (their code reads the loaded bone
+rotation as the closed cover); pages2 back to rest without the stack baked in at export. Retire it when the owner re-exports at rest.
 
 2. `0bl3vphd9w8zl.js` (module 48585, `K(name)`): a texture name that is already a path (starts with `/`) is used as
    that path, so our catalogue can point at our own files without manifest entries.

@@ -1,10 +1,12 @@
 # Owner, 25 Nov ("let's do b for now"): a load-ready copy of his book.glb until he re-exports it at rest. Reads
-# public/assets/three/book/book.glb and writes assets/book-rest.glb:
-#   1. the root node's saved pose (tilt + z 7.86) is cleared; their code poses the book itself;
+# public/assets/three/book/book.glb and writes public/assets/three/book/book-rest.glb:
+#   1. the root node keeps the model's own offset (z 7.86) and loses only the saved runtime tilt (their code rotates the
+#      root but never moves it, and the skinned cover renders from its bind matrices, not the root);
 #   2. every cover bone goes back to its bind pose (from the skins' inverse bind matrices), since their code takes the
 #      loaded bone rotation as the closed cover (3fe65 `pressBindQuat`);
-#   3. `crash` (the outer spine strip) is named `spine`, the name their code looks up (3fe65 `X`).
-# Units already match theirs (cover thickness 3.38 vs their 3.374 reference), so nothing is rescaled.
+#   3. pages2 (the host of their code-built page stack) goes back to rest (no rotation, its own 1.0059 Y/Z scale), loses
+#      the array-valued pressLookInsideHostRestQuat extra, and drops the page stack baked in at export (unnamed node 27).
+# Units already match theirs (cover thickness 3.38 vs their 3.374 reference). Diagnosis: .tmp/stripe-notes/page-block-diagnosis.md.
 import json, struct, sys
 SRC = "/Users/seanschoi/orca/workspaces/sphmrs/ui-commerce/.tmp/cart-wt/public/assets/three/book/book.glb"
 OUT = sys.argv[1] if len(sys.argv) > 1 else "assets/book-rest.glb"
@@ -29,7 +31,8 @@ I = [[1.0 if r == c else 0.0 for c in range(4)] for r in range(4)]
 local = lambda n: col(j["nodes"][n]["matrix"]) if "matrix" in j["nodes"][n] else I
 
 nodes = j["nodes"]; root = next(i for i, n in enumerate(nodes) if n.get("name") == "book")
-nodes[root].pop("matrix", None)                                                    # 1
+T = nodes[root]["matrix"][12:15]                                                    # 1: keep the model's own offset,
+nodes[root]["matrix"] = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, T[0], T[1], T[2], 1]  #    drop only the runtime tilt
 parent = {c: i for i, n in enumerate(nodes) for c in n.get("children", [])}
 def world(n):
     m = local(n)
@@ -42,8 +45,13 @@ bind = {jt: inv(col(ibm[k * 16:(k + 1) * 16])) for k, jt in enumerate(skin["join
 for jt in skin["joints"]:                                                          # parents first (chains are ordered)
     p = parent[jt]; pw = bind.get(p) or world(p)
     nodes[jt]["matrix"] = flat(mul(inv(pw), bind[jt]))
-for n in nodes:                                                                    # 3
-    if n.get("name") == "crash": n["name"] = "spine"
+byname = {n.get("name"): n for n in nodes}                                          # 3: page blocks back to rest
+p2 = byname["pages2"]                                                              #    (pages1 is hidden by their code)
+S = (p2["matrix"][4] ** 2 + p2["matrix"][5] ** 2 + p2["matrix"][6] ** 2) ** 0.5      # 1.0059, the model's own Y/Z scale
+p2.update(translation=p2.pop("matrix")[12:15], scale=[1, S, S])                    # rest = identity (extras.pressBindQuat)
+p2["extras"].pop("pressLookInsideHostRestQuat", None)                               # an array defeats 45610 Q()
+baked = next(c for c in p2["children"] if "name" not in nodes[c])                   # node 27: exported runtime stack
+p2["children"].remove(baked)
 js = json.dumps(j, separators=(",", ":")).encode(); js += b" " * ((4 - len(js) % 4) % 4)
 open(OUT, "wb").write(b"glTF" + struct.pack("<II", 2, 12 + 8 + len(js) + len(rest)) + struct.pack("<I", len(js)) + b"JSON" + js + rest)
-print("wrote", OUT, "bones reset:", len(skin["joints"]))
+print("wrote", OUT, "bones reset:", len(skin["joints"]), "removed child", baked)

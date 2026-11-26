@@ -39,5 +39,5 @@ export default async function CartPage() {
     }
   } catch { shop = null; console.error("Published book information is unavailable."); }
   if (!shop || shop.status !== "displayable" || shop.products.length === 0) return <CartView {...cart} />;
-  return <div className="min-h-dvh bg-background text-foreground"><CommerceShopView shop={shop} contents={contents} cartPanel={<ShopCartPanel {...cart} />} /></div>;
+  return <div className="min-h-dvh bg-background text-foreground"><CommerceShopView shop={shop} contents={contents} cartOpen cartPanel={<ShopCartPanel {...cart} />} /></div>;
 }

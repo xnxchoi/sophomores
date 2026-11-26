@@ -12,9 +12,8 @@ import type { CartProps } from "./cart-view";
 /**
  * What the cart's steps need (CartContents), read as /shop/cart has always read it: the cart's products (Auth's loadCartProducts), whether the
  * request is a signed-in member (it only decides whether Checkout asks for sign-in first) and the sign-in capabilities.
- * Only /shop/cart calls it: it reads the member's state, and /shop/cart is the private page (private, no-store and the
- * back-forward guard, src/lib/member-auth/private-pages.ts). The shop's public routes don't, until Auth makes them
- * session-varying too.
+ * It reads the member's state, so only pages sent private, no-store call it: /shop/cart (a private page with the guard),
+ * and /shop and /shop/products/* (session-varying since Auth fbad4635), where the panel it feeds sits inside PrivateRoute.
  */
 export async function loadCartProps(): Promise<CartProps> {
   const t = await getTranslations("Customer.app_site_shop_cart_page");

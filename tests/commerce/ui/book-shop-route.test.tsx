@@ -14,7 +14,9 @@ before(async () => {
       if (context.parentURL && new URL(context.parentURL).pathname.endsWith("/src/app/(site)/shop/page.tsx")
         && ["next/server", "payload", "@payload-config", "@/lib/commerce/catalogue", "@/lib/commerce/editions",
           "@/lib/member-auth/public-capabilities.server", "@/components/commerce/checkout",
-          "@/components/commerce/offer", "@/components/commerce/book-offer", "@/components/commerce/load-retry"].includes(specifier)) {
+          "@/components/commerce/offer", "@/components/commerce/book-offer", "@/components/commerce/load-retry",
+          // The in-place cart panel (Hamlet, 27 Nov): its loader reads the member; the route test covers the shop's routing only.
+          "./cart/load-cart", "./cart/shop-cart-panel", "@/components/auth/private-route"].includes(specifier)) {
         return { url: new URL("../../fixtures/commerce/book-shop-route.tsx", import.meta.url).href, shortCircuit: true };
       }
       return nextResolve(specifier, context);

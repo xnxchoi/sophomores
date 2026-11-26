@@ -8,6 +8,9 @@ import { BookUnavailable, CommerceShopView } from "@/components/commerce/book-of
 import { CommerceLoadRetry } from "@/components/commerce/load-retry";
 import { readProductPageContent, type ProductPageContent } from "@/components/commerce/product-page/_shared/content";
 import { loadProductPageDocuments } from "./products/[id]/page-documents";
+import { PrivateRoute } from "@/components/auth/private-route";
+import { loadCartProps } from "./cart/load-cart";
+import { ShopCartPanel } from "./cart/shop-cart-panel";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("PageMetadata");
@@ -38,7 +41,8 @@ export default async function ShopPage() {
   return (
     <div className="min-h-dvh bg-background text-foreground">
       {failed ? <BookUnavailable retry={<CommerceLoadRetry className="mt-4" />} />
-        : <CommerceShopView shop={editions} contents={contents} />}
+        // The cart opens in place here (/shop is session-varying, private no-store); its lines sit behind the private guard.
+        : <CommerceShopView shop={editions} contents={contents} cartPanel={<PrivateRoute><ShopCartPanel inPlace {...await loadCartProps()} /></PrivateRoute>} />}
     </div>
   );
 }

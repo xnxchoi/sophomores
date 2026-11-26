@@ -20,11 +20,11 @@ import { readProductPageContent, type ProductPageContent } from "./product-page/
  * `contents`: each product's page fields by product ID (art, book textures, shelf title); a product without them shows
  * its first image and a plain book.
  */
-export function CommerceShopView({ shop, contents = {}, initialOpen, cartPanel }: { shop: CommerceEditionShop | null; contents?: Record<string, ProductPageContent>;
+export function CommerceShopView({ shop, contents = {}, initialOpen, cartPanel, cartOpen }: { shop: CommerceEditionShop | null; contents?: Record<string, ProductPageContent>;
   /** A product's address: the shop opens with that product's details open (stripe.press renders /book/<slug> as its home). */
   initialOpen?: string;
   /** The cart's address (/shop/cart): the shop opens in its cart mode with this in the cart column (stripe.press's /cart). */
-  cartPanel?: ReactNode }) {
+  cartPanel?: ReactNode; cartOpen?: boolean }) {
   const t = useTranslations("Customer.components_commerce_book_offer");
   const locale = useLocale();
   if (!shop || shop.status === "unavailable" || shop.products.length === 0) return <BookUnavailable />;
@@ -39,7 +39,7 @@ export function CommerceShopView({ shop, contents = {}, initialOpen, cartPanel }
   // fallback list sets its own inset (ShopFallback).
   return <main className="pt-[4.5rem] pb-24 text-foreground">
     <h1 className="sr-only">{t("book")}</h1>
-    <ShopHome initialOpen={initialOpen} cartPanel={cartPanel} labels={{ featured: t("featured"), shelf: t("allProducts"), viewDetails: t("viewDetails"), toShelf: t("allProducts"),
+    <ShopHome initialOpen={initialOpen} cartPanel={cartPanel} cartOpen={cartOpen} labels={{ featured: t("featured"), shelf: t("allProducts"), viewDetails: t("viewDetails"), toShelf: t("allProducts"),
       openBook: t("openBook"), closeBook: t("closeTheBook"), previousPage: t("previousPage"), nextPage: t("nextPage"),
       titles: t("titles"), sceneFailed: t("sceneFailed"), tryAgain: t("tryAgain"),
       // Templates: each book fills in its own title on the client.

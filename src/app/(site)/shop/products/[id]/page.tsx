@@ -1,4 +1,7 @@
 import { getTranslations } from "next-intl/server";
+import { PrivateRoute } from "@/components/auth/private-route";
+import { loadCartProps } from "../../cart/load-cart";
+import { ShopCartPanel } from "../../cart/shop-cart-panel";
 import type { Metadata } from "next";
 import { connection } from "next/server";
 import { getPayload } from "payload";
@@ -58,7 +61,7 @@ export default async function ShopProductPage({ params }: { params: Promise<{ id
   }
   return <div className="min-h-dvh bg-background text-foreground">
     {!(product && offer) ? <><FXFrameOff /><BookUnavailable /></>
-      : shop ? <CommerceShopView shop={shop} contents={contents} initialOpen={id} />
+      : shop ? <CommerceShopView shop={shop} contents={contents} initialOpen={id} cartPanel={<PrivateRoute><ShopCartPanel inPlace {...await loadCartProps()} /></PrivateRoute>} />
       : <><FXFrameOff /><ProductPage product={product} offer={offer} content={content} shelf={shelf} /></>}
   </div>;
 }

@@ -34,3 +34,7 @@ export const PALETTE = {
 } as const;
 
 export type PaletteName = keyof typeof PALETTE;
+
+/** A palette colour as sRGB channels from 0 to 1, for shader uniforms and vendored scene props that take numbers. */
+export const paletteRGB = (name: PaletteName): [number, number, number] =>
+  [1, 3, 5].map((at) => parseInt(PALETTE[name].hex.slice(at, at + 2), 16) / 255) as [number, number, number];

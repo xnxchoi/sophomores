@@ -279,8 +279,7 @@ function TickBar({
       aria-hidden
       data-tick={index}
       className={cn(
-        "block shrink-0 rounded-[0.5px] text-nav-foreground",
-        !accent && "bg-nav-foreground"
+        "block shrink-0 rounded-[0.5px]"
       )}
       style={{
         width: tickWidth,

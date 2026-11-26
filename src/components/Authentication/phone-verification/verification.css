@@ -88,7 +88,7 @@
     gap: 2px;
     padding: 6px 12px;
     border-radius: 0;
-    border-right: 1px solid var(--color-titanium);
+    border-right: 1px solid var(--color-singer-stone);
     background: transparent;
     line-height: 1.2;
     color: var(--color-gunmetal-lighter-2);
@@ -194,8 +194,8 @@
 }
 
 .pv-primary:disabled {
-    background: var(--color-titanium);
-    border-color: var(--color-titanium);
+    background: var(--color-singer-stone);
+    border-color: var(--color-singer-stone);
     color: var(--color-pewter);
     cursor: not-allowed;
 }
@@ -208,7 +208,7 @@
 }
 
 .pv-secondary:hover {
-    background: var(--color-titanium);
+    background: var(--color-singer-stone);
 }
 
 .pv-number-summary {
@@ -238,7 +238,7 @@
 }
 
 .pv-message-card {
-    border: 1px solid var(--color-titanium);
+    border: 1px solid var(--color-singer-stone);
     border-radius: 12px;
     padding: 0 16px;
 }
@@ -248,7 +248,7 @@
 }
 
 .pv-message-card > div + div {
-    border-top: 1px solid var(--color-titanium);
+    border-top: 1px solid var(--color-singer-stone);
 }
 
 .pv-message-card span {
@@ -283,7 +283,7 @@
 }
 
 .pv-preview-controls {
-    border-top: 1px solid var(--color-titanium);
+    border-top: 1px solid var(--color-singer-stone);
     margin-top: 24px;
 }
 
@@ -294,7 +294,7 @@
 }
 
 .pv-preview-controls button {
-    border: 1px solid var(--color-titanium);
+    border: 1px solid var(--color-singer-stone);
     background: var(--color-titanium);
     color: var(--color-gunmetal-lighter-2);
     border-radius: 999px;
@@ -360,7 +360,7 @@
     text-align: center;
     line-height: 1.7;
     padding: 12px;
-    background: var(--color-titanium);
+    background: var(--color-singer-stone);
     border-radius: 8px;
 }
 
@@ -400,7 +400,7 @@
 
 
 .pv-study {
-    background: var(--color-titanium);
+    background: var(--color-singer-stone);
 }
 
 .pv-study-launcher {
@@ -417,7 +417,7 @@
     overflow-y: auto;
     overscroll-behavior: contain;
     padding: 20px 36px 28px;
-    border: 1px solid var(--color-titanium);
+    border: 1px solid var(--color-singer-stone);
     border-radius: 22px;
     box-shadow: 0 24px 90px color-mix(in oklab, var(--color-carbon-deep) 8%, transparent);
     scrollbar-width: thin;
@@ -447,7 +447,7 @@
 }
 
 .pv-close:hover {
-    background: var(--color-titanium);
+    background: var(--color-singer-stone);
 }
 
 .pv-language-switcher {

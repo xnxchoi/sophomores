@@ -12,8 +12,8 @@ export function Input({ className, type, ...props }: ComponentProps<"input">) {
       suppressHydrationWarning
       className={cn(
         "h-8 w-full min-w-0 rounded-none border border-input bg-transparent px-2.5 py-1 text-xs transition-colors outline-none file:inline-flex file:h-6 file:border-0 file:bg-transparent file:text-xs file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:border-ring disabled:pointer-events-none disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-1 aria-invalid:ring-destructive/20 md:text-xs dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40",
-        "border-faded-background/60 flex h-8 w-full min-w-0 border-b border-solid bg-transparent px-2.5 py-3.5 text-base shadow-xs transition-[color,box-shadow] outline-none selection:bg-background selection:text-foreground file:inline-flex file:h-6 file:border-0 file:bg-transparent file:font-medium file:text-foreground placeholder:text-base placeholder:text-muted-foreground disabled:pointer-events-none disabled:opacity-50",
-        "focus-visible:border-faded-background/50 focus-visible:ring-ring/0 focus-visible:ring-offset-0",
+        "flex h-8 w-full min-w-0 border-b border-solid bg-transparent px-2.5 py-3.5 text-base shadow-xs transition-[color,box-shadow] outline-none selection:bg-background selection:text-foreground file:inline-flex file:h-6 file:border-0 file:bg-transparent file:font-medium file:text-foreground placeholder:text-base placeholder:text-muted-foreground disabled:pointer-events-none disabled:opacity-50",
+        "focus-visible:ring-ring/0 focus-visible:ring-offset-0",
         "aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40",
         className
       )}
@@ -46,7 +46,7 @@ function HA_Input({
       suppressHydrationWarning
       className={cn(
         "flex h-8 w-full min-w-0 border-b border-solid border-background/60 bg-transparent px-2.5 py-3 text-base shadow-xs transition-[color,box-shadow] outline-none selection:bg-background selection:text-foreground file:inline-flex file:h-7 file:border-0 file:bg-transparent file:font-medium file:text-foreground placeholder:text-base placeholder:text-muted-foreground disabled:pointer-events-none disabled:opacity-50",
-        "focus-visible:border-faded-background/50 focus-visible:ring-ring/0 focus-visible:ring-offset-0",
+        "focus-visible:ring-ring/0 focus-visible:ring-offset-0",
         "aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40",
         className
       )}

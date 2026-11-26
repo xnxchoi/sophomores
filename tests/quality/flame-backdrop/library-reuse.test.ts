@@ -11,6 +11,7 @@ import { createGasFlameShader } from "@/components/gl/flame-backdrop/field/gas-s
 import { referenceConfig } from "@/components/gl/flame-backdrop/field/material";
 import { createFragmentShader } from "@/components/gl/flame-backdrop/shaders";
 import { assertShaderFixture } from "../../flame-backdrop/support/shader-fixture";
+import { historicalFlameConfig, historicalReferenceConfig } from "../../flame-backdrop/support/historical-colours";
 
 const fixture = JSON.parse(
   readFileSync(
@@ -92,9 +93,9 @@ test("installed damping preserves scrub endpoints and state", () => {
 
 test("installed color conversion changes only Float32-equivalent GLSL number spellings", () => {
   const generated = {
-    ring: createFragmentShader(DEFAULT_FLAME_CONFIG),
+    ring: createFragmentShader(historicalFlameConfig()),
     gas: createGasFlameShader(
-      referenceConfig(1440, 900),
+      historicalReferenceConfig(1440, 900),
       fixture.materialWeights
     )
   };

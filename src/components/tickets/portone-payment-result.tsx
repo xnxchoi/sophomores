@@ -327,7 +327,7 @@ function PaymentResult({
               setResult({ paymentId, status: "checking" });
               setAttempt((value) => value + 1);
             }}
-            className="min-h-12 w-full rounded-xl bg-titanium px-5 py-3 text-sm font-medium text-carbon-deep transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-titanium disabled:bg-gunmetal disabled:text-pewter"
+            className="min-h-12 w-full rounded-xl bg-titanium px-5 py-3 text-sm font-medium text-carbon-deep transition-colors hover:bg-singer-stone focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-titanium disabled:bg-gunmetal disabled:text-pewter"
           >
             {status === "checking" ? t('checking') : t('checkAgain')}
           </button>

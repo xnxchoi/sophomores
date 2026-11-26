@@ -68,9 +68,10 @@ export default function RP_Cursor() {
 
   const colors = useMemo(
     () => ({
-      rouge: "62.41% 0.246 28.34",
-      light: "10.17% 0.0013 218.99",
-      dark: "97.5% 0.0013 218.99"
+      // The owner's palette (Palette r3): Deep Cinnabar for focus and drag, Carbon Darker -1 and Titanium per theme.
+      rouge: "var(--red)",
+      light: "var(--carbon-deep)",
+      dark: "var(--white)"
     }),
     []
   );
@@ -131,7 +132,7 @@ export default function RP_Cursor() {
     }),
     []
   );
-  const strokeColor = useMotionValue(`oklch(${currentBase}/1)`);
+  const strokeColor = useMotionValue(currentBase);
 
   const outerVariants = useMemo(
     () => ({
@@ -153,7 +154,7 @@ export default function RP_Cursor() {
     const isDrag = cursorState === "DRAG";
     const isTC = !(isFocus || isDrag) && !!cursorState;
     const target = isFocus || isDrag ? rouge : currentBase;
-    strokeColor.set(`oklch(${target}/1)`);
+    strokeColor.set(target);
     const rr = isFocus || isDrag ? c.MEDIUM : c.SMALL;
     const ii = isDrag ? 0 : isFocus ? 1 : rr;
     outerRad.set(rr);
@@ -331,7 +332,7 @@ export default function RP_Cursor() {
                 key={"wrap"}
                 className={cn(
                   "pointer-events-none flex shrink-0 flex-col items-center justify-center overflow-hidden outline-none",
-                  "rounded-[8px] bg-nav-button/10 font-dots backdrop-blur-xs perspective-distant"
+                  "rounded-[8px] font-dots backdrop-blur-xs perspective-distant"
                 )}
                 style={{ width: containerWidth, height: containerHeight }}
                 variants={textCursorVariants}
@@ -345,7 +346,7 @@ export default function RP_Cursor() {
                   // The caption sits on near-clear glass; a soft shadow in the other ink keeps it readable over bright
                   // imagery without changing the glass.
                   className={cn(
-                    "pointer-events-none relative inline-block w-full origin-[50%_50%_0] text-center font-dots text-sm leading-none font-bold tracking-[0.05rem] whitespace-nowrap text-nav-foreground mix-blend-difference",
+                    "pointer-events-none relative inline-block w-full origin-[50%_50%_0] text-center font-dots text-sm leading-none font-bold tracking-[0.05rem] whitespace-nowrap mix-blend-difference",
                     cursorTheme === "dark"
                       ? "[text-shadow:0_0_2px_var(--color-carbon-deep),0_0_4px_color-mix(in_oklab,var(--color-carbon-deep)_60%,transparent)]"
                       : "[text-shadow:0_0_2px_var(--color-titanium),0_0_4px_color-mix(in_oklab,var(--color-titanium)_60%,transparent)]"

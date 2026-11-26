@@ -109,10 +109,10 @@ function AccountNavigation() {
   const orders = useTranslations("Customer.app_site_me_orders_page");
   const settings = useTranslations("Customer.app_site_me_settings_page_client");
   return <div className="mt-5 grid gap-3 border-t border-gunmetal pt-5">
-    <Link href="/me" prefetch={false} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-titanium px-4 py-3 text-center text-sm font-medium text-carbon-deep transition-colors duration-200 hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-titanium">{navigation("account")}</Link>
-    <Link href="/me/orders" prefetch={false} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-titanium px-4 py-3 text-center text-sm font-medium text-carbon-deep transition-colors duration-200 hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-titanium">{orders("title")}</Link>
-    <Link href="/me/settings" prefetch={false} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-titanium px-4 py-3 text-center text-sm font-medium text-carbon-deep transition-colors duration-200 hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-titanium">{settings("settings")}</Link>
-    <Link href="/me/settings/account" prefetch={false} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-titanium px-4 py-3 text-center text-sm font-medium text-carbon-deep transition-colors duration-200 hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-titanium">{t("returnToAccountDetails")}</Link>
+    <Link href="/me" prefetch={false} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-titanium px-4 py-3 text-center text-sm font-medium text-carbon-deep transition-colors duration-200 hover:bg-singer-stone focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-titanium">{navigation("account")}</Link>
+    <Link href="/me/orders" prefetch={false} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-titanium px-4 py-3 text-center text-sm font-medium text-carbon-deep transition-colors duration-200 hover:bg-singer-stone focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-titanium">{orders("title")}</Link>
+    <Link href="/me/settings" prefetch={false} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-titanium px-4 py-3 text-center text-sm font-medium text-carbon-deep transition-colors duration-200 hover:bg-singer-stone focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-titanium">{settings("settings")}</Link>
+    <Link href="/me/settings/account" prefetch={false} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-titanium px-4 py-3 text-center text-sm font-medium text-carbon-deep transition-colors duration-200 hover:bg-singer-stone focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-titanium">{t("returnToAccountDetails")}</Link>
     <Link href="/help" prefetch={false} className="inline-flex min-h-12 items-center justify-center rounded-xl border border-carbon-lighter-2 px-4 py-3 text-center text-sm font-medium text-titanium transition-colors duration-200 hover:bg-gunmetal focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-titanium">{t("returnToHelp")}</Link>
   </div>;
 }
@@ -131,7 +131,7 @@ function TicketReturnAction({
       <Link
         href="/shop"
         onClick={onReturn}
-        className="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-titanium px-4 [font-family:system-ui] text-sm font-medium text-carbon-deep transition-colors duration-200 hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-titanium"
+        className="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-titanium px-4 [font-family:system-ui] text-sm font-medium text-carbon-deep transition-colors duration-200 hover:bg-singer-stone focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-titanium"
       >
         {t("returnToShop")}
       </Link>

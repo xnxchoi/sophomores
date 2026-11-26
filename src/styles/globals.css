@@ -266,7 +266,6 @@
 
 
 
-  /* Hideaway's viewport frame stays off-black in both themes (owner, 20 Nov: "yes to the first 2"); -i is
   /* Roles, light (DESIGN.md Colors). Neutral grounds and inks only (owner); primary is not green. */
   --background: var(--white);
   --foreground: var(--carbon-deep);

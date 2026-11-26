@@ -7,7 +7,7 @@ export const DEFAULT_FOOTER_CONFIG = resolveFlameConfig({
   composition: { mode: 'footer', heightRatio: .90, verticalScale: .60 },
   visual: { ringThickness: 1.65, breathingAmount: 1.35, inwardLeakAmount: .7, brightness: FLAME_APPEARANCE.exposure.brightness, overlapWhitening: 0 },
   fire: { intensity: FLAME_APPEARANCE.exposure.intensity, plumeHeight: .25, plumeFrequency: 9, flowCycles: 2, warmth: 1, rimStrength: 0, baseColor: PALETTE.gulfCerulean.hex, tipColor: PALETTE.gulfCeruleanLighter.hex,
-    stemStrength: FLAME_APPEARANCE.exposure.stemStrength, alternateBaseColor: PALETTE.gulfCerulean.hex, alternateTipColor: PALETTE.gulfCeruleanLighter.hex, colorCycleSeconds: 32 },
+    stemStrength: FLAME_APPEARANCE.exposure.stemStrength, alternateBaseColor: PALETTE.ultramarine.hex, alternateTipColor: PALETTE.gulfCeruleanLighter.hex, colorCycleSeconds: 32 },
   motion: { loopSeconds: 16 },
   ignition: { enabled: true, durationSeconds: 1.6, sweepFraction: .55 },
   prism: { amount: 0, pointerAmount: 0, nativeSplit: 0, spread: .01 },

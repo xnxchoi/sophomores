@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { PALETTE } from "@/utils/palette";
+import { PALETTE, paletteRGB } from "@/utils/palette";
 
 /**
  * stripe.press's book scene, copied verbatim (owner, 25 Nov: "only copy over the 3D parts verbatim … Dont build webgl
@@ -136,7 +136,7 @@ function stripeBook({ id, title, stageArt, pages, pageCount }: SceneBook) {
       id, title, author: "", slug: id,
       palette: { backgroundColor: PALETTE.singerStone.hex, color: PALETTE.gunmetal.hex, coverColor: PALETTE.titanium.hex, gradientSwatch: TEX + "shared/diffuse_none.png" },
       material: {
-        shininess: 8, reflectiveness: 0.2, thickness: 3, diffuseMapCustom: TEX + "cover-placeholder.png", diffuseBaseColor: [0.9, 0.9, 0.88],
+        shininess: 8, reflectiveness: 0.2, thickness: 3, diffuseMapCustom: TEX + "cover-placeholder.png", diffuseBaseColor: paletteRGB("titanium"),
         bumpMapBase: TEX + "shared/bump_paper.png", bumpScaleBase: 0.03, bumpMapCustom: TEX + "shared/bump_none.png", bumpScaleCustom: 0,
         foilMap: TEX + "shared/foil_none.png", foilSpecular: 0, foilDetail: 1, foilOpacity: 0, foilOffset: 0, foilSilver: 0,
       },

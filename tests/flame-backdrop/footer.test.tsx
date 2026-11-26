@@ -201,7 +201,7 @@ test("footer adds restrained stems, slow blue-green cycling, and viewport igniti
   assert.equal(footer.fire.plumeFrequency, 9);
   assert.equal(footer.motion.loopSeconds, 16);
   assert.equal(footer.fire.colorCycleSeconds, 32);
-  assert.equal(footer.fire.alternateBaseColor, "#2E7DA6");
+  assert.equal(footer.fire.alternateBaseColor, "#005477"); // Ultramarine, so the slow cycle still moves
   assert.equal(footer.fire.alternateTipColor, "#11B8FF");
   assert.equal(footer.ignition.enabled, true);
   assert.equal(footer.ignition.durationSeconds, 1.6);

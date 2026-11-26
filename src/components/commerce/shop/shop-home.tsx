@@ -49,7 +49,9 @@ type Labels = { featured: string; shelf: string; viewDetails: string; toShelf: s
   previousProduct: string; nextProduct: string };
 type Geometry = { lvh: number; mobile: boolean; top: number;
   /** How far our header pushes theirs down (px): see `measure`. */
-  shift: number; height: number; offset: number; extents: number[];
+  shift: number;
+  /** How much lower our card starts than theirs (the shift plus the refund line under the titles), px. */
+  drop: number; height: number; offset: number; extents: number[];
   starts: number[]; lock: number[]; total: number };
 
 export function ShopHome({ items, labels, initialOpen }: { items: Item[]; labels: Labels;
@@ -155,7 +157,7 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
     const shelfScreens = mobile ? Math.max(2.3, Math.min(3.8, 2.3 + ((lvh - 650) / 350) * 1.2)) : 1.67;
     const lock = Array.from({ length: catalogue.t }, (_, index) => 150 + (index === J ? Math.round(0.67 * height) : 0));
     const extents = catalogue.F(count, height, lock, shelfScreens), starts = scroll.e(extents);
-    return { lvh, mobile, top, shift, height, offset, extents, starts, lock, total: extents.reduce((sum, value) => sum + value, 0) };
+    return { lvh, mobile, top, shift, drop: shift + refund, height, offset, extents, starts, lock, total: extents.reduce((sum, value) => sum + value, 0) };
   };
   const [geometry, setGeometry] = useState<Geometry>(measure);
   const geo = useRef(geometry);
@@ -395,6 +397,26 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
     arrived.current = undefined;
     if (!(index >= 0 && items[index]?.details && detail.openBook(index, true))) { setLanding(null); held.current = false; }
   }, []);   // eslint-disable-line react-hooks/exhaustive-deps
+  // Enter opens the selected book (the shelf's, or the featured one in view), as theirs (06w9 keydown, at 338115 in their
+  // build); from the shelf it holds the selection first, so neither a drag nor an arrow moves it during the carry, and
+  // lets go once the details close (their `iv` effect). A focused control keeps its own Enter.
+  const hold = hub as unknown as { holdSpineSelection: () => void; spineSelectionHoldLiveRef: { current: boolean } };
+  useEffect(() => {
+    if (detail.open != null || look.open) return;
+    const key = (event: KeyboardEvent) => {
+      if (event.key !== "Enter" || event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("a, button, input, textarea, select, [contenteditable], [role=button], [role=option]")) return;
+      const index = onShelf ? (hub.spineSelectionLiveRef.current as { to?: number } | null)?.to : active;
+      if (index == null || index < 0) return;
+      event.preventDefault();
+      if (onShelf) hold.holdSpineSelection();
+      openRef.current(index);
+    };
+    window.addEventListener("keydown", key);
+    return () => window.removeEventListener("keydown", key);
+  }, [detail.open, look.open, onShelf, active, hub, hold]);
+  useEffect(() => { if (detail.open == null) hold.spineSelectionHoldLiveRef.current = false; }, [detail.open, hold]);
   // A phone's rail fades as an open starts, not when the details arrive (their `dO`: `ah && ds != null`, 06w9:13545).
   const [opening, setOpening] = useState(false);
   useEffect(() => { if (detail.open != null) setOpening(false); }, [detail.open]);
@@ -575,7 +597,7 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
   // While reading, the page is the stack of every book's details (their sections, then half a screen); otherwise the
   // home's own scroll.
   const readingHeight = reading.layout.total + Math.round(geometry.lvh / 2);
-  return <div ref={page} className="relative overflow-x-clip" style={{ "--shop-shift": geometry.shift + "px" } as CSSProperties}>
+  return <div ref={page} className="relative overflow-x-clip" style={{ "--shop-shift": geometry.shift + "px", "--shop-drop": geometry.drop + "px" } as CSSProperties}>
     <div aria-hidden="true" className="h-(--page-height)" style={{ "--page-height": (readingOpen ? readingHeight : Math.max(0, nextTop)) + "px" } as CSSProperties} />
     {/* The section after the shelf (their Multimedia's place). A placeholder for now (owner, 26 Nov: "a whole new section
         … For now, make it a placeholder: min 100vh, 100vw section"). At least a screen tall, so the page scrolls on
@@ -583,7 +605,7 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
         the section's top is ~100 px from the window's (at 40lvh the page ended at 213 px, row half under the header, G5).
         Its top is the anchor the seat and the lift read: nothing may go above it inside it. */}
     <section ref={next} aria-hidden="true" className="relative min-h-lvh w-screen" />
-    <Cards items={items} featured={catalogue.t} geometry={geometry} progressRef={cardsRef} listeners={listeners} reading={held} J={J}
+    <Cards narrow={readingOpen && !detail.leaving} items={items} featured={catalogue.t} geometry={geometry} progressRef={cardsRef} listeners={listeners} reading={held} J={J}
       hub={hub} openRef={openIndex} />
     {noWebgl ? (
       // Without WebGL their page draws the books as pre-rendered images (06w9:17921-17935): the hero layer instead of
@@ -649,7 +671,9 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
  * a phone), sliding with the locked progress, so a book's hold is its card's pause; the photo counter-moves 70 % and
  * zooms to ~1.06 one book away; the last card lifts out as the shelf arrives. Written per scroll, outside React.
  */
-function Cards({ items, featured, geometry, progressRef, listeners, reading, J, hub, openRef }: { items: Item[]; featured: number; geometry: Geometry;
+function Cards({ narrow, items, featured, geometry, progressRef, listeners, reading, J, hub, openRef }: {
+  /** Details open: the card narrows to 60 % of its box on desktop (theirs, never on a phone). */
+  narrow: boolean; items: Item[]; featured: number; geometry: Geometry;
   progressRef: { current: number }; listeners: { current: Set<() => void> };
   /** True while reading: the cards follow the reading progress (the last card does not lift away). */
   reading: { current: boolean }; J: number;
@@ -705,9 +729,13 @@ function Cards({ items, featured, geometry, progressRef, listeners, reading, J, 
     if (mobile) frame = requestAnimationFrame(follow);
     return () => { set.delete(write); cancelAnimationFrame(frame); };
   }, [geometry, featured, progressRef, listeners, reading, J, hub, openRef]);
-  // The card's box: 8 px off the bottom on desktop, 25 on a phone (theirs, 1jyk:64-77, without the URL-bar terms).
+  // The card's box: 8 px off the bottom on desktop, 25 on a phone (theirs, 1jyk:64-77, without the URL-bar terms). With
+  // details open on desktop it narrows to 60 % of that box (their CardViewport mask, 1jyk:325-328): in over 480 ms after
+  // 100 ms on their ease-in-quad/ease-out-cubic split (sampled into linear()), back over 640 ms easeInOutCubic.
   return <div aria-hidden="true" style={{ top: geometry.top, height: geometry.height - (geometry.mobile ? 25 : CARD_INSET_BOTTOM) }}
-    className="pointer-events-none fixed inset-x-4 z-0 overflow-hidden rounded-[8px] max-[900px]:z-[2]">
+    className={cn("pointer-events-none fixed inset-x-4 z-0 overflow-hidden rounded-[8px] transition-[clip-path] max-[900px]:z-[2] max-[900px]:[clip-path:none]",
+      narrow ? "[clip-path:inset(0_40%_0_0_round_8px)] delay-100 duration-480 ease-[linear(0,0.008,0.031,0.07,0.125,0.195,0.281,0.383,0.5,0.665,0.789,0.878,0.938,0.974,0.992,0.999,1)]"
+        : "[clip-path:inset(0_0_0_0_round_8px)] duration-640 ease-[cubic-bezier(0.65,0,0.35,1)]")}>
     {/* data-bg-index: the no-WebGL hero layer finds the plates by it and follows their translate (theirs, 0jause). */}
     {items.slice(0, featured).map((entry, index) => <div key={entry.id} data-bg-index={index} ref={(plate) => { plates.current[index] = plate; }}
       className={cn("absolute inset-0 overflow-hidden rounded-[8px] bg-muted transition-opacity duration-[450ms] will-change-transform",
@@ -830,7 +858,8 @@ function DetailStack({ shown, height, toShelf, onClose, children }: { shown: boo
 }
 
 /**
- * One book's details in the stack (BookDetailSlot, 06w9:7348-7366): placed at its section top, 118 px down and 260 px
+ * One book's details in the stack (BookDetailSlot, 06w9:7348-7366): placed at its section top, 118 px down (on desktop
+ * plus however much lower our card starts than theirs, so its first rule meets the card's top edge as theirs does) and 260 px
  * of tail; its content measured (height + 300, theirs) for the reading scroll's sections, and its exit anchor
  * registered: the top of its full-width section (praise, details), when it has one.
  */
@@ -850,7 +879,7 @@ function DetailSlot({ index, top, active, onMeasured, anchors, children }: { ind
     observer.observe(element);
     return () => { observer.disconnect(); anchors.current.delete(index); };
   }, [index, onMeasured, anchors]);
-  return <div inert={!active} aria-hidden={!active || undefined} className="absolute inset-x-0 top-0 px-6 pt-[118px] pb-[260px] max-[900px]:px-4" style={{ transform: "translateY(" + top + "px)" }}>
+  return <div inert={!active} aria-hidden={!active || undefined} className="absolute inset-x-0 top-0 px-6 pt-[calc(118px+var(--shop-drop,0px))] pb-[260px] max-[900px]:px-4 max-[900px]:pt-[118px]" style={{ transform: "translateY(" + top + "px)" }}>
     {/* A phone: the details start under a window for the book (MobileBookViewGap, calc(94vh − 185px)), inside the
         measured block, which is at least a screen tall (theirs). */}
     <div ref={content} data-detail-panel-index={index} className="max-[900px]:min-h-[100vh]">

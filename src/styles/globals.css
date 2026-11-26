@@ -6,6 +6,7 @@
    first, so a class can only name a palette colour or a role below. */
 @import "./palette-reset.css";
 @import "./sophomores-palette.css";
+@import "./shadow-theme.css";
 @import "./teaser-theme.css";
 /* Keep site discovery explicit and exclude the separate authentication entry. */
 @source "../app/(site)";
@@ -149,7 +150,7 @@
 @theme static {
   --spacing-header: 7rem;
   --blur-floating: 20px;
-  --shadow-floating: 0 8px 28px -12px oklch(from var(--carbon-deep) l c h / 0.55);
+  --shadow-floating: 0 8px 28px -12px oklch(from var(--color-shadow) l c h / 0.55);
   --shadow-resting: none;
 }
 /* Textures: public/assets/textures/texture-<kind>, one name per kind (grain, leather, marble), from the Mersi study

@@ -16,7 +16,7 @@ export function Panel({ children, className, as = "section" }: PanelProps) {
         "border border-white/10 bg-carbon/60 backdrop-blur-md",
         "before:absolute before:inset-x-0 before:top-0 before:z-10 before:h-px",
         "before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent",
-        "shadow-[0_4px_24px_-4px_color-mix(in_oklab,var(--color-carbon-deep)_50%,transparent)]",
+        "shadow-[0_4px_24px_-4px_color-mix(in_oklab,var(--color-shadow)_50%,transparent)]",
         className
       )}
     >

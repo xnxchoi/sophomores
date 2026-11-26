@@ -1,6 +1,7 @@
 @import "tailwindcss" source(none);
 /* The owner's palette, the only colour source here too (owner, 26 Nov). */
 @import "../../styles/sophomores-palette.css";
+@import "../../styles/shadow-theme.css";
 
 /* Paths are relative to this entry, not TypeScript aliases. */
 @source "./**/*.tsx";
@@ -15,5 +16,6 @@
   --color-preview-muted: var(--stone);
   --color-preview-accent: var(--white);
   --color-preview-on-accent: var(--black);
-  --color-preview-error: var(--bone);
+  /* Staff error: Deep Cinnabar Tuned (owner, 26 Nov: "deep cinnabar tuned"). */
+  --color-preview-error: var(--red);
 }

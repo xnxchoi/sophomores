@@ -61,26 +61,27 @@ function GradientInner() {
   const noiseTexture = useTexture("/assets/seamless.png", (texture) => {
     texture.wrapS = texture.wrapT = RepeatWrapping;
   });
-  // The Hideaway's 15 two-stop schemes, one per menu link in order, drawn from the owner's palette
-  // (sophomores-palette.css; owner, 26 Nov: "remove the old color from all stylesheets"). Each stop is the
-  // palette colour nearest The Hideaway's hex by OKLab distance; the source hex is noted for review.
+  // The Hideaway's 15 two-stop schemes, one per menu link in order. The owner asked for the palette's brighter
+  // colours here (26 Nov: "use the brighter colors within the palettwe"), so each stop is the nearest of Saffron Amber,
+  // Saffron Amber Lighter +1, Muted Olive, Signal Orange, Signal Orange Lighter, Gulf Cerulean and Gulf Cerulean
+  // Lighter by OKLab distance to The Hideaway's stop (the second stop takes the next nearest when both would match).
   const colorSchemes = useMemo<ReadonlyArray<readonly [string, string]>>(
     () => [
-      ["--red", "--celadon"], // d40000, 9ecbd9
-      ["--red", "--gulf-cerulean-lighter"], // aa3422, 77a6a6
-      ["--celadon", "--bone"], // 9ecbd9, e7d5ba
-      ["--yellow", "--white"], // f6b08a, fdf1e8
-      ["--white", "--celadon"], // fdf1e8, 9ecbd9
-      ["--red", "--yellow"], // d40000, ffb400
-      ["--red", "--yellow-lighter-1"], // d40000, 9eff00
-      ["--yellow", "--celadon"], // f57b66, c3ead2
-      ["--gulf-cerulean", "--orange-lighter"], // 4d8593, f38b2b
-      ["--yellow-lighter-1", "--celadon"], // aae935, ade9ff
-      ["--bone", "--orange"], // f5c78e, e74b58
-      ["--orange", "--celadon"], // c67006, 9ce8e3
-      ["--yellow", "--celadon"], // f57b66, c3ead2
-      ["--red", "--yellow"], // d40000, f6b08a
-      ["--red", "--olive"] // d40000, 9aa989
+      ["--orange", "--gulf-cerulean-lighter"],
+      ["--orange", "--gulf-cerulean-lighter"],
+      ["--gulf-cerulean-lighter", "--yellow-lighter-1"],
+      ["--yellow", "--yellow-lighter-1"],
+      ["--yellow-lighter-1", "--gulf-cerulean-lighter"],
+      ["--orange", "--yellow"],
+      ["--orange", "--yellow-lighter-1"],
+      ["--yellow", "--yellow-lighter-1"],
+      ["--gulf-cerulean", "--orange-lighter"],
+      ["--yellow-lighter-1", "--gulf-cerulean-lighter"],
+      ["--yellow-lighter-1", "--orange"],
+      ["--orange", "--yellow-lighter-1"],
+      ["--yellow", "--yellow-lighter-1"],
+      ["--orange", "--yellow"],
+      ["--orange", "--olive"]
     ],
     []
   );

@@ -54,7 +54,7 @@ export function ProgressSegment({
     return Math.max(0, Math.min(1, value));
   });
   return (
-    <span className="h-1 flex-1 overflow-hidden bg-titanium/33 group-data-[story-tone=green]/card:bg-carbon-deep/33">
+    <span className="h-1 flex-1 overflow-hidden bg-titanium/33">
       <motion.i
         className="block size-full origin-left bg-current"
         style={{ scaleX }}
@@ -91,7 +91,7 @@ function StoryCard({
         story.tone === "dark"
           ? "bg-carbon"
           : story.tone === "green"
-            ? "bg-saffron-amber-lighter-1 text-black [&>:not([data-story-artwork])]:relative [&>:not([data-story-artwork])]:z-1"
+            ? "bg-medici-cypress-tuned text-titanium [&>:not([data-story-artwork])]:relative [&>:not([data-story-artwork])]:z-1"
             : "bg-ultramarine",
         story.tone === "portrait" ? "[&>:not([data-story-photo])]:relative" : ""
       )}
@@ -116,10 +116,7 @@ function StoryCard({
       {story.tone === "green" && <StoryArtwork tone="green" reveal={opacity} />}
       <div className="relative flex flex-col gap-4">
         <span
-          className={cn(
-            "text-teaser-label self-start p-2 font-sans uppercase",
-            story.tone === "green" ? "bg-carbon-deep/10" : "bg-titanium/10"
-          )}
+          className="text-teaser-label self-start bg-titanium/10 p-2 font-sans uppercase"
         >
           {storyLabel}
         </span>

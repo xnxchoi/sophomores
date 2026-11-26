@@ -62,7 +62,7 @@ export function SetlistHeader({ setlist, contributedCount, archiveOnly = false }
   const isClosed = Boolean(countdown?.isExpired) || setlist.isPastDeadline || setlist.status !== "active";
 
   return (
-    <header className="relative w-full overflow-hidden rounded-2xl border border-white/10 bg-carbon/60 p-6 backdrop-blur-md shadow-[0_4px_24px_-4px_color-mix(in_oklab,var(--color-carbon-deep)_50%,transparent)] md:p-8">
+    <header className="relative w-full overflow-hidden rounded-2xl border border-white/10 bg-carbon/60 p-6 backdrop-blur-md shadow-[0_4px_24px_-4px_color-mix(in_oklab,var(--color-shadow)_50%,transparent)] md:p-8">
       {/* Subtle top edge specular highlight */}
       <div
         aria-hidden="true"

@@ -32,7 +32,7 @@ export function CuratorControlBar({
   } = useMusicKit(slug, initialIsConfigured);
 
   return (
-    <div className="relative w-full overflow-hidden rounded-2xl border border-white/15 bg-carbon/80 p-5 backdrop-blur-md shadow-[0_4px_24px_-4px_color-mix(in_oklab,var(--color-carbon-deep)_50%,transparent)] md:p-6">
+    <div className="relative w-full overflow-hidden rounded-2xl border border-white/15 bg-carbon/80 p-5 backdrop-blur-md shadow-[0_4px_24px_-4px_color-mix(in_oklab,var(--color-shadow)_50%,transparent)] md:p-6">
       {/* Specular edge */}
       <div
         aria-hidden="true"

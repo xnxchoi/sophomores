@@ -450,7 +450,8 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
 
   // How far the rising row covers the titles (their header sampler's `rowOverTitles`, 06w9:11870-11895): the rail's
   // share under the row's top at the lift the next section gives it, in 40ths; −1 while the seat isn't locked. The
-  // rail fades by half of it (their footerFade). Their phone branch reads a mobile seat this page doesn't have.
+  // rail fades by half of it (their footerFade), at every width. Their other branch (`rD.f`, module 44870) is for their
+  // no-WebGL shelf (module 16909 `t` is the no-WebGL check), which this page replaces with its plain list.
   const [rowOver, setRowOver] = useState(-1);
   useEffect(() => {
     let frame = 0;

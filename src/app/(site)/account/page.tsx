@@ -31,7 +31,10 @@ export default async function MemberAccountStudyPage({
   const providerReturn = query?.error !== undefined;
   const accountReturn = query?.next === "/me" || query?.next === "/me/settings/account" || query?.next === "/me/orders" || query?.next === "/me/settings";
   return (
+    // Signed in, the account shows even when its status check fails (owner, 26 Nov: "Account page shoulda fucking
+    // should show the account page when logged in"); only a signed-out visitor sees sign-in, by the redirect above.
     <TicketAccountEntry
+      signedIn
       initialFlow={providerReturn || accountReturn ? "login" : undefined}
       showAccountNavigation={providerReturn || accountReturn}
       initialCapabilities={await loadPublicMemberCapabilities()}

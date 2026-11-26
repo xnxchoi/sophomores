@@ -219,8 +219,11 @@ export function MemberAccountPage({
   initialCapabilities,
   completionAction,
   authenticatedAction,
+  signedIn: serverSignedIn = false,
   navigate = (url) => window.location.replace(url)
 }: {
+  /** The server read a session for this request: until a status read says otherwise, this is the account. */
+  signedIn?: boolean;
   /** The sign-in page's validated return; absent on the account page itself. */
   next?: string;
   client?: MemberClient;
@@ -244,7 +247,7 @@ export function MemberAccountPage({
   const lastChoice = useRef<"login" | "signup" | null>(null);
   const left = useRef(false);
   const flow = useRef<{ requestCancel: () => void } | null>(null);
-  const [signedIn, setSignedIn] = useState(false);
+  const [signedIn, setSignedIn] = useState(serverSignedIn);
   useEffect(() => {
     // Back from a flow, focus returns to the choice that opened it.
     if (step === "chooser" && lastChoice.current) (lastChoice.current === "login" ? login : signup).current?.focus({ preventScroll: true });
@@ -254,7 +257,9 @@ export function MemberAccountPage({
     setChoice(flow);
   }
   function leaveWhenMember(snapshot: MemberSnapshot) {
-    if (Boolean(snapshot.status?.authenticated) !== signedIn) setSignedIn(Boolean(snapshot.status?.authenticated));
+    // A failed or pending status read keeps what the server knew; only a status read can end the session here.
+    const known = snapshot.status ? snapshot.status.authenticated : serverSignedIn;
+    if (known !== signedIn) setSignedIn(known);
     if (next === undefined || left.current || !snapshot.status?.member) return;
     left.current = true;
     navigate(next);
@@ -295,6 +300,7 @@ export function MemberAccountPage({
             flow={step}
             completionAction={completionAction}
             authenticatedAction={authenticatedAction}
+            signedIn={serverSignedIn}
             onSnapshot={leaveWhenMember}
             onChooser={() => setChoice("chooser")}
             onExit={() => setChoice("chooser")}
@@ -385,12 +391,15 @@ export function MemberAccountFlow({
   authenticatedAction,
   presentation,
   noAccountMessage,
+  signedIn,
   onSnapshot,
   onVerifiedFocus,
   onTitle,
   onChooser = () => {},
   onExit = () => {}
 }: {
+  /** The server read a session for this request: a failed or pending status read shows the account, not sign-in. */
+  signedIn?: boolean;
   ref?: Ref<{ requestCancel: () => void }>;
   client?: MemberClient;
   initialCapabilities?: Readonly<MemberCapabilities>;
@@ -629,6 +638,7 @@ export function MemberAccountFlow({
       presentation={presentation}
       onTitle={onTitle}
       noAccountMessage={noAccountMessage}
+      signedIn={signedIn}
       emailEntry={emailEntry?.email === normalizedEmail ? emailEntry : undefined}
       onLookupRetry={() => { void checkEmailEntry(); }}
       onVerifiedFocus={onVerifiedFocus}

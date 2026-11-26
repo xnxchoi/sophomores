@@ -300,6 +300,45 @@ test("configured authority accepts only the exact production origin and keeps lo
   assert.equal(hasLocalRequestAuthority(request("/x"), origin), false);
 });
 
+// The preview, 26 Nov: every GET /api/member/status was a 403 (Review-copy's nginx counts). Under `next start`
+// (standalone) a route's request.url is built from the server's own bind address (deployment/Dockerfile sets
+// HOSTNAME=0.0.0.0 PORT=3000) and X-Forwarded-Proto, so it is https://0.0.0.0:3000/..., never the site's origin.
+// The authority then comes from the Host the proxy sets, but only where the deployment says a trusted proxy is the sole
+// way in (Review-B, 26 Nov: forwarded headers are never proof of trust; opt in, exact listener, default off).
+test("configured authority accepts the standalone listener's URL only with the trusted-proxy opt-in", () => {
+  const trusted = { TRUSTED_PROXY_LISTENER_ORIGIN: "https://0.0.0.0:3000" };
+  const listener = { url: "https://0.0.0.0:3000" };
+  assert.equal(hasConfiguredRequestAuthority(request("/api/member/status", listener), origin, trusted), true);
+  assert.equal(hasConfiguredRequestAuthority(request("/x", { ...listener,
+    headers: { "X-Forwarded-Host": "sophomores.co", "X-Forwarded-Proto": "https" } }), origin, trusted), true);
+  // Off by default; a malformed value (no port, http, a path, a non-listener host, the site itself) is also off.
+  for (const value of [undefined, "", "on", "https://0.0.0.0", "http://0.0.0.0:3000", "https://0.0.0.0:3000/",
+    "https://0.0.0.0:3000/api", " https://0.0.0.0:3000", "https://10.0.0.5:3000", "https://sophomores.co:3000", "https://user@0.0.0.0:3000"])
+    assert.equal(hasConfiguredRequestAuthority(request("/x", listener), origin, { TRUSTED_PROXY_LISTENER_ORIGIN: value }), false, String(value));
+  // Another listener address is allowed only when it is the one configured.
+  assert.equal(hasConfiguredRequestAuthority(request("/x", { url: "https://127.0.0.1:3000" }), origin,
+    { TRUSTED_PROXY_LISTENER_ORIGIN: "https://127.0.0.1:3000" }), true);
+  // Opted in, only the supported topology's exact listener origin, and only when the proxy's Host names the site.
+  for (const bad of [
+    new Request("https://0.0.0.0:3000/x"),
+    request("/x", { ...listener, headers: { Host: "evil.example" } }),
+    request("/x", { ...listener, headers: { Host: "0.0.0.0:3000" } }),
+    request("/x", { ...listener, headers: { "X-Forwarded-Host": "evil.example" } }),
+    request("/x", { url: "http://0.0.0.0:3000" }),
+    request("/x", { url: "https://0.0.0.0:3001" }),
+    request("/x", { url: "https://0.0.0.0" }),
+    request("/x", { url: "https://localhost:3000" }),
+    request("/x", { url: "https://127.0.0.1:3000" }),
+    request("/x", { url: "https://[::1]:3000" }),
+    request("/x", { url: "https://10.0.0.5:3000" }),
+    request("/x", { url: "https://evil.example:3000" })
+  ])
+    assert.equal(hasConfiguredRequestAuthority(bad, origin, trusted), false, bad.url);
+  // The exact-origin rule is the same with or without the opt-in.
+  assert.equal(hasConfiguredRequestAuthority(request("/x"), origin, trusted), true);
+  assert.equal(hasConfiguredRequestAuthority(request("/x", { url: "https://www.sophomores.co" }), origin, trusted), false);
+});
+
 test("member status accepts the production origin and rejects localhost and foreign origins", async () => {
   const handlers = createMemberHandlers({
     production: true,

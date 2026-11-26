@@ -29,6 +29,8 @@ export type MemberAccountViewProps = {
   /** "page": the sign-in page lays the flow out itself (no panel padding, no sheet indents; its h1 names the step). */
   presentation?: "ticket-checkout" | "page";
   noAccountMessage?: string;
+  /** The server read a session for this request: with no status yet (pending or failed), show the account, not sign-in. */
+  signedIn?: boolean;
   onVerifiedFocus?: () => void;
   emailEntry?: { email: string; state: "pending" | "error" | "existing" | "new"; retryAt?: number };
   onLookupRetry?: () => void;
@@ -119,12 +121,16 @@ export function MemberAccountView(props: MemberAccountViewProps) {
   }, [props.onVerifiedFocus]);
   const capabilities = status?.capabilities ?? props.initialCapabilities;
   const locked = snapshot.busy || !status;
-  const sharedEmail = !status?.authenticated || Boolean(props.reauthenticating);
+  // Owner, 26 Nov: "Account page shoulda fucking should show the account page when logged in". The server already
+  // read the session; a status read that is pending or failed (the preview's was refused) is not a sign-out.
+  const accountPending = Boolean(props.signedIn && !status);
+  const sharedEmail = !accountPending && (!status?.authenticated || Boolean(props.reauthenticating));
   const bindingConfirmed = Boolean(
     status?.member &&
     snapshot.notice === "Email and phone binding confirmed for this local account."
   );
-  const error = snapshot.error && snapshot.failure ? t(`failures.${snapshot.failure}`) : snapshot.error;
+  const error = accountPending && snapshot.error ? t("weCouldntLoadYourAccountTryAgain")
+    : snapshot.error && snapshot.failure ? t(`failures.${snapshot.failure}`) : snapshot.error;
   const notice = bindingConfirmed || snapshot.noticeCode === "passkey-added" ||
     (status?.authenticated && snapshot.failure === "passkey-cancelled") ? null : snapshot.notice
     ? snapshot.failure ? t(`failures.${snapshot.failure}`)
@@ -148,14 +154,14 @@ export function MemberAccountView(props: MemberAccountViewProps) {
   const embeddedPhone =
     !status?.member && (props.registrationContext || (pendingSetup &&
     (props.flow === "signup" || props.registrationRequested === true)));
-  const phase = embeddedPhone ? "phone" : status?.member
+  const phase = accountPending ? "account" : embeddedPhone ? "phone" : status?.member
     ? "member"
     : status?.authenticated
       ? embeddedPhone
         ? "phone"
         : "setup"
       : "identity";
-  const heading = status?.member
+  const heading = accountPending ? t("yourAccount") : status?.member
     ? t("accountReady")
     : status?.authenticated
       ? status.emailVerified
@@ -275,7 +281,7 @@ export function MemberAccountView(props: MemberAccountViewProps) {
                 <IdentityStep {...props} flow="login" presentation={undefined} headingId={(props.headingId ?? "member-account-heading") + "-reauth-entry"} reauthenticating locked={locked} reserveFeedback={needsStatusRetry} feedbackAction={statusRetry} />
               </div>}
             </>
-          ) : !status?.authenticated ? (
+          ) : accountPending ? null : !status?.authenticated ? (
             <IdentityStep
               {...props}
               locked={locked}

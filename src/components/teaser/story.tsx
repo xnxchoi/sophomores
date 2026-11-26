@@ -318,7 +318,7 @@ export function Story({
           ))}
         </motion.div>
         <div
-          className="pointer-events-auto absolute right-4.5 bottom-[63px] flex gap-1 md:right-6 md:bottom-17"
+          className="pointer-events-auto absolute right-4.5 bottom-[calc(var(--frame-bottom)+63px)] flex gap-1 phone:bottom-[63px] md:right-6 md:bottom-[calc(var(--frame-bottom)+68px)]"
           aria-label={t("storyChapters")}
         >
           {activeStories.map((_, index) => (

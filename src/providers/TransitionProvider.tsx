@@ -28,7 +28,8 @@ import {
   useEffect,
   useMemo,
   useRef,
-  useState
+  useState,
+  useTransition
 } from "react";
 import { useStore } from "zustand";
 import { useShallow } from "zustand/shallow";
@@ -207,6 +208,20 @@ const TransitionManager = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (pathname) entryScroll.arrived(pathname, lenis);
   }, [entryScroll, pathname, lenis]);
+  // The faded page's way back. A push can land on the page it left (Home redirects to the shop without a pass), so
+  // the route never changes and nothing fades the page in. The push runs in this transition, which stays pending until
+  // the navigation commits (Next.js docs, interactive apps: router.push inside startTransition); if it settles on the
+  // same path, the page comes back.
+  const [isFadePushPending, startFadePush] = useTransition();
+  const fadedFrom = useRef<{ path: string; page: HTMLElement } | null>(null);
+  useEffect(() => {
+    const faded = fadedFrom.current;
+    if (isFadePushPending || !faded) return;
+    fadedFrom.current = null;
+    if (window.location.pathname === faded.path && faded.page.isConnected) {
+      animate(faded.page, { opacity: 1 }, { duration: 0.28, ease: "easeOut" });
+    }
+  }, [isFadePushPending]);
   const completeEntry = useCallback((keepScroll = false) => {
     entryScroll.settle(lenis, keepScroll);
     lenis?.resize();
@@ -795,17 +810,21 @@ const TransitionManager = ({ children }: { children: ReactNode }) => {
           scheduleTransitionWork(goOn);
           return;
         }
+        const path = window.location.pathname;
         animate(page, { opacity: 0 }, { duration: 0.18, ease: "easeIn" }).then(() => {
-          scheduleTransitionWork(() => {
-            // A Back/Forward during the fade supersedes the link: that page stays, so it comes back.
-            if (!goOn()) animate(page, { opacity: 1 }, { duration: 0.18, ease: "easeOut" });
+          requestAnimationFrame(() => {
+            startFadePush(() => {
+              // A Back/Forward during the fade supersedes the link: that page stays, so it comes back.
+              if (goOn()) fadedFrom.current = { path, page };
+              else animate(page, { opacity: 1 }, { duration: 0.18, ease: "easeOut" });
+            });
           });
         });
       } else {
         scheduleTransitionWork(goOn);
       }
     },
-    [exit, completeExfil, runLostProductLeave, entryScroll]
+    [exit, completeExfil, runLostProductLeave, entryScroll, startFadePush]
   );
   const enterer = useCallback(
     (next: () => void, from?: string, to?: string) => {

@@ -15,13 +15,12 @@ import { useCommerceCartState } from "./use-commerce-cart-state";
  * is useCommerceCartState; this view only renders it. It never submits payment. With `onSignIn`, Checkout asks for
  * sign-in first instead of linking on.
  */
-export function CommerceCart({ products, resolveProducts, wide = false, signedIn = true, onSignIn }: {
-  products: readonly CartProduct[]; resolveProducts?: (productIDs: string[]) => Promise<readonly CartProduct[]>;
-  wide?: boolean; signedIn?: boolean; onSignIn?: () => void;
+export function CommerceCart({ products, wide = false, signedIn = true, onSignIn }: {
+  products: readonly CartProduct[]; wide?: boolean; signedIn?: boolean; onSignIn?: () => void;
 }) {
   const t = useTranslations("Customer.components_commerce_cart");
   const { lines, waiting, busy, feedback, purchased, subtotalKRW, shippingKRW, totalKRW, checkoutAvailable,
-    removingLineID, refreshing, canRefresh, remove, refresh } = useCommerceCartState({ signedIn, products, resolveProducts });
+    removingLineID, refreshing, canRefresh, remove, refresh } = useCommerceCartState({ signedIn, products });
 
   return <section aria-label={t("contents")} aria-busy={busy} className={cn("grid min-w-0 gap-8",
     wide && lines.length > 0 && "lg:grid-cols-[minmax(0,1.6fr)_minmax(18rem,1fr)] lg:gap-12")}>

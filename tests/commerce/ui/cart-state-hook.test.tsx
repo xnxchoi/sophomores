@@ -101,12 +101,14 @@ function resolving(products: readonly CartProduct[], resolveProducts: Resolver, 
   return env.ui.renderHook(() => useCommerceCartState({ signedIn, products, resolveProducts }), { wrapper });
 }
 
-test("an edition line not loaded up front is resolved once, loading until then", async () => {
+test("an edition line not loaded up front is resolved once; meanwhile the row shows and only checkout waits", async () => {
   env.dom.window.localStorage.setItem("sphmrs.cart.v1", JSON.stringify({ version: 1, lines: [{ productID: "e1", quantity: 1 }] }));
   const asked: string[][] = [];
   let answer!: (found: readonly CartProduct[]) => void;
   const { result } = resolving([membership], (ids) => { asked.push(ids); return new Promise((resolve) => { answer = resolve; }); }, false);
-  assert.equal(result.current.checkoutReason, "loading");
+  // Review-B LOW: the cart isn't "loading" while only display details are; the row is there and checkout waits.
+  assert.deepEqual([result.current.waiting, result.current.resolvingDetails, result.current.checkoutReason], [false, true, "loading"]);
+  assert.deepEqual(result.current.lines.map(({ productID, kind }) => [productID, kind]), [["e1", "unknown"]]);
   // A resolver may only name editions it was asked about: the extra membership-kind entry is ignored.
   await env.ui.act(async () => { answer([edition, { ...membership, productID: "e1-spoof", kind: "membership" }]); });
   assert.deepEqual(asked, [["e1"]]);
@@ -123,7 +125,18 @@ test("a failing resolver leaves the membership line named and the other line unk
   await env.ui.act(async () => {});
   assert.equal(calls, 1);
   assert.deepEqual(result.current.lines.map(({ productID, kind }) => [productID, kind]), [["p1", "membership"], ["e9", "unknown"]]);
-  assert.deepEqual([result.current.waiting, result.current.checkoutReason], [false, "multiple-lines"]);
+  assert.deepEqual([result.current.waiting, result.current.resolvingDetails, result.current.checkoutReason], [false, false, "multiple-lines"]);
+});
+
+test("Remove works on a known row while another row's details are still loading", async () => {
+  env.ecommerce.setFakeEcommerce({ user: member, cart: cart([{ id: "i1", product: "p1", quantity: 1 }, { id: "i9", product: "e9", quantity: 1 }]),
+    removeItem: async () => { env.ecommerce.setFakeEcommerce({ cart: cart([{ id: "i9", product: "e9", quantity: 1 }]) }); } });
+  const { result } = resolving([membership], () => new Promise(() => {}));
+  assert.equal(result.current.resolvingDetails, true);
+  assert.equal(result.current.waiting, false);
+  await env.ui.act(() => result.current.remove("i1"));
+  assert.equal(result.current.feedback, "Item removed.");
+  assert.deepEqual(result.current.lines.map(({ productID }) => productID), ["e9"]);
 });
 
 test("nothing unknown, nothing asked", async () => {

@@ -18,9 +18,8 @@ import type { MemberCapabilities } from "@/lib/member-auth/contracts";
  * /shop/cart (owner, 23 Nov): the cart is visible to everyone, and sign-in happens only at Checkout. Signed out, Checkout
  * swaps the page to the account step (its own title); once signed in, the page swaps back to the cart, which goes on.
  */
-export function CartView({ products, resolveProducts, signedIn, initialCapabilities, signInOffInReview, copy }: {
+export function CartView({ products, signedIn, initialCapabilities, signInOffInReview, copy }: {
   products: readonly CartProduct[];
-  resolveProducts?: (productIDs: string[]) => Promise<readonly CartProduct[]>;
   signedIn: boolean;
   initialCapabilities: Readonly<MemberCapabilities>;
   signInOffInReview: boolean;
@@ -40,7 +39,7 @@ export function CartView({ products, resolveProducts, signedIn, initialCapabilit
   return <PageFrame title={copy.title} displayTitle layout={signInOffInReview ? "editorial" : "wide"}>
     <CommerceProvider>
       {member && <GuestCartWriteThrough />}
-      <CommerceCart products={products} resolveProducts={resolveProducts} wide signedIn={member} onSignIn={member ? undefined : () => setView("sign-in")} />
+      <CommerceCart products={products} wide signedIn={member} onSignIn={member ? undefined : () => setView("sign-in")} />
     </CommerceProvider>
   </PageFrame>;
 }

@@ -62,8 +62,8 @@ const editionIDs = z.array(z.string().min(1).max(64).refine((id) => id.trim() ==
 
 /**
  * Names and prices the edition lines actually in a cart: one validated catalogue read per distinct ID, never the whole
- * catalogue. Input is untrusted (it comes from the browser cart through a server action): anything malformed or over the
- * limit reads nothing. One edition failing leaves the others named; each failure logs one fixed diagnostic.
+ * catalogue. Server-side only: not exposed to the browser until editions in the cart are decided and an admitted route
+ * exists (Review-B, 27 Nov). Input is treated as untrusted anyway: anything malformed or over the limit reads nothing. One edition failing leaves the others named; each failure logs one fixed diagnostic.
  */
 export async function loadCartEditionProducts(payload: Payload, ids: unknown): Promise<readonly CartProduct[]> {
   const parsed = editionIDs.safeParse(ids);

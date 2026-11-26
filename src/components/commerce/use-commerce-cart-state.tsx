@@ -40,7 +40,10 @@ function readGuestLines() {
  *
  * `products` holds what the page loaded up front (the membership offer). A line whose product isn't there is named on
  * demand through `resolveProducts` (Review-B, 26 Nov: resolve only the edition IDs actually in the cart), asked once per
- * set of unknown IDs; until it settles the cart is loading, and a failure leaves the line unknown. Without it, unknown.
+ * set of unknown IDs. Until it settles those lines are unknown and `resolvingDetails` is true, but the cart is not
+ * loading: known rows and Remove stay usable (Review-B LOW); only checkout waits ("loading"). A failure leaves them
+ * unknown. Nothing passes a resolver yet: editions in the cart wait on the owner (Cordy, 27 Nov), and the server-side
+ * loader (loadCartEditionProducts) is not exposed to the browser.
  */
 export function useCommerceCartState({ signedIn, products: loaded, resolveProducts }: {
   signedIn: boolean; products: readonly CartProduct[];
@@ -79,7 +82,7 @@ export function useCommerceCartState({ signedIn, products: loaded, resolveProduc
   const pending = action?.kind === "removing" || action?.kind === "refreshing";
   const busy = pending || isLoading;
   const purchased = !!cart?.purchasedAt || cart?.status === "purchased";
-  const waiting = (!guest && !cart && (isLoading || !user || savedCarts > 0)) || resolving;
+  const waiting = !guest && !cart && (isLoading || !user || savedCarts > 0);
 
   const lines: CartLine[] = items.map((item) => {
     const productID = lineProductID(item);
@@ -112,6 +115,7 @@ export function useCommerceCartState({ signedIn, products: loaded, resolveProduc
     : purchased ? "purchased"
     : items.length > 1 ? "multiple-lines"
     : resolved?.kind === "edition" ? "edition-on-product-page"
+    : resolving ? "loading"
     : !quoted ? "not-quoted"
     : busy ? "busy"
     : quantity !== 1 ? "quantity"
@@ -155,7 +159,7 @@ export function useCommerceCartState({ signedIn, products: loaded, resolveProduc
   }
 
   return {
-    lines, waiting, busy, feedback, purchased,
+    lines, waiting, resolvingDetails: resolving, busy, feedback, purchased,
     subtotalKRW: quoted ? subtotal : null, shippingKRW: quoted ? membership.shippingKRW : null, totalKRW: quoted ? total : null,
     checkoutAvailable, checkoutReason, checkoutHref: checkoutAvailable ? "/shop/checkout" : null,
     removingLineID: action?.kind === "removing" ? action.itemID : null, refreshing: action?.kind === "refreshing",

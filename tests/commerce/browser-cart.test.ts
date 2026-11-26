@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { addGuestCartLine, clearGuestCart, GUEST_CART_STORAGE_KEY, listGuestCart, removeGuestCartLine, subscribeGuestCart, writeThroughGuestCart } from "../../src/lib/commerce/browser-cart";
+import { addGuestCartLine, clearGuestCart, GUEST_CART_STORAGE_KEY, listGuestCart, readGuestCartCount, removeGuestCartLine, subscribeGuestCart, writeThroughGuestCart } from "../../src/lib/commerce/browser-cart";
 
 function memoryStorage() {
   const values = new Map<string, string>();
@@ -233,4 +233,29 @@ test("storage that reads but refuses writes keeps the newer page copy until a wr
   addGuestCartLine("product-c", flaky);
   assert.deepEqual(listGuestCart(flaky), [{ productID: "product-c", quantity: 1 }]);
   assert.match(values.get("sphmrs.cart.v1") ?? "", /product-c/);
+});
+
+// Review-B/Cordy, 27 Nov: the header's signed-out count tells a verified-empty cart from an unreadable one, and reading
+// it never changes storage.
+test("the guest count: 0 only when verified empty, the line count when readable, unknown otherwise, storage untouched", () => {
+  const storage = memoryStorage();
+  assert.equal(readGuestCartCount(storage), 0);
+  addGuestCartLine("product-a", storage);
+  assert.equal(readGuestCartCount(storage), 1);
+  for (const raw of ["not json", JSON.stringify({ version: 2, lines: [] }), JSON.stringify({ version: 1, lines: [{ productID: "a", quantity: 2 }] })]) {
+    storage.values.set(GUEST_CART_STORAGE_KEY, raw);
+    assert.equal(readGuestCartCount(storage), "unknown", raw);
+    assert.equal(storage.values.get(GUEST_CART_STORAGE_KEY), raw, "a bad record is left for listGuestCart to handle");
+  }
+  const blocked = { getItem: () => { throw new Error("blocked"); }, setItem: () => { throw new Error("blocked"); }, removeItem: () => { throw new Error("blocked"); } };
+  assert.equal(readGuestCartCount(blocked), "unknown");
+});
+
+test("the guest count follows this page's own cart when storage refuses writes", () => {
+  const values = new Map<string, string>();
+  const refusing = { getItem: (key: string) => values.get(key) ?? null, setItem: () => { throw new Error("quota"); }, removeItem: () => { throw new Error("quota"); } };
+  addGuestCartLine("product-a", refusing);
+  assert.equal(readGuestCartCount(refusing), 1);
+  clearGuestCart(refusing);
+  assert.equal(readGuestCartCount(refusing), 0);
 });

@@ -24,6 +24,8 @@ let memory: GuestCartLine[] = [];
 // A storage that refused the last write (read may still work, returning an older value) is read from memory until a
 // later write to it succeeds.
 const refusedWrites = new WeakSet<CartStorage>();
+// Set once this page has written a cart with no browser storage at all: memory is then this page's known cart.
+let wroteWithoutStorage = false;
 const listeners = new Set<() => void>();
 
 function storage(explicit?: CartStorage): CartStorage | undefined {
@@ -50,6 +52,7 @@ function read(target?: CartStorage): GuestCartLine[] {
 function write(lines: GuestCartLine[], target?: CartStorage): GuestCartLine[] {
   const store = storage(target);
   memory = lines;
+  if (!store) wroteWithoutStorage = true;
   if (store) {
     try {
       if (lines.length) store.setItem(GUEST_CART_STORAGE_KEY, JSON.stringify({ version: 1, lines }));
@@ -62,6 +65,28 @@ function write(lines: GuestCartLine[], target?: CartStorage): GuestCartLine[] {
 }
 
 export const listGuestCart = (target?: CartStorage): GuestCartLine[] => read(target);
+
+/** "unknown" when the browser cart can't be read; otherwise its line count, 0 meaning verified empty. */
+export type GuestCartCount = "unknown" | number;
+/**
+ * The header's signed-out count (Review-B/Cordy, 27 Nov): unlike listGuestCart it never reads an unreadable cart as empty
+ * and never changes storage, so it is safe as a useSyncExternalStore snapshot with subscribeGuestCart (a number or
+ * "unknown", stable between calls). Server snapshot: "unknown".
+ * - No storage, or storage that refused this page's last write: the count of what this page wrote, else "unknown".
+ * - Storage that throws on read, or holds a record that isn't a valid cart: "unknown" (the record is left as it is).
+ * - No record: 0.
+ */
+export function readGuestCartCount(target?: CartStorage): GuestCartCount {
+  const store = storage(target);
+  if (!store) return wroteWithoutStorage ? memory.length : "unknown";
+  if (refusedWrites.has(store)) return memory.length;
+  try {
+    const raw = store.getItem(GUEST_CART_STORAGE_KEY);
+    if (raw === null) return 0;
+    const parsed = stored.safeParse(JSON.parse(raw));
+    return parsed.success ? parsed.data.lines.length : "unknown";
+  } catch { return "unknown"; }
+}
 /** Replaces any line: the latest choice wins, never summed. */
 export const addGuestCartLine = (productID: string, target?: CartStorage): GuestCartLine[] =>
   write([{ productID: z.string().min(1).max(64).parse(productID), quantity: 1 }], target);

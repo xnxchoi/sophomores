@@ -18,7 +18,7 @@ import { NextIntlClientProvider, useLocale, useTranslations } from "next-intl";
 import type { VerificationLocale } from "../../../lib/phone-verification/i18n";
 import { VerificationCataloguesContext } from "./verification-messages";
 import { VerificationCountdown } from "./verification-countdown";
-import { Link } from "next-transition-router";
+import Link from "next/link";
 import { PhoneNumberField } from "./phone-number-field";
 import { VerificationTrayTitle } from "./verification-tray";
 import {

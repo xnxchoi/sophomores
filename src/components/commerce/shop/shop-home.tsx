@@ -6,6 +6,8 @@ import { ArrowLeftIcon } from "@phosphor-icons/react/dist/ssr";
 import { Link } from "@/components/core/Link/Link";
 import { PageInset } from "@/components/core/PageInset/PageInset";
 import { cn } from "@/lib/utils";
+import { NoWebglBookLayer } from "./no-webgl-book-layer";
+import { NoWebglSpineRow } from "./no-webgl-spine-row";
 import { lockedProgressFor, scenePageCount, StripeScene, useStripeScene, type SceneBook, type Vendored } from "./stripe-scene";
 import { useLookInside, type LookInsideSource } from "./use-look-inside";
 import { useShelfCatch, type ShelfCatchSource } from "./use-shelf-catch";
@@ -93,6 +95,21 @@ function ShopFallback({ items, labels, initialOpen }: { items: Item[]; labels: L
 
 function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; items: Item[]; labels: Labels; initialOpen?: string }) {
   const { hub, scroll, catalogue, router, seats, motion: tokens } = vendored;
+  // Without WebGL their page shows the 2D layers (no-webgl-book-layer.tsx, no-webgl-spine-row.tsx), and the 2D row
+  // reports its seat in module 44870 (`rD.f`), which the seat and the title fade read first (06w9:11117, 11874).
+  const noWebgl = useMemo(() => vendored.noWebgl(), [vendored]);
+  const flatBooks = useMemo(() => items.map(({ id, title }) => ({ id, title })), [items]);
+  // Their "page is scrolling" flag (module 50883 `R`), which the no-WebGL layers read: true on each scroll, false 120 ms
+  // after the last (06w9:14730-14733).
+  useEffect(() => {
+    if (!noWebgl) return;
+    const flag = (vendored.module(50883) as { R: { current: boolean } }).R;
+    let timer = 0;
+    const scrolling = () => { flag.current = true; window.clearTimeout(timer); timer = window.setTimeout(() => { flag.current = false; }, 120); };
+    window.addEventListener("scroll", scrolling, { passive: true });
+    return () => { window.removeEventListener("scroll", scrolling); window.clearTimeout(timer); };
+  }, [noWebgl, vendored]);
+  const flatRow = () => noWebgl ? (vendored.module(44870) as { f: { current: { visible: boolean; dyPx: number; seatScrollY: number | null } } }).f.current : null;
   const navigate = useTransitionRouter();
   const count = items.length, J = catalogue.J, K = catalogue.K;
 
@@ -188,6 +205,8 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
   const drive = useRef({ token: 0, active: false });
   /** The idle advance's glide in flight (its own, so a wheel doesn't cut it short; theirs `n`/`o`). */
   const gliding = useRef<{ at: number } | null>(null);
+  /** A drag on a no-WebGL hero stops the idle advance for good (their onBookDragStart, 06w9:14928-14934). */
+  const idleOff = useRef(false);
   const stopDriving = () => { drive.current.token += 1; drive.current.active = false; };
   const scrollTo = (target: number, ms: number) => {
     const from = window.scrollY, start = performance.now(), token = ++drive.current.token;
@@ -220,6 +239,8 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
   };
   // The shelf's seat (their `nH`, 06w9:11116-11160): where the spine row sits seated, lifted clear of the titles.
   const seatY = () => {
+    const flat = flatRow()?.seatScrollY;
+    if (flat != null) return flat;
     const { starts, extents } = geo.current, width = window.innerWidth || 0, height = window.innerHeight || 1, mobile = width < 900;
     const at = (progress: number) => {
       const segment = Math.floor(progress), start = starts[segment], extent = extents[segment];
@@ -363,7 +384,7 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
     window.addEventListener("scroll", drift, { passive: true });
     const arm = (delay: number) => {
       timer = window.setTimeout(() => {
-        if (stopped) return;
+        if (stopped || idleOff.current) return;
         if (held.current || lookOpen.current) { arm(3000); return; }
         const index = catalogue.a(Math.round(hub.scrollProgressDirectLiveRef.current as number));
         if (index == null || index >= catalogue.t) return;
@@ -450,8 +471,8 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
 
   // How far the rising row covers the titles (their header sampler's `rowOverTitles`, 06w9:11870-11895): the rail's
   // share under the row's top at the lift the next section gives it, in 40ths; −1 while the seat isn't locked. The
-  // rail fades by half of it (their footerFade), at every width. Their other branch (`rD.f`, module 44870) is for their
-  // no-WebGL shelf (module 16909 `t` is the no-WebGL check), which this page replaces with its plain list.
+  // rail fades by half of it (their footerFade), at every width. Without WebGL it's the 2D row's rise over its seat
+  // instead (`rD.f`, module 44870, written by no-webgl-spine-row.tsx).
   const [rowOver, setRowOver] = useState(-1);
   useEffect(() => {
     let frame = 0;
@@ -460,7 +481,11 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
       const geom = hub.spineRowSeatGeomLiveRef.current as { valid?: boolean; lock?: boolean } | null;
       const rail = titles.current, section = next.current;
       let over = -1;
-      if (geom?.valid && geom.lock && rail && section) {
+      const flat = flatRow();
+      if (flat && flat.seatScrollY != null && rail) {
+        const box = rail.getBoundingClientRect();
+        over = box.height < 1 ? 0 : Math.round(40 * Math.max(0, Math.min(1, -flat.dyPx / box.height))) / 40;
+      } else if (geom?.valid && geom.lock && rail && section) {
         const lift = hub.spineRowLiftForWebsitesTop(section.getBoundingClientRect().top), box = rail.getBoundingClientRect();
         over = lift <= 0 || box.height < 1 ? 0 : Math.round(40 * Math.max(0, Math.min(1, (box.bottom - hub.spineRowTopPxAtLift(lift)) / box.height))) / 40;
       }
@@ -503,7 +528,19 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
     <section ref={next} aria-hidden="true" className="relative min-h-lvh w-screen" />
     <Cards items={items} featured={catalogue.t} geometry={geometry} progressRef={cardsRef} listeners={listeners} reading={held} J={J}
       hub={hub} openRef={openIndex} />
-    <StripeScene vendored={vendored} props={sceneProps} className="pointer-events-none fixed inset-0 isolate z-10" />
+    {noWebgl ? (
+      // Without WebGL their page draws the books as pre-rendered images (06w9:17921-17935): the hero layer instead of
+      // BookStack, the 2D spine row instead of the 3D shelf. In their own stacking layer, as the scene is.
+      <div className="relative isolate z-10">
+        <NoWebglBookLayer vendored={vendored} books={flatBooks} detailOpen={detail.open != null}
+          detailBookIndex={detail.open != null ? (sceneIndex ?? detail.open) : null} stackDetailOpen={detail.open != null || look.open}
+          hidden={look.open} isMobile={geometry.mobile} raised={false} onBookOpen={(index) => openRef.current(index)}
+          onFirstBookReady={() => undefined} onBookDragStart={() => { idleOff.current = true; }} onBookDragEnd={() => undefined}
+          openLabel={(title) => title} />
+        <NoWebglSpineRow vendored={vendored} books={flatBooks} hidden={detail.open != null || look.open}
+          onBookOpen={(index) => openRef.current(index)} labels={{ open: "{title}", show: "{title}" }} />
+      </div>
+    ) : <StripeScene vendored={vendored} props={sceneProps} className="pointer-events-none fixed inset-0 isolate z-10" />}
     {/* On a phone the return link takes the label's place while a book is open (their Nav__FeaturedSlot: the label slides
         −10 px and fades, the link comes in from +10 px 100 ms later, 300 ms each). */}
     <div className="fixed top-[calc(53px+var(--shop-shift,0px))] left-4 z-20 grid text-[11px] uppercase leading-4 tracking-[0.06em] text-muted-foreground">
@@ -603,7 +640,8 @@ function Cards({ items, featured, geometry, progressRef, listeners, reading, J, 
   // The card's box: 8 px off the bottom on desktop, 25 on a phone (theirs, 1jyk:64-77, without the URL-bar terms).
   return <div aria-hidden="true" style={{ top: geometry.top, height: geometry.height - (geometry.mobile ? 25 : CARD_INSET_BOTTOM) }}
     className="pointer-events-none fixed inset-x-4 z-0 overflow-hidden rounded-[8px] max-[900px]:z-[2]">
-    {items.slice(0, featured).map((entry, index) => <div key={entry.id} ref={(plate) => { plates.current[index] = plate; }}
+    {/* data-bg-index: the no-WebGL hero layer finds the plates by it and follows their translate (theirs, 0jause). */}
+    {items.slice(0, featured).map((entry, index) => <div key={entry.id} data-bg-index={index} ref={(plate) => { plates.current[index] = plate; }}
       className={cn("absolute inset-0 overflow-hidden rounded-[8px] bg-muted transition-opacity duration-[450ms] will-change-transform",
         shown ? "opacity-100" : "opacity-0", index === 0 ? "delay-[1100ms]" : "delay-[1600ms]")}>
       {entry.stageArt && (

@@ -52,7 +52,12 @@ export type SceneRouter = { e: () => (() => void) | void; v: (scope: string, han
 /** Their motion tokens (module 72646): `P` and `i` time the close (the column fades, then the book returns). */
 export type SceneMotion = { P: number; i: number };
 export type Vendored = { mount: (element: HTMLElement) => { render: (props: Props) => void; unmount: () => void };
-  hub: SceneHub; scroll: SceneScroll; catalogue: SceneCatalogue; router: SceneRouter; seats: SceneSeats; motion: SceneMotion };
+  hub: SceneHub; scroll: SceneScroll; catalogue: SceneCatalogue; router: SceneRouter; seats: SceneSeats; motion: SceneMotion;
+  /** True when the browser has no WebGL2 (their module 16909 `t`, also forced by ?nowebgl=1): the page shows their
+   * no-WebGL layers instead of BookStack. */
+  noWebgl: () => boolean;
+  /** Any of their shipped modules by id, for the no-WebGL ports' helpers (spine slots 11899, the mobile seat 44870). */
+  module: (id: number) => unknown };
 type Context = { i: (id: number) => unknown };
 
 let loaded: Promise<Vendored> | null = null;
@@ -95,6 +100,7 @@ function load(books: SceneBook[], featured: number) {
           hub: context.i(50016) as SceneHub, scroll: context.i(73900) as SceneScroll,
           catalogue: context.i(67168) as SceneCatalogue, router: context.i(11743) as SceneRouter, seats: context.i(2449) as SceneSeats,
           motion: context.i(72646) as SceneMotion,
+          noWebgl: () => Boolean((context.i(16909) as { t: () => boolean }).t()), module: (id) => context.i(id),
         });
       } catch (error) { reject(error); } }]);
       queue.push([entry, { otherChunks: [], runtimeModuleIds: [990001] }]);

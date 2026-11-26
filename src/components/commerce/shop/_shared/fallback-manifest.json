@@ -1,0 +1,68 @@
+{
+  "placeholder": {
+    "spine": {
+      "src": "/assets/three/book/fallback/placeholder/spine.webp",
+      "width": 118,
+      "height": 824
+    },
+    "cover": {
+      "src": "/assets/three/book/fallback/placeholder/cover.webp",
+      "width": 567,
+      "height": 824
+    },
+    "hero": {
+      "src": "/assets/three/book/fallback/placeholder/hero.webp",
+      "width": 670,
+      "height": 935
+    },
+    "turn": {
+      "frames": [
+        "/assets/three/book/fallback/placeholder/turn/00.webp",
+        "/assets/three/book/fallback/placeholder/turn/01.webp",
+        "/assets/three/book/fallback/placeholder/turn/02.webp",
+        "/assets/three/book/fallback/placeholder/turn/03.webp",
+        "/assets/three/book/fallback/placeholder/turn/04.webp",
+        "/assets/three/book/fallback/placeholder/turn/05.webp",
+        "/assets/three/book/fallback/placeholder/turn/06.webp",
+        "/assets/three/book/fallback/placeholder/turn/07.webp",
+        "/assets/three/book/fallback/placeholder/turn/08.webp",
+        "/assets/three/book/fallback/placeholder/turn/09.webp",
+        "/assets/three/book/fallback/placeholder/turn/10.webp",
+        "/assets/three/book/fallback/placeholder/turn/11.webp",
+        "/assets/three/book/fallback/placeholder/turn/12.webp",
+        "/assets/three/book/fallback/placeholder/turn/13.webp",
+        "/assets/three/book/fallback/placeholder/turn/14.webp",
+        "/assets/three/book/fallback/placeholder/turn/15.webp",
+        "/assets/three/book/fallback/placeholder/turn/16.webp",
+        "/assets/three/book/fallback/placeholder/turn/17.webp",
+        "/assets/three/book/fallback/placeholder/turn/18.webp",
+        "/assets/three/book/fallback/placeholder/turn/19.webp",
+        "/assets/three/book/fallback/placeholder/turn/20.webp",
+        "/assets/three/book/fallback/placeholder/turn/21.webp",
+        "/assets/three/book/fallback/placeholder/turn/22.webp",
+        "/assets/three/book/fallback/placeholder/turn/23.webp",
+        "/assets/three/book/fallback/placeholder/turn/24.webp",
+        "/assets/three/book/fallback/placeholder/turn/25.webp",
+        "/assets/three/book/fallback/placeholder/turn/26.webp",
+        "/assets/three/book/fallback/placeholder/turn/27.webp",
+        "/assets/three/book/fallback/placeholder/turn/28.webp",
+        "/assets/three/book/fallback/placeholder/turn/29.webp",
+        "/assets/three/book/fallback/placeholder/turn/30.webp",
+        "/assets/three/book/fallback/placeholder/turn/31.webp",
+        "/assets/three/book/fallback/placeholder/turn/32.webp",
+        "/assets/three/book/fallback/placeholder/turn/33.webp",
+        "/assets/three/book/fallback/placeholder/turn/34.webp",
+        "/assets/three/book/fallback/placeholder/turn/35.webp"
+      ],
+      "width": 580,
+      "height": 711,
+      "heroBox": {
+        "x": 65,
+        "y": 55,
+        "width": 441,
+        "height": 614
+      }
+    }
+  },
+  "books": {}
+}

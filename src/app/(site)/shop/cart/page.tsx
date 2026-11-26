@@ -1,14 +1,15 @@
-import { isReviewCopyRequest } from "@/lib/auth/review-editor-policy";
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { connection } from "next/server";
-import { headers } from "next/headers";
 import { getPayload } from "payload";
 import config from "@payload-config";
-import { loadCartProducts, type CartProduct } from "@/lib/commerce/cart-products";
-import { loadPublicMemberCapabilities } from "@/lib/member-auth/public-capabilities.server";
-import { readHeaderMemberState } from "@/lib/member-auth/header-state.server";
+import { listCommerceEditionProducts, type CommerceEditionShop } from "@/lib/commerce/editions";
+import { CommerceShopView } from "@/components/commerce/book-offer";
+import { readProductPageContent, type ProductPageContent } from "@/components/commerce/product-page/_shared/content";
+import { loadProductPageDocuments } from "../products/[id]/page-documents";
 import { CartView } from "./cart-view";
+import { loadCartProps } from "./load-cart";
+import { ShopCartPanel } from "./shop-cart-panel";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("PageMetadata");
@@ -18,15 +19,25 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
+/**
+ * /shop/cart: the shop in its cart mode, as stripe.press's /cart is its home with the cart column open (their direct
+ * load opens it at once). The cart's own steps (CartContents) are unchanged inside that column. When the shop can't
+ * be shown, the cart stands alone as before (CartView).
+ */
 export default async function CartPage() {
   await connection();
-  const t = await getTranslations("Customer.app_site_shop_cart_page");
-  let products: readonly CartProduct[] = [];
-  try { products = await loadCartProducts(await getPayload({ config })); }
-  catch { console.error("Published cart pricing is unavailable."); }
-  // The same request-scoped state the header reads; it only decides whether Checkout asks for sign-in first.
-  const member = await readHeaderMemberState(await headers());
-  return <CartView products={products} signedIn={member.state === "signed-in" && member.member}
-    initialCapabilities={await loadPublicMemberCapabilities()} signInOffInReview={isReviewCopyRequest()}
-    copy={{ title: t("title"), signInTitle: t("signInTitle"), backToCart: t("backToCart") }} />;
+  const cart = await loadCartProps();
+  let shop: CommerceEditionShop | null = null;
+  const contents: Record<string, ProductPageContent> = {};
+  try {
+    const payload = await getPayload({ config });
+    shop = await listCommerceEditionProducts(payload);
+    if (shop.status === "displayable") {
+      const ids = shop.products.map((entry) => entry.product.productID);
+      const documents = await loadProductPageDocuments(payload, ids).catch(() => [] as unknown[]);
+      for (const id of ids) contents[id] = readProductPageContent(documents.find((document) => String((document as { id?: unknown }).id) === id));
+    }
+  } catch { shop = null; console.error("Published book information is unavailable."); }
+  if (!shop || shop.status !== "displayable" || shop.products.length === 0) return <CartView {...cart} />;
+  return <div className="min-h-dvh bg-background text-foreground"><CommerceShopView shop={shop} contents={contents} cartPanel={<ShopCartPanel {...cart} />} /></div>;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type Ref } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode, type Ref } from "react";
 import { useTransitionRouter } from "next-transition-router";
 import { ArrowLeftIcon } from "@phosphor-icons/react/dist/ssr";
 import { Link } from "@/components/core/Link/Link";
@@ -16,6 +16,9 @@ import { READING_RUN_ON, useReadingScroll, type ReadingSource } from "./use-read
 import { useBookSounds } from "./use-book-sounds";
 import { LookInsideBar } from "./look-inside-bar";
 import { ShelfPager, ShelfPills, type ShelfHub } from "./shelf-controls";
+import { useCartMode, type CartConstants, type CartMotion, type CartTiming } from "./use-cart-mode";
+import { CartBehind, CartColumn } from "./cart-column";
+import { listGuestCart, subscribeGuestCart } from "@/lib/commerce/browser-cart";
 
 /**
  * The shop's home, rebuilt from stripe.press's home code (06w9 module 43181; .tmp/stripe-notes/home-layout-inventory.md,
@@ -54,19 +57,21 @@ type Geometry = { lvh: number; mobile: boolean; top: number;
   drop: number; height: number; offset: number; extents: number[];
   starts: number[]; lock: number[]; total: number };
 
-export function ShopHome({ items, labels, initialOpen }: { items: Item[]; labels: Labels;
+export function ShopHome({ items, labels, initialOpen, cartPanel }: { items: Item[]; labels: Labels;
   /** The product whose address the page was loaded on: it opens in place once the scene is ready. */
-  initialOpen?: string }) {
+  initialOpen?: string;
+  /** Loaded on the cart's address: the cart's steps, shown in the cart mode's column (stripe.press's /cart). */
+  cartPanel?: ReactNode }) {
   const books = useMemo<SceneBook[]>(() => items.map(({ id, title, stageArt, pages, pageCount }) => ({ id, title, stageArt: stageArt?.url ?? null, pages, pageCount })), [items]);
   const { vendored, failed } = useStripeScene(books, Math.min(FEATURED_MAX, items.length));
   // Sounds only while the working scene is up: not while it loads, nor on the plain list it falls back to.
   useBookSounds(vendored != null && !failed);
   const first = items[0]?.stageArt;
-  if (failed) return <ShopFallback items={items} labels={labels} initialOpen={initialOpen} />;
+  if (failed) return <ShopFallback items={items} labels={labels} initialOpen={initialOpen} cartPanel={cartPanel} />;
   // Native wheel scrolling here, as on stripe.press: their scroll mapping, holds and shelf catch read the browser's own
   // scroll, and the site's Lenis smoothing would keep driving the page through the shelf's catch.
   return <section data-lenis-prevent-wheel aria-label={labels.featured} className="relative min-h-svh">
-    {vendored && items.length > 0 ? <Home vendored={vendored} items={items} labels={labels} initialOpen={initialOpen} /> : first && (
+    {vendored && items.length > 0 ? <Home vendored={vendored} items={items} labels={labels} initialOpen={initialOpen} cartPanel={cartPanel} /> : first && (
       // The first card where theirs lands (162 px down, 16 px in, 24 px off the bottom) until their code is running.
       <div className="pointer-events-none fixed inset-x-4 top-[162px] bottom-6 z-0 overflow-hidden rounded-[8px] bg-muted max-[900px]:top-[140px]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -81,7 +86,7 @@ export function ShopHome({ items, labels, initialOpen }: { items: Item[]; labels
  * When the scene's code doesn't load: the products as a plain list (title, price, refund rule, a link to each), with a
  * product's own details first on its address, and a reload to try the scene again.
  */
-function ShopFallback({ items, labels, initialOpen }: { items: Item[]; labels: Labels; initialOpen?: string }) {
+function ShopFallback({ items, labels, initialOpen, cartPanel }: { items: Item[]; labels: Labels; initialOpen?: string; cartPanel?: ReactNode }) {
   const open = items.find((entry) => entry.id === initialOpen && entry.details);
   return <PageInset as="section" aria-label={labels.featured} className="min-h-svh pt-24 pb-24">
     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
@@ -89,6 +94,7 @@ function ShopFallback({ items, labels, initialOpen }: { items: Item[]; labels: L
       <button type="button" onClick={() => window.location.reload()}
         className="inline-flex min-h-11 items-center text-foreground underline-offset-4 transition-opacity hover:opacity-70">{labels.tryAgain}</button>
     </div>
+    {cartPanel && <div className="mt-10 max-w-2xl">{cartPanel}</div>}
     {open && <div className="mt-10 max-w-2xl">{open.details}</div>}
     <ul className="mt-16 grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
       {items.map((entry) => <li key={entry.id} className="min-w-0">
@@ -102,7 +108,7 @@ function ShopFallback({ items, labels, initialOpen }: { items: Item[]; labels: L
   </PageInset>;
 }
 
-function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; items: Item[]; labels: Labels; initialOpen?: string }) {
+function Home({ vendored, items, labels, initialOpen, cartPanel }: { vendored: Vendored; items: Item[]; labels: Labels; initialOpen?: string; cartPanel?: ReactNode }) {
   const { hub, scroll, catalogue, router, seats, motion: tokens } = vendored;
   // Without WebGL their page shows the 2D layers (no-webgl-book-layer.tsx, no-webgl-spine-row.tsx), and the 2D row
   // reports its seat in module 44870 (`rD.f`), which the seat and the title fade read first (06w9:11117, 11874).
@@ -363,6 +369,47 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
     place: (index) => window.scrollTo({ top: Math.max(0, index < catalogue.t ? bookY(index) : (seatY() ?? shelfY())), behavior: "smooth" }),
     book: (index) => (items[index] ? { pageCount: scenePageCount(items[index].pages, items[index].pageCount), startPage: 1 } : null) }; });
   const look = useLookInside(hub, detail.open, lookSource);
+
+  // The cart mode (stripe.press's /cart, a mode of their home): their cart hook on their clock and curves, its frame
+  // written as theirs does (06w9 s_.current): three :root variables the page, the column and the backdrop fade by, and
+  // on desktop the scene's shift from where it stood to −20vw with the books' slide.
+  const cartTiming = useMemo(() => vendored.module(60444) as unknown as CartTiming, [vendored]);
+  const cartConstants = useMemo(() => vendored.module(72646) as unknown as CartConstants, [vendored]);
+  const cartShiftFrom = useRef(0), cartOn = useRef(false);
+  const cart = useCartMode({ timing: cartTiming, k: cartConstants, coverReady: hub.coverAppliedLiveRef as unknown as { current: Set<number> },
+    onFrame: (frame: CartMotion) => {
+      const root = document.documentElement.style;
+      root.setProperty("--cart-page-opacity", String(frame.pageOpacity));
+      root.setProperty("--cart-panel-enter", String(frame.panel));
+      root.setProperty("--cart-backdrop-opacity", String(frame.backdropOpacity));
+      if (geo.current.mobile || !(frame.active || cartOn.current)) return;
+      hub.detailCanvasShiftVwLiveRef.current = cartShiftFrom.current + (-20 - cartShiftFrom.current) * frame.bookSlide;
+      hub.canvasShiftAnimatingUntilRef.current = performance.now() + 720; hub.sceneShiftAnimRef.current = null;
+    } });
+  useEffect(() => { cartOn.current = cart.cartMode; }, [cart.cartMode]);
+  useEffect(() => () => { const root = document.documentElement.style; for (const name of ["--cart-page-opacity", "--cart-panel-enter", "--cart-backdrop-opacity"]) root.removeProperty(name); }, []);
+  // What the stack shows: each product's quantity in the cart (their cartQuantitiesByBookId; our book ids are product
+  // ids). Read from Auth's browser cart for now; the member's cart comes with Auth's cart-state hook.
+  const guestKey = useSyncExternalStore(subscribeGuestCart, () => JSON.stringify(listGuestCart()), () => "[]");
+  const cartQuantities = useMemo(() => Object.fromEntries((JSON.parse(guestKey) as { productID: string; quantity: number }[])
+    .filter((line) => items.some((entry) => entry.id === line.productID) && line.quantity > 0).map((line) => [line.productID, line.quantity])), [guestKey, items]);
+  // Loaded on the cart's address: open at once (their openInstantly), the books not in the cart veiled until it closes.
+  const [cartVeil, setCartVeil] = useState(false);
+  useEffect(() => { if (cartPanel) { cartShiftFrom.current = 0; setCartVeil(true); cart.openInstantly(); } }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const closeCart = useRef(() => {});
+  useEffect(() => { closeCart.current = () => {
+    if (!cart.cartMode || cart.phase === "toBrowse") return;
+    setCartVeil(false); cart.toggle({});
+    if (window.location.pathname === "/shop/cart") window.history.pushState(null, "", "/shop");
+  }; });
+  // Escape and Back close it (theirs: Esc, and their router leaving /cart).
+  useEffect(() => {
+    if (!cart.cartMode) return;
+    const key = (event: KeyboardEvent) => { if (event.key === "Escape") { event.preventDefault(); closeCart.current(); } };
+    const back = () => { if (window.location.pathname !== "/shop/cart") { setCartVeil(false); if (cart.phase !== "toBrowse") cart.toggle({}); } };
+    window.addEventListener("keydown", key); window.addEventListener("popstate", back);
+    return () => { window.removeEventListener("keydown", key); window.removeEventListener("popstate", back); };
+  }, [cart]);
   const lookOpen = useRef(false);
   useEffect(() => { lookOpen.current = look.open; });
   // The scene hears the book being read 200 ms late (their `uK`), the first one at once.
@@ -515,7 +562,17 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
     // Their `isDetailOpen: tx || iv` and `detailBookIndex: iv ? nI : uK`: the home's open book is posed as a detail book.
     isDetailOpen: (detail.open ?? landing ?? lookHome) != null,
     detailBookIndex: lookHome ?? (detail.open != null || landing != null ? (sceneIndex ?? detail.open ?? landing) : -1),
-  }), [skipIntro, lookProps, lookHome, committed, active, detail.open, landing, sceneIndex]);
+    // The cart mode (their props to BookStack in cart mode, 06w9): the stack's blend and slides, the entry and its clock,
+    // the motion ref the scene reads every frame, and the quantities it stacks.
+    ...(cart.cartMode || cart.phase !== "idle" ? {
+      stackMode: "cart", cartLayoutBlend: cart.layoutBlend, cartNonCartSlideBlend: cart.nonCartSlide, cartStackExitProgress: cart.stackExit,
+      cartShelfSlideProgress: cart.shelfSlide, cartReturning: cart.phase === "toBrowse", cartTransitioning: cart.phase !== "idle",
+      cartEntry: cart.entry, cartPanelOpen: cart.panelOpen, veilNonCartBooks: cartVeil,
+    } : {}),
+    cartMotionRef: cart.motion, cartEntryClockRef: cart.clock, onCartMotionRest: cart.settle,
+    cartQuantitiesByBookId: cartQuantities, quantities: cartQuantities,
+  }), [skipIntro, lookProps, lookHome, committed, active, detail.open, landing, sceneIndex, cart.cartMode, cart.phase, cart.layoutBlend,
+    cart.nonCartSlide, cart.stackExit, cart.shelfSlide, cart.entry, cart.panelOpen, cart.motion, cart.clock, cart.settle, cartVeil, cartQuantities]);
 
   // The spine row seats against, and lifts out ahead of, the section after the shelf (their #home-section-films, read
   // through homeWebsitesSectionElLiveRef); without one the scene treats the row as already gone. Theirs places that
@@ -596,6 +653,8 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
   // home's own scroll.
   const readingHeight = reading.layout.total + Math.round(geometry.lvh / 2);
   return <div ref={page} className="relative overflow-x-clip" style={{ "--shop-shift": geometry.shift + "px", "--shop-drop": geometry.drop + "px" } as CSSProperties}>
+    <CartBehind open={cart.cartMode} art={items[active]?.stageArt} cardTop={geometry.top} />
+    {cartPanel && <CartColumn open={cart.cartMode} shown={cart.panelOpen} back={labels.toShelf} onBack={() => closeCart.current()}>{cartPanel}</CartColumn>}
     <div aria-hidden="true" className="h-(--page-height)" style={{ "--page-height": (readingOpen ? readingHeight : Math.max(0, nextTop)) + "px" } as CSSProperties} />
     {/* The section after the shelf (their Multimedia's place). A placeholder for now (owner, 26 Nov: "a whole new section
         … For now, make it a placeholder: min 100vh, 100vw section"). At least a screen tall, so the page scrolls on
@@ -620,7 +679,7 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
     ) : <StripeScene vendored={vendored} props={sceneProps} className="pointer-events-none fixed inset-0 isolate z-10" />}
     {/* On a phone the return link takes the label's place while a book is open (their Nav__FeaturedSlot: the label slides
         −10 px and fades, the link comes in from +10 px 100 ms later, 300 ms each). */}
-    <div className="fixed top-[calc(53px+var(--shop-shift,0px))] left-4 z-20 grid text-[11px] uppercase leading-4 tracking-[0.06em] text-muted-foreground">
+    <div style={{ opacity: "var(--cart-page-opacity, 1)" }} className="fixed top-[calc(53px+var(--shop-shift,0px))] left-4 z-20 grid text-[11px] uppercase leading-4 tracking-[0.06em] text-muted-foreground">
       <p className={cn("pointer-events-none col-start-1 row-start-1 transition-[opacity,translate] duration-300 ease-[ease]", phoneDetail ? "-translate-x-2.5 opacity-0" : "delay-100")}>
         {/* Theirs reads the label from the first section at the nav (header.sampler, 06w9:11821-11922); with details open
             no section is there, so it shows the default (traced 26 Nov). */}
@@ -730,7 +789,7 @@ function Cards({ narrow, items, featured, geometry, progressRef, listeners, read
   // The card's box: 8 px off the bottom on desktop, 25 on a phone (theirs, 1jyk:64-77, without the URL-bar terms). With
   // details open on desktop it narrows to 60 % of that box (their CardViewport mask, 1jyk:325-328): in over 480 ms after
   // 100 ms on their ease-in-quad/ease-out-cubic split (sampled into linear()), back over 640 ms easeInOutCubic.
-  return <div aria-hidden="true" style={{ top: geometry.top, height: geometry.height - (geometry.mobile ? 25 : CARD_INSET_BOTTOM) }}
+  return <div aria-hidden="true" style={{ top: geometry.top, height: geometry.height - (geometry.mobile ? 25 : CARD_INSET_BOTTOM), opacity: "var(--cart-page-opacity, 1)" }}
     className={cn("pointer-events-none fixed inset-x-4 z-0 overflow-hidden rounded-[8px] transition-[clip-path] max-[900px]:z-[2] max-[900px]:[clip-path:none]",
       narrow ? "[clip-path:inset(0_40%_0_0_round_8px)] delay-100 duration-480 ease-[linear(0,0.008,0.031,0.07,0.125,0.195,0.281,0.383,0.5,0.665,0.789,0.878,0.938,0.974,0.992,0.999,1)]"
         : "[clip-path:inset(0_0_0_0_round_8px)] duration-640 ease-[cubic-bezier(0.65,0,0.35,1)]")}>
@@ -778,7 +837,7 @@ function TitleRail({ railRef, label, titles, refunds, active, fade, shelf, detai
     window.addEventListener("resize", place);
     return () => window.removeEventListener("resize", place);
   }, [active, titles, detail, anchor]);
-  return <nav ref={railRef} aria-label={label} aria-hidden={hidden || undefined} inert={hidden} style={{ opacity: shown && !hidden ? 1 - 2 * fade : 0 }}
+  return <nav ref={railRef} aria-label={label} aria-hidden={hidden || undefined} inert={hidden} style={{ opacity: shown && !hidden ? "calc(var(--cart-page-opacity, 1) * " + (1 - 2 * fade) + ")" : 0 }}
     className={cn("pointer-events-none fixed inset-x-0 top-[calc(70px+var(--shop-shift,0px))] z-20 overflow-hidden px-5 pt-5 pb-3 transition-[opacity,clip-path] duration-[1600ms] max-[900px]:top-[calc(63px+var(--shop-shift,0px))]",
       hidden ? "duration-300" : detail ? "[clip-path:inset(0_40%_0_0)] [transition-duration:1600ms,600ms] [transition-timing-function:ease,cubic-bezier(0.16,1,0.3,1)]" : "[clip-path:inset(0_0_0_0)] ease-[ease]",
       shown && shelf && !detail && !hidden && "duration-[350ms]")}>

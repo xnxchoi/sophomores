@@ -4,7 +4,7 @@ import { Button } from "@/components/core/Button";
 import { ArrowClockwiseIcon, ArrowLeftIcon } from "@phosphor-icons/react";
 import { useEcommerce } from "@payloadcms/plugin-ecommerce/client/react";
 import { useTranslations } from "next-intl";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { Link } from "@/components/core/Link/Link";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { PageFrame } from "@/components/commerce/page-frame";
@@ -18,17 +18,33 @@ import type { MemberCapabilities } from "@/lib/member-auth/contracts";
  * /shop/cart is visible to everyone. Signed-out shoppers can sign in to save their selection;
  * the account step returns them to the cart, not payment.
  */
-export function CartView({ products, signedIn, initialCapabilities, signInOffInReview, copy }: {
+export function CartView(props: CartProps) {
+  return <CartContents {...props} frame={({ title, step, children }) =>
+    <PageFrame title={title} displayTitle layout={step === "sign-in" ? "wide" : props.signInOffInReview ? "editorial" : "wide"}>{children}</PageFrame>} />;
+}
+
+export type CartProps = {
   products: readonly CartProduct[];
   signedIn: boolean;
   initialCapabilities: Readonly<MemberCapabilities>;
   signInOffInReview: boolean;
   copy: { title: string; signInTitle: string; backToCart: string };
+};
+
+/**
+ * The cart's steps without a page around them: the cart, or the account step Checkout asks for when signed out, and the
+ * guest cart's write-through once signed in. `frame` lays each step out: the cart page's PageFrame, or the shop's cart
+ * panel (shop/cart-panel.tsx), which shows the same steps in stripe.press's cart column.
+ */
+export function CartContents({ products, signedIn, initialCapabilities, signInOffInReview, copy, frame }: CartProps & {
+  frame: (props: { title: string; step: "cart" | "sign-in"; children: ReactNode }) => ReactNode;
 }) {
   const [view, setView] = useState<"cart" | "sign-in">("cart");
   const [member, setMember] = useState(signedIn);
   const [transferring, setTransferring] = useState<string>();
-  if (view === "sign-in") return <PageFrame title={copy.signInTitle} displayTitle layout="wide">
+  // Called, not rendered as <frame>: a caller's inline frame would otherwise be a new component type on every render
+  // and remount the steps (and their provider) each time.
+  if (view === "sign-in") return frame({ title: copy.signInTitle, step: "sign-in", children: <>
     <Button variant="bare" type="button" onClick={() => setView("cart")}
       className="group/focus -ml-1 mb-6 inline-flex min-h-11 items-center gap-2 px-1 text-xs uppercase tracking-[0.04em] underline decoration-current/40 underline-offset-4 hover:decoration-current">
       <FocusShape className="inline-flex items-center gap-[inherit] outline-offset-4"><ArrowLeftIcon aria-hidden="true" className="size-4" />{copy.backToCart}</FocusShape>
@@ -36,13 +52,13 @@ export function CartView({ products, signedIn, initialCapabilities, signInOffInR
     <CommerceAccountGate signInOffInReview={signInOffInReview} initialCapabilities={initialCapabilities} returnTo="shop-cart">
       <SignedIn onReady={() => { setMember(true); setView("cart"); }} />
     </CommerceAccountGate>
-  </PageFrame>;
-  return <PageFrame title={copy.title} displayTitle layout={signInOffInReview ? "editorial" : "wide"}>
+  </> });
+  return frame({ title: copy.title, step: "cart", children: <>
     <CommerceProvider>
       {member && <GuestCartWriteThrough running={transferring !== undefined} onRunning={setTransferring} />}
       <CommerceCart products={products} wide signedIn={member} localPendingFor={transferring} onSignIn={member ? undefined : () => setView("sign-in")} />
     </CommerceProvider>
-  </PageFrame>;
+  </> });
 }
 
 /** The gate mounts its children only once the account step reports a signed-in member, so mounting here means sign-in finished. */

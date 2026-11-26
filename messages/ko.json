@@ -981,6 +981,11 @@
       "guestNameForAdmission": "입장권 {unit}의 게스트 이름",
       "privateLinkExpiry": "만료: {date}(한국 시간). 이 링크를 가진 사람은 누구나 초대 등록을 시도할 수 있어요."
     },
+    "components_commerce_wallet_pass": {
+      "description": "",
+      "event": "",
+      "starts": ""
+    },
     "components_commerce_payment": {
       "ticketEmailConsent": "",
       "guestQuoteChanged": "",

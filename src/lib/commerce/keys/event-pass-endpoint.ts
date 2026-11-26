@@ -1,10 +1,14 @@
 import type { Endpoint } from "payload";
+import type { Address } from "viem";
 import { z } from "zod";
 import { isReviewCopyRequest } from "@/lib/auth/review-editor-policy";
 import { getPayloadMemberRuntime } from "@/lib/member-auth/payload-runtime";
 import { assertCommerceBrowserAuthority } from "../access";
 import { readOwnedEventPassSource } from "./event-pass";
-import { createPassHolderCheck, type PassHolderCheck } from "./unlock/pass-holder";
+import { appleWalletPass, loadAppleSigner, type AppleSigner } from "./apple-wallet-pass";
+import { googleWalletSaveURL, loadGoogleWalletIssuer, passSerial, type GoogleWalletIssuer, type PassEvent } from "./google-wallet-pass";
+import { hostedBarcode, LOCKSMITH_SIGNERS, type BarcodeRefusal } from "./unlock/hosted-barcode";
+import { createPassHolderCheck, type PassHolderCheck, type PassKey } from "./unlock/pass-holder";
 
 const params = z.strictObject({ orderID: z.uuid(), admissionID: z.uuid(), platform: z.enum(["ios", "android"]) });
 const privateHeaders = {
@@ -63,9 +67,32 @@ async function servePass(response: Response, platform: "ios" | "android", json: 
   const save = new URL(passObjectUrl);
   if (save.origin !== "https://pay.google.com" || save.username || save.password || save.search || save.hash ||
     !/^\/gp\/v\/save\/[\w-]+\.[\w-]+\.[\w-]+$/.test(save.pathname)) return unavailable(502);
-  // Navigation goes to Google; an explicit sponsor share action can copy the validated URL instead.
-  return json ? Response.json({ passObjectUrl: save.href }, { headers: privateHeaders })
-    : new Response(null, { status: 302, headers: { ...privateHeaders, Location: save.href } });
+  return sendSave(save.href, json);
+}
+
+// Navigation goes to Google; an explicit sponsor share action can copy the validated URL instead.
+const sendSave = (href: string, json: boolean) => json ? Response.json({ passObjectUrl: href }, { headers: privateHeaders })
+  : new Response(null, { status: 302, headers: { ...privateHeaders, Location: href } });
+
+type OwnPass = { signer: { google: GoogleWalletIssuer } | { apple: AppleSigner }; key: PassKey; event: PassEvent; origin: string;
+  signers: readonly Address[] };
+
+/** Our own pass: Unlock's QR from its hosted Android answer, proved for this key and Safe, in a pass we sign. */
+async function serveOwnPass(response: Response, own: OwnPass, json: boolean, unavailable: Fail,
+  log: (reason: BarcodeRefusal) => void) {
+  if (!response.ok || response.headers.get("content-type")?.split(";")[0].trim() !== "application/json") {
+    await response.body?.cancel();
+    return unavailable(502);
+  }
+  const proved = await hostedBarcode((await readBounded(response, 20 * 1024)).toString("utf8"), own.key, own.signers);
+  if ("refused" in proved) { log(proved.refused); return unavailable(502); }
+  const barcode = proved.value;
+  if ("google" in own.signer) {
+    return sendSave(await googleWalletSaveURL(own.signer.google, { key: own.key, event: own.event, barcode, origin: own.origin }), json);
+  }
+  const bytes = await appleWalletPass(own.signer.apple, { serial: passSerial(own.key), event: own.event, barcode });
+  return new Response(new Uint8Array(bytes), { headers: { ...privateHeaders,
+    "Content-Type": appleType, "Content-Disposition": 'attachment; filename="event-ticket.pkpass"' } });
 }
 
 type Dependencies = {
@@ -73,10 +100,16 @@ type Dependencies = {
   fetcher?: typeof fetch;
   /** Serve-time chain proof that the member's Safe still holds the valid key; fails closed (pass-holder.ts). */
   keyHeld?: PassHolderCheck;
+  /** Our own Google issuer (google-wallet-pass.ts); loaded before the chain or Unlock is asked, so a gap fetches nothing. */
+  googleIssuer?: () => Promise<GoogleWalletIssuer>;
+  /** Our own Apple signer and pass art (apple-wallet-pass.ts); loaded first for the same reason. */
+  appleSigner?: () => Promise<AppleSigner>;
+  /** Who may have signed Unlock's QR (hosted-barcode.ts); tests pass their own. */
+  qrSigners?: readonly Address[];
 };
 
 export function createEventPassEndpoint({ getMemberRuntime = getPayloadMemberRuntime, fetcher = (...args) => fetch(...args),
-  keyHeld = createPassHolderCheck() }: Dependencies = {}): Endpoint {
+  keyHeld = createPassHolderCheck(), googleIssuer = () => loadGoogleWalletIssuer(), appleSigner = () => loadAppleSigner(), qrSigners = LOCKSMITH_SIGNERS }: Dependencies = {}): Endpoint {
   const rates = new Map<string, { count: number; until: number }>();
   return {
     path: "/commerce/orders/:orderID/admissions/:admissionID/wallet-pass/:platform",
@@ -88,11 +121,13 @@ export function createEventPassEndpoint({ getMemberRuntime = getPayloadMemberRun
       const fail = failureFor(req, orderID);
       if (!req.url || req.user?.collection !== "users") return fail(404);
       let source: Awaited<ReturnType<typeof readOwnedEventPassSource>>;
+      let siteOrigin: string;
       try {
         const request = new Request(req.url, { headers: req.headers });
         const runtime = getMemberRuntime();
         if (!runtime || request.url.includes("?") || isReviewCopyRequest(request)) return fail(404);
         assertCommerceBrowserAuthority(req, runtime.config.origin, "read");
+        siteOrigin = runtime.config.origin;
         const buyer = String(req.user.id);
         const principal = await runtime.toMemberPrincipal(request);
         if (!principal?.emailVerified || principal.userId !== buyer) return fail(404);
@@ -106,12 +141,24 @@ export function createEventPassEndpoint({ getMemberRuntime = getPayloadMemberRun
         return fail(404);
       }
       if (!source) return fail(404);
+      const json = req.headers.get("accept") === "application/json";
+      // Own pass: our signing material loads first, so a missing or broken key file refuses with zero fetches.
+      let own: OwnPass | null = null;
+      if (source.mode === "own") {
+        if (!source.event) return fail(404);
+        try {
+          own = { signer: platform === "ios" ? { apple: await appleSigner() } : { google: await googleIssuer() },
+            key: source.key, event: source.event, origin: siteOrigin, signers: qrSigners };
+        } catch { return fail(503); }
+      }
       // Live on Polygon, right before Unlock is asked: a key that moved, expired or was cancelled gets no pass.
       try { if (!(await keyHeld(source.key))) return fail(404); } catch { return fail(404); }
       try {
         const upstream = await fetcher(source.url, { cache: "no-store", credentials: "omit", redirect: "error",
           signal: AbortSignal.timeout(5000) });
-        return await servePass(upstream, platform, req.headers.get("accept") === "application/json", fail);
+        // A refused QR is logged by its fixed reason only, so the first live refusal says which check failed.
+        const log = (reason: BarcodeRefusal) => req.payload.logger?.warn({ msg: "Own wallet pass: Unlock QR refused", cause: reason });
+        return own ? await serveOwnPass(upstream, own, json, fail, log) : await servePass(upstream, platform, json, fail);
       } catch {
         return fail(502);
       }

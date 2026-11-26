@@ -477,7 +477,10 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
   const readingHeight = reading.layout.total + Math.round(geometry.lvh / 2);
   return <div ref={page} className="relative overflow-x-clip">
     {readingOpen ? <div style={{ height: readingHeight }} /> : <div aria-hidden="true" style={{ height: Math.max(0, nextTop) }} />}
-    <div ref={next} aria-hidden="true" className="h-[40lvh]" />
+    {/* A screen tall, so the page scrolls on until its top passes the window's: their row lift (spineRowLiftForWebsitesTop)
+        only takes the row fully off once the section's top is ~100 px from the window's. At 40lvh the page ended at
+        213 px and left the row half under the header (measured, G5). Theirs scrolls on through its Multimedia section. */}
+    <div ref={next} aria-hidden="true" className="h-lvh" />
     <Cards items={items} featured={catalogue.t} geometry={geometry} progressRef={cardsRef} listeners={listeners} reading={held} J={J}
       hub={hub} openRef={openIndex} />
     <StripeScene vendored={vendored} props={sceneProps} className="pointer-events-none fixed inset-0 isolate z-10" />

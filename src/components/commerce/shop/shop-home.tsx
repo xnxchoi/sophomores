@@ -18,6 +18,7 @@ import { useBookSounds } from "./use-book-sounds";
 import { LookInsideBar } from "./look-inside-bar";
 import { ShelfPager, ShelfPills, type ShelfHub } from "./shelf-controls";
 import { useCartMode, type CartConstants, type CartMotion, type CartTiming } from "./use-cart-mode";
+import { CartFlyContext } from "./cart-fly";
 import { CartBehind, CartColumn, cartOwnsInput, ownInput } from "./cart-column";
 import { NoWebglCartStack } from "./no-webgl-cart-stack";
 import { listGuestCart, subscribeGuestCart } from "@/lib/commerce/browser-cart";
@@ -622,9 +623,26 @@ function Home({ vendored, items, labels, initialOpen, cartPanel, cartOpen, onCar
   // Once the detail state itself is open, the landing has done its job (closing must not fall back to it).
   useEffect(() => { if (detail.open != null) setLanding(null); }, [detail.open]);
   const lookProps = look.sceneProps, lookHome = look.home && look.homeIndex != null ? look.homeIndex : null;
+  const stageIndex = lookHome ?? (detail.open != null ? (sceneIndex ?? detail.open) : active);
+  // The cart's add and remove motion (their cart-motion hook, 06w9:621355-622500): the add row starts a fly of its book
+  // into the stack before it adds; outside the cart, the stage's book leaving the cart (its count falling to 0 while it
+  // stays the stage's book) sends it off. Both are counters the scene watches, with the book they apply to.
+  const [flight, setFlight] = useState({ trigger: 0, index: 0 });
+  const [removal, setRemoval] = useState({ trigger: 0, index: 0 });
+  const flyFor = useCallback((productID: string) => {
+    const index = items.findIndex((entry) => entry.id === productID);
+    if (index >= 0) setFlight((current) => ({ trigger: current.trigger + 1, index }));
+  }, [items]);
+  const stageCount = useRef<{ index: number; count: number } | null>(null);
+  useEffect(() => {
+    if (cart.cartMode) return;
+    const id = items[stageIndex]?.id, count = id ? (cartQuantities[id] ?? 0) : 0, seen = stageCount.current;
+    stageCount.current = { index: stageIndex, count };
+    if (seen && seen.index === stageIndex && count < seen.count && count === 0) setRemoval((current) => ({ trigger: current.trigger + 1, index: stageIndex }));
+  }, [cartQuantities, stageIndex, cart.cartMode, items]);
   const sceneProps = useMemo(() => ({ skipIntro, ...lookProps,
     books: (window as unknown as { __SPBOOKS: unknown }).__SPBOOKS, scrollProgress: committed, scrollProgressLiveRef: progressRef,
-    activeBookIndex: lookHome ?? (detail.open != null ? (sceneIndex ?? detail.open) : active), stackMode: "browse", onBookOpen: (index: number) => openRef.current(index),
+    activeBookIndex: stageIndex, stackMode: "browse", onBookOpen: (index: number) => openRef.current(index),
     // Their `isDetailOpen: tx || iv` and `detailBookIndex: iv ? nI : uK`: the home's open book is posed as a detail book.
     isDetailOpen: (detail.open ?? landing ?? lookHome) != null,
     detailBookIndex: lookHome ?? (detail.open != null || landing != null ? (sceneIndex ?? detail.open ?? landing) : -1),
@@ -637,7 +655,8 @@ function Home({ vendored, items, labels, initialOpen, cartPanel, cartOpen, onCar
     } : {}),
     cartMotionRef: cart.motion, cartEntryClockRef: cart.clock, onCartMotionRest: cart.settle,
     cartQuantitiesByBookId: cartQuantities, quantities: cartQuantities,
-  }), [skipIntro, lookProps, lookHome, committed, active, detail.open, landing, sceneIndex, cart.cartMode, cart.phase, cart.layoutBlend,
+    cartFlyTrigger: flight.trigger, cartFlyBookIndex: flight.index, cartRemoveTrigger: removal.trigger, cartRemoveBookIndex: removal.index,
+  }), [skipIntro, lookProps, lookHome, stageIndex, flight, removal, committed, active, detail.open, landing, sceneIndex, cart.cartMode, cart.phase, cart.layoutBlend,
     cart.nonCartSlide, cart.stackExit, cart.shelfSlide, cart.entry, cart.panelOpen, cart.motion, cart.clock, cart.settle, cartVeil, cartQuantities]);
 
   // The spine row seats against, and lifts out ahead of, the section after the shelf (their #home-section-films, read
@@ -718,7 +737,7 @@ function Home({ vendored, items, labels, initialOpen, cartPanel, cartOpen, onCar
   // While reading, the page is the stack of every book's details (their sections, then half a screen); otherwise the
   // home's own scroll.
   const readingHeight = reading.layout.total + Math.round(geometry.lvh / 2);
-  return <div ref={page} className="relative overflow-x-clip" style={{ "--shop-shift": geometry.shift + "px", "--shop-drop": geometry.drop + "px" } as CSSProperties}>
+  return <CartFlyContext value={flyFor}><div ref={page} className="relative overflow-x-clip" style={{ "--shop-shift": geometry.shift + "px", "--shop-drop": geometry.drop + "px" } as CSSProperties}>
     <CartBehind open={cart.cartMode} art={items[active]?.stageArt} cardTop={geometry.top} />
     {/* Without WebGL the cart's books are images (theirs: NoWebglCartStack, desktop only). */}
     {cart.cartMode && noWebgl && !geometry.mobile && <NoWebglCartStack ids={itemIds} quantities={cartQuantities} cardTop={geometry.top} />}
@@ -791,7 +810,7 @@ function Home({ vendored, items, labels, initialOpen, cartPanel, cartOpen, onCar
         onMeasured={reading.measured} anchors={reading.anchors}>{entry.details}</DetailSlot>)}
     </DetailStack>
     </div>
-  </div>;
+  </div></CartFlyContext>;
 }
 
 /**

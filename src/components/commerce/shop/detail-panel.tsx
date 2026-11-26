@@ -14,6 +14,7 @@ import { RefundTerms } from "../refund-terms";
 import type { ProductPageContent } from "../product-page/_shared/content";
 import { physicalDetails, type EditionProduct } from "../product-page/product-page";
 import { DetailGallery } from "./detail-gallery";
+import { useCartFly } from "./cart-fly";
 
 /**
  * One book's details inside stripe.press's scene: their detail panel content (`ie`, 06w:6066-6943; notes
@@ -195,6 +196,7 @@ function Prose({ data }: { data: SerializedEditorState }) {
 function AddRow({ productID, title, price }: { productID: string; title: string; price: string }) {
   const t = useTranslations("Customer.components_commerce_book_offer");
   const inCart = useSyncExternalStore(subscribeGuestCart, () => listGuestCart().some((line) => line.productID === productID), () => false);
+  const fly = useCartFly();
   if (inCart) return <div className="flex min-h-[41px] items-center justify-between border-t border-dotted border-foreground/45 text-[15px] leading-[1.4] first:border-t-0 pointer-coarse:min-h-11">
     <span className="min-w-0 px-4">{t("inCart")}</span>
     <span className="flex shrink-0 items-center gap-3 px-4 tabular-nums">{price}
@@ -203,7 +205,7 @@ function AddRow({ productID, title, price }: { productID: string; title: string;
         <FocusShape className="flex size-5 items-center justify-center rounded-full border-[0.8px] border-current pb-0.5 text-[19.5px] leading-none opacity-75 transition-opacity duration-200 group-hover/focus:opacity-100">×</FocusShape>
       </button></span>
   </div>;
-  return <button type="button" onClick={() => addGuestCartLine(productID)}
+  return <button type="button" onClick={() => { fly?.(productID); addGuestCartLine(productID); }}
     className="group/focus flex min-h-[41px] w-full items-center border-t border-dotted border-foreground/45 text-left text-[15px] leading-[1.4] transition-colors duration-200 ease-[ease] first:border-t-0 hover:bg-foreground/8 pointer-coarse:min-h-11">
     <FocusShape className="flex w-full items-center justify-between"><span className="min-w-0 px-4">{t("addToCart")}</span><span className="shrink-0 px-4 tabular-nums">{price}</span></FocusShape>
   </button>;

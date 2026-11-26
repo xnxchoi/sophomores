@@ -8,6 +8,7 @@ import { readProductPageContent } from "../../../src/components/commerce/product
 // adds the book to the browser cart through Auth's exports and the row says it's in the cart; × takes it out again.
 let env: Awaited<ReturnType<typeof setupCartDom>>;
 let DetailPanel: typeof import("../../../src/components/commerce/shop/detail-panel").DetailPanel;
+let CartFlyContext: typeof import("../../../src/components/commerce/shop/cart-fly").CartFlyContext;
 type Props = Parameters<typeof DetailPanel>[0];
 const product = { productID: "e1", title: "Edition one", description: "" } as unknown as Props["product"];
 const offer = { priceKRW: 82000, maximumQuantity: 1,
@@ -16,6 +17,7 @@ const offer = { priceKRW: 82000, maximumQuantity: 1,
 before(async () => {
   env = await setupCartDom();
   DetailPanel = (await import("../../../src/components/commerce/shop/detail-panel")).DetailPanel;
+  CartFlyContext = (await import("../../../src/components/commerce/shop/cart-fly")).CartFlyContext;
 });
 afterEach(() => { env.ui.cleanup(); env.dom.window.localStorage.clear(); });
 after(async () => { await env.restore(); });
@@ -31,4 +33,14 @@ test("Add to cart puts the edition in the cart in place; × takes it out", () =>
   env.ui.fireEvent.click(screen.getByRole("button", { name: "Remove Edition one from your cart" }));
   assert.deepEqual(stored()?.lines ?? [], []);
   assert.ok(screen.getByRole("button", { name: /Add to cart/ }));
+});
+
+test("Add to cart starts the book's fly into the stack before it adds (their hZ)", () => {
+  const flown: string[] = [];
+  env.ui.render(<MemberAuthProviders><CartFlyContext value={(id) => { flown.push(id); assert.equal(stored(), null); }}>
+    <DetailPanel product={product} offer={offer} content={readProductPageContent(undefined)} />
+  </CartFlyContext></MemberAuthProviders>);
+  env.ui.fireEvent.click(env.ui.screen.getByRole("button", { name: /Add to cart/ }));
+  assert.deepEqual(flown, ["e1"]);
+  assert.deepEqual(stored()?.lines.map((line) => line.productID), ["e1"]);
 });

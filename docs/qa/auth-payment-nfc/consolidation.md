@@ -439,6 +439,7 @@ If a page needs a state that isn't listed, add it to the request list below inst
 **Requests from page work:**
 
 - **Products: a 'featured' flag (UI-Commerce, 24 Nov; low priority; needs the owner's OK).** A checkbox in the product's page fields (`page.featured`, boolean, default false, editable in the admin). `/shop` lists only featured products under "New and featured"; every product stays on the shelf. It changes the products schema, so no one builds it before the owner agrees.
+- **Cart checkout of native editions (Auth, 26 Nov; owner-facing).** Today the cart names and prices an edition line but can't take it to checkout. The server cart takes one line, refuses variant lines and resolves products only through the legacy catalogue (`ecommerce.ts`), and native-edition settlement is held (`rejectHeldNativeCheckout`). To check an edition out from the cart we would need variant cart lines in the cart hook, the edition catalogue in cart validation, a more-than-one-line or one-line swap rule, and native settlement switched on. Until then, edition lines point to the product page.
 
 ## How changes are made
 

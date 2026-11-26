@@ -290,7 +290,7 @@ export default function TeaserExperience() {
           visibility: navVisibility
         }}
       >
-        <div className="desktop-chapters pointer-events-auto hidden bg-teaser-glass backdrop-blur-lg md:flex">
+        <div className="desktop-chapters pointer-events-auto hidden bg-titanium/10 backdrop-blur-lg md:flex">
           {chapters.map((chapter) => (
             <Link
               key={chapter.id}
@@ -303,7 +303,7 @@ export default function TeaserExperience() {
             </Link>
           ))}
         </div>
-        <div className="mobile-chapters pointer-events-auto flex w-40 flex-col bg-teaser-glass backdrop-blur-lg md:hidden">
+        <div className="mobile-chapters pointer-events-auto flex w-40 flex-col bg-titanium/10 backdrop-blur-lg md:hidden">
           <AnimatePresence>
             {menuOpen && (
               <motion.div
@@ -317,7 +317,7 @@ export default function TeaserExperience() {
                 {chapters.map((chapter) => (
                   <MobileChapterControl key={chapter.id}>
                     <a
-                      className="aria-[current]:bg-[#fff2]"
+                      className="aria-[current]:bg-titanium/13"
                       href={`#${chapter.id}`}
                       aria-current={
                         current === chapter.id ? "location" : undefined

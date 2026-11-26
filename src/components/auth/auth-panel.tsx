@@ -15,9 +15,9 @@ export function AuthPanel({
 }) {
   return (
     <div className="mx-auto flex w-full max-w-[384px] flex-col gap-6">
-      <div className="rounded-xl bg-faded-bg/50 px-6 py-6">
+      <div className="rounded-xl bg-background/50 px-6 py-6">
         <header className="mb-2 text-center">
-          <h2 className="mb-2 font-sans text-[22.5px] font-medium tracking-tight text-off-fg">
+          <h2 className="mb-2 font-sans text-[22.5px] font-medium tracking-tight text-foreground">
             {title}
           </h2>
           {description ? (

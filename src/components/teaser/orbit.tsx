@@ -94,7 +94,7 @@ export function Orbit({ onActive }: { onActive: (id: ChapterId) => void }) {
     >
       <div className="sticky top-0 h-svh overflow-hidden">
         <div
-          className="absolute top-[calc(50%-64px)] left-1/2 h-32 border-l border-dashed border-l-teaser-muted"
+          className="absolute top-[calc(50%-64px)] left-1/2 h-32 border-l border-dashed border-l-singer-stone"
           aria-hidden="true"
         />
         <motion.div

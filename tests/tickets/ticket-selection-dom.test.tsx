@@ -503,16 +503,16 @@ test("ticket preview uses shared rails and balanced content-sized panels", async
   assert.ok(grid.classList.contains("min-[800px]:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]"));
   assert.ok(grid.classList.contains("items-start"), "panel height remains content-sized rather than stretched");
   for (const panel of [choice, summary]) {
-    assert.ok(panel.classList.contains("bg-neutral-900/50"));
+    assert.ok(panel.classList.contains("bg-carbon/50"));
     assert.ok(![...panel.classList].some((value) => /^(?:shadow-|h-|min-h-)/.test(value)), "no extra shadow, filler height or fixed panel height");
   }
   for (const heading of [choiceHeading, summaryHeading]) {
-    for (const token of ["text-[16px]", "leading-6", "font-medium", "text-neutral-100"]) {
+    for (const token of ["text-[16px]", "leading-6", "font-medium", "text-titanium"]) {
       assert.ok(heading.classList.contains(token), "both section headings share the same visual hierarchy");
     }
   }
   const price = ui.screen.getByText("Price to be announced");
-  for (const token of ["text-[18px]", "leading-6", "text-neutral-300"]) assert.ok(price.classList.contains(token));
+  for (const token of ["text-[18px]", "leading-6", "text-singer-stone"]) assert.ok(price.classList.contains(token));
   assert.ok(!price.classList.contains("text-[27px]"), "unknown pricing is not styled like an actual monetary total");
   assert.equal((ui.screen.getByRole("button", { name: "Checkout unavailable" }) as HTMLButtonElement).disabled, true);
 });
@@ -524,7 +524,7 @@ test("an actual test quote retains monetary emphasis without enabling checkout",
   ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Get test quote" }));
   const amount = await ui.screen.findByText("₩12,345");
   for (const token of ["text-[27px]", "leading-[34px]", "font-medium", "tabular-nums"]) assert.ok(amount.classList.contains(token));
-  assert.ok(!amount.classList.contains("text-neutral-300"));
+  assert.ok(!amount.classList.contains("text-singer-stone"));
   assert.equal((ui.screen.getByRole("button", { name: "Checkout unavailable" }) as HTMLButtonElement).disabled, true);
 });
 

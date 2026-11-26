@@ -93,17 +93,17 @@ export function Invitation({
             <BlurText text={content.invitationHeadline} />
           </h2>
           <button
-            className="self-start bg-none p-0 text-left text-[18px] leading-[1.3] uppercase hover:text-teaser-focus"
+            className="self-start bg-none p-0 text-left text-[18px] leading-[1.3] uppercase hover:text-saffron-amber-lighter-1"
             onClick={onOpen}
           >
             → {content.rsvpButtonLabel.replace(/^→\s*/, "")}{" "}
-            <span className="mt-3 block text-[12px] text-teaser-muted">
+            <span className="mt-3 block text-[12px] text-singer-stone">
               {content.rsvpButtonSubtext}
             </span>
           </button>
         </div>
       </div>
-      <footer className="flex flex-wrap justify-between gap-5 font-sans text-teaser-fine text-teaser-muted uppercase md:flex-nowrap md:text-teaser-caption">
+      <footer className="flex flex-wrap justify-between gap-5 font-sans text-teaser-fine text-singer-stone uppercase md:flex-nowrap md:text-teaser-caption">
         <span>{content.footerCopyright}</span>
         <a
           className="order-3 basis-full md:order-none md:basis-auto"

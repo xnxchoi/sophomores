@@ -15,7 +15,7 @@ export function NotFoundPage() {
       <Missing />
       <div className="fixed z-1 flex h-full w-full items-center justify-center px-6">
         <nav aria-label={t("notFoundNavigation")} className="relative bottom-5 flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
-          <LinkUnderlined className="inline-flex min-h-12 items-center bg-transparent hover:text-red-500" href="/">
+          <LinkUnderlined className="inline-flex min-h-12 items-center bg-transparent hover:text-deep-cinnabar" href="/">
             {t("returnHome")}
           </LinkUnderlined>
         </nav>

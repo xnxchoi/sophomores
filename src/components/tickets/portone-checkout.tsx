@@ -200,10 +200,10 @@ export function PortOneCheckoutButton({ quantity, disabled = true, recoveryDisab
   return <div className="space-y-3">
     <button ref={button} type="button" disabled={busy || (preparedOrder ? recoveryDisabled : (intent ? recoveryDisabled : disabled) || !storageReady || storageBlocked || (!intent && (!Number.isSafeInteger(quantity) || quantity < 1 || quantity > 6)))}
       aria-busy={busy} onClick={checkout}
-      className="min-h-12 w-full rounded-xl bg-neutral-100 px-5 py-3 text-sm font-medium text-neutral-950 transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-100 disabled:bg-neutral-800 disabled:text-neutral-500">
+      className="min-h-12 w-full rounded-xl bg-titanium px-5 py-3 text-sm font-medium text-carbon-deep transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-titanium disabled:bg-gunmetal disabled:text-pewter">
       {busy ? phase === "recovering" ? t('recoveringCheckout') : t('openingPayment') : preparedOrder ? t('checkPaymentStatus') : storageBlocked || (!intent && disabled) ? t('checkoutUnavailable') : intent ? t('recoverCheckout') : t('payByCard')}
     </button>
-    {preparedOrder && <p className="text-sm leading-6 tabular-nums text-neutral-300">{preparedOrder.quantity} {preparedOrder.quantity === 1 ? t('ticket') : t('tickets')} · {new Intl.NumberFormat("en-US", { style: "currency", currency: preparedOrder.currency }).format(preparedOrder.currency === "KRW" ? preparedOrder.totalAmount : preparedOrder.totalAmount / 100)}</p>}
-    {feedback && <p role="alert" className="text-sm leading-6 text-neutral-300">{feedback}</p>}
+    {preparedOrder && <p className="text-sm leading-6 tabular-nums text-singer-stone">{preparedOrder.quantity} {preparedOrder.quantity === 1 ? t('ticket') : t('tickets')} · {new Intl.NumberFormat("en-US", { style: "currency", currency: preparedOrder.currency }).format(preparedOrder.currency === "KRW" ? preparedOrder.totalAmount : preparedOrder.totalAmount / 100)}</p>}
+    {feedback && <p role="alert" className="text-sm leading-6 text-singer-stone">{feedback}</p>}
   </div>;
 }

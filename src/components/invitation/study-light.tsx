@@ -29,7 +29,7 @@ void main() {
   gl_Position = vec4(position.xy, 0.0, 1.0);
 }`;
 const fragment = createFragmentShader(studyLightConfig);
-const fill = { width: "100%", height: "100%", background: "#000" } as const;
+const fill = { width: "100%", height: "100%", background: "var(--color-carbon-deep)" } as const;
 const subscribeClient = () => () => {};
 const clientSnapshot = () => true;
 const serverSnapshot = () => false;

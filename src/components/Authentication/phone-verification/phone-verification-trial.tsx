@@ -202,7 +202,7 @@ export function TrialVerificationView({
         <div className="mb-1 flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
             {markState !== "entry" && <VerificationMark state={markState} />}
-            <p className="truncate text-[10px] tracking-[0.08em] text-neutral-400">
+            <p className="truncate text-[10px] tracking-[0.08em] text-pewter">
               {t("trial")}
             </p>
           </div>
@@ -227,7 +227,7 @@ export function TrialVerificationView({
             ref={heading}
             className={cn(registration && "mt-0 mb-2 text-2xl leading-[30px] tracking-[-0.035em] sm:text-2xl", registration && !mobileTray && !(state === "verified" && registrationCompletion) && "pl-14", registration && state === "verified" && Boolean(registrationCompletion) && "flex items-center justify-center gap-2.5 text-center")}
           >
-            {registration && state === "verified" && registrationCompletion && <Check aria-hidden="true" className="size-5 shrink-0 text-neutral-200" strokeWidth={1.5} />}
+            {registration && state === "verified" && registrationCompletion && <Check aria-hidden="true" className="size-5 shrink-0 text-titanium" strokeWidth={1.5} />}
             {t(
               challenge && state
                 ? registration
@@ -271,7 +271,7 @@ export function TrialVerificationView({
                   ref={attachHaptics}
                   type="submit"
                   aria-busy={registration ? snapshot.busy : undefined}
-                  className={cn(registration && "mt-4 min-h-12 justify-center rounded-xl bg-neutral-100 py-3 font-medium")}
+                  className={cn(registration && "mt-4 min-h-12 justify-center rounded-xl bg-titanium py-3 font-medium")}
                   disabled={snapshot.busy}
                 >
                   {t(snapshot.busy ? "creating" : "continueLabel")}
@@ -300,7 +300,7 @@ export function TrialVerificationView({
                     )}
                     {composer && (
                       <PrimaryLink
-                        className={cn(registration && "mt-4 min-h-12 justify-center rounded-xl bg-neutral-100 py-3 font-medium")}
+                        className={cn(registration && "mt-4 min-h-12 justify-center rounded-xl bg-titanium py-3 font-medium")}
                         href={composer}
                         onClick={
                           registration ? composerFallback.onCompose : undefined
@@ -369,7 +369,7 @@ export function TrialVerificationView({
                     </VerificationDetails>
                   )}
                 {registration && state === "verified" && registrationCompletion ? registrationCompletion : <ResetAction
-                  className={cn(registration && "mx-auto", terminalRecovery && "mt-4 min-h-12 justify-center rounded-xl bg-neutral-100 py-3 font-medium")}
+                  className={cn(registration && "mx-auto", terminalRecovery && "mt-4 min-h-12 justify-center rounded-xl bg-titanium py-3 font-medium")}
                   type="button"
                   disabled={snapshot.busy}
                   onClick={onReset}
@@ -390,7 +390,7 @@ export function TrialVerificationView({
             <div data-trial-error="">
               <div className="pt-4">
                 <p
-                  className="rounded-lg border border-neutral-500/40 bg-white/5 px-4 py-3 text-[13px] leading-relaxed text-neutral-200"
+                  className="rounded-lg border border-pewter/40 bg-white/5 px-4 py-3 text-[13px] leading-relaxed text-titanium"
                   role="alert"
                 >
                   {t(

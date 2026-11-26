@@ -10,6 +10,7 @@ import {
   teaser as defaultTeaser,
   values as defaultValues
 } from "@/lib/teaser/content";
+import { PALETTE } from "@/utils/palette";
 
 export type HomePageContent = Record<string, unknown> & {
   brandWordmark?: string;
@@ -145,7 +146,7 @@ export function useTeaserContent() {
             ...defaultPrinciples[i],
             title: pick(p.title, defaultPrinciples[i]?.title || ""),
             body: pick(p.body, defaultPrinciples[i]?.body || ""),
-            color: pick(p.color, defaultPrinciples[i]?.color || "#ff4c25")
+            color: pick(p.color, defaultPrinciples[i]?.color || PALETTE.signalOrange.hex)
           }))
         : defaultPrinciples,
     messages:

@@ -13,10 +13,10 @@ export function Panel({ children, className, as = "section" }: PanelProps) {
     <Tag
       className={cn(
         "relative w-full overflow-hidden rounded-2xl",
-        "border border-white/10 bg-neutral-900/60 backdrop-blur-md",
+        "border border-white/10 bg-carbon/60 backdrop-blur-md",
         "before:absolute before:inset-x-0 before:top-0 before:z-10 before:h-px",
         "before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent",
-        "shadow-[0_4px_24px_-4px_rgba(0,0,0,0.5)]",
+        "shadow-[0_4px_24px_-4px_color-mix(in_oklab,var(--color-carbon-deep)_50%,transparent)]",
         className
       )}
     >
@@ -87,12 +87,12 @@ export function PanelHeader({
             {eyebrow}
           </h2>
         ) : (
-          <p className="text-xs uppercase tracking-wider text-neutral-400">
+          <p className="text-xs uppercase tracking-wider text-pewter">
             {eyebrow}
           </p>
         )}
         {meta ? (
-          <span className="shrink-0 text-xs text-neutral-400">
+          <span className="shrink-0 text-xs text-pewter">
             {meta}
           </span>
         ) : null}
@@ -103,7 +103,7 @@ export function PanelHeader({
         </h2>
       ) : null}
       {blurb ? (
-        <p className="max-w-prose text-sm leading-relaxed text-neutral-300">
+        <p className="max-w-prose text-sm leading-relaxed text-singer-stone">
           {blurb}
         </p>
       ) : null}

@@ -73,7 +73,7 @@ export function MissingLayout() {
     <m.svg
       id={"svgel"}
       xmlns={"http://www.w3.org/02000/svg"}
-      fill="oklch(from var(--fg) l c h/.86)"
+      fill="oklch(from var(--foreground) l c h/.86)"
       viewBox={viewBox}
       height="100%"
       width={"100%"}

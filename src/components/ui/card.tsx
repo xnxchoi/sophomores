@@ -109,7 +109,7 @@ function HA_Card({className, ...props}: React.ComponentProps<"div">) {
 			className,
 		)}
 		     {...props} style={{
-			outlineColor: "oklch(from var(--muted-faded-fg) l c h/.3)",
+			outlineColor: "oklch(from var(--muted-foreground) l c h/.3)",
 			...props.style,
 		}} />
 	);

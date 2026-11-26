@@ -152,7 +152,7 @@ const t = useTranslations("Customer.menuButton");
       onClick={onClick}
       ref={menuRef}
       className={cn(
-        "rp_btn relative flex h-6 max-md:h-8! phone:h-7! items-center justify-center border border-transparent rounded-full bg-[var(--button-background)] text-[oklch(from_var(--faded-fg)_l_c_h_/_0.9)] text-xs backdrop-blur-[var(--header-button-blur,24px)] outline-none",
+        "rp_btn relative flex h-6 max-md:h-8! phone:h-7! items-center justify-center border border-transparent rounded-full bg-[var(--button-background)] text-[oklch(from_var(--foreground)_l_c_h_/_0.9)] text-xs backdrop-blur-[var(--header-button-blur,24px)] outline-none",
         "leading-[140%] font-normal tracking-[-0.01em]",
         "w-[64px] overflow-hidden transition-all duration-300 ease-out-power3 hover:border-current! hover:bg-transparent! data-[state=true]:w-[77px] data-[state=true]:border-current! data-[state=true]:bg-transparent!",
         className

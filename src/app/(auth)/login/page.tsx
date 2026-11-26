@@ -20,7 +20,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       <form method="post" action="/api/session">
         <label className="mt-5 block" htmlFor="username">{t("user")}</label>
         <input
-          className="mt-1.5 block w-full rounded-md border border-preview-border bg-preview-input p-3 text-inherit shadow-[inset_0_1px_2px_rgb(0_0_0/0.18)] transition-[border-color,box-shadow,background-color,outline-color] duration-200 ease-out focus-visible:border-preview-accent focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-preview-accent"
+          className="mt-1.5 block w-full rounded-md border border-preview-border bg-preview-input p-3 text-inherit shadow-[inset_0_1px_2px_color-mix(in_oklab,var(--color-carbon-deep)_18%,transparent)] transition-[border-color,box-shadow,background-color,outline-color] duration-200 ease-out focus-visible:border-preview-accent focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-preview-accent"
           id="username"
           name="username"
           autoComplete="username"
@@ -31,7 +31,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         />
         <label className="mt-5 block" htmlFor="password">{t("passcode")}</label>
         <input
-          className="mt-1.5 block w-full rounded-md border border-preview-border bg-preview-input p-3 text-inherit shadow-[inset_0_1px_2px_rgb(0_0_0/0.18)] transition-[border-color,box-shadow,background-color,outline-color] duration-200 ease-out focus-visible:border-preview-accent focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-preview-accent"
+          className="mt-1.5 block w-full rounded-md border border-preview-border bg-preview-input p-3 text-inherit shadow-[inset_0_1px_2px_color-mix(in_oklab,var(--color-carbon-deep)_18%,transparent)] transition-[border-color,box-shadow,background-color,outline-color] duration-200 ease-out focus-visible:border-preview-accent focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-preview-accent"
           id="password"
           name="password"
           type="password"

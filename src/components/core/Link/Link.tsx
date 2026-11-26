@@ -178,7 +178,7 @@ export function LinkUnderlined(
       <Link
         href={href}
         className={cn(
-          "ease rounded-xs no-underline decoration-0 transition-colors duration-200 hover:text-red-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current",
+          "ease rounded-xs no-underline decoration-0 transition-colors duration-200 hover:text-deep-cinnabar focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current",
           className
         )}
         {...rest}

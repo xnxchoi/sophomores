@@ -14,6 +14,7 @@ import {
   warpVertexShader as vertexShader,
   warpFragmentShader as fragmentShader
 } from "./warp-shaders";
+import { PALETTE } from "@/utils/palette";
 
 // The supplied visual loop runs on the existing R3F scheduler, not a second RAF.
 // Constants adapt it to the cooler, quieter Sophomores ring without changing its flow.
@@ -265,7 +266,7 @@ function Ring({
     () => {
       const config = resolveFlameConfig({
         pointer: { enabled: false },
-        visual: { backgroundColor: "#000000" }
+        visual: { backgroundColor: PALETTE.carbonDeep.hex }
       });
       return `
 #define main warpRingMain

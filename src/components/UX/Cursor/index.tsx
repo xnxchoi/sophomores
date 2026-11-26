@@ -347,8 +347,8 @@ export default function RP_Cursor() {
                   className={cn(
                     "pointer-events-none relative inline-block w-full origin-[50%_50%_0] text-center font-dots text-sm leading-none font-bold tracking-[0.05rem] whitespace-nowrap text-nav-foreground mix-blend-difference",
                     cursorTheme === "dark"
-                      ? "[text-shadow:0_0_2px_oklch(10.17%_0.0013_218.99),0_0_4px_oklch(10.17%_0.0013_218.99/0.6)]"
-                      : "[text-shadow:0_0_2px_oklch(97.5%_0.0013_218.99),0_0_4px_oklch(97.5%_0.0013_218.99/0.6)]"
+                      ? "[text-shadow:0_0_2px_var(--color-carbon-deep),0_0_4px_color-mix(in_oklab,var(--color-carbon-deep)_60%,transparent)]"
+                      : "[text-shadow:0_0_2px_var(--color-titanium),0_0_4px_color-mix(in_oklab,var(--color-titanium)_60%,transparent)]"
                   )}
                   key={cursorState}
                   style={{
@@ -392,13 +392,13 @@ export default function RP_Cursor() {
                 className={cn(
                   "absolute top-0 left-0 z-[999] h-full w-full",
                   cursorTheme === "dark"
-                    ? "[filter:drop-shadow(0_0_1.5px_oklch(10.17%_0.0013_218.99))_drop-shadow(0_0_1.5px_oklch(10.17%_0.0013_218.99))]"
-                    : "[filter:drop-shadow(0_0_1.5px_oklch(97.5%_0.0013_218.99))_drop-shadow(0_0_1.5px_oklch(97.5%_0.0013_218.99))]"
+                    ? "[filter:drop-shadow(0_0_1.5px_var(--color-carbon-deep))_drop-shadow(0_0_1.5px_var(--color-carbon-deep))]"
+                    : "[filter:drop-shadow(0_0_1.5px_var(--color-titanium))_drop-shadow(0_0_1.5px_var(--color-titanium))]"
                 )}
               >
                 <m.circle
                   ref={oCircle}
-                  className={"inline bg-transparent fill-transparent transition-[stroke] duration-150 ease-out-power3 data-[focus=true]:stroke-rouge-400"}
+                  className={"inline bg-transparent fill-transparent transition-[stroke] duration-150 ease-out-power3 data-[focus=true]:stroke-deep-cinnabar"}
                   cx={50}
                   cy={50}
                   r={outerRadius}

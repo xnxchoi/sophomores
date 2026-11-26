@@ -10,8 +10,8 @@ function MediaWell({ ratio, src }: { ratio: "video" | "square"; src: string }) {
     <div
       className={
         ratio === "video"
-          ? "port-wash relative aspect-video w-full overflow-hidden rounded-lg bg-faded-bg bg-[radial-gradient(circle_at_30%_20%,oklch(from_var(--port-shade)_32%_c_h/0.85),transparent_55%),linear-gradient(165deg,oklch(from_var(--port-shade)_l_c_h/0.22)_0%,oklch(from_var(--port-shade)_l_c_h/0.08)_42%,oklch(from_var(--port-shade)_l_c_h/0)_100%)]"
-          : "port-wash relative aspect-square overflow-hidden rounded-md bg-faded-bg bg-[radial-gradient(circle_at_30%_20%,oklch(from_var(--port-shade)_32%_c_h/0.85),transparent_55%),linear-gradient(165deg,oklch(from_var(--port-shade)_l_c_h/0.22)_0%,oklch(from_var(--port-shade)_l_c_h/0.08)_42%,oklch(from_var(--port-shade)_l_c_h/0)_100%)] transition-transform duration-500 ease-[cubic-bezier(.16,1,.3,1)] group-hover:scale-[1.02]"
+          ? "port-wash relative aspect-video w-full overflow-hidden rounded-lg bg-background bg-[radial-gradient(circle_at_30%_20%,oklch(from_var(--port-shade)_32%_c_h/0.85),transparent_55%),linear-gradient(165deg,oklch(from_var(--port-shade)_l_c_h/0.22)_0%,oklch(from_var(--port-shade)_l_c_h/0.08)_42%,oklch(from_var(--port-shade)_l_c_h/0)_100%)]"
+          : "port-wash relative aspect-square overflow-hidden rounded-md bg-background bg-[radial-gradient(circle_at_30%_20%,oklch(from_var(--port-shade)_32%_c_h/0.85),transparent_55%),linear-gradient(165deg,oklch(from_var(--port-shade)_l_c_h/0.22)_0%,oklch(from_var(--port-shade)_l_c_h/0.08)_42%,oklch(from_var(--port-shade)_l_c_h/0)_100%)] transition-transform duration-500 ease-[cubic-bezier(.16,1,.3,1)] group-hover:scale-[1.02]"
       }
     >
       {src ? (
@@ -26,7 +26,7 @@ function MediaWell({ ratio, src }: { ratio: "video" | "square"; src: string }) {
       ) : null}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-[8%] bg-linear-to-t from-off-bg to-transparent"
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-[8%] bg-linear-to-t from-background to-transparent"
       />
     </div>
   );
@@ -36,7 +36,7 @@ function Lead({ post, span }: { post: PostCard; span: "with-rail" | "solo" }) {
   return (
     <article
       className={cn(
-        "group relative flex flex-col bg-off-bg",
+        "group relative flex flex-col bg-background",
         span === "with-rail"
           ? "md:col-span-2 lg:col-span-4"
           : "md:col-span-2 lg:col-span-6"
@@ -76,7 +76,7 @@ function Secondary({
   return (
     <article
       className={cn(
-        "group relative grid grid-cols-[96px_1fr] gap-x-4 bg-off-bg p-4 sm:grid-cols-[120px_1fr] sm:gap-x-5 sm:p-5",
+        "group relative grid grid-cols-[96px_1fr] gap-x-4 bg-background p-4 sm:grid-cols-[120px_1fr] sm:gap-x-5 sm:p-5",
         span === "with-rail" ? "lg:col-span-2" : "lg:col-span-3"
       )}
     >
@@ -103,7 +103,7 @@ function Headliners({ posts }: { posts: PostCard[] }) {
   return (
     <aside
       aria-label={t('headliners')}
-      className="flex flex-col bg-off-bg md:col-span-2 lg:col-span-2 lg:col-start-5 lg:row-span-2 lg:row-start-1"
+      className="flex flex-col bg-background md:col-span-2 lg:col-span-2 lg:col-start-5 lg:row-span-2 lg:row-start-1"
     >
       <header className="port-row border-b border-[oklch(from_var(--port-shade)_l_c_h/0.12)] px-5 py-3">
         <span className="port-meta font-sans text-xs tracking-[0.18em] text-[oklch(from_var(--port-shade)_l_c_h/0.55)] uppercase">

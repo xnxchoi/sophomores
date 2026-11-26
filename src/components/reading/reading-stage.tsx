@@ -12,7 +12,7 @@ import type { ReadingSurface } from "@/lib/content/reading-surface";
 export function ReadingStage({ surface, children }: { surface: ReadingSurface; children: ReactNode }) {
   const { posts, notifications, memberId } = surface;
   return (
-    <main className="min-h-screen bg-off-bg pt-[76px] text-faded-fg">
+    <main className="min-h-screen bg-background pt-[76px] text-foreground">
       {/* The site frame mounts the one header; this hands it the posts for Search and the inbox its rows. */}
       <ReadingChrome posts={posts} notifications={notifications} userId={memberId} />
       {children}

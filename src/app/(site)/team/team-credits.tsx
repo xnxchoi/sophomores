@@ -149,7 +149,7 @@ export function TeamCredits({ people }: { people: ReadonlyArray<TeamPerson> }) {
   });
 
   return (
-    <main className="relative h-svh overflow-hidden bg-off-black text-(--off-white) max-md:mb-[70px] max-md:h-auto max-md:min-h-svh max-md:overflow-visible max-md:px-0 max-md:pt-[110px]">
+    <main className="relative h-svh overflow-hidden bg-carbon-deep text-(--white) max-md:mb-[70px] max-md:h-auto max-md:min-h-svh max-md:overflow-visible max-md:px-0 max-md:pt-[110px]">
       <h1 className="sr-only">{t("title")}</h1>
 
       {/* Blurred ground of the shown profile. */}
@@ -533,7 +533,7 @@ function MobileProfiles({ people, start, onShow, onClose }: {
         className="fixed bottom-[50px] left-1/2 z-8 flex size-[55px] -translate-x-1/2 items-center justify-center rounded-full bg-white outline-offset-4 focus-visible:outline-2"
       >
         <svg aria-hidden="true" fill="none" height="25" viewBox="0 0 25 25" width="25" xmlns="http://www.w3.org/2000/svg">
-          <g stroke="#121212" strokeLinecap="round" strokeWidth="1.25">
+          <g className="stroke-carbon" strokeLinecap="round" strokeWidth="1.25">
             <path d="m1.5 23.3019 21.8025-21.80245" />
             <path d="m23.5328 23.269-21.80249-21.80241" />
           </g>

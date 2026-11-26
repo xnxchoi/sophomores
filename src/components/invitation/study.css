@@ -1,8 +1,8 @@
 .invitation-study {
-  --study-ink: #f5f3ee;
-  --study-muted: #c5c3bd;
+  --study-ink: var(--color-titanium);
+  --study-muted: var(--color-singer-stone);
   color: var(--study-ink);
-  background: #030504;
+  background: var(--color-carbon-deep);
   position: relative;
   isolation: isolate;
   min-height: 100svh;
@@ -26,7 +26,7 @@
 .invitation-study button:focus-visible,
 .invitation-film-dialog button:focus-visible,
 .invitation-film-dialog video:focus-visible {
-  outline: 2px solid #fff;
+  outline: 2px solid var(--color-titanium);
   outline-offset: 5px;
 }
 .invitation-study-light {
@@ -78,7 +78,7 @@
   grid-template-columns: 1fr auto;
   align-items: center;
   gap: 24px 60px;
-  border-top: 1px solid #ffffff35;
+  border-top: 1px solid color-mix(in oklab, var(--color-titanium) 21%, transparent);
   scroll-margin-top: 30px;
 }
 .invitation-study-film-section p {
@@ -93,7 +93,7 @@
 }
 .invitation-study-text-button {
   background: transparent;
-  border: 1px solid #ffffff8a;
+  border: 1px solid color-mix(in oklab, var(--color-titanium) 54%, transparent);
   border-radius: 100px;
   padding: 16px 24px;
   min-height: 52px;
@@ -145,12 +145,12 @@
   border: 0;
   padding: 80px 20px 28px;
   background: transparent;
-  color: #f5f3ee;
+  color: var(--color-titanium);
   overflow: auto;
   font-family: Arial, Helvetica, sans-serif;
 }
 .invitation-film-dialog::backdrop {
-  background: #030504e8;
+  background: color-mix(in oklab, var(--color-carbon-deep) 91%, transparent);
 }
 .invitation-film-dialog[open] {
   display: grid;
@@ -164,9 +164,9 @@
   right: 24px;
   min-height: 44px;
   padding: 8px 16px;
-  border: 1px solid #ffffff80;
+  border: 1px solid color-mix(in oklab, var(--color-titanium) 50%, transparent);
   border-radius: 50px;
-  background: #030504;
+  background: var(--color-carbon-deep);
   z-index: 2;
 }
 .invitation-film-disclosure {
@@ -187,13 +187,13 @@
   aspect-ratio: 1;
   object-fit: contain;
   display: block;
-  background: #000;
+  background: var(--color-carbon-deep);
   border-radius: 16px;
-  outline: 1px solid #ffffff25;
+  outline: 1px solid color-mix(in oklab, var(--color-titanium) 14%, transparent);
   outline-offset: -1px;
 }
 .invitation-film-empty {
-  background: #151515;
+  background: var(--color-carbon);
   padding: 44px;
   border-radius: 16px;
   aspect-ratio: 1;
@@ -226,10 +226,10 @@
 .invitation-film-failure {
   min-height: 200px;
   padding: 32px;
-  background: #151515;
+  background: var(--color-carbon);
 }
 .invitation-film-failure button {
-  border: 1px solid #fff;
+  border: 1px solid var(--color-titanium);
   padding: 12px;
   min-height: 44px;
   background: transparent;

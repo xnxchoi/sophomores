@@ -1,5 +1,6 @@
 import { FLAME_APPEARANCE } from "./appearance";
 import { Color } from 'three';
+import { PALETTE } from "@/utils/palette";
 
 /** Renderer controls. Distances use centered artwork coordinates: the square is 1 unit wide. */
 export interface FlameConfig {
@@ -86,7 +87,7 @@ export const DEFAULT_FLAME_CONFIG: FlameConfig = Object.freeze({
     breathingAmount: 1,
     inwardLeakAmount: 1,
     overlapWhitening: 1,
-    backgroundColor: "#030504"
+    backgroundColor: PALETTE.carbonDeep.hex
   }),
   pointer: Object.freeze({
     enabled: true,
@@ -129,13 +130,13 @@ export const DEFAULT_FLAME_CONFIG: FlameConfig = Object.freeze({
     warmth: 0.7,
     curlAmount: 0.7,
     rimStrength: 1,
-    baseColor: "#155BFF",
-    tipColor: "#5CBFFF",
+    baseColor: PALETTE.gulfCerulean.hex,
+    tipColor: PALETTE.gulfCeruleanLighter.hex,
     frontSoftness: FLAME_APPEARANCE.front.softness,
     bodyOpacity: FLAME_APPEARANCE.legacy.rawBodyOpacity,
     stemStrength: 0.05,
-    alternateBaseColor: "#155BFF",
-    alternateTipColor: "#5CBFFF",
+    alternateBaseColor: PALETTE.gulfCerulean.hex,
+    alternateTipColor: PALETTE.gulfCeruleanLighter.hex,
     colorCycleSeconds: 0
   }),
   ignition: Object.freeze({

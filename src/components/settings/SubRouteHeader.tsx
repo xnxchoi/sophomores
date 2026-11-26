@@ -34,7 +34,7 @@ const t = useTranslations("Customer.settingsControls");
           setPendingHref(backHref);
         }}
         className={cn(
-          "group group/focus inline-flex w-fit items-center text-xs text-neutral-400 transition-colors hover:text-white",
+          "group group/focus inline-flex w-fit items-center text-xs text-pewter transition-colors hover:text-white",
           "rounded-sm xl:hidden"
         )}
       >
@@ -53,7 +53,7 @@ const t = useTranslations("Customer.settingsControls");
           {title}
         </h1>
         {blurb ? (
-          <p className="max-w-2xl text-sm text-neutral-400">
+          <p className="max-w-2xl text-sm text-pewter">
             {blurb}
           </p>
         ) : null}

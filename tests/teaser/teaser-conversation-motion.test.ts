@@ -6,10 +6,10 @@ import { Orbit } from "@/components/teaser/orbit";
 import { Conversation, messageVariants, metaVariants, TypingDots } from "@/components/teaser/conversation";
 import { messages, principles } from "@/lib/teaser/content";
 test("native card variants preserve every active and inactive color", () => {
-  assert.deepEqual(messageVariants.inactive, { backgroundColor: "#161616", color: "#fff" });
-  assert.deepEqual(messageVariants.first, { backgroundColor: "#292929", color: "#fff" });
-  assert.deepEqual(messageVariants.active, { backgroundColor: "#ff4c25", color: "#000" });
-  assert.deepEqual(metaVariants, { inactive: { color: "#bbb" }, first: { color: "#aaa" }, active: { color: "#552014" } });
+  assert.deepEqual(messageVariants.inactive, { backgroundColor: "var(--color-carbon)", color: "var(--color-titanium)" });
+  assert.deepEqual(messageVariants.first, { backgroundColor: "var(--color-gunmetal)", color: "var(--color-titanium)" });
+  assert.deepEqual(messageVariants.active, { backgroundColor: "var(--color-signal-orange)", color: "var(--color-carbon-deep)" });
+  assert.deepEqual(metaVariants, { inactive: { color: "var(--color-singer-stone)" }, first: { color: "var(--color-singer-stone)" }, active: { color: "var(--color-imperial-plum-darker-1)" } });
 });
 
 test("typing dots retain their exact looping opacity sequence and offsets", () => {

@@ -24,6 +24,7 @@ import {
   WebGLRenderer
 } from "three";
 import { useShallow } from "zustand/shallow";
+import { PALETTE } from "@/utils/palette";
 const Manvas = m.create(Canvas);
 export function Missing() {
   // Cauterization: Voyageur is not imported. This scene only renders on the 404 page.
@@ -92,7 +93,7 @@ export function Missing() {
       y = Math.min(_, v);
     (ctx.setTransform(y, 0, 0, y, 0, 0),
       ctx.translate((canvass.width - m * y) / 2, (canvass.height - g * y) / 2),
-      (ctx.fillStyle = `oklch(46.3% 0.187 28.3)`),
+      (ctx.fillStyle = PALETTE.arterialRed.hex),
       ctx.fill(path));
     const txttr = new CanvasTexture(canvass);
 

@@ -54,7 +54,7 @@ export function ProgressSegment({
     return Math.max(0, Math.min(1, value));
   });
   return (
-    <span className="h-1 flex-1 overflow-hidden bg-[#ffffff55] group-data-[story-tone=green]/card:bg-[#0005]">
+    <span className="h-1 flex-1 overflow-hidden bg-titanium/33 group-data-[story-tone=green]/card:bg-carbon-deep/33">
       <motion.i
         className="block size-full origin-left bg-current"
         style={{ scaleX }}
@@ -89,10 +89,10 @@ function StoryCard({
       className={cn(
         "group/card relative flex h-[min(585px,calc(100svh-130px))] w-(--story-width) flex-[0_0_var(--story-width)] flex-col gap-6 overflow-hidden rounded-teaser-card p-6 short:gap-4 short:max-md:p-4.5 md:short:h-[calc(100svh-95px)] md:tall:h-[585px] teaser-wide:tall:h-[min(728px,calc(100svh-100px))]",
         story.tone === "dark"
-          ? "bg-teaser-card"
+          ? "bg-carbon"
           : story.tone === "green"
-            ? "bg-teaser-green text-black [&>:not([data-story-artwork])]:relative [&>:not([data-story-artwork])]:z-1"
-            : "bg-teaser-blue",
+            ? "bg-saffron-amber-lighter-1 text-black [&>:not([data-story-artwork])]:relative [&>:not([data-story-artwork])]:z-1"
+            : "bg-ultramarine",
         story.tone === "portrait" ? "[&>:not([data-story-photo])]:relative" : ""
       )}
       data-story-card={index}
@@ -118,7 +118,7 @@ function StoryCard({
         <span
           className={cn(
             "text-teaser-label self-start p-2 font-sans uppercase",
-            story.tone === "green" ? "bg-[#0000001a]" : "bg-[#ffffff1a]"
+            story.tone === "green" ? "bg-carbon-deep/10" : "bg-titanium/10"
           )}
         >
           {storyLabel}
@@ -152,7 +152,7 @@ function StoryCard({
 
 /** Chapter and playback controls share appearance, but never compete for width. */
 export const storyControlVariants = cva(
-  "h-7 bg-teaser-card text-teaser-control text-[12px] aria-pressed:bg-white aria-pressed:text-black md:h-9",
+  "h-7 bg-carbon text-singer-stone text-[12px] aria-pressed:bg-white aria-pressed:text-black md:h-9",
   {
     variants: {
       kind: {

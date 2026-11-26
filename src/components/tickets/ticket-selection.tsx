@@ -627,7 +627,7 @@ export function TicketSelection({
 
   return (
     <>
-      <main className="dark min-h-svh bg-neutral-950 px-6 py-8 [font-family:system-ui] text-neutral-100 sm:px-10">
+      <main className="dark min-h-svh bg-carbon-deep px-6 py-8 [font-family:system-ui] text-titanium sm:px-10">
         <header className="mx-auto flex max-w-[960px] items-center justify-between gap-6">
           <BrandMark asChild>
             {/* Match the approved customer-account header mark exactly. */}
@@ -642,7 +642,7 @@ export function TicketSelection({
           {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
           <a
             href="/"
-            className="inline-flex min-h-[44px] items-center gap-1 text-[13px] text-neutral-400 transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
+            className="inline-flex min-h-[44px] items-center gap-1 text-[13px] text-pewter transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
           >
             <ChevronLeft aria-hidden="true" className="size-4" /> {t('back')}</a>
         </header>
@@ -655,7 +655,7 @@ export function TicketSelection({
             >
               {t('tickets')}</h1>
             {eligible && (
-              <span className="rounded-full border border-neutral-700 px-3 py-1 text-[12px] font-medium text-neutral-300">
+              <span className="rounded-full border border-carbon-lighter-2 px-3 py-1 text-[12px] font-medium text-singer-stone">
                 {testCatalogue
                   ? t('testPricesNotAnOffer')
                   : checkoutCatalogue
@@ -686,7 +686,7 @@ export function TicketSelection({
             {storageBlocked && (
               <p
                 role="status"
-                className="mt-4 text-[13px] leading-5 text-neutral-300"
+                className="mt-4 text-[13px] leading-5 text-singer-stone"
               >
                 {t('yourBrowserCouldnTSaveThisSelectionYouCan')}</p>
             )}
@@ -702,11 +702,11 @@ export function TicketSelection({
           >
             <section
               aria-labelledby="ticket-choice-heading"
-              className="min-w-0 rounded-[24px] border border-neutral-800 bg-neutral-900/50 p-6 sm:p-8"
+              className="min-w-0 rounded-[24px] border border-gunmetal bg-carbon/50 p-6 sm:p-8"
             >
               <h2
                 id="ticket-choice-heading"
-                className="m-0 mb-5 text-[16px] leading-6 font-medium text-neutral-100"
+                className="m-0 mb-5 text-[16px] leading-6 font-medium text-titanium"
               >
                 {t('yourTickets')}</h2>
               <fieldset
@@ -719,9 +719,9 @@ export function TicketSelection({
                     <label
                       key={option.id}
                       className={cn(
-                        "flex min-h-[76px] items-center gap-4 rounded-2xl border border-neutral-700 px-4 py-4 transition-colors has-focus-visible:outline-2 has-focus-visible:outline-offset-4 has-focus-visible:outline-neutral-100",
+                        "flex min-h-[76px] items-center gap-4 rounded-2xl border border-carbon-lighter-2 px-4 py-4 transition-colors has-focus-visible:outline-2 has-focus-visible:outline-offset-4 has-focus-visible:outline-titanium",
                         option.id === selection.ticketTypeId &&
-                          "border-neutral-300 bg-white/4",
+                          "border-singer-stone bg-white/4",
                         option.available === false &&
                           "opacity-50"
                       )}
@@ -742,7 +742,7 @@ export function TicketSelection({
                             quantity: option.minimumQuantity
                           })
                         }
-                        className="m-0! size-4! shrink-0 accent-neutral-200 [color-scheme:dark]"
+                        className="m-0! size-4! shrink-0 accent-titanium [color-scheme:dark]"
                       />
                       <div className="min-w-0 flex-1">
                         <span className="block text-[18px] leading-6 font-medium tracking-[-0.02em]">
@@ -751,7 +751,7 @@ export function TicketSelection({
                             : option.label}
                         </span>
                         {!recoveryWithoutOffer && (
-                          <span className="mt-1 block text-[13px] leading-5 text-neutral-400">
+                          <span className="mt-1 block text-[13px] leading-5 text-pewter">
                             {option.available === false
                               ? t('unavailable')
                               : testCatalogue
@@ -762,13 +762,13 @@ export function TicketSelection({
                       </div>
                       <Ticket
                         aria-hidden="true"
-                        className="size-5 shrink-0 text-neutral-500"
+                        className="size-5 shrink-0 text-pewter"
                       />
                     </label>
                   ))}
                 </div>
               </fieldset>
-              <div className="mt-7 flex flex-wrap items-center justify-between gap-4 border-t border-neutral-800 pt-6">
+              <div className="mt-7 flex flex-wrap items-center justify-between gap-4 border-t border-gunmetal pt-6">
                 <label htmlFor={quantityId} className="text-[14px] font-medium">
                   {t('quantity')}</label>
                 <NumberField.Root
@@ -788,11 +788,11 @@ export function TicketSelection({
                     select({ ...selection, quantity: value })
                   }
                 >
-                  <NumberField.Group className="flex items-center rounded-[14px] border border-neutral-700 bg-neutral-950/50 p-1">
+                  <NumberField.Group className="flex items-center rounded-[14px] border border-carbon-lighter-2 bg-carbon-deep/50 p-1">
                     <NumberField.Decrement
                       aria-label={t('removeOneTicket')}
                       render={<motion.button whileTap={{ scale: 0.94 }} />}
-                      className="flex size-[44px] items-center justify-center rounded-[10px] border-0 bg-transparent text-neutral-100 transition-colors hover:bg-neutral-800 focus-visible:outline-2 focus-visible:outline-neutral-200 disabled:opacity-30"
+                      className="flex size-[44px] items-center justify-center rounded-[10px] border-0 bg-transparent text-titanium transition-colors hover:bg-gunmetal focus-visible:outline-2 focus-visible:outline-titanium disabled:opacity-30"
                     >
                       <Minus aria-hidden="true" className="size-[17px]" />
                     </NumberField.Decrement>
@@ -802,12 +802,12 @@ export function TicketSelection({
                       aria-describedby={
                         quantityInvalid ? quantityId + "-feedback" : undefined
                       }
-                      className="m-0! h-[44px]! w-[54px]! rounded-lg! border-0! bg-transparent! p-0! text-center! text-[22px]! leading-[28px]! font-medium! text-neutral-100! tabular-nums shadow-none! outline-none! selection:bg-neutral-100 selection:text-neutral-950 focus-visible:outline-2! focus-visible:outline-neutral-300!"
+                      className="m-0! h-[44px]! w-[54px]! rounded-lg! border-0! bg-transparent! p-0! text-center! text-[22px]! leading-[28px]! font-medium! text-titanium! tabular-nums shadow-none! outline-none! selection:bg-titanium selection:text-carbon-deep focus-visible:outline-2! focus-visible:outline-singer-stone!"
                     />
                     <NumberField.Increment
                       aria-label={t('addOneTicket')}
                       render={<motion.button whileTap={{ scale: 0.94 }} />}
-                      className="flex size-[44px] items-center justify-center rounded-[10px] border-0 bg-transparent text-neutral-100 transition-colors hover:bg-neutral-800 focus-visible:outline-2 focus-visible:outline-neutral-200 disabled:opacity-30"
+                      className="flex size-[44px] items-center justify-center rounded-[10px] border-0 bg-transparent text-titanium transition-colors hover:bg-gunmetal focus-visible:outline-2 focus-visible:outline-titanium disabled:opacity-30"
                     >
                       <Plus aria-hidden="true" className="size-[17px]" />
                     </NumberField.Increment>
@@ -818,7 +818,7 @@ export function TicketSelection({
                 <p
                   id={quantityId + "-feedback"}
                   role="alert"
-                  className="mt-3 mb-0 text-[13px] leading-5 text-neutral-300"
+                  className="mt-3 mb-0 text-[13px] leading-5 text-singer-stone"
                 >
                   {t('quantityRange', { minimum: activeOption!.minimumQuantity, maximum })}
                 </p>
@@ -826,22 +826,22 @@ export function TicketSelection({
               {!testCatalogue &&
                 !checkoutCatalogue &&
                 !recoveryWithoutOffer && (
-                  <p className="mt-4 mb-0 text-[12px] leading-5 text-neutral-400">
+                  <p className="mt-4 mb-0 text-[12px] leading-5 text-pewter">
                     {t('previewRange16NotAConfirmedBookingLimit')}</p>
                 )}
             </section>
             <section
               aria-labelledby="ticket-summary-heading"
-              className="min-w-0 rounded-[24px] border border-neutral-800 bg-neutral-900/50 p-6 sm:p-8"
+              className="min-w-0 rounded-[24px] border border-gunmetal bg-carbon/50 p-6 sm:p-8"
             >
               <h2
                 ref={eligible ? setSummaryHeading : undefined}
                 tabIndex={-1}
                 id="ticket-summary-heading"
-                className="m-0 text-[16px] leading-6 font-medium tracking-[-0.02em] text-neutral-100 outline-none"
+                className="m-0 text-[16px] leading-6 font-medium tracking-[-0.02em] text-titanium outline-none"
               >
                 {t('yourSelection')}</h2>
-              <div className="mt-5 flex items-baseline justify-between gap-4 text-[14px] leading-5 text-neutral-400">
+              <div className="mt-5 flex items-baseline justify-between gap-4 text-[14px] leading-5 text-pewter">
                 <span>
                   {recoveryWithoutOffer
                     ? t('previousCheckout')
@@ -855,8 +855,8 @@ export function TicketSelection({
                       : t('chooseQuantity')}
                 </span>
               </div>
-              <div className="mt-6 border-t border-neutral-800 pt-6">
-                <p className="m-0 text-[12px] leading-5 text-neutral-400">
+              <div className="mt-6 border-t border-gunmetal pt-6">
+                <p className="m-0 text-[12px] leading-5 text-pewter">
                   {readyQuote ? t('testTotal') : t('total')}
                 </p>
                 <p
@@ -864,7 +864,7 @@ export function TicketSelection({
                     "mt-2 mb-0 font-medium tracking-[-0.035em] tabular-nums",
                     formattedTotal
                       ? "text-[27px] leading-[34px]"
-                      : "text-[18px] leading-6 text-neutral-300"
+                      : "text-[18px] leading-6 text-singer-stone"
                   )}
                 >
                   {formattedTotal ??
@@ -874,7 +874,7 @@ export function TicketSelection({
                 </p>
               </div>
               {readyQuote && (
-                <p className="mt-2 mb-0 text-[12px] leading-5 text-neutral-400">
+                <p className="mt-2 mb-0 text-[12px] leading-5 text-pewter">
                   {t('quoteExpires')}{" "}
                   <time dateTime={readyQuote.expiresAt}>
                     {new Intl.DateTimeFormat("en", {
@@ -885,7 +885,7 @@ export function TicketSelection({
                 </p>
               )}
               {!testCatalogue && !checkoutReady && !paymentBusy && (
-                <p className="mt-2 mb-0 text-[13px] leading-5 text-neutral-400">
+                <p className="mt-2 mb-0 text-[13px] leading-5 text-pewter">
                   {t('ticketsAreNotOnSaleYet')}</p>
               )}
               {feedback && (
@@ -897,7 +897,7 @@ export function TicketSelection({
                       ? "alert"
                       : "status"
                   }
-                  className="mt-5 mb-0 text-[13px] leading-5 text-neutral-300"
+                  className="mt-5 mb-0 text-[13px] leading-5 text-singer-stone"
                 >
                   {feedback}
                 </p>
@@ -919,7 +919,7 @@ export function TicketSelection({
                             : t('getTestQuote')}
                     </TicketAction>
                   ) : (
-                    <p className="m-0 flex items-center gap-2 text-[13px] leading-5 text-neutral-300">
+                    <p className="m-0 flex items-center gap-2 text-[13px] leading-5 text-singer-stone">
                       <Check aria-hidden="true" className="size-4" /> {t('accountVerified')}</p>
                   ))}
                 {!testCatalogue ? (
@@ -937,7 +937,7 @@ export function TicketSelection({
                         <button
                           type="button"
                           disabled
-                          className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-neutral-700 bg-transparent px-4 py-3 text-[14px] font-medium text-neutral-500"
+                          className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-carbon-lighter-2 bg-transparent px-4 py-3 text-[14px] font-medium text-pewter"
                         >
                           <LockKeyhole aria-hidden="true" className="size-4" />{" "}
                           {t('checkoutUnavailable')}</button>
@@ -969,13 +969,13 @@ export function TicketSelection({
                   <button
                     type="button"
                     disabled
-                    className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-neutral-700 bg-transparent px-4 py-3 text-[14px] font-medium text-neutral-500"
+                    className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-carbon-lighter-2 bg-transparent px-4 py-3 text-[14px] font-medium text-pewter"
                   >
                     <LockKeyhole aria-hidden="true" className="size-4" />{" "}
                     {t('checkoutUnavailable')}</button>
                 )}
               </div>
-              <p className="mt-4 mb-0 text-[12px] leading-5 text-neutral-400">
+              <p className="mt-4 mb-0 text-[12px] leading-5 text-pewter">
                 {recoveryWithoutOffer
                   ? t('paymentStatusOnly')
                   : checkoutCatalogue && !testCatalogue
@@ -1009,7 +1009,7 @@ function TicketAction({
       {...props}
       type="button"
       aria-busy={busy}
-      className="relative flex min-h-[48px] w-full items-center justify-center rounded-xl border-0 bg-neutral-100 px-8 py-3 text-[14px] font-medium text-neutral-950 transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-200 disabled:opacity-40 disabled:aria-busy:opacity-100"
+      className="relative flex min-h-[48px] w-full items-center justify-center rounded-xl border-0 bg-titanium px-8 py-3 text-[14px] font-medium text-carbon-deep transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-titanium disabled:opacity-40 disabled:aria-busy:opacity-100"
     >
       {children}
       {busy && (

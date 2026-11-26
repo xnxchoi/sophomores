@@ -1,3 +1,4 @@
+import { PALETTE } from "@/utils/palette";
 // Editorial copy and bilingual defaults for the website teaser.
 // Site-editable at runtime through PayloadCMS (`home-page` collection).
 
@@ -98,17 +99,17 @@ export const principles = [
   {
     title: "A Different Kind\nOf Company",
     body: "People who have done a few things. Changed their minds. Stayed curious. Less interested in a title than in what happens next.",
-    color: "#ff4c25"
+    color: PALETTE.signalOrange.hex
   },
   {
     title: "Living, Sans\nReference",
     body: "A little outside the script. Familiar enough to feel at home. Unfamiliar enough to feel something. A shared appetite for the unplanned.",
-    color: "#192ce4"
+    color: PALETTE.ultramarine.hex
   },
   {
     title: "The Beginning\nIs A Night",
     body: "Music. Conversation. A room with its own rhythm. Some things are better discovered in person. We’ll leave the rest for the invitation.",
-    color: "#58b8e1"
+    color: PALETTE.gulfCeruleanLighter.hex
   }
 ] as const;
 

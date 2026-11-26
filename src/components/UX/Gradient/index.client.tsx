@@ -62,27 +62,26 @@ function GradientInner() {
   const noiseTexture = useTexture("/assets/seamless.png", (texture) => {
     texture.wrapS = texture.wrapT = RepeatWrapping;
   });
-  // The Hideaway's 15 two-stop schemes, one per menu link in order, now drawn from our CSS colour tokens
-  // (owner, 21 Nov: "bring in the colors from our CSS"). Each stop is the nearest existing token to The
-  // Hideaway's hex by OKLab distance, or the named brand colour where the nearest was a grey or a rouge tint
-  // for a clearly coloured stop. No new colour values; the source hex is noted for review.
+  // The Hideaway's 15 two-stop schemes, one per menu link in order, drawn from the owner's palette
+  // (sophomores-palette.css; owner, 26 Nov: "remove the old color from all stylesheets"). Each stop is the
+  // palette colour nearest The Hideaway's hex by OKLab distance; the source hex is noted for review.
   const colorSchemes = useMemo<ReadonlyArray<readonly [string, string]>>(
     () => [
-      ["--rouge-500", "--bleu-400"], // d40000, 9ecbd9
-      ["--rouge-600", "--blue-gray"], // aa3422, 77a6a6
-      ["--bleu-400", "--creamy-white"], // 9ecbd9, e7d5ba
-      ["--melon", "--faded-white"], // f6b08a, fdf1e8
-      ["--faded-white", "--bleu-400"], // fdf1e8, 9ecbd9
-      ["--rouge-500", "--warm-yellow"], // d40000, ffb400
-      ["--rouge-500", "--piercing-green"], // d40000, 9eff00
-      ["--rouge-200", "--green-white"], // f57b66, c3ead2
-      ["--bleu-800", "--soft-peach"], // 4d8593, f38b2b
-      ["--piercing-green", "--bleu-300"], // aae935, ade9ff
-      ["--creamy-white", "--rouge-300"], // f5c78e, e74b58
-      ["--soft-peach", "--bleu-300"], // c67006, 9ce8e3
-      ["--rouge-200", "--green-white"], // f57b66, c3ead2
-      ["--rouge-500", "--melon"], // d40000, f6b08a
-      ["--rouge-500", "--muted-olive"] // d40000, 9aa989
+      ["--red", "--celadon"], // d40000, 9ecbd9
+      ["--red", "--gulf-cerulean-lighter"], // aa3422, 77a6a6
+      ["--celadon", "--bone"], // 9ecbd9, e7d5ba
+      ["--yellow", "--white"], // f6b08a, fdf1e8
+      ["--white", "--celadon"], // fdf1e8, 9ecbd9
+      ["--red", "--yellow"], // d40000, ffb400
+      ["--red", "--yellow-lighter-1"], // d40000, 9eff00
+      ["--yellow", "--celadon"], // f57b66, c3ead2
+      ["--gulf-cerulean", "--orange-lighter"], // 4d8593, f38b2b
+      ["--yellow-lighter-1", "--celadon"], // aae935, ade9ff
+      ["--bone", "--orange"], // f5c78e, e74b58
+      ["--orange", "--celadon"], // c67006, 9ce8e3
+      ["--yellow", "--celadon"], // f57b66, c3ead2
+      ["--red", "--yellow"], // d40000, f6b08a
+      ["--red", "--olive"] // d40000, 9aa989
     ],
     []
   );
@@ -102,8 +101,8 @@ function GradientInner() {
     () => [
       tokenColor(colorSchemes[0][0], new ThreeColor()),
       tokenColor(colorSchemes[0][1], new ThreeColor()),
-      tokenColor("--cold-d-gray", new ThreeColor()),
-      tokenColor("--edge-black", new ThreeColor())
+      tokenColor("--black-lighter-2", new ThreeColor()),
+      tokenColor("--black", new ThreeColor())
     ],
     [colorSchemes]
   );
@@ -296,7 +295,7 @@ function tokenColor(token: string, target: ThreeColor) {
   if (!probe || !value) return target;
   // A fresh pixel each time, so a translucent token can't blend over the last one.
   probe.clearRect(0, 0, 1, 1);
-  probe.fillStyle = "#000";
+  probe.fillStyle = "transparent";
   probe.fillStyle = value;
   probe.fillRect(0, 0, 1, 1);
   const [r, g, b] = probe.getImageData(0, 0, 1, 1).data;

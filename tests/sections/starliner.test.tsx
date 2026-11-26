@@ -23,7 +23,7 @@ test("Starliner stands alone: no legacy stylesheet classes and no inline backdro
 });
 
 test("the stars read one global token with a literal fallback, so they stay light on any page", () => {
-  // --faded-white is the global light neutral (globals.css); the literal keeps the stars light where it is undefined.
-  assert.match(html, /\[--starliner-star:var\(--faded-white,oklch\(97\.5%_0\.003_58\.67\)\)\]/);
+  // --white is the palette's Titanium (sophomores-palette.css), defined on every page.
+  assert.match(html, /\[--starliner-star:var\(--white\)\]/);
   assert.match(html, /oklch\(from_var\(--starliner-star\)_l_c_h_\/_0\.85\)/);
 });

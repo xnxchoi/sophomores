@@ -133,7 +133,7 @@ function HA_PopoverContent({
             "z-50 w-72 origin-(--radix-popover-content-transform-origin) rounded-md p-4 outline-hidden",
             // Opaque-leaning surface (95%) + blur — discrete, readable.
             "bg-background/95 supports-[backdrop-filter]:bg-background/80 supports-[backdrop-filter]:backdrop-blur-xl",
-            "text-foreground shadow-[0_8px_28px_-12px_rgba(0,0,0,0.55)] ring-1 ring-foreground/15",
+            "text-foreground shadow-[0_8px_28px_-12px_color-mix(in_oklab,var(--color-carbon-deep)_55%,transparent)] ring-1 ring-foreground/15",
             "data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95",
             className
           )}

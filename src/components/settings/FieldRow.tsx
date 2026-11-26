@@ -37,7 +37,7 @@ export function FieldRow({
     >
       <div className="flex min-w-0 items-start gap-3">
         {icon ? (
-          <span className="mt-0.5 shrink-0 text-neutral-400">
+          <span className="mt-0.5 shrink-0 text-pewter">
             {icon}
           </span>
         ) : null}
@@ -45,11 +45,11 @@ export function FieldRow({
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-white">{label}</span>
             {meta ? (
-              <span className="text-xs text-neutral-400">{meta}</span>
+              <span className="text-xs text-pewter">{meta}</span>
             ) : null}
           </div>
           {description ? (
-            <p className="text-xs leading-relaxed text-neutral-400">
+            <p className="text-xs leading-relaxed text-pewter">
               {description}
             </p>
           ) : null}

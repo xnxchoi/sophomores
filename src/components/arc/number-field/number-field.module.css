@@ -51,7 +51,7 @@
 .input:disabled { cursor: not-allowed; }
 /* Each digit is a wheel whose window reaches a little past the line box and feathers out, so a turning digit fades at the edge instead of being cut.
    The window clips vertically only: a column opening its width shows its whole digit fading in, never a sliver. */
-.column { --feather: .2em; position: relative; display: inline-block; overflow-x: visible; overflow-y: clip; margin-block: calc(var(--feather) * -1); padding-block: var(--feather); mask-image: linear-gradient(to bottom, transparent, #000 calc(var(--feather) * 1.5), #000 calc(100% - var(--feather) * 1.5), transparent); mask-repeat: repeat-x; mask-clip: no-clip; }
+.column { --feather: .2em; position: relative; display: inline-block; overflow-x: visible; overflow-y: clip; margin-block: calc(var(--feather) * -1); padding-block: var(--feather); mask-image: linear-gradient(to bottom, transparent, var(--color-carbon-deep) calc(var(--feather) * 1.5), var(--color-carbon-deep) calc(100% - var(--feather) * 1.5), transparent); mask-repeat: repeat-x; mask-clip: no-clip; }
 .sizer { visibility: hidden; }
 .glyph { position: absolute; inset: var(--feather) 0; text-align: center; }
 .symbol { display: inline-block; overflow-x: clip; white-space: pre; }

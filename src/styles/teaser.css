@@ -11,12 +11,12 @@
 
   /* The home page's black ground, kept to the home page (owner, 2026-11-16); other pages take the theme's. */
   html:has(.teaser) {
-    background: #000;
+    background: var(--color-carbon-deep);
   }
 
   body:has(.teaser) {
-    background: #000;
-    color: #fff;
+    background: var(--color-carbon-deep);
+    color: var(--color-titanium);
   }
 
   .teaser *,
@@ -49,7 +49,7 @@
 
   .teaser button:focus-visible,
   .teaser a:focus-visible {
-    outline: 2px solid #b5ff95;
+    outline: 2px solid var(--color-saffron-amber-lighter-1);
     outline-offset: 5px;
   }
 }

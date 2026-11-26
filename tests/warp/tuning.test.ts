@@ -16,7 +16,7 @@ test("reset defaults retain the user's approved edited values and visible layers
   assert.deepEqual(DEFAULT_WARP_TUNING, {
     ringScale: .11, ringBrightness: .51, ringSaturation: 1,
     pointScale: .11, pointBrightness: .51, pointSoftness: 1,
-    interiorBrightness: .3, interiorColor: "#ffffff", interiorBloom: .1,
+    interiorBrightness: .3, interiorColor: "#E4E6EA", interiorBloom: .1,
     interiorBlur: 1, edgeBlur: .5,
     bloomStrength: 1, bloomSpread: 1,
     rayIntensity: 1.35, rayDensity: .85, rayWidth: 1,

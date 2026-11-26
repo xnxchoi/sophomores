@@ -16,7 +16,7 @@ import { reachableHref } from "@/lib/content/essays";
 
 function PanelRow({ href, title, hint, onClose, onClick }: { href: string; title: string; hint?: string; onClose: () => void; onClick?: (event: MouseEvent<HTMLElement>) => void }) {
   return (
-    <Link href={href} className="flex min-h-11 w-full items-center py-2 pr-8 pl-4 text-sm leading-4 text-faded-fg/90 outline-none transition-colors duration-200 hover:text-faded-bg focus-visible:underline focus-visible:underline-offset-4" onClick={(event: MouseEvent<HTMLElement>) => { onClick?.(event); onClose(); }}>
+    <Link href={href} className="flex min-h-11 w-full items-center py-2 pr-8 pl-4 text-sm leading-4 text-foreground/90 outline-none transition-colors duration-200 hover:text-background focus-visible:underline focus-visible:underline-offset-4" onClick={(event: MouseEvent<HTMLElement>) => { onClick?.(event); onClose(); }}>
       <span className="flex-1 truncate">{title}</span>
       {hint ? <span className="ml-3 text-xs opacity-60">{hint}</span> : null}
     </Link>
@@ -70,7 +70,7 @@ export function NotificationPanel({
             }
           : undefined
       }
-      className="header-panel header-panel-notes absolute top-[calc(100%+10px)] right-0 z-45 min-w-64 w-[min(25rem,80vw)] min-h-60 rounded-lg bg-[oklch(from_var(--faded-bg)_l_c_h_/_0.8)] p-4 px-3 text-[var(--faded-fg)] backdrop-blur-md"
+      className="header-panel header-panel-notes absolute top-[calc(100%+10px)] right-0 z-45 min-w-64 w-[min(25rem,80vw)] min-h-60 rounded-lg bg-[oklch(from_var(--background)_l_c_h_/_0.8)] p-4 px-3 text-[var(--foreground)] backdrop-blur-md"
       role="dialog"
       aria-label={t('notifications')}
       initial={{ opacity: 0, scale: 0.9 }}
@@ -157,7 +157,7 @@ export function AccountPanel({ onClose }: { onClose: () => void }) {
     <m.div
       inert={!present}
       data-header-panel
-      className="header-panel absolute top-[calc(100%+10px)] right-0 z-45 min-w-64 rounded-lg bg-[oklch(from_var(--faded-bg)_l_c_h_/_0.8)] p-4 px-3 text-[var(--faded-fg)] backdrop-blur-md"
+      className="header-panel absolute top-[calc(100%+10px)] right-0 z-45 min-w-64 rounded-lg bg-[oklch(from_var(--background)_l_c_h_/_0.8)] p-4 px-3 text-[var(--foreground)] backdrop-blur-md"
       role="menu"
       initial={{ opacity: 0, scaleX: 0.01 }}
       animate={{ opacity: 1, scaleX: 1 }}
@@ -167,8 +167,8 @@ export function AccountPanel({ onClose }: { onClose: () => void }) {
       {ACCOUNT_LINKS.map((link) => (
         <PanelRow key={link.title} href={link.href} title={rowT(link.title)} onClose={onClose} />
       ))}
-      <div className="menu-separator h-px my-1.5 mx-4 bg-gradient-to-r from-[oklch(from_var(--faded-fg)_l_c_h_/_0.1)] via-[oklch(from_var(--faded-fg)_l_c_h_/_0.25)] to-[oklch(from_var(--faded-fg)_l_c_h_/_0.1)]" />
-      <button type="button" className="flex w-full py-2 pr-8 pl-4 text-sm leading-4 text-faded-fg/90 outline-none focus-visible:underline focus-visible:underline-offset-4" role="menuitem" onClick={onClose}>
+      <div className="menu-separator h-px my-1.5 mx-4 bg-gradient-to-r from-[oklch(from_var(--foreground)_l_c_h_/_0.1)] via-[oklch(from_var(--foreground)_l_c_h_/_0.25)] to-[oklch(from_var(--foreground)_l_c_h_/_0.1)]" />
+      <button type="button" className="flex w-full py-2 pr-8 pl-4 text-sm leading-4 text-foreground/90 outline-none focus-visible:underline focus-visible:underline-offset-4" role="menuitem" onClick={onClose}>
         {t('signOut')}</button>
     </m.div>
   );
@@ -240,8 +240,8 @@ export function SearchPanel({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
-      <button type="button" className="search-dialog-scrim absolute inset-0 bg-[oklch(from_var(--off-bg)_l_c_h_/_0.4)] focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-current" aria-label={t('closeSearch')} onClick={onClose} />
-      <m.div className="search-dialog-panel relative z-1 w-[min(640px,calc(100%-32px))] mx-auto mt-[12vh] p-2 rounded-xl bg-[var(--faded-bg)]" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ duration: 0.2, ease: "easeOut" }}>
+      <button type="button" className="search-dialog-scrim absolute inset-0 bg-[oklch(from_var(--background)_l_c_h_/_0.4)] focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-current" aria-label={t('closeSearch')} onClick={onClose} />
+      <m.div className="search-dialog-panel relative z-1 w-[min(640px,calc(100%-32px))] mx-auto mt-[12vh] p-2 rounded-xl bg-[var(--background)]" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ duration: 0.2, ease: "easeOut" }}>
         <input ref={field} className="w-full h-11 border-0 bg-transparent text-inherit text-base tracking-normal outline-none" value={query} placeholder={t('searchForAnything')} autoComplete="off" autoCorrect="off" spellCheck={false} onChange={(event) => setQuery(event.target.value)} />
         <div className="mt-2 max-h-[50vh] overflow-auto">
           {query.trim() === "" ? (
@@ -257,7 +257,7 @@ export function SearchPanel({
                 <p className="px-3 py-1 text-xs tracking-[0.08em] uppercase opacity-60">{t('quickActions')}</p>
                 <button
                   type="button"
-                  className="flex min-h-11 w-full items-center py-2 pr-8 pl-4 text-sm leading-4 text-faded-fg/90 outline-none focus-visible:underline focus-visible:underline-offset-4"
+                  className="flex min-h-11 w-full items-center py-2 pr-8 pl-4 text-sm leading-4 text-foreground/90 outline-none focus-visible:underline focus-visible:underline-offset-4"
                   onClick={() => {
                     toggleTheme();
                     onClose();

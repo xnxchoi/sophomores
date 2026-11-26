@@ -75,7 +75,7 @@ export function ControlbarDrawer({
           <div
             aria-hidden="true"
             onClick={() => setSideDrawerOpen(false)}
-            className="fixed inset-0 bg-off-bg/50 backdrop-blur-sm"
+            className="fixed inset-0 bg-background/50 backdrop-blur-sm"
             style={{ zIndex: siteLayer.controlbarDrawer }}
           />
         )}
@@ -87,7 +87,7 @@ export function ControlbarDrawer({
             finalFocus={() =>
               focusElsewhereRef.current ? false : (returnFocus.current ?? true)
             }
-            className="pointer-events-auto flex h-[65dvh] w-full [transform:translateY(var(--drawer-swipe-movement-y))] flex-col rounded-t-[16px] bg-off-bg pt-7 text-faded-fg transition-transform duration-[450ms] ease-[cubic-bezier(0.32,0.72,0,1)] outline-none data-ending-style:[transform:translateY(100%)] data-ending-style:duration-[calc(var(--drawer-swipe-strength)*400ms)] data-starting-style:[transform:translateY(100%)] data-swiping:select-none"
+            className="pointer-events-auto flex h-[65dvh] w-full [transform:translateY(var(--drawer-swipe-movement-y))] flex-col rounded-t-[16px] bg-background pt-7 text-foreground transition-transform duration-[450ms] ease-[cubic-bezier(0.32,0.72,0,1)] outline-none data-ending-style:[transform:translateY(100%)] data-ending-style:duration-[calc(var(--drawer-swipe-strength)*400ms)] data-starting-style:[transform:translateY(100%)] data-swiping:select-none"
           >
             <Drawer.Title className="sr-only">{t("menu")}</Drawer.Title>
             <Drawer.Content className="flex min-h-0 flex-1 flex-col">

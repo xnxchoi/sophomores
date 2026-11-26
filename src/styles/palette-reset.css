@@ -1,0 +1,6 @@
+/* Tailwind's default colours off, before the palette defines its own (owner, 26 Nov: "remove the old color from all
+   stylesheets"). Imported by globals.css between Tailwind and sophomores-palette.css; a reset after the palette would
+   clear the palette too. transparent, current and inherit are not theme colours and keep working. */
+@theme {
+  --color-*: initial;
+}

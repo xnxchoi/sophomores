@@ -58,7 +58,7 @@ export function SettingsRail() {
           onNavigate={() => {
             if (activePath !== SETTINGS_BASE) setPendingHref(SETTINGS_BASE);
           }}
-          className="group/focus inline-flex min-h-12 items-center rounded-xl px-3.5 text-sm text-neutral-400 hover:text-white aria-[current=page]:font-medium aria-[current=page]:text-white"
+          className="group/focus inline-flex min-h-12 items-center rounded-xl px-3.5 text-sm text-pewter hover:text-white aria-[current=page]:font-medium aria-[current=page]:text-white"
         >
           <FocusShape className="outline-offset-4">{hub("settings")}</FocusShape>
         </Link>
@@ -99,7 +99,7 @@ export function SettingsRail() {
                   "relative z-10 flex size-9 shrink-0 items-center justify-center rounded-lg border",
                   active
                     ? "border-white/20 bg-white/10 text-white"
-                    : "border-white/5 bg-white/[0.03] text-neutral-400 group-hover:text-white"
+                    : "border-white/5 bg-white/[0.03] text-pewter group-hover:text-white"
                 )}
               >
                 <Icon size={18} strokeWidth={1.5} />
@@ -110,7 +110,7 @@ export function SettingsRail() {
                     "text-sm tracking-tight transition-colors duration-150",
                     active
                       ? "font-medium text-white"
-                      : "text-neutral-400 group-hover:text-neutral-200"
+                      : "text-pewter group-hover:text-titanium"
                   )}
                 >
                   {sectionT(meta.label)}

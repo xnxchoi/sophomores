@@ -49,15 +49,15 @@ export function SlotManager({
   // 1. Unauthenticated state
   if (!isAuthenticated) {
     return (
-      <section className="relative w-full overflow-hidden rounded-2xl border border-white/10 bg-neutral-900/50 p-6 backdrop-blur-md md:p-8">
+      <section className="relative w-full overflow-hidden rounded-2xl border border-white/10 bg-carbon/50 p-6 backdrop-blur-md md:p-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-4">
             <div className="flex size-12 shrink-0 items-center justify-center text-white">
-              <UserIcon className="size-6 text-neutral-300" />
+              <UserIcon className="size-6 text-singer-stone" />
             </div>
             <div className="flex flex-col gap-1">
               <h2 className="text-base text-white">Attendee nominations</h2>
-              <p className="text-xs text-neutral-400 max-w-lg leading-relaxed">
+              <p className="text-xs text-pewter max-w-lg leading-relaxed">
                 Ticket holders and members can shape the room by nominating up to two tracks from Apple Music. Sign in to your account to claim your slots.
               </p>
             </div>
@@ -66,7 +66,7 @@ export function SlotManager({
           <Link
             href={signIn.href}
             onClick={signIn.onClick}
-            className="inline-flex h-11 shrink-0 items-center justify-center rounded-xl bg-white px-5 text-xs font-medium text-black transition-colors hover:bg-neutral-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            className="inline-flex h-11 shrink-0 items-center justify-center rounded-xl bg-white px-5 text-xs font-medium text-black transition-colors hover:bg-titanium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
           >
             Sign in to nominate
           </Link>
@@ -79,17 +79,17 @@ export function SlotManager({
   if (userSlotState && !userSlotState.eligible) {
     const isUnactivated = userSlotState.reason === "account_unactivated";
     return (
-      <section className="relative w-full overflow-hidden rounded-2xl border border-white/10 bg-neutral-900/50 p-6 backdrop-blur-md md:p-8">
+      <section className="relative w-full overflow-hidden rounded-2xl border border-white/10 bg-carbon/50 p-6 backdrop-blur-md md:p-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-4">
-            <div className="flex size-12 shrink-0 items-center justify-center text-neutral-300">
+            <div className="flex size-12 shrink-0 items-center justify-center text-singer-stone">
               <ShieldWarningIcon className="size-6" />
             </div>
             <div className="flex flex-col gap-1">
               <h2 className="text-base text-white">
                 {isUnactivated ? "Activation required" : "Verification required"}
               </h2>
-              <p className="text-xs text-neutral-400 max-w-xl leading-relaxed">
+              <p className="text-xs text-pewter max-w-xl leading-relaxed">
                 {isUnactivated
                   ? "Your event ticket is bound, but your account must be activated to nominate tracks. Please verify your email or phone to unlock your nomination slots."
                   : userSlotState.reason === "ineligible_product"
@@ -112,7 +112,7 @@ export function SlotManager({
   }
 
   if (!userSlotState) {
-    return <p role="status" className="text-sm text-neutral-300">{t("nominationsUnavailable")}</p>;
+    return <p role="status" className="text-sm text-singer-stone">{t("nominationsUnavailable")}</p>;
   }
 
   // 3. Eligible state: 2 nomination slots
@@ -143,7 +143,7 @@ export function SlotManager({
   };
 
   return (
-    <section className="relative w-full overflow-hidden rounded-2xl border border-white/10 bg-neutral-900/60 p-6 backdrop-blur-md md:p-8">
+    <section className="relative w-full overflow-hidden rounded-2xl border border-white/10 bg-carbon/60 p-6 backdrop-blur-md md:p-8">
       {/* Top subtle highlight */}
       <div
         aria-hidden="true"
@@ -154,7 +154,7 @@ export function SlotManager({
         <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-col gap-0.5">
             <h2 className="text-base text-white">Your nomination slots</h2>
-            <p className="text-xs text-neutral-400">
+            <p className="text-xs text-pewter">
               {isPastDeadline
                 ? "Nominations are locked. Here are the tracks you added to the room setlist."
                 : "You have 2 nomination slots. Search and audition tracks before submitting."}
@@ -162,7 +162,7 @@ export function SlotManager({
           </div>
 
           {isPastDeadline && (
-            <span className="flex items-center gap-1.5 text-xs text-neutral-400">
+            <span className="flex items-center gap-1.5 text-xs text-pewter">
               <LockKeyIcon className="size-3.5" />
               Locked
             </span>
@@ -191,9 +191,9 @@ export function SlotManager({
                   className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div className="flex items-center gap-3.5">
-                    <MusicNotesIcon className="size-6 shrink-0 text-neutral-400" />
+                    <MusicNotesIcon className="size-6 shrink-0 text-pewter" />
                     <div className="flex flex-col gap-0.5">
-                    <span className="font-sans text-xs text-neutral-400">
+                    <span className="font-sans text-xs text-pewter">
                       Entry 0{slot.position} (open)
                     </span>
                     <span className="text-sm font-medium text-white">
@@ -206,13 +206,13 @@ export function SlotManager({
                     <button
                       type="button"
                       onClick={() => onOpenSearch(slot.position)}
-                      className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white px-5 text-xs font-medium text-black transition-colors hover:bg-neutral-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                      className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white px-5 text-xs font-medium text-black transition-colors hover:bg-titanium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                     >
                       <PlusIcon className="size-4" />
                       <span>Search catalog</span>
                     </button>
                   ) : (
-                    <span className="text-xs text-neutral-500">
+                    <span className="text-xs text-pewter">
                       Nominations closed
                     </span>
                   )}
@@ -229,7 +229,7 @@ export function SlotManager({
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3.5 min-w-0">
                     {/* Artwork with Play/Pause button */}
-                    <div className="relative size-16 shrink-0 overflow-hidden rounded-xl bg-neutral-800 border border-white/10">
+                    <div className="relative size-16 shrink-0 overflow-hidden rounded-xl bg-gunmetal border border-white/10">
                       {slot.track?.coverUrl ? (
                         <Image
                           src={slot.track.coverUrl}
@@ -240,7 +240,7 @@ export function SlotManager({
                           className="size-full object-cover"
                         />
                       ) : (
-                        <div className="flex size-full items-center justify-center text-neutral-500">
+                        <div className="flex size-full items-center justify-center text-pewter">
                           <MusicNotesIcon className="size-6" />
                         </div>
                       )}
@@ -269,20 +269,20 @@ export function SlotManager({
 
                     {/* Details */}
                     <div className="flex flex-col min-w-0">
-                      <span className="font-sans text-[11px] text-neutral-400">
+                      <span className="font-sans text-[11px] text-pewter">
                         Entry 0{slot.position}
                       </span>
                       <span className="text-sm font-medium text-white truncate">
                         {slot.track?.title}
                       </span>
-                      <span className="text-xs text-neutral-400 truncate">
+                      <span className="text-xs text-pewter truncate">
                         {slot.track?.artist}
                       </span>
                       {isActive && (previewLoading || previewFailed) && (
-                        <p className="text-xs text-neutral-300">{t(previewFailed ? "previewError" : "previewLoading")}</p>
+                        <p className="text-xs text-singer-stone">{t(previewFailed ? "previewError" : "previewLoading")}</p>
                       )}
                       {slot.track?.albumTitle && (
-                        <span className="text-[11px] text-neutral-500 truncate">
+                        <span className="text-[11px] text-pewter truncate">
                           {slot.track.albumTitle}
                         </span>
                       )}
@@ -296,7 +296,7 @@ export function SlotManager({
                         type="button"
                         onClick={() => onOpenSearch(slot.position)}
                         title="Replace track"
-                        className="flex size-9 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-neutral-400 transition-colors hover:bg-white/[0.08] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                        className="flex size-9 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-pewter transition-colors hover:bg-white/[0.08] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                       >
                         <ArrowsClockwiseIcon className="size-4" />
                         <span className="sr-only">Replace</span>
@@ -306,7 +306,7 @@ export function SlotManager({
                         disabled={isRemoving}
                         onClick={() => handleRemove(slot.position)}
                         title="Remove track"
-                        className="flex size-9 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-neutral-400 transition-colors hover:bg-neutral-800 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                        className="flex size-9 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-pewter transition-colors hover:bg-gunmetal hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                       >
                         <TrashIcon className="size-4" />
                         <span className="sr-only">Remove</span>
@@ -325,14 +325,14 @@ export function SlotManager({
                         onChange={(e) => setNoteDraft(e.target.value)}
                         placeholder="Why this track belongs in the room..."
                         maxLength={120}
-                        className="mt-0 h-9 w-full rounded-none border-0 border-b border-white/15 bg-transparent px-0 py-0 font-sans text-xs font-normal tracking-normal text-white placeholder:text-neutral-500 focus-visible:outline-none focus-visible:border-white/40"
+                        className="mt-0 h-9 w-full rounded-none border-0 border-b border-white/15 bg-transparent px-0 py-0 font-sans text-xs font-normal tracking-normal text-white placeholder:text-pewter focus-visible:outline-none focus-visible:border-white/40"
                         autoFocus
                       />
                       <div className="flex items-center justify-end gap-2">
                         <button
                           type="button"
                           onClick={() => setEditingNoteSlot(null)}
-                          className="h-7 rounded px-2.5 text-xs text-neutral-400 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                          className="h-7 rounded px-2.5 text-xs text-pewter hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                         >
                           Cancel
                         </button>
@@ -340,7 +340,7 @@ export function SlotManager({
                           type="button"
                           disabled={isSavingNote}
                           onClick={() => handleSaveNote(slot.position)}
-                          className="inline-flex h-7 items-center justify-center rounded bg-white px-3 text-xs font-medium text-black hover:bg-neutral-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                          className="inline-flex h-7 items-center justify-center rounded bg-white px-3 text-xs font-medium text-black hover:bg-titanium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                         >
                           {isSavingNote ? "Saving..." : "Save note"}
                         </button>
@@ -348,14 +348,14 @@ export function SlotManager({
                     </div>
                   ) : (
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-neutral-400 italic truncate max-w-[280px]">
+                      <span className="text-pewter italic truncate max-w-[280px]">
                         {slot.note ? `“${slot.note}”` : "No note added"}
                       </span>
                       {!isPastDeadline && (
                         <button
                           type="button"
                           onClick={() => handleStartEditNote(slot)}
-                          className="text-neutral-400 hover:text-white underline underline-offset-2 shrink-0 ml-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                          className="text-pewter hover:text-white underline underline-offset-2 shrink-0 ml-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                         >
                           {slot.note ? "Edit note" : "Add note"}
                         </button>

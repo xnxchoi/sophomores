@@ -1,7 +1,7 @@
 .phone-verification {
     min-height: 100svh;
-    background: #fff;
-    color: #111;
+    background: var(--color-titanium);
+    color: var(--color-carbon);
     font-family: Arial, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
     padding: 24px;
 }
@@ -39,7 +39,7 @@
 }
 
 .pv-description {
-    color: #666;
+    color: var(--color-pewter);
     font-size: 14px;
     line-height: 1.6;
     text-align: center;
@@ -56,29 +56,29 @@
     margin: 0;
     font-size: 13px;
     font-weight: 500;
-    color: #333;
+    color: var(--color-carbon-lighter-2);
 }
 
 .pv-phone-field[data-slot="input-group"] {
     height: 58px;
     gap: 0;
     padding: 4px;
-    border: 1px solid #d4d4d4;
+    border: 1px solid var(--color-singer-stone);
     border-radius: 14px;
-    background: #fff;
-    box-shadow: 0 1px 2px #00000004;
+    background: var(--color-titanium);
+    box-shadow: 0 1px 2px color-mix(in oklab, var(--color-carbon-deep) 2%, transparent);
     transition: border-color 120ms,
     box-shadow 120ms;
 }
 
 .pv-phone-field[data-slot="input-group"]:hover {
-    border-color: #aaa;
+    border-color: var(--color-singer-stone);
 }
 
 .pv-phone-field[data-slot="input-group"]:focus-within {
-    border-color: #222;
+    border-color: var(--color-gunmetal);
     outline: none;
-    box-shadow: 0 0 0 3px #1111110d;
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-carbon) 5%, transparent);
 }
 
 .pv-phone-field .pv-phone-country[data-slot="input-group-addon"] {
@@ -88,10 +88,10 @@
     gap: 2px;
     padding: 6px 12px;
     border-radius: 0;
-    border-right: 1px solid #e5e5e5;
+    border-right: 1px solid var(--color-titanium);
     background: transparent;
     line-height: 1.2;
-    color: #555;
+    color: var(--color-gunmetal-lighter-2);
 }
 
 .pv-country-name {
@@ -104,7 +104,7 @@
     font-size: 14px;
     font-weight: 500;
     font-variant-numeric: tabular-nums;
-    color: #333;
+    color: var(--color-carbon-lighter-2);
 }
 
 .pv-phone-field [data-slot="input-group-control"] {
@@ -114,7 +114,7 @@
     border: 0;
     border-radius: 0;
     background: transparent;
-    color: #111;
+    color: var(--color-carbon);
     font-size: 18px;
     font-weight: 400;
     font-variant-numeric: tabular-nums;
@@ -125,38 +125,38 @@
 }
 
 .pv-phone-field [data-slot="input-group-control"]::placeholder {
-    color: #737373;
+    color: var(--color-pewter);
     opacity: 1;
 }
 
 .pv-number-field [data-slot="field-description"] {
     margin: 0 0 3px;
     padding-left: 2px;
-    color: #737373;
+    color: var(--color-pewter);
     font-size: 12px;
     line-height: 1.6;
 }
 
 .pv-number-field[data-invalid="true"] [data-slot="input-group"] {
-    border-color: #b42318;
-    box-shadow: 0 0 0 3px #b423180c;
+    border-color: var(--color-deep-cinnabar);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-deep-cinnabar) 5%, transparent);
 }
 
 .pv-number-field[data-invalid="true"] [data-slot="input-group"]:focus-within {
-    outline: 2px solid #b42318;
+    outline: 2px solid var(--color-deep-cinnabar);
     outline-offset: 2px;
 }
 
 .pv-number-field [data-slot="field-error"] {
     margin: 0;
     padding-left: 2px;
-    color: #b42318;
+    color: var(--color-deep-cinnabar);
     font-size: 12px;
     line-height: 1.6;
 }
 
 .pv-note {
-    color: #737373;
+    color: var(--color-pewter);
     font-size: 12px;
     line-height: 1.65;
     margin: 10px 0 18px;
@@ -174,10 +174,10 @@
     width: 100%;
     min-height: 44px;
     padding: 11px 20px;
-    border: 1px solid #111;
+    border: 1px solid var(--color-carbon);
     border-radius: 14px;
-    background: #111;
-    color: #fff;
+    background: var(--color-carbon);
+    color: var(--color-titanium);
     font-size: 14px;
     font-weight: 500;
 
@@ -190,25 +190,25 @@
 }
 
 .pv-primary:hover:not(:disabled) {
-    background: #292929;
+    background: var(--color-gunmetal);
 }
 
 .pv-primary:disabled {
-    background: #e8e8e8;
-    border-color: #e8e8e8;
-    color: #707070;
+    background: var(--color-titanium);
+    border-color: var(--color-titanium);
+    color: var(--color-pewter);
     cursor: not-allowed;
 }
 
 .pv-secondary {
-    color: #111;
-    background: #fff;
-    border-color: #d7d7d7;
+    color: var(--color-carbon);
+    background: var(--color-titanium);
+    border-color: var(--color-singer-stone);
     margin-top: 12px;
 }
 
 .pv-secondary:hover {
-    background: #f7f7f7;
+    background: var(--color-titanium);
 }
 
 .pv-number-summary {
@@ -226,7 +226,7 @@
     padding: 10px 0;
     border: 0;
     background: none;
-    color: #666;
+    color: var(--color-pewter);
     font-size: 12px;
     text-decoration: underline;
     text-underline-offset: 3px;
@@ -238,7 +238,7 @@
 }
 
 .pv-message-card {
-    border: 1px solid #e1e1e1;
+    border: 1px solid var(--color-titanium);
     border-radius: 12px;
     padding: 0 16px;
 }
@@ -248,12 +248,12 @@
 }
 
 .pv-message-card > div + div {
-    border-top: 1px solid #eee;
+    border-top: 1px solid var(--color-titanium);
 }
 
 .pv-message-card span {
     display: block;
-    color: #737373;
+    color: var(--color-pewter);
     font-size: 11px;
     margin-bottom: 6px;
 }
@@ -267,7 +267,7 @@
 .pv-preview-controls {
     font-size: 12px;
     line-height: 1.7;
-    color: #666;
+    color: var(--color-pewter);
     margin-top: 18px;
 }
 
@@ -283,7 +283,7 @@
 }
 
 .pv-preview-controls {
-    border-top: 1px solid #eee;
+    border-top: 1px solid var(--color-titanium);
     margin-top: 24px;
 }
 
@@ -294,9 +294,9 @@
 }
 
 .pv-preview-controls button {
-    border: 1px solid #ddd;
-    background: #fff;
-    color: #555;
+    border: 1px solid var(--color-titanium);
+    background: var(--color-titanium);
+    color: var(--color-gunmetal-lighter-2);
     border-radius: 999px;
     min-height: 44px;
     padding: 8px 14px;
@@ -304,14 +304,14 @@
 
 .pv-preview {
     text-align: center;
-    color: #737373;
+    color: var(--color-pewter);
     font-size: 11px;
     line-height: 1.7;
     margin: 32px 0 0;
 }
 
 .pv-error {
-    color: #b42318;
+    color: var(--color-deep-cinnabar);
     font-size: 12px;
     line-height: 1.7;
     margin: 10px 0;
@@ -320,7 +320,7 @@
 .pv-status {
     font-size: 12px;
     line-height: 1.7;
-    color: #666;
+    color: var(--color-pewter);
 }
 
 .pv-status:empty {
@@ -338,7 +338,7 @@
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: #666;
+    background: var(--color-pewter);
 }
 
 .pv-timer {
@@ -349,18 +349,18 @@
 }
 
 .pv-timer span {
-    color: #737373;
+    color: var(--color-pewter);
     font-size: 12px;
     margin-left: 5px;
 }
 
 .pv-simulation {
-    color: #666;
+    color: var(--color-pewter);
     font-size: 12px;
     text-align: center;
     line-height: 1.7;
     padding: 12px;
-    background: #f5f5f5;
+    background: var(--color-titanium);
     border-radius: 8px;
 }
 
@@ -373,11 +373,11 @@
 }
 
 .pv-trial a.pv-primary {
-    color: #fff;
+    color: var(--color-titanium);
 }
 
 .phone-verification :is(a, button, summary):focus-visible {
-    outline: 2px solid #111;
+    outline: 2px solid var(--color-carbon);
     outline-offset: 4px;
 }
 
@@ -400,7 +400,7 @@
 
 
 .pv-study {
-    background: #f7f7f6;
+    background: var(--color-titanium);
 }
 
 .pv-study-launcher {
@@ -417,9 +417,9 @@
     overflow-y: auto;
     overscroll-behavior: contain;
     padding: 20px 36px 28px;
-    border: 1px solid #e5e5e5;
+    border: 1px solid var(--color-titanium);
     border-radius: 22px;
-    box-shadow: 0 24px 90px #00000014;
+    box-shadow: 0 24px 90px color-mix(in oklab, var(--color-carbon-deep) 8%, transparent);
     scrollbar-width: thin;
 }
 
@@ -442,12 +442,12 @@
     border: 0;
     border-radius: 50%;
     background: transparent;
-    color: #555;
+    color: var(--color-gunmetal-lighter-2);
 
 }
 
 .pv-close:hover {
-    background: #f5f5f5;
+    background: var(--color-titanium);
 }
 
 .pv-language-switcher {
@@ -462,13 +462,13 @@
     padding: 8px 12px;
     border: 0;
     background: transparent;
-    color: #737373;
+    color: var(--color-pewter);
     font-size: 12px;
 
 }
 
 .pv-language-switcher button[aria-pressed="true"] {
-    color: #111;
+    color: var(--color-carbon);
     text-decoration: underline;
     text-underline-offset: 5px;
 }

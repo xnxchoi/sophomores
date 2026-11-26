@@ -5,6 +5,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Component, type ErrorInfo, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type Group, MathUtils, type ShaderMaterial } from "three";
 import type { SceneProps } from "./scene-loader";
+import { PALETTE } from "@/utils/palette";
 
 const vertexShader = /* glsl */ `
   uniform float uTime;
@@ -76,7 +77,7 @@ function StillOrb({ footer = false }: { footer?: boolean }) {
       style={{
         position: "absolute",
         inset: 0,
-        backgroundColor: "#020204",
+        backgroundColor: PALETTE.carbonDeep.hex,
         backgroundImage: "url('/teaser/orb-blue.webp')",
         backgroundPosition: "center",
         backgroundSize: "cover",
@@ -84,7 +85,7 @@ function StillOrb({ footer = false }: { footer?: boolean }) {
         ...(footer
           ? {
               backgroundImage:
-                "linear-gradient(to bottom, #020204 45%, transparent 85%), url('/teaser/orb-blue.webp')",
+                "linear-gradient(to bottom, var(--color-carbon-deep) 45%, transparent 85%), url('/teaser/orb-blue.webp')",
               backgroundPosition: "center, center bottom",
               backgroundSize: "100% 100%, 100% auto"
             }
@@ -264,7 +265,7 @@ export default function Scene(props: SceneProps) {
             fallback={<StillOrb footer={props.footer} />}
             style={{ pointerEvents: "none" }}
           >
-            <color attach="background" args={["#020204"]} />
+            <color attach="background" args={[PALETTE.carbonDeep.hex]} />
             <Lens {...props} active={running} />
             <ContextGuard onLost={onLost} />
           </Canvas>

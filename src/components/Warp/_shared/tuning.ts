@@ -1,4 +1,5 @@
 import { cubicBezier, transform } from "motion";
+import { PALETTE } from "@/utils/palette";
 
 // Settlement spans 60–70% overall progress. Restore geometry and material by
 // 67.2%, leaving the final color return before the original Hero starts at zero.
@@ -21,7 +22,7 @@ export const DEFAULT_WARP_TUNING = Object.freeze({
   pointBrightness: .51,
   pointSoftness: 1,
   interiorBrightness: .30,
-  interiorColor: "#ffffff",
+  interiorColor: PALETTE.titanium.hex,
   interiorBloom: .10,
   interiorBlur: 1,
   edgeBlur: .5,

@@ -126,7 +126,7 @@ export function ChapterNav({
         exit={{ opacity: 0, y: motionTokens.distance.xl }}
         transition={{ duration: motionTokens.duration.normal }}
       >
-        <div className="desktop-chapters pointer-events-auto hidden bg-teaser-glass backdrop-blur-lg md:flex">
+        <div className="desktop-chapters pointer-events-auto hidden bg-titanium/10 backdrop-blur-lg md:flex">
           {chapters.map((chapter) => (
             <Link
               key={chapter.id}
@@ -135,12 +135,12 @@ export function ChapterNav({
               aria-current={current === chapter.id ? "location" : undefined}
               onClick={chapter.id === "hero" ? onHome : undefined}
             >
-              <FocusShape className="outline-offset-[5px] group-focus-visible/focus:outline-teaser-focus">{chapter.label}</FocusShape>
+              <FocusShape className="outline-offset-[5px] group-focus-visible/focus:outline-saffron-amber-lighter-1">{chapter.label}</FocusShape>
             </Link>
           ))}
         </div>
         {!inStrip && (
-        <div className="mobile-chapters pointer-events-auto flex w-40 flex-col bg-teaser-glass backdrop-blur-lg md:hidden">
+        <div className="mobile-chapters pointer-events-auto flex w-40 flex-col bg-titanium/10 backdrop-blur-lg md:hidden">
           <AnimatePresence>
             {menuOpen && (
               <motion.div
@@ -154,7 +154,7 @@ export function ChapterNav({
                 {chapters.map((chapter) => (
                   <MobileChapterControl key={chapter.id}>
                     <a
-                      className="aria-[current]:bg-[#fff2]"
+                      className="aria-[current]:bg-titanium/13"
                       href={`#${chapter.id}`}
                       aria-current={
                         current === chapter.id ? "location" : undefined
@@ -203,7 +203,7 @@ export function ChapterNav({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 8 }}
                   transition={{ duration: motionTokens.duration.fast }}
-                  className="absolute bottom-[calc(100%+12px)] left-1/2 flex max-h-[60dvh] w-[min(320px,calc(100vw-32px))] -translate-x-1/2 flex-col gap-1 overflow-y-auto rounded-[28px] border border-border/30 bg-off-bg/95 p-3 backdrop-blur-xl"
+                  className="absolute bottom-[calc(100%+12px)] left-1/2 flex max-h-[60dvh] w-[min(320px,calc(100vw-32px))] -translate-x-1/2 flex-col gap-1 overflow-y-auto rounded-[28px] border border-border/30 bg-background/95 p-3 backdrop-blur-xl"
                 >
                   {chapters.map((chapter, index) => (
                     <li key={chapter.id} className="flex">
@@ -269,7 +269,7 @@ export function ChapterNav({
           exit={{ opacity: 0 }}
           transition={{ duration: motionTokens.duration.normal }}
         >
-          <FocusShape className="outline-offset-[5px] group-focus-visible/focus:outline-teaser-focus">{t("skipToNextChapter")}</FocusShape>
+          <FocusShape className="outline-offset-[5px] group-focus-visible/focus:outline-saffron-amber-lighter-1">{t("skipToNextChapter")}</FocusShape>
         </motion.a>
       )}
     </>

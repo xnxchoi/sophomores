@@ -52,7 +52,7 @@ export function SetlistTracklist({
   }, [tracks, filterQuery]);
 
   return (
-    <section className="relative w-full overflow-hidden rounded-2xl border border-white/10 bg-neutral-900/60 p-6 backdrop-blur-md md:p-8">
+    <section className="relative w-full overflow-hidden rounded-2xl border border-white/10 bg-carbon/60 p-6 backdrop-blur-md md:p-8">
       {/* Subtle top edge highlight */}
       <div
         aria-hidden="true"
@@ -64,26 +64,26 @@ export function SetlistTracklist({
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-col gap-0.5">
             <h2 className="text-base text-white">Full setlist</h2>
-            <p className="text-xs text-neutral-400">
+            <p className="text-xs text-pewter">
               {t("setlistPreviewIntro", { count: tracks.length })}
             </p>
           </div>
 
           {/* Quick filter input. The global input rule (sphmrs.scss) is in the base layer, so these utilities set every property it touches. */}
           <div className="relative w-full sm:w-64">
-            <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-neutral-400" />
+            <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-pewter" />
             <input
               type="text"
               value={filterQuery}
               onChange={(e) => setFilterQuery(e.target.value)}
               placeholder="Filter setlist..."
-              className="mt-0 h-10 w-full rounded-none border-0 border-b border-white/15 bg-transparent py-0 pl-8 pr-8 font-sans text-xs font-normal tracking-normal text-white placeholder:text-neutral-500 focus-visible:outline-none focus-visible:border-white/40"
+              className="mt-0 h-10 w-full rounded-none border-0 border-b border-white/15 bg-transparent py-0 pl-8 pr-8 font-sans text-xs font-normal tracking-normal text-white placeholder:text-pewter focus-visible:outline-none focus-visible:border-white/40"
             />
             {filterQuery && (
               <button
                 type="button"
                 onClick={() => setFilterQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-pewter hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
               >
                 <XIcon className="size-3.5" />
                 <span className="sr-only">Clear filter</span>
@@ -115,12 +115,12 @@ export function SetlistTracklist({
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3.5 min-w-0">
                     {/* Track sequence number */}
-                    <span className="w-6 shrink-0 text-center font-sans text-xs tabular-nums text-neutral-500">
+                    <span className="w-6 shrink-0 text-center font-sans text-xs tabular-nums text-pewter">
                       {String(idx + 1).padStart(2, "0")}
                     </span>
 
                     {/* Artwork + Play button */}
-                    <div className="relative size-11 shrink-0 overflow-hidden rounded-lg bg-neutral-800 border border-white/10">
+                    <div className="relative size-11 shrink-0 overflow-hidden rounded-lg bg-gunmetal border border-white/10">
                       {track.coverUrl ? (
                         <Image
                           src={track.coverUrl}
@@ -131,7 +131,7 @@ export function SetlistTracklist({
                           className="size-full object-cover"
                         />
                       ) : (
-                        <div className="flex size-full items-center justify-center text-neutral-500">
+                        <div className="flex size-full items-center justify-center text-pewter">
                           <MusicNotesIcon className="size-4" />
                         </div>
                       )}
@@ -145,14 +145,14 @@ export function SetlistTracklist({
                         <span
                           className={cn(
                             "text-sm font-medium truncate",
-                            isPlayingThis ? "text-white" : "text-neutral-200"
+                            isPlayingThis ? "text-white" : "text-titanium"
                           )}
                         >
                           {track.title}
                         </span>
 
                         {isContributed ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-sans text-neutral-300">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-sans text-singer-stone">
                             <span>Added by {track.submittedByName}</span>
                             {hasNote && (
                               <button
@@ -161,25 +161,25 @@ export function SetlistTracklist({
                                   setActiveNoteTrackId(isNoteOpen ? null : track.id)
                                 }
                                 title="View note"
-                                className="text-neutral-400 hover:text-white ml-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                                className="text-pewter hover:text-white ml-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                               >
                                 <ChatCircleTextIcon className="size-3" />
                               </button>
                             )}
                           </span>
                         ) : (
-                          <span className="hidden sm:inline font-sans text-[10px] text-neutral-500">
+                          <span className="hidden sm:inline font-sans text-[10px] text-pewter">
                             Curated by {curatorName}
                           </span>
                         )}
                       </div>
 
-                      <div className="flex items-center gap-2 text-xs text-neutral-400">
+                      <div className="flex items-center gap-2 text-xs text-pewter">
                         <span className="truncate">{track.artist}</span>
                         {track.albumTitle && (
                           <>
-                            <span className="text-neutral-600 hidden sm:inline">•</span>
-                            <span className="text-neutral-500 truncate hidden sm:inline">
+                            <span className="text-gunmetal-lighter-2 hidden sm:inline">•</span>
+                            <span className="text-pewter truncate hidden sm:inline">
                               {track.albumTitle}
                             </span>
                           </>
@@ -200,7 +200,7 @@ export function SetlistTracklist({
                           "flex size-11 items-center justify-center rounded-lg border text-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white",
                           isPlayingThis
                             ? "border-white bg-white text-black"
-                            : "border-white/10 bg-white/[0.02] text-neutral-400 hover:bg-white/[0.08] hover:text-white"
+                            : "border-white/10 bg-white/[0.02] text-pewter hover:bg-white/[0.08] hover:text-white"
                         )}
                         aria-busy={previewLoading || undefined}
                         aria-label={t(previewLoading ? "cancelPreview" : isPlayingThis ? "pausePreview" : previewFailed ? "retryPreview" : "playPreview", { track: track.title })}
@@ -213,7 +213,7 @@ export function SetlistTracklist({
                       </button>
                     )}
 
-                    <span className="font-sans text-xs tabular-nums text-neutral-500 hidden sm:inline w-12 text-right">
+                    <span className="font-sans text-xs tabular-nums text-pewter hidden sm:inline w-12 text-right">
                       {formatDuration(track.duration)}
                     </span>
 
@@ -222,7 +222,7 @@ export function SetlistTracklist({
                         href={track.externalUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex size-8 items-center justify-center rounded-lg border border-white/10 bg-white/[0.02] text-neutral-400 transition-colors hover:bg-white/[0.08] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                        className="flex size-8 items-center justify-center rounded-lg border border-white/10 bg-white/[0.02] text-pewter transition-colors hover:bg-white/[0.08] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                         title="Open track on Apple Music"
                       >
                         <ArrowSquareOutIcon className="size-3.5" />
@@ -233,15 +233,15 @@ export function SetlistTracklist({
                 </div>
 
                 {isActive && (previewLoading || previewFailed) && (
-                  <p className="ml-9 text-xs text-neutral-300 sm:ml-12">
+                  <p className="ml-9 text-xs text-singer-stone sm:ml-12">
                     {t(previewFailed ? "previewError" : "previewLoading")}
                   </p>
                 )}
 
                 {/* Expanded Contributor Note if opened */}
                 {isNoteOpen && track.note && (
-                  <div className="ml-10 sm:ml-14 border-l border-white/15 pl-3 text-xs text-neutral-300">
-                    <span className="text-neutral-400 font-sans text-[11px] block mb-0.5">
+                  <div className="ml-10 sm:ml-14 border-l border-white/15 pl-3 text-xs text-singer-stone">
+                    <span className="text-pewter font-sans text-[11px] block mb-0.5">
                       Note from {track.submittedByName}:
                     </span>
                     <p className="italic">&ldquo;{track.note}&rdquo;</p>
@@ -253,8 +253,8 @@ export function SetlistTracklist({
 
           {filteredTracks.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12 gap-2 text-center">
-              <span className="text-sm font-medium text-neutral-300">No tracks found</span>
-              <p className="text-xs text-neutral-500">
+              <span className="text-sm font-medium text-singer-stone">No tracks found</span>
+              <p className="text-xs text-pewter">
                 No songs match &ldquo;{filterQuery}&rdquo;. Try another search term.
               </p>
             </div>

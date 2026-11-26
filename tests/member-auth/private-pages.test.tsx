@@ -40,6 +40,10 @@ test("private paths match whole segments only", () => {
   for (const pathname of ["/", "/meet", "/accounts", "/shop", "/shop/checkoutx", "/tickets", "/music"]) {
     assert.equal(isPrivatePagePath(pathname), false, pathname);
   }
+  // The shop is session-varying (no-store, no guard); the cart under it stays a private page with the guard.
+  assert.equal(isNoStorePagePath("/shop"), true);
+  assert.equal(isPrivatePagePath("/shop/cart"), true);
+  assert.equal(isPrivatePagePath("/shop/products/e1"), false);
 });
 
 // Public pages that read the signed-in member: sent private, no-store, without the guard (coordinator, 23 Nov: no
@@ -116,10 +120,12 @@ test("private pages are sent private, no-store, as documents and as RSC payloads
     for (const pathname of ["/me", "/me/settings/account", "/account", "/shop/checkout", "/shop/payment", "/shop/orders/2f7c", "/tickets/payment", "/welcome"]) {
       assert.equal(call(pathname, headers).headers.get("cache-control"), "private, no-store", `${pathname} ${JSON.stringify(headers)}`);
     }
-    for (const pathname of ["/music", "/setlists/spring-2026", "/essays", "/essays/on-wanting", "/essays/in/2"]) {
+    // The shop (Cordy, 26 Nov, Hamlet's cart mode): the cart opens in place on /shop and /shop/products/* (a shallow push
+    // to /shop/cart), so those pages carry the member's cart and are sent private, no-store too.
+    for (const pathname of ["/music", "/setlists/spring-2026", "/essays", "/essays/on-wanting", "/essays/in/2", "/shop", "/shop/products/e1"]) {
       assert.equal(call(pathname, headers).headers.get("cache-control"), "private, no-store", `session-varying ${pathname}`);
     }
-    for (const pathname of ["/", "/shop", "/tickets", "/meet", "/musical", "/essaysx"]) {
+    for (const pathname of ["/", "/shopx", "/shopping", "/tickets", "/meet", "/musical", "/essaysx"]) {
       assert.equal(call(pathname, headers).headers.get("cache-control"), null, pathname);
     }
   }

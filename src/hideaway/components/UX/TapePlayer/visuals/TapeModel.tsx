@@ -50,7 +50,6 @@ import {
   ACESFilmicToneMapping,
   Box3,
   BufferGeometry,
-  Color,
   Group,
   LinearFilter,
   LinearMipmapLinearFilter,
@@ -327,7 +326,6 @@ export function TapeModel({
       if (mat.name === "Display") {
         displayScreen.current = obj;
         const displayMat = obj.material as MeshStandardMaterial;
-        displayMat.emissive = new Color(0x96f7ff);
         // Keep display unlit until the RenderTexture aspect is computed and
         // the texture has been wired onto the emissiveMap slot.
         displayMat.emissiveIntensity = 300;
@@ -353,7 +351,6 @@ export function TapeModel({
       // No explicit envMap: scene.environment is picked up automatically.
       if (mat.name === "black_glass") {
         obj.material = new MeshPhysicalMaterial({
-          color: "#111111",
           metalness: 0,
           roughness: 0,
           transmission: 1,
@@ -367,7 +364,6 @@ export function TapeModel({
       // ── Black — plain MeshStandardMaterial ───────────────────────────────
       if (mat.name === "Black") {
         obj.material = new MeshStandardMaterial({
-          color: "#1c1c1c",
           metalness: 0,
           roughness: 1
         });
@@ -382,7 +378,6 @@ export function TapeModel({
 
           const metalMat = new MeshStandardMaterial({
             ...metalMate,
-            color: "#EBEFF4",
             metalness: 0.85,
             roughness: 0.2,
             envMapIntensity: 0.156,
@@ -840,7 +835,6 @@ export function TapeModel({
          */}
         <pointLight
           ref={lightRef}
-          color={"#ff7829"}
           intensity={50}
           distance={3.5}
           decay={3.6}
@@ -902,7 +896,6 @@ export function TapeModel({
                     }
                   }}
                   font={"/assets/fonts/Workbench.ttf"}
-                  color={"#c5dcdc"}
                   fontSize={displayFontSize}
                   fillOpacity={0.6}
                 >
@@ -911,7 +904,6 @@ export function TapeModel({
                 <Text
                   position={[-textWidth.current, 0, 0]}
                   font={"/assets/fonts/Workbench.ttf"}
-                  color={"#c5dcdc"}
                   ref={textRef2}
                   fontSize={displayFontSize}
                   fillOpacity={0.6}
@@ -1013,7 +1005,6 @@ export function DisplayScreenText({
         {isMarquee ? paddedText : text}
         <meshStandardMaterial
           ref={materialRef1}
-          color="#96f7ff"
           transparent
           opacity={0}
         />
@@ -1031,7 +1022,6 @@ export function DisplayScreenText({
         {paddedText}
         <meshStandardMaterial
           ref={materialRef2}
-          color="#96f7ff"
           transparent
           opacity={0}
         />

@@ -152,9 +152,9 @@ export const Slider = (props: {
     Color
   > = useMemo(
     () => ({
-      black: new Color("#050302"),
-      white: new Color("#f9f5f2"),
-      gray: new Color("#cbcaca")
+      black: new Color(),
+      white: new Color(),
+      gray: new Color()
     }),
     []
   );
@@ -1644,7 +1644,7 @@ function sliderInternal({
 
       gdntFrnt.global &&
         gdntFrnt.onInit({
-          color1: new Color("#d3eef3"),
+          color1: new Color(),
           color2: colors.gradient1,
           color3: colors.gradient2,
           noisePower: 0.1,

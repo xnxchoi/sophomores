@@ -3,24 +3,16 @@ import { CommentBubble } from "../CommentBubble";
 import { useDomCursor } from "@/hideaway/components/core/cursorWrapper";
 import { CopyLinkButton } from "@/hideaway/components/ui/copy-button";
 import { Link } from "@/hideaway/components/core/Link/Link";
-import { SPRING_EASE } from "@/hideaway/constants/animations";
 import { cn } from "@/lib/utils";
 import { createRichtext } from "@/payload/collections/Users/helpers/createRichtext";
 import RichText from "../../UX/RichText";
 import { useTheme } from "@/hideaway/providers/Theme";
 import { SurfOverview } from "@/types/collections/surf";
 import { getClientSideURL } from "@/hideaway/utilities/getURL";
-import { randomNumber } from "@/hideaway/utilities/randomNumber";
-import { Property } from "csstype";
 import { DateTime } from "luxon";
-import {
-  useMotionTemplate,
-  useMotionValue,
-  useSpring,
-  useTransform
-} from "motion/react";
+import { useMotionValue } from "motion/react";
 import * as m from "motion/react-m";
-import { useCallback, useId, useMemo, useRef, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 import { uuidv7 } from "uuidv7";
 import { useHumanTime } from "./useLocaleDate";
 
@@ -59,7 +51,7 @@ export const Surf = ({
   return (
     <div
       className={cn(
-        "group border-muted-fg relative max-w-[600px] border-b-[1px] px-4 pt-[16px] pb-[24px]",
+        "group relative max-w-[600px] border-b-[1px] px-4 pt-[16px] pb-[24px]",
         hovered
       )}
       onMouseEnter={onMouseEnter}
@@ -67,7 +59,7 @@ export const Surf = ({
       data-themed={"background-color, border-color,color"}
     >
       <Link
-        className="z-[1] after:absolute after:top-0 after:left-0 after:h-full after:w-full after:rounded-[4px] after:bg-transparent after:shadow-md/0 after:shadow-muted after:transition-colors after:duration-200 after:ease-power3 after:content-[''] hover:after:bg-muted-faded-background/10 hover:after:shadow-md/20 dark:hover:after:bg-muted/10 dark:hover:after:shadow-sm/25"
+        className="z-[1] after:absolute after:top-0 after:left-0 after:h-full after:w-full after:rounded-[4px] after:bg-transparent after:shadow-md/0 after:shadow-muted after:transition-colors after:duration-200 after:ease-power3 after:content-[''] hover:after:shadow-md/20 dark:hover:after:bg-muted/10 dark:hover:after:shadow-sm/25"
         href="/public"
       />
       <div className={"flex p-0 md:py-4"}>
@@ -86,58 +78,10 @@ const SurfGradient = ({
 }: {
   surf: SurfOverview;
 }) => {
-  const gradients: Record<
-    SurfSource,
-    [[number, number, number], [number, number, number]]
-  > = useMemo(
-    () => ({
-      external: [
-        [0.6433, 0.2179, 6.68],
-        [0.9234, 0.0749, 95.11]
-      ],
-      instagram: [
-        [0.4461, 0.2336, 296.43],
-        [0.5533, 0.2115, 355.73]
-      ],
-      medium: [
-        [0.5498, 0.1745, 142.51],
-        [0.4095, 0.0715, 212.58]
-      ],
-      youtube: [
-        [0.5528, 0.2053, 19.43],
-        [0.4995, 0.1077, 273.6]
-      ],
-      substack: [
-        [0.8126, 0.1113, 54.36],
-        [0.3442, 0.128, 298.2]
-      ],
-      twitter: [
-        [0.9136, 0.0625, 213.94],
-        [0.6408, 0.0771, 227.25]
-      ],
-      x: [
-        [0.9136, 0.0625, 213.94],
-        [0.6408, 0.0771, 227.25]
-      ]
-    }),
-    []
-  );
   const initial = useMemo(() => (name.charAt(0) || "A").toUpperCase(), [name]);
   const { label } = useMemo(() => sourceToMeta({ source }), [source]);
 
-  const palette = useMotionValue(gradients.external);
-  const keys = useMemo(
-    () => Object.keys(gradients) as SurfSource[],
-    [gradients]
-  );
   const tid = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const switchPalette = useCallback(() => {
-    const index = randomNumber(0, keys.length - 1);
-    const next = keys[index];
-    tid.current && clearTimeout(tid.current);
-    tid.current = setTimeout(() => palette.set(gradients[next]), 50);
-  }, [gradients, keys, palette]);
-
   const { onMouseEnter, onMouseLeave } = useDomCursor({
     enterCondition: () => (!tid.current ? "FOCUS" : null)
   });
@@ -146,33 +90,6 @@ const SurfGradient = ({
 
   const id = useId();
 
-  const s1 = useTransform(() => palette.get()[0][0]),
-    s2 = useTransform(() => palette.get()[0][1]),
-    s3 = useTransform(() => palette.get()[0][2]),
-    e3 = useTransform(() => palette.get()[1][2]),
-    e1 = useTransform(() => palette.get()[1][0]),
-    e2 = useTransform(() => palette.get()[1][1]);
-  const start = useMotionTemplate`oklch(${s1} ${s2} ${s3})`,
-    end = useMotionTemplate`oklch(${e1} ${e2} ${e3})`;
-  const iC = useTransform(() => {
-      return (
-        s1.get() > 0.5 ? "var(--off-black)" : "var(--off-white)"
-      ) as Property.Color;
-    }),
-    initialColor = useSpring(iC, {
-      ...SPRING_EASE.power2.inOut,
-      visualDuration: 0.3
-    }),
-    sC = useTransform(
-      () =>
-        (e1.get() > 0.5
-          ? "var(--off-black)"
-          : "var(--off-white)") as Property.Color
-    ),
-    sourceColor = useSpring(sC, {
-      ...SPRING_EASE.power2.inOut,
-      visualDuration: 0.3
-    });
   return (
     <>
       <div className={"absolute z-0 ml-0 w-[24px]"}>
@@ -183,8 +100,8 @@ const SurfGradient = ({
         >
           <defs>
             <linearGradient id={id} gradientTransform="rotate(90)">
-              <m.stop offset="40%" stopColor={start}></m.stop>
-              <m.stop offset="55%" stopColor={end}></m.stop>
+              <m.stop offset="40%"></m.stop>
+              <m.stop offset="55%"></m.stop>
             </linearGradient>
           </defs>
           <path
@@ -195,11 +112,8 @@ const SurfGradient = ({
       </div>
       <m.div
         className={
-          "z-[10] flex size-[24px] justify-center px-[4px] py-[6px] text-center font-sans text-[11px] leading-[11px] font-bold text-black"
+          "z-[10] flex size-[24px] justify-center px-[4px] py-[6px] text-center font-sans text-[11px] leading-[11px] font-bold"
         }
-        style={{
-          color: initialColor
-        }}
       >
         {initial}
       </m.div>
@@ -212,7 +126,6 @@ const SurfGradient = ({
           className={"flex w-full justify-center"}
           onMouseLeave={onMouseLeave}
           onMouseEnter={onMouseEnter}
-          onClick={switchPalette}
         >
           <m.svg
             width="12"
@@ -220,7 +133,6 @@ const SurfGradient = ({
             viewBox="0 0 11 11"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
-            style={{ color: sourceColor }}
           >
             <title>{label}</title>
             <m.path
@@ -277,10 +189,10 @@ const SurfSource = ({ source }: Pick<SurfOverview, "source">) => {
   return (
     <div
       className={
-        "z-[10] mt-[3px] flex size-[24px] justify-center p-2 text-center text-black"
+        "z-[10] mt-[3px] flex size-[24px] justify-center p-2 text-center"
       }
     >
-      <span className={"flex w-full justify-center text-black"}>
+      <span className={"flex w-full justify-center"}>
         <svg
           width="12"
           height="13"
@@ -305,7 +217,7 @@ const SurfInitials = ({ name }: { name: string }) => {
   return (
     <div
       className={
-        "z-[10] flex size-[24px] justify-center px-[4px] py-[6px] text-center font-sans text-[11px] leading-[11px] font-bold text-black"
+        "z-[10] flex size-[24px] justify-center px-[4px] py-[6px] text-center font-sans text-[11px] leading-[11px] font-bold"
       }
     >
       {initial}
@@ -335,7 +247,7 @@ const SurfHeader = (props: SurfOverview) => {
         {timestamp && <SurfTime timestamp={timestamp} />}
       </div>
       <CopyLinkButton
-        className="relative flex items-center text-muted group-hover:text-muted-off-foreground"
+        className="relative flex items-center text-muted"
         textToCopy={text}
       />
     </div>

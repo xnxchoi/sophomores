@@ -50,11 +50,8 @@ export function AmbientAudioWidget() {
         transition={{ type: "spring", bounce: 0.28, visualDuration: 0.3 }}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.94 }}
-        className="relative inline-flex h-8 items-center gap-1.5 rounded-full border border-white/10 px-2.5 select-none"
+        className="relative inline-flex h-8 items-center gap-1.5 rounded-full border px-2.5 select-none"
         style={{
-          background: enabled
-            ? "oklch(0.97 0 0 / 0.08)"
-            : "oklch(0.97 0 0 / 0.04)",
           color: "inherit",
           fontFamily: "var(--font-mono, ui-monospace)",
           fontSize: 10,

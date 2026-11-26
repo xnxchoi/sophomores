@@ -287,7 +287,7 @@ export function EditableLink({
           {error ? (
             <span
               id={errorId}
-              className="text-xs text-rouge-500/85"
+              className="text-xs"
               role="alert"
             >
               {error}

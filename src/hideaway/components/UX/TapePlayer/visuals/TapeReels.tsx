@@ -118,14 +118,12 @@ export const TapeReels = ({ diameter = 120, className }: TapeReelsProps) => {
       {/* Tape path connecting reels */}
       <m.path
         d={tapeY1}
-        stroke="var(--faded-fg)"
         strokeWidth="1"
         fill="none"
         opacity="0.3"
       />
       <m.path
         d={tapeY2}
-        stroke="var(--faded-fg)"
         strokeWidth="1"
         fill="none"
         opacity="0.3"
@@ -136,14 +134,12 @@ export const TapeReels = ({ diameter = 120, className }: TapeReelsProps) => {
         cx={guidex1}
         cy={cy}
         r="2"
-        fill="var(--rouge-500)"
         opacity="0.7"
       />
       <m.circle
         cx={guidex2}
         cy={cy}
         r="2"
-        fill="var(--rouge-500)"
         opacity="0.7"
       />
 
@@ -155,7 +151,6 @@ export const TapeReels = ({ diameter = 120, className }: TapeReelsProps) => {
           cy={cy}
           r={supplyR}
           fill="none"
-          stroke="var(--faded-fg)"
           strokeWidth="1.5"
           opacity="0.6"
         />
@@ -164,8 +159,6 @@ export const TapeReels = ({ diameter = 120, className }: TapeReelsProps) => {
           cx={cx1}
           cy={cy}
           r={smolHubr}
-          fill="var(--faded-fg)"
-          stroke="var(--faded-fg)"
           strokeWidth="0.75"
           opacity="0.85"
         />
@@ -178,7 +171,6 @@ export const TapeReels = ({ diameter = 120, className }: TapeReelsProps) => {
           clipPath={`url(#clip1)`}
           style={{
             strokeWidth: tapeWidth1,
-            stroke: "var(--muted-faded-fg)",
             opacity: 0.5
           }}
         />
@@ -187,12 +179,10 @@ export const TapeReels = ({ diameter = 120, className }: TapeReelsProps) => {
           cx={cx1}
           cy={cy}
           r={hubR}
-          fill="var(--off-bg)"
-          stroke="var(--faded-fg)"
           strokeWidth="1.5"
         />
         {/* Center dot */}
-        <m.circle cx={cx1} cy={cy} r="2.5" fill="var(--faded-fg)" />
+        <m.circle cx={cx1} cy={cy} r="2.5" />
         {/* Spokes */}
         {new Array(REEL_SPOKE_COUNT).fill(1).map((_, index) => {
           return (
@@ -216,7 +206,6 @@ export const TapeReels = ({ diameter = 120, className }: TapeReelsProps) => {
           cy={cy}
           r={takeupR}
           fill="none"
-          stroke="var(--faded-fg)"
           strokeWidth="1.5"
           opacity="0.6"
         />
@@ -224,8 +213,6 @@ export const TapeReels = ({ diameter = 120, className }: TapeReelsProps) => {
           cx={cx2}
           cy={cy}
           r={smolHubrR}
-          fill="var(--faded-fg)"
-          stroke="var(--faded-fg)"
           strokeWidth="0.75"
           opacity="0.85"
         />
@@ -238,7 +225,6 @@ export const TapeReels = ({ diameter = 120, className }: TapeReelsProps) => {
           clipPath={`url(#clip2)`}
           style={{
             strokeWidth: tapeWidth2,
-            stroke: "var(--muted-faded-fg)",
             clipRule: "evenodd",
             opacity: 0.5
           }}
@@ -247,11 +233,9 @@ export const TapeReels = ({ diameter = 120, className }: TapeReelsProps) => {
           cx={cx2}
           cy={cy}
           r={hubR}
-          fill="var(--off-bg)"
-          stroke="var(--faded-fg)"
           strokeWidth="1.5"
         />
-        <m.circle cx={cx2} cy={cy} r="2.5" fill="var(--faded-fg)" />
+        <m.circle cx={cx2} cy={cy} r="2.5" />
         {new Array(REEL_SPOKE_COUNT).fill(1).map((_, index) => {
           return (
             <Spoke
@@ -272,7 +256,6 @@ export const TapeReels = ({ diameter = 120, className }: TapeReelsProps) => {
         x={cx1}
         y={textMax}
         textAnchor="middle"
-        fill="var(--faded-fg)"
         fontSize="8"
         fontFamily="var(--font-mono)"
         letterSpacing="0.08em"
@@ -284,7 +267,6 @@ export const TapeReels = ({ diameter = 120, className }: TapeReelsProps) => {
         x={cx2}
         y={textMax}
         textAnchor="middle"
-        fill="var(--faded-fg)"
         fontSize="8"
         fontFamily="var(--font-mono)"
         letterSpacing="0.08em"
@@ -325,7 +307,6 @@ const Spoke = ({
       y1={y1}
       x2={x2}
       y2={y2}
-      stroke="var(--faded-fg)"
       strokeWidth="1.5"
       strokeLinecap="round"
       opacity="0.5"

@@ -197,14 +197,14 @@ export function Scrubber({
         {SECTION_KEYS.map((key, i) => (
           <span
             key={`head-${key}`}
-            className="pointer-events-none absolute top-0 h-[22px] w-px -translate-x-[0.5px] bg-[color-mix(in_srgb,var(--dn-fg)_60%,transparent)]"
+            className="pointer-events-none absolute top-0 h-[22px] w-px -translate-x-[0.5px]"
             style={{ left: `${headPositions[i] * 100}%` }}
             aria-hidden
           />
         ))}
         <div
           ref={indicatorRef}
-          className="absolute top-0 left-0 -ml-7 h-3 w-14 rounded-full bg-[var(--dn-fg)] mix-blend-exclusion will-change-transform"
+          className="absolute top-0 left-0 -ml-7 h-3 w-14 rounded-full mix-blend-exclusion will-change-transform"
           aria-hidden
         />
       </div>
@@ -216,7 +216,7 @@ export function Scrubber({
               labelRefs.current[i] = el;
             }}
             type="button"
-            className="ease absolute top-0 translate-x-0 cursor-pointer appearance-none border-0 bg-transparent py-0.5 pr-1.5 pl-0 text-left font-sans text-[13px] font-normal tracking-[0.005em] whitespace-nowrap text-[var(--dn-fg)] transition-[opacity,font-weight] duration-[320ms] hover:!opacity-100 data-[active=true]:font-semibold"
+            className="ease absolute top-0 translate-x-0 cursor-pointer appearance-none border-0 bg-transparent py-0.5 pr-1.5 pl-0 text-left font-sans text-[13px] font-normal tracking-[0.005em] whitespace-nowrap transition-[opacity,font-weight] duration-[320ms] hover:!opacity-100 data-[active=true]:font-semibold"
             style={{ left: `${labelPositions[i] * 100}%` }}
             onClick={() => handleJump(headPositions[i])}
           >

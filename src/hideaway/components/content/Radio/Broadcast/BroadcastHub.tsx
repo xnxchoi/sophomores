@@ -76,7 +76,7 @@ function BroadcastArchive({ releases }: BroadcastArchiveProps) {
   return (
     <section
       aria-labelledby="archive"
-      className="relative w-full border-y border-border/15 bg-black/80 pt-20 pb-16 backdrop-blur-[1px] sm:pt-20 xl:py-24"
+      className="relative w-full border-y border-border/15 pt-20 pb-16 backdrop-blur-[1px] sm:pt-20 xl:py-24"
     >
       <div className="mx-auto w-full max-w-7xl px-6 xl:px-10">
         {/*<header className="mb-8 flex items-end justify-between border-b border-border/30 pb-6 sm:mb-12 sm:pb-8 xl:mb-14">*/}
@@ -218,7 +218,7 @@ function Forthcoming() {
   return (
     <section
       aria-labelledby="forthcoming"
-      className="relative w-full border-t border-border/30 bg-black/80 py-14 backdrop-blur-[1px] xl:py-20"
+      className="relative w-full border-t border-border/30 py-14 backdrop-blur-[1px] xl:py-20"
     >
       <div className="mx-auto w-full max-w-7xl px-6 xl:px-10">
         <p

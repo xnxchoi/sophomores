@@ -97,9 +97,9 @@ export function ActEyebrow({
       <span
         data-dn-eyebrow
         data-align={align}
-        className="gap-[14px] text-(--dn-fg)"
+        className="gap-[14px]"
       >
-        <span className="font-sans text-[11px] tracking-[0.32em] text-(--dn-fg-faint)">
+        <span className="font-sans text-[11px] tracking-[0.32em]">
           №
         </span>
         <span className="font-serif text-[clamp(1.5rem,1.7vw,1.85rem)] font-medium italic">
@@ -107,7 +107,7 @@ export function ActEyebrow({
         </span>
         <span
           aria-hidden
-          className="font-serif text-[clamp(1.5rem,1.7vw,1.85rem)] text-(--dn-fg-faint) italic"
+          className="font-serif text-[clamp(1.5rem,1.7vw,1.85rem)] italic"
         >
           —
         </span>
@@ -116,10 +116,10 @@ export function ActEyebrow({
         </span>
         {time && (
           <>
-            <span aria-hidden className="text-[11px] text-(--dn-fg-faint)">
+            <span aria-hidden className="text-[11px]">
               ·
             </span>
-            <span className="text-[clamp(11px,0.9vw,13px)] tracking-[0.18em] text-(--dn-fg-mute) uppercase tabular-nums">
+            <span className="text-[clamp(11px,0.9vw,13px)] tracking-[0.18em] uppercase tabular-nums">
               {time}
             </span>
           </>
@@ -138,18 +138,18 @@ export function ActEyebrow({
  */
 
 export const TITLE_HERO =
-  "font-serif text-[clamp(4.5rem,9vw,10rem)] leading-[0.92] font-bold tracking-[-0.025em] text-[var(--dn-fg)]";
+  "font-serif text-[clamp(4.5rem,9vw,10rem)] leading-[0.92] font-bold tracking-[-0.025em]";
 
 export const TITLE_SECTION =
-  "font-serif text-[clamp(2.75rem,6.2vw,6rem)] leading-[0.98] font-bold tracking-[-0.02em] text-[var(--dn-fg)]";
+  "font-serif text-[clamp(2.75rem,6.2vw,6rem)] leading-[0.98] font-bold tracking-[-0.02em]";
 
 export const TITLE_PAIR =
-  "font-serif text-[clamp(1.85rem,3.2vw,3.1rem)] leading-[1.05] font-bold tracking-[-0.015em] text-[var(--dn-fg)]";
+  "font-serif text-[clamp(1.85rem,3.2vw,3.1rem)] leading-[1.05] font-bold tracking-[-0.015em]";
 
 export const LEDE =
-  "text-[clamp(1.4rem,1.6vw,1.75rem)] leading-[1.45] font-light tracking-[-0.005em] text-[var(--dn-fg-mute)]";
+  "text-[clamp(1.4rem,1.6vw,1.75rem)] leading-[1.45] font-light tracking-[-0.005em]";
 
 
 
 export const LABEL_MONO =
-  "font-sans text-[10px] tracking-[0.32em] text-[var(--dn-fg-faint)] uppercase";
+  "font-sans text-[10px] tracking-[0.32em] uppercase";

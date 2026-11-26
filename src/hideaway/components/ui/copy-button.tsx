@@ -109,7 +109,7 @@ export const CopyLinkButton = ({
               visualDuration: 0.15
             }}
             className={cn(
-              "z-20 h-8 w-8 transition-colors duration-200 ease-in-out-power3 hover:text-muted-off-foreground",
+              "z-20 h-8 w-8 transition-colors duration-200 ease-in-out-power3",
               className
             )}
             {...props}

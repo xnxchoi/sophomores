@@ -35,7 +35,6 @@ export function DropTeaser() {
           style={{
             fontSize: 14,
             lineHeight: 1.55,
-            color: "var(--pricing-fg-mute)"
           }}
         >
           Releases, parties, prints. Patrons see them first. Nobody gets a

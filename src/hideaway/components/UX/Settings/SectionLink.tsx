@@ -26,11 +26,11 @@ type CategoryTone =
 const TILE_TONES: Record<CategoryTone, string> = {
   // Same oklch tokens as the CLAUDE.md "Admin surfaces" categorical
   // palette. Each color is used once per surface.
-  account: "bg-[oklch(72%_0.10_50/0.18)] text-[oklch(85%_0.08_50)]",
-  options: "bg-[oklch(60%_0.12_280/0.18)] text-[oklch(80%_0.10_280)]",
-  support: "bg-[oklch(70%_0.14_160/0.18)] text-[oklch(85%_0.10_160)]",
-  billing: "bg-[oklch(60%_0.18_25/0.20)] text-[oklch(80%_0.12_25)]",
-  data: "bg-[oklch(75%_0.04_90/0.18)] text-[oklch(88%_0.04_90)]",
+  account: "",
+  options: "",
+  support: "",
+  billing: "",
+  data: "",
   neutral: "bg-foreground/[0.06] text-foreground/70 dark:bg-foreground/[0.08]"
 };
 

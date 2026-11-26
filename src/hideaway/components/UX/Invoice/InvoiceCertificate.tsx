@@ -194,13 +194,13 @@ export function InvoiceCertificate({
           <article
             ref={paperRef}
             className={cn(
-              "invoice-paper group/paper relative isolate origin-top text-[#1a1612]",
+              "invoice-paper group/paper relative isolate origin-top",
               // First-pass microinteraction: the paper lifts a hair on hover
               // and its shadow deepens. Sets up the "alive" feel — future
               // passes can layer parallax grain, a paper-rustle sound, an
               // embossed "PAID" stamp reveal, etc.
               "transition-[transform,box-shadow] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]",
-              "hover:-translate-y-1 hover:shadow-[0_42px_80px_-22px_rgba(0,0,0,0.65),_0_12px_32px_-10px_rgba(0,0,0,0.45)]"
+              "hover:-translate-y-1"
             )}
             aria-label="Invoice certificate"
             style={{
@@ -212,9 +212,8 @@ export function InvoiceCertificate({
               maxHeight: "min(calc(100vh - 240px), 880px)",
               width: "auto",
               maxWidth: "100%",
-              backgroundColor: "#ffffff",
               boxShadow:
-                "0 30px 60px -20px rgba(0,0,0,0.55), 0 8px 24px -8px rgba(0,0,0,0.35)"
+                "0 30px 60px -20px, 0 8px 24px -8px"
             }}
           >
             {/* Paper-grain texture overlay at low opacity. */}
@@ -234,8 +233,6 @@ export function InvoiceCertificate({
               aria-hidden
               className="pointer-events-none absolute inset-0"
               style={{
-                backgroundImage:
-                  "radial-gradient(120% 60% at 50% -10%, rgba(255,255,255,0.5), transparent 60%), radial-gradient(80% 40% at 50% 110%, rgba(60,50,40,0.05), transparent 70%)",
                 mixBlendMode: "soft-light"
               }}
             />
@@ -363,7 +360,7 @@ function PaperContent({ invoice }: { invoice: InvoiceDisplay }) {
   return (
     <>
       {/* ── 1. Header band ───────────────────────────────────────── */}
-      <header className="flex flex-col items-center text-[#1a1612]" lang="en">
+      <header className="flex flex-col items-center" lang="en">
         {/* Crests strip — same SVG paths the PDF uses, font-independent.
         Scaled up roughly 1.5× over the PDF so they actually register at HTML
         viewing sizes rather than reading as a tiny pinprick row. */}
@@ -375,7 +372,7 @@ function PaperContent({ invoice }: { invoice: InvoiceDisplay }) {
           className="block"
           aria-hidden
         >
-          <g fill="#1a1612">
+          <g>
             {CRESTS_SVG_PATHS.map((d, i) => (
               <path key={i} d={d} />
             ))}
@@ -410,7 +407,7 @@ function PaperContent({ invoice }: { invoice: InvoiceDisplay }) {
         chrome, not localizable copy. `lang="en"` keeps font/AT behaviour
         consistent even when the page locale is Korean. */}
         <p
-          className={`${instrumentSerif.className} text-[14px] leading-none text-[#3a342e] italic`}
+          className={`${instrumentSerif.className} text-[14px] leading-none italic`}
           lang="en"
         >
           {t("tagline")}
@@ -419,14 +416,14 @@ function PaperContent({ invoice }: { invoice: InvoiceDisplay }) {
 
       {/* ── 2. Issued date (right-aligned) ──────────────────────── */}
       <p
-        className={`${instrumentSerif.className} mt-[28px] mb-[16px] text-right text-[14px] text-[#1a1612]`}
+        className={`${instrumentSerif.className} mt-[28px] mb-[16px] text-right text-[14px]`}
         lang={locale}
       >
         {formatLongDate(issuedAt, locale)}
       </p>
 
       {/* ── 3. Purchased by ─────────────────────────────────────── */}
-      <section className="mb-[20px] flex flex-col text-[#1a1612]">
+      <section className="mb-[20px] flex flex-col">
         <p
           className={`${instrumentSerif.className} text-[15px] leading-[1.35] italic`}
           lang={locale}
@@ -469,7 +466,7 @@ function PaperContent({ invoice }: { invoice: InvoiceDisplay }) {
       Service period only renders for subscription invoices that carry a
       cycle (one-off product invoices skip the row entirely). ────── */}
       <dl
-        className={`${instrumentSerif.className} mb-[18px] grid gap-x-[2px] gap-y-[2px] text-[14px] text-[#1a1612]`}
+        className={`${instrumentSerif.className} mb-[18px] grid gap-x-[2px] gap-y-[2px] text-[14px]`}
         style={{
           gridTemplateColumns: `${isKo ? "180px" : "150px"} 1fr`
         }}
@@ -491,20 +488,20 @@ function PaperContent({ invoice }: { invoice: InvoiceDisplay }) {
       page in half. ──────────────────────────────────────── */}
       <div className="mt-[4px] mb-[12px]">
         <p
-          className={`${instrumentSerif.className} mb-[3px] text-[14px] text-[#1a1612] italic`}
+          className={`${instrumentSerif.className} mb-[3px] text-[14px] italic`}
           lang={locale}
         >
           {t("clientCopy")}
         </p>
-        <div className="h-[0.5px] w-[160px] bg-[#1a1612]" />
+        <div className="h-[0.5px] w-[160px]" />
       </div>
 
       {/* ── 6. Line items table ─────────────────────────────────── */}
       <table
-        className={`${instrumentSerif.className} w-full border-collapse text-[15px] text-[#1a1612]`}
+        className={`${instrumentSerif.className} w-full border-collapse text-[15px]`}
       >
         <thead>
-          <tr className="border-b-[0.5px] border-[#1a1612]">
+          <tr className="border-b-[0.5px]">
             <th className="py-[6px] text-left font-normal" />
             <th
               className="py-[6px] pr-0 pl-[6px] text-right font-normal"
@@ -542,7 +539,7 @@ function PaperContent({ invoice }: { invoice: InvoiceDisplay }) {
 
       {/* ── 7. Totals (Subtotal / Tax / Total) ──────────────────── */}
       <table
-        className={`${instrumentSerif.className} mt-[8px] mb-[16px] w-full border-collapse text-[15px] text-[#1a1612]`}
+        className={`${instrumentSerif.className} mt-[8px] mb-[16px] w-full border-collapse text-[15px]`}
       >
         <tbody>
           <tr>
@@ -559,7 +556,7 @@ function PaperContent({ invoice }: { invoice: InvoiceDisplay }) {
             </td>
             <td className="py-[6px] pr-0 pl-[6px] text-right">0</td>
           </tr>
-          <tr className="border-t-[0.5px] border-[#1a1612]">
+          <tr className="border-t-[0.5px]">
             <td className="py-[6px] pr-[6px] text-left font-bold" lang={locale}>
               {t("totals.total")}
             </td>
@@ -572,7 +569,7 @@ function PaperContent({ invoice }: { invoice: InvoiceDisplay }) {
 
       {/* ── 8. Terms paragraph ─────────────────────────────────── */}
       <p
-        className={`${instrumentSerif.className} mt-[8px] mb-[8px] text-[11px] leading-[1.2] text-[#1a1612]`}
+        className={`${instrumentSerif.className} mt-[8px] mb-[8px] text-[11px] leading-[1.2]`}
         lang={locale}
       >
         {t("terms")}
@@ -583,7 +580,7 @@ function PaperContent({ invoice }: { invoice: InvoiceDisplay }) {
       feeling stapled to the closing tagline. ──────────────────── */}
       {isPaid && invoice.payment_method ? (
         <div
-          className={`${instrumentSerif.className} mt-[16px] mb-[48px] flex flex-col gap-[3px] text-[15px] text-[#1a1612]`}
+          className={`${instrumentSerif.className} mt-[16px] mb-[48px] flex flex-col gap-[3px] text-[15px]`}
         >
           {invoice.payment_method.map((m, i) => (
             <div key={i} className="flex flex-wrap items-baseline gap-x-[22px]">
@@ -599,7 +596,7 @@ function PaperContent({ invoice }: { invoice: InvoiceDisplay }) {
       {/* ── 10. Footer band. Entirely brand chrome, English-only across
       every locale, so all three lines carry `lang="en"`. ──────────── */}
       <footer
-        className={`${instrumentSerif.className} mt-auto flex flex-col items-center text-center text-[#1a1612]`}
+        className={`${instrumentSerif.className} mt-auto flex flex-col items-center text-center`}
         lang="en"
       >
         <p className="text-[14px]">{t("footer.tagline")}</p>
@@ -655,8 +652,6 @@ function StatusStamp({ status }: StatusStampProps) {
   const t = useTranslations("Invoice");
 
   // Pending invoices read as the document's default state — no stamp.
-  const isPaid = status === "paid";
-  const color = isPaid ? "#7a2e2a" : "#666060";
   switch (status) {
     case "paid":
     case "draft":
@@ -674,8 +669,7 @@ function StatusStamp({ status }: StatusStampProps) {
           <span
             className="block px-3 py-1 font-sans text-[11px] font-bold tracking-[0.32em] uppercase"
             style={{
-              color,
-              border: `1.5px solid ${color}`,
+              border: "1.5px solid",
               backgroundColor: "transparent"
             }}
           >

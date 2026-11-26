@@ -117,10 +117,6 @@ export const Justification = (props: {
                       times: [0.2, 1]
                     }
                   },
-                  backgroundColor: [
-                    "oklch(14.17% 0 118.54/.2)",
-                    "oklch(14.17% 0 118.54/1)"
-                  ],
                   backdropFilter: "blur(10px)"
                 }}
                 exit={{
@@ -131,7 +127,6 @@ export const Justification = (props: {
                     ease: [0.12, 0.23, 0.5, 1],
                     type: "tween"
                   },
-                  backgroundColor: "oklch(14.17% 0 118.54/0)",
                   backdropFilter: "initial"
                 }}
                 initial={{

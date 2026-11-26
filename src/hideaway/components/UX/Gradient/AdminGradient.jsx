@@ -283,31 +283,14 @@ const GradientModuleInner = () => {
   const gradientt = useRef();
   const theme = useTheme((r) => r.theme);
   const { gl, set, scene, camera } = useThree();
-  const colorSchemes = useMemo(
-    () => [
-      [
-        parseInt("3B1E1D", 16),
-        parseInt("603230", 16),
-        parseInt("85504D", 16),
-        parseInt("A5716E", 16)
-      ],
-      [
-        parseInt("F9E2E0", 16),
-        parseInt("EAC0BD", 16),
-        parseInt("D89B95", 16),
-        parseInt("C07D78", 16)
-      ]
-    ],
-    []
-  );
   const colours = useMemo(
     () => [
-      new Color(colorSchemes[0][0]),
-      new Color(colorSchemes[0][1]),
-      new Color(colorSchemes[0][2]),
-      new Color(colorSchemes[0][3])
+      new Color(),
+      new Color(),
+      new Color(),
+      new Color()
     ],
-    [colorSchemes]
+    []
   );
   const uOffset = useMemo(() => new Vector2(0.42, 0.6), []);
   const u_pixels = useMemo(() => new Vector2(1, 1), []);
@@ -315,15 +298,15 @@ const GradientModuleInner = () => {
   const uAdditionalOffset = useMemo(() => new Vector2(0), []);
   const u_color = useMemo(
     () => [
-      new Color(colorSchemes[0][0]),
-      new Color(colorSchemes[0][1]),
-      new Color(colorSchemes[0][2]),
-      new Color(colorSchemes[0][3])
+      new Color(),
+      new Color(),
+      new Color(),
+      new Color()
     ],
-    [colorSchemes]
+    []
   );
   const uOpacity = useRef(1.0);
-  const colore = useMemo(() => new Color("rgb(122,122,122)"), []);
+  const colore = useMemo(() => new Color(), []);
   const vecc = useMemo(() => new Vector3(0, 0, 0.46), []);
   const uniforms = useMemo(
     () => ({
@@ -361,13 +344,6 @@ const GradientModuleInner = () => {
     gradientt.current.uniforms.u_time.value += delta * 0.01;
   });
   useEffect(() => {
-    let selIndex = theme === "dark" ? 0 : 1;
-    let target = colorSchemes[selIndex];
-    colours[0].setHex(target[0]);
-    colours[1].setHex(target[1]);
-    colours[2].setHex(target[2]);
-    colours[3].setHex(target[3]);
-
     (gradientt.current &&
       (gsap.to(gradientt.current.u_color[0], {
         r: colours[0].r,
@@ -404,7 +380,6 @@ const GradientModuleInner = () => {
     <>
       <ambientLight args={[colore]} intensity={1} />
       <directionalLight
-        color={colore.setRGB(122, 122, 122)}
         intensity={1}
         position={vecc}
       />

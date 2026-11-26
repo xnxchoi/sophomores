@@ -4,7 +4,6 @@ import { Link } from "@/hideaway/components/core/Link/Link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { errorToast } from "@/hideaway/components/ui/sonner";
 import { HighlightCreateError } from "@/hideaway/components/UX/Highlightr/HighlightErrors";
-import { HighlightPalette } from "@/hideaway/components/UX/Highlightr/stores";
 import type { HighlightedRange } from "@/hideaway/components/UX/Highlightr/types";
 import { TWEEN_EASE } from "@/hideaway/constants/animations";
 import { useRPSession } from "@/hideaway/lib/auth/session/RP_SessionProvider";
@@ -268,7 +267,7 @@ const MemoInputField = () => {
   return (
     <div
       className={
-        "group bg-muted-faded-background/50 ease-in-out-2 flex flex-col rounded-[6px] pb-0 transition-[background-color,padding-bottom] duration-400"
+        "group ease-in-out-2 flex flex-col rounded-[6px] pb-0 transition-[background-color,padding-bottom] duration-400"
       }
       data-active={writing}
     >
@@ -381,12 +380,6 @@ const MemoInputField = () => {
                         }}
                         style={{
                           opacity: disabled ? "0.5" : "1",
-                          color: disabled
-                            ? "var(--muted-faded-background)"
-                            : "var(--faded-background)",
-                          backgroundColor: disabled
-                            ? "var(--muted-faded-foreground)"
-                            : "var(--faded-foreground)"
                         }}
                       >
                         Respond
@@ -426,7 +419,6 @@ export const SideBarProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     lenis && lenis[open ? "stop" : "start"]();
   }, [open, lenis]);
-  const currentColor = useHighlighter(useShallow((r) => r.currentColor));
   useEffect(() => {
     if (!open) {
       setContent(null);
@@ -453,13 +445,12 @@ export const SideBarProvider = ({ children }: { children: ReactNode }) => {
         direction={"right"}
       >
         <Drawer.Portal>
-          <Drawer.Overlay className="fixed inset-0 z-[249] bg-black/40" />
+          <Drawer.Overlay className="fixed inset-0 z-[249]" />
           <Drawer.Content
             className="fixed top-2 right-2 bottom-2 z-[250] flex w-[400px] flex-col gap-4 bg-background p-4"
             style={
               {
                 "--initial-transform": "calc(100% + 8px)",
-                "--currentHighlight": HighlightPalette[currentColor]
               } as CSSProperties
             }
           >

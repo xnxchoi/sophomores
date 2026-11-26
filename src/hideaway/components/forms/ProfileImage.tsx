@@ -162,7 +162,7 @@ export default function ProfileImageField(props: ProfileImageProps) {
     <div className="relative my-10 flex w-full flex-col items-center">
       <div
         className={
-          "relative flex aspect-[3/2] w-full items-center justify-center overflow-hidden rounded-lg border border-faded-background/60 bg-transparent transition-all duration-300"
+          "relative flex aspect-[3/2] w-full items-center justify-center overflow-hidden rounded-lg border bg-transparent transition-all duration-300"
         }
         onDragEnter={handleDragEnter}
         onDragOver={handleDragOver}
@@ -174,7 +174,7 @@ export default function ProfileImageField(props: ProfileImageProps) {
       >
         <div
           className={cn(
-            "ease relative rounded-xl border-[1px] border-solid border-off-background p-5 px-3.5 py-1 text-center leading-[1.5] transition-[z-index,opacity,border-color,background-color,color] duration-200 hover:bg-muted-faded-background hover:text-off-background"
+            "ease relative rounded-xl border-[1px] border-solid p-5 px-3.5 py-1 text-center leading-[1.5] transition-[z-index,opacity,border-color,background-color,color] duration-200"
           )}
           onMouseEnter={onMouseEnter}
           onMouseLeave={onMouseLeave}
@@ -259,7 +259,7 @@ export default function ProfileImageField(props: ProfileImageProps) {
           >
             <span
               role="button"
-              className="relative z-[5] inline-flex h-[42px] min-w-[42px] cursor-none items-center justify-center rounded-xl px-[20px] py-0 text-center leading-[42px] text-faded-white transition-colors duration-300 hover:bg-off-background/50 hover:text-rouge-700/85"
+              className="relative z-[5] inline-flex h-[42px] min-w-[42px] cursor-none items-center justify-center rounded-xl px-[20px] py-0 text-center leading-[42px] transition-colors duration-300"
               onClick={onClickRemove}
             >
               <svg

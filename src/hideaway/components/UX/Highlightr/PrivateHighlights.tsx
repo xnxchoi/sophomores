@@ -96,7 +96,7 @@ const Private2 = (props: { children: ReactNode }) => {
             >
               <div
                 className={
-                  "flex items-center bg-muted-faded-background/85 p-[12px_20px]"
+                  "flex items-center p-[12px_20px]"
                 }
               >
                 <div
@@ -140,7 +140,7 @@ const Private2 = (props: { children: ReactNode }) => {
                     </div>
                     <div
                       className={
-                        "border-t-px mt-[8px] mb-0 flex border-solid border-muted-faded-background/65 p-[12px_0]"
+                        "border-t-px mt-[8px] mb-0 flex border-solid p-[12px_0]"
                       }
                     >
                       <div className={"text-[14px]"}></div>
@@ -376,7 +376,7 @@ const PrivateNoteEditor = ({
             />
             <p
               id={`${textAreaId}-description`}
-              className="mt-2 text-right text-xs text-off-foreground"
+              className="mt-2 text-right text-xs"
               role="status"
               aria-live="polite"
             >
@@ -416,7 +416,7 @@ const PrivateNoteHeader = (props: {}) => {
 
   return (
     <div
-      className={"flex items-center bg-muted-faded-background/85 p-[12px_20px]"}
+      className={"flex items-center p-[12px_20px]"}
     >
       <div className={"mr-[8px] -ml-[4px] block [&_svg]:align-middle"}></div>
       <div className={"relative top-px block flex-[1_1_auto]"}>
@@ -492,7 +492,7 @@ const PrivateDialog = (
             >
               <div
                 className={
-                  "absolute top-0 left-0 z-[1] h-full w-full bg-faded-d-gray dark:bg-faded-l-gray"
+                  "absolute top-0 left-0 z-[1] h-full w-full"
                 }
               />
               {reste.children}

@@ -7,48 +7,31 @@
 // WebKit — same caveat as Pricing.module.scss.
 
 .shell {
-  --dn-bg: oklch(8% 0.02 280);
 
   // --dn-fg is the "text floating on the sky" base. SceneView writes
   // it per-frame from sky luminance: cream (oklch 96%) when the sky
   // is dark, deep ink (oklch 22%) when the sky is bright. This is the
   // rest-state value used during the loader and on SSR.
-  --dn-fg: oklch(96% 0.005 80);
 
   // Secondary tokens derive from --dn-fg via relative-color syntax,
   // so the whole palette tracks sky luminance with no extra writes
   // from JS.
-  --dn-fg-mute: oklch(from var(--dn-fg) l c h / 0.7);
-  --dn-fg-faint: oklch(from var(--dn-fg) l c h / 0.5);
-  --dn-line: oklch(from var(--dn-fg) l c h / 0.22);
 
   // Chrome tokens — used by elements that sit on their own dark
   // translucent backdrop (exit affordance, view toggle, loader). They
   // stay cream regardless of sky brightness because the backdrop
   // already provides the contrast; adapting them would make the text
   // invisible against the dark pill.
-  --dn-chrome-fg: oklch(96% 0.005 80);
-  --dn-chrome-fg-mute: oklch(72% 0.012 80);
-  --dn-chrome-line: oklch(28% 0.012 280);
 
-  --dn-accent-day: oklch(56% 0.08 50);
-  --dn-accent-night: oklch(46% 0.075 255);
   --dn-progress: 0;
 
   position: relative;
   min-height: 100dvh;
-  background: var(--dn-bg);
-  color: var(--dn-fg);
   isolation: isolate;
   overflow: clip;
 }
 
 .shell[data-view="simplified"] {
-  --dn-bg: var(--background);
-  --dn-fg: var(--foreground);
-  --dn-fg-mute: oklch(from var(--foreground) l c h / 0.7);
-  --dn-fg-faint: oklch(from var(--foreground) l c h / 0.45);
-  --dn-line: oklch(from var(--foreground) l c h / 0.18);
 }
 
 // While the immersive view owns the viewport, hide the site's persistent
@@ -76,10 +59,8 @@
   gap: 10px;
   padding: 7px 14px 7px 12px;
   border-radius: 999px;
-  border: 1px solid var(--dn-chrome-line);
-  background: color-mix(in oklch, var(--dn-bg) 80%, transparent);
+  border: 1px solid;
   backdrop-filter: blur(10px);
-  color: var(--dn-chrome-fg-mute);
   font-family: var(--font-mono, ui-monospace, monospace);
   font-size: 10px;
   letter-spacing: 0.18em;
@@ -88,7 +69,6 @@
   transition: color 0.25s ease;
 
   &:hover {
-    color: var(--dn-chrome-fg);
   }
 
   @media (min-width: 768px) {
@@ -128,8 +108,7 @@
   gap: 2px;
   padding: 3px;
   border-radius: 999px;
-  border: 1px solid var(--dn-chrome-line);
-  background: color-mix(in oklch, var(--dn-bg) 80%, transparent);
+  border: 1px solid;
   backdrop-filter: blur(10px);
 
   @media (min-width: 768px) {
@@ -151,7 +130,6 @@
   font-size: 10px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--dn-chrome-fg-mute);
 
   @media (min-width: 768px) {
     display: inline-flex;
@@ -162,7 +140,6 @@
   appearance: none;
   border: 0;
   background: transparent;
-  color: var(--dn-chrome-fg-mute);
   font-family: var(--font-mono, ui-monospace, monospace);
   font-size: 10px;
   letter-spacing: 0.16em;
@@ -176,12 +153,9 @@
   transition-timing-function: var(--ease-in-out-power3);
 
   &[data-active="true"] {
-    background: var(--dn-chrome-fg);
-    color: var(--dn-bg);
   }
 
   &:hover:not([data-active="true"]) {
-    color: var(--dn-chrome-fg);
   }
 }
 
@@ -205,7 +179,6 @@
   font-size: 10px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--dn-fg-faint);
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -232,7 +205,6 @@
   font-size: 11px;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--dn-fg-mute);
 }
 
 .simplifiedTitle {
@@ -241,14 +213,12 @@
   font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 0.92;
-  color: var(--dn-fg);
 }
 
 .simplifiedSubtitle {
   font-size: clamp(1.4rem, 2vw, 1.9rem);
   font-weight: 300;
   letter-spacing: -0.01em;
-  color: var(--dn-fg-mute);
   line-height: 1.35;
   max-width: 50ch;
 }
@@ -260,7 +230,6 @@
   gap: 4px;
   font-family: var(--font-mono, ui-monospace, monospace);
   font-size: 12px;
-  color: var(--dn-fg-mute);
   line-height: 1.6;
 
   @media (min-width: 768px) {
@@ -278,7 +247,6 @@
 }
 
 .simplifiedMetaLabel {
-  color: var(--dn-fg-faint);
   letter-spacing: 0.18em;
   text-transform: uppercase;
   font-size: 10px;
@@ -295,7 +263,6 @@
   display: block;
   margin-top: 4px;
   font-size: 10.5px;
-  color: var(--dn-fg-faint);
   letter-spacing: 0.06em;
   text-transform: none;
 }
@@ -304,7 +271,6 @@
   display: flex;
   flex-direction: column;
   gap: 0;
-  color: var(--dn-fg);
   letter-spacing: 0;
   font-size: 13px;
 }
@@ -335,7 +301,6 @@
   font-style: italic;
   font-size: clamp(1.05rem, 1.2vw, 1.25rem);
   line-height: 1.4;
-  color: var(--dn-fg-mute);
 }
 
 .ctaPrimary {
@@ -343,9 +308,7 @@
   align-items: center;
   gap: 14px;
   padding: 14px 26px;
-  border: 1px solid var(--dn-fg);
-  background: var(--dn-fg);
-  color: var(--dn-bg);
+  border: 1px solid;
   font-family: var(--font-mono, ui-monospace, monospace);
   font-size: 11px;
   letter-spacing: 0.22em;
@@ -358,7 +321,6 @@
 
   &:hover {
     background: transparent;
-    color: var(--dn-fg);
   }
 }
 
@@ -367,7 +329,6 @@
   font-size: 10px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--dn-fg-faint);
 }
 
 // Immersive view.
@@ -409,13 +370,6 @@
   margin-bottom: -5%;
   pointer-events: none;
   z-index: 0;
-  background: radial-gradient(
-    ellipse 45% 100% at 50% 50%,
-    oklch(86% 0.18 75 / calc(0.95 * var(--horizon-brightness))) 0%,
-    oklch(80% 0.18 65 / calc(0.7 * var(--horizon-brightness))) 25%,
-    oklch(70% 0.2 50 / calc(0.35 * var(--horizon-brightness))) 50%,
-    transparent 78%
-  );
   filter: blur(6px);
   transition: opacity 0.6s ease;
 }
@@ -429,20 +383,11 @@
   // so the first paint reads as daytime (anchor=0 / Opening). SceneView's
   // rAF overwrites these inline as soon as it hydrates; this CSS fallback
   // only matters during the initial paint window.
-  --sky-top: rgb(102 158 217);
-  --sky-mid: rgb(166 204 240);
-  --sky-bottom: rgb(242 235 217);
 
   position: absolute;
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background: linear-gradient(
-    to bottom,
-    var(--sky-top) 0%,
-    var(--sky-mid) 55%,
-    var(--sky-bottom) 100%
-  );
   transition: background 0.4s ease;
   will-change: background;
 
@@ -451,11 +396,6 @@
     content: "";
     position: absolute;
     inset: 0;
-    background: radial-gradient(
-      ellipse 90% 30% at 50% 82%,
-      color-mix(in srgb, var(--sky-bottom) 60%, transparent) 0%,
-      transparent 70%
-    );
     mix-blend-mode: screen;
     pointer-events: none;
   }
@@ -471,7 +411,6 @@
 // from its loader-centered spot to the scene-arc start, in lockstep with
 // the loader backdrop fade.
 .body {
-  --body-color: oklch(80% 0.15 60);
   --body-scale: 1;
 
   position: absolute;
@@ -482,19 +421,13 @@
   margin-left: -32px;
   margin-bottom: -32px;
   border-radius: 50%;
-  background: radial-gradient(
-    circle at center,
-    var(--body-color) 0%,
-    color-mix(in srgb, var(--body-color) 60%, transparent) 55%,
-    transparent 75%
-  );
   transform: scale(var(--body-scale));
   z-index: 1;
   pointer-events: none;
   filter: blur(0.5px);
   box-shadow:
-    0 0 80px 12px color-mix(in srgb, var(--body-color) 35%, transparent),
-    0 0 200px 40px color-mix(in srgb, var(--body-color) 15%, transparent);
+    0 0 80px 12px,
+    0 0 200px 40px;
   // Driven by a per-frame rAF in SceneView, so the position is already
   // continuous. Keep transitions off on left/bottom/transform — any
   // duration here just adds lag between scroll input and the sun's
@@ -514,8 +447,8 @@
   margin-left: -24px;
   margin-bottom: -24px;
   box-shadow:
-    0 0 60px 6px color-mix(in srgb, var(--body-color) 18%, transparent),
-    0 0 140px 24px color-mix(in srgb, var(--body-color) 8%, transparent);
+    0 0 60px 6px,
+    0 0 140px 24px;
 }
 
 // Horizontal timeline — pinned, scrubbed by vertical scroll.
@@ -602,7 +535,6 @@
   font-size: 10px;
   letter-spacing: 0.28em;
   text-transform: uppercase;
-  color: var(--dn-fg-mute);
   white-space: nowrap;
 
   @media (min-width: 1280px) {
@@ -626,7 +558,6 @@
   font-weight: 500;
   font-size: 1.4em;
   letter-spacing: 0;
-  color: var(--dn-fg);
   text-transform: none;
 }
 
@@ -662,7 +593,6 @@
   font-size: 11px;
   letter-spacing: 0.32em;
   text-transform: uppercase;
-  color: var(--dn-fg-mute);
 }
 
 .openingTitle {
@@ -672,7 +602,6 @@
   font-size: clamp(8rem, 9vw, 12rem);
   line-height: 0.94;
   letter-spacing: -0.022em;
-  color: var(--color-faded-black);
 }
 
 .openingLede {
@@ -680,7 +609,6 @@
   font-size: clamp(1.4rem, 1.7vw, 1.8rem);
   font-weight: 300;
   line-height: 1.4;
-  color: var(--dn-fg-mute);
   letter-spacing: -0.005em;
 }
 
@@ -690,7 +618,6 @@
   font-size: clamp(2rem, 3.4vw, 2.4rem);
   text-align: start;
   line-height: 1.1;
-  color: var(--dn-fg-mute);
   letter-spacing: -0.005em;
 }
 .openingFoot {
@@ -700,7 +627,6 @@
   font-size: 13px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--dn-fg-faint);
 }
 
 .openingFootItem {
@@ -738,7 +664,6 @@
   font-size: clamp(1.4rem, 1.6vw, 1.7rem);
   line-height: 1.5;
   font-weight: 300;
-  color: var(--dn-fg-mute);
   max-width: 48ch;
   letter-spacing: -0.005em;
 }
@@ -760,7 +685,7 @@
   display: grid;
   gap: 4px;
   padding-top: 14px;
-  border-top: 1px solid var(--dn-line);
+  border-top: 1px solid;
 }
 
 .cookoutListLabel {
@@ -768,14 +693,12 @@
   font-size: 10px;
   letter-spacing: 0.32em;
   text-transform: uppercase;
-  color: var(--dn-fg-faint);
 }
 
 .cookoutListValue {
   font-family: var(--font-serif);
   font-size: clamp(1.6rem, 1.7vw, 1.9rem);
   font-weight: 500;
-  color: var(--dn-fg);
   letter-spacing: -0.01em;
 }
 
@@ -877,14 +800,12 @@
   font-size: 14px;
   letter-spacing: 0.32em;
   text-transform: uppercase;
-  color: var(--dn-fg-faint);
 }
 
 .dressOptionMarkerRule {
   display: inline-block;
   width: 56px;
   height: 1px;
-  background: var(--dn-fg);
   opacity: 0.55;
 }
 
@@ -896,7 +817,6 @@
   font-size: clamp(40px, 5.4vw, 80px);
   line-height: 0.98;
   letter-spacing: -0.022em;
-  color: var(--dn-fg);
   max-width: 18ch;
 }
 
@@ -906,7 +826,6 @@
   font-size: clamp(22px, 2vw, 28px);
   line-height: 1.5;
   font-weight: 400;
-  color: var(--dn-fg-mute);
   max-width: 38ch;
 }
 
@@ -954,7 +873,6 @@
   font-size: clamp(3.2rem, 5vw, 5.6rem);
   line-height: 1.02;
   letter-spacing: -0.02em;
-  color: var(--dn-fg);
   max-width: 12ch;
 }
 
@@ -969,7 +887,6 @@
   font-weight: 500;
   font-size: clamp(2.2rem, 2.2vw, 2.8rem);
   line-height: 1.4;
-  color: var(--dn-fg);
   opacity: 0.85;
   max-width: 36ch;
 }
@@ -991,7 +908,6 @@
   font-size: clamp(2.4rem, 2.8vw, 3rem);
   line-height: 1.15;
   letter-spacing: -0.01em;
-  color: var(--dn-fg);
 }
 
 .nightTributeBody {
@@ -1000,7 +916,6 @@
   font-weight: 400;
   font-size: clamp(1.9rem, 2vw, 2.2rem);
   line-height: 1.55;
-  color: var(--dn-fg);
   opacity: 0.9;
   max-width: 48ch;
 }
@@ -1025,7 +940,6 @@
   display: block;
   width: 56px;
   height: 1px;
-  background: var(--dn-fg);
   margin-bottom: 8px;
   opacity: 0.55;
 }
@@ -1035,7 +949,6 @@
   font-size: 11px;
   letter-spacing: 0.28em;
   text-transform: uppercase;
-  color: var(--dn-fg-faint);
 }
 
 .nightDressStampHeading {
@@ -1044,13 +957,11 @@
   font-size: clamp(2rem, 2.4vw, 2.6rem);
   line-height: 1.18;
   letter-spacing: -0.005em;
-  color: var(--dn-fg);
 }
 
 .nightDressStampBody {
   font-size: 1.9rem;
   line-height: 1.5;
-  color: var(--dn-fg-mute);
   font-weight: 400;
   max-width: 32ch;
 }
@@ -1074,7 +985,6 @@
   font-size: clamp(1.4rem, 1.7vw, 1.8rem);
   line-height: 1.4;
   font-weight: 300;
-  color: var(--dn-fg-mute);
   max-width: 42ch;
   letter-spacing: -0.005em;
 }
@@ -1094,7 +1004,6 @@
   display: block;
   width: 56px;
   height: 1px;
-  background: var(--dn-fg);
   margin-left: auto;
   margin-bottom: 8px;
   opacity: 0.6;
@@ -1105,7 +1014,6 @@
   font-size: 11px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--dn-fg-mute);
   line-height: 1.6;
 }
 
@@ -1121,7 +1029,6 @@
   font-size: 11px;
   letter-spacing: 0.32em;
   text-transform: uppercase;
-  color: var(--dn-fg-mute);
 }
 
 .actLabelStrong {
@@ -1129,14 +1036,12 @@
   font-weight: 900;
   font-size: clamp(1.4rem, 2vw, 1.8rem);
   letter-spacing: 0.18em;
-  color: var(--dn-fg);
 }
 
 .actTime {
   font-family: var(--font-mono, ui-monospace, monospace);
   font-size: 12px;
   letter-spacing: 0.16em;
-  color: var(--dn-fg-mute);
 }
 
 .actBody {
@@ -1154,7 +1059,6 @@
   font-size: clamp(5rem, 6vw, 11.4rem);
   line-height: 1.1;
   letter-spacing: -0.02em;
-  color: var(--dn-fg);
 }
 
 .actLede {
@@ -1163,7 +1067,6 @@
   font-weight: 300;
   margin-block: 14px;
   letter-spacing: -0.005em;
-  color: var(--dn-fg-mute);
   max-width: 56ch;
 }
 
@@ -1176,7 +1079,6 @@
   font-size: 11px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--dn-fg-faint);
 }
 
 .actFooterItem {
@@ -1186,11 +1088,9 @@
 }
 
 .actFooterItemKey {
-  color: var(--dn-fg-faint);
 }
 
 .actFooterItemVal {
-  color: var(--dn-fg-mute);
 }
 
 // Closing act — RSVP final.
@@ -1209,7 +1109,6 @@
   font-size: 11px;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--dn-fg-mute);
 }
 
 .closingTitle {
@@ -1218,7 +1117,6 @@
   font-size: clamp(5rem, 9vw, 11.4rem);
   line-height: 0.94;
   letter-spacing: -0.02em;
-  color: var(--dn-fg);
 }
 
 .closingFee {
@@ -1227,7 +1125,6 @@
   gap: 6px;
   font-family: var(--font-mono, ui-monospace, monospace);
   font-size: 12px;
-  color: var(--dn-fg-mute);
 }
 
 .closingFeeAmount {
@@ -1235,7 +1132,6 @@
   font-weight: 900;
   font-size: 2.4rem;
   letter-spacing: 0.04em;
-  color: var(--dn-fg);
 }
 
 // Immersive closing-act CTA — bigger touch target than the simplified
@@ -1248,9 +1144,8 @@
   gap: 18px;
   padding: 18px 0 16px;
   border: 0;
-  border-bottom: 1px solid var(--dn-fg);
+  border-bottom: 1px solid;
   background: transparent;
-  color: var(--dn-fg);
   font-family: var(--font-mono, ui-monospace, monospace);
   font-size: 13px;
   letter-spacing: 0.32em;
@@ -1313,7 +1208,6 @@
 .loaderBackdrop {
   position: absolute;
   inset: 0;
-  background: oklch(7% 0.004 250);
   transition: opacity 0.7s ease;
 }
 
@@ -1333,13 +1227,12 @@
   top: 50%;
   width: min(85vw, 1400px);
   height: 1px;
-  background: oklch(96% 0.005 80 / 0.85);
   // Soft warm bloom along the line — gives the horizon a sun-warm
   // breath instead of a sterile single pixel. Stays subtle so the
   // line itself remains the protagonist.
   box-shadow:
-    0 0 6px 0 oklch(85% 0.08 70 / 0.35),
-    0 0 18px 0 oklch(80% 0.06 60 / 0.18);
+    0 0 6px 0,
+    0 0 18px 0;
   transform-origin: center;
   // Initial state — point at center. JS writes the target each frame.
   transform: translate(-50%, -50%) scaleX(0);
@@ -1379,7 +1272,6 @@
 // translateY((1-u) * 32px * scale) so the sun emerges from beneath the
 // clip line as u → 1; scale stays at the handoff value throughout.
 .loaderSun {
-  --body-color: rgb(255 199 107);
   --body-scale: 1.353;
 
   position: absolute;
@@ -1390,16 +1282,10 @@
   margin-left: -32px;
   margin-bottom: -32px;
   border-radius: 50%;
-  background: radial-gradient(
-    circle at center,
-    var(--body-color) 0%,
-    color-mix(in srgb, var(--body-color) 60%, transparent) 55%,
-    transparent 75%
-  );
   filter: blur(0.5px);
   box-shadow:
-    0 0 80px 12px color-mix(in srgb, var(--body-color) 35%, transparent),
-    0 0 200px 40px color-mix(in srgb, var(--body-color) 15%, transparent);
+    0 0 80px 12px,
+    0 0 200px 40px;
   pointer-events: none;
   // Baseline at u=0: sun pushed down by one scaled-half-height so its
   // top edge sits at the horizon, fully below the clip → invisible.
@@ -1423,10 +1309,8 @@
   gap: 8px;
   padding: 7px 14px;
   border-radius: 999px;
-  border: 1px solid var(--dn-chrome-line);
-  background: color-mix(in oklch, var(--dn-bg) 80%, transparent);
+  border: 1px solid;
   backdrop-filter: blur(10px);
-  color: var(--dn-chrome-fg-mute);
   font-family: var(--font-mono, ui-monospace, monospace);
   font-size: 10px;
   letter-spacing: 0.18em;
@@ -1438,12 +1322,9 @@
     border-color 0.25s ease;
 
   &:hover {
-    color: var(--dn-chrome-fg);
   }
 
   &[data-on] {
-    color: var(--dn-chrome-fg);
-    border-color: oklch(from var(--dn-chrome-fg) l c h / 0.4);
   }
 
   @media (min-width: 768px) {
@@ -1475,7 +1356,6 @@
   // affordance — no separate icon required; the typography carries
   // the state.
   text-decoration: line-through;
-  text-decoration-color: oklch(from var(--dn-chrome-fg) l c h / 0.55);
   text-decoration-thickness: 1px;
   text-underline-offset: 2px;
   transition: text-decoration-color 0.3s ease;
@@ -1539,11 +1419,6 @@
 .scrubberTrack {
   position: relative;
   height: 22px;
-  background-image: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--dn-fg) 28%, transparent) 1px,
-    transparent 1px
-  );
   mix-blend-mode: difference;
   background-repeat: repeat-x;
   background-size: 9px 6px; // 1px tick + 8px gap, 6px tall (body)
@@ -1559,7 +1434,6 @@
   top: 0;
   width: 1px;
   height: 22px;
-  background: color-mix(in srgb, var(--dn-fg) 60%, transparent);
   transform: translateX(-0.5px); // center the 1px tick on its loop %
   pointer-events: none;
 }
@@ -1574,7 +1448,6 @@
   width: 56px;
   height: 6px;
   margin-left: -14px;
-  background: var(--dn-fg);
   border-radius: 8px;
   will-change: transform;
   // No transition — the rAF loop writes a fresh transform every frame.
@@ -1598,7 +1471,6 @@
   appearance: none;
   border: 0;
   background: transparent;
-  color: var(--dn-fg);
   font-family: var(--font-sans, system-ui, sans-serif);
   font-size: 13px;
   font-weight: 400;
@@ -1620,7 +1492,6 @@
   transform: translateX(0);
 
   &:hover {
-    color: var(--dn-fg);
     opacity: 1 !important; // hover always shows full strength
   }
 
@@ -1641,7 +1512,6 @@
   font-size: 10px;
   letter-spacing: 0.28em;
   text-transform: uppercase;
-  color: var(--dn-fg-mute);
   display: inline-flex;
   gap: 10px;
   align-items: center;
@@ -1767,9 +1637,8 @@
 .polaroidPhoto {
   position: relative;
   overflow: hidden;
-  background: oklch(70% 0.04 80);
   // Tiny inner shadow for depth around the photo crop.
-  box-shadow: 0 0 0 1px oklch(0% 0 0 / 0.08) inset;
+  box-shadow: 0 0 0 1px inset;
 
   img {
     display: block;
@@ -1792,8 +1661,8 @@
   overflow: hidden;
   border-radius: 4px;
   box-shadow:
-    0 8px 24px oklch(0% 0 0 / 0.22),
-    0 2px 6px oklch(0% 0 0 / 0.15);
+    0 8px 24px,
+    0 2px 6px;
 }
 
 // Texture base layer — the polaroid graphic sits at the bottom of the
@@ -1834,8 +1703,8 @@
   overflow: hidden;
   border-radius: 4px;
   box-shadow:
-    0 8px 24px oklch(0% 0 0 / 0.22),
-    0 2px 6px oklch(0% 0 0 / 0.15);
+    0 8px 24px,
+    0 2px 6px;
 }
 
 // Caption — unified printed-photo voice. Upright serif below the image,

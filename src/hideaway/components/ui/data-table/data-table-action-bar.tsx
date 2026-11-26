@@ -120,7 +120,7 @@ function DataTableActionBarAction({
       <TooltipTrigger render={() => trigger} />
       <TooltipContent
         sideOffset={6}
-        className="border bg-accent font-semibold text-faded-foreground dark:bg-card [&>span]:hidden"
+        className="border bg-accent font-semibold dark:bg-card [&>span]:hidden"
       >
         <p>{tooltip}</p>
       </TooltipContent>

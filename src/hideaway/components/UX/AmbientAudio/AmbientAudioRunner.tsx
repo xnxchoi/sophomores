@@ -325,13 +325,11 @@ function AmbientIsland({
             transition={spring}
             whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.96 }}
-            className="relative isolate overflow-hidden rounded-full border border-white/5 select-none"
+            className="relative isolate overflow-hidden rounded-full border select-none"
             style={{
               padding: 1,
-              background:
-                "linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01))",
               boxShadow:
-                "0 1px 0 rgba(255,255,255,0.05) inset, 0 20px 40px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.25)"
+                "0 1px 0 inset, 0 20px 40px, 0 2px 8px"
             }}
           >
             {/* blurred backdrop layer (Dynamic Island's liquid glass) */}
@@ -339,7 +337,6 @@ function AmbientIsland({
               aria-hidden
               className="absolute inset-0 rounded-full"
               style={{
-                background: "oklch(0.12 0 0 / 0.72)",
                 backdropFilter: "blur(24px) saturate(1.4)",
                 WebkitBackdropFilter: "blur(24px) saturate(1.4)"
               }}
@@ -354,7 +351,6 @@ function AmbientIsland({
                 fontSize: 10,
                 letterSpacing: "0.14em",
                 textTransform: "uppercase",
-                color: "oklch(0.97 0 0 / 0.88)"
               }}
             >
               <IslandGlyph state={state} />
@@ -368,7 +364,7 @@ function AmbientIsland({
                     animate={{ opacity: 0.6, x: 0 }}
                     exit={{ opacity: 0, x: -4 }}
                     transition={fadeSpring}
-                    className="whitespace-nowrap text-white/55"
+                    className="whitespace-nowrap"
                   >
                     Ambient · searching
                   </m.span>
@@ -385,7 +381,7 @@ function AmbientIsland({
                     className="whitespace-nowrap"
                   >
                     Ambient · {groupCount}{" "}
-                    <span className="text-white/50">
+                    <span>
                       {groupCount === 1 ? "passage" : "passages"}
                     </span>
                   </m.span>
@@ -422,7 +418,6 @@ function AmbientIsland({
                         textTransform: "none",
                         letterSpacing: "0.02em",
                         fontSize: 11,
-                        color: "oklch(0.97 0 0 / 0.95)"
                       }}
                     >
                       {formatTrackLabel(track)}
@@ -441,7 +436,6 @@ function AmbientIsland({
                   transition={fadeSpring}
                   aria-hidden
                   className="ml-1 inline-flex h-[14px] w-[14px] items-center justify-center rounded-full"
-                  style={{ background: "oklch(0.97 0 0 / 0.08)" }}
                 >
                   <svg width="8" height="8" viewBox="0 0 8 8" aria-hidden>
                     <path

@@ -86,7 +86,7 @@ export const PrevNext = ({
   return (
     <m.div
       className={cn(
-        "top-[0px] z-0 mt-[-10px] flex w-screen flex-col justify-between overflow-hidden border-0 border-t-[1px] border-solid border-foreground bg-faded-foreground pt-0 pb-[8px] text-background",
+        "top-[0px] z-0 mt-[-10px] flex w-screen flex-col justify-between overflow-hidden border-0 border-t-[1px] border-solid border-foreground pt-0 pb-[8px] text-background",
         isSidebarOpen ? "fixed" : "sticky"
       )}
       style={{ bottom: contBottom, top: cot }}
@@ -95,12 +95,12 @@ export const PrevNext = ({
       onMouseLeave={resetCursorTheme}
     >
       <div
-        className="relative flex h-[calc(100vh-35px)] min-h-[400px] w-full items-start gap-[31px] bg-faded-foreground pb-[24px] after:absolute after:bottom-0 after:left-0 after:mt-[12px] after:h-px after:w-full after:border-t-[1px] after:border-solid after:border-foreground after:opacity-20 after:content-[''] min-lg:p-[0_27px_24px_26px] [&_h1]:m-0 [&_h1]:leading-[0.84] [&>a]:h-full [&>a]:w-1/2 [&>a]:text-faded-background"
+        className="relative flex h-[calc(100vh-35px)] min-h-[400px] w-full items-start gap-[31px] pb-[24px] after:absolute after:bottom-0 after:left-0 after:mt-[12px] after:h-px after:w-full after:border-t-[1px] after:border-solid after:border-foreground after:opacity-20 after:content-[''] min-lg:p-[0_27px_24px_26px] [&_h1]:m-0 [&_h1]:leading-[0.84] [&>a]:h-full [&>a]:w-1/2"
         style={{ textDecoration: "none" }}
       >
         <div
           className={
-            "pointer-events-none absolute top-0 left-[calc(50%-16px)] z-[1] h-full w-[32px] border-x-[1px] border-dashed border-muted-off-background/20 bg-faded-foreground after:absolute after:top-0 after:left-1/2 after:h-full after:w-px after:bg-muted-off-background/20 after:content-['']"
+            "pointer-events-none absolute top-0 left-[calc(50%-16px)] z-[1] h-full w-[32px] border-x-[1px] border-dashed after:absolute after:top-0 after:left-1/2 after:h-full after:w-px after:content-['']"
           }
         ></div>
         <Link
@@ -108,7 +108,7 @@ export const PrevNext = ({
           onClick={resetCursorTheme}
           className={"overflow-hidden rounded-lg"}
         >
-          <div className="relative flex h-full w-full flex-col justify-end bg-faded-foreground text-faded-background transition-colors duration-200 ease-out-power2 hover:bg-faded-background/40 hover:text-faded-foreground min-lg:px-[14px] min-lg:py-[10px]">
+          <div className="relative flex h-full w-full flex-col justify-end transition-colors duration-200 ease-out-power2 min-lg:px-[14px] min-lg:py-[10px]">
             {prev && "image" in prev && prev.image && (
               <div className="absolute inset-0 z-[0] opacity-0 transition-opacity duration-400 ease-out-power2 hover:opacity-35">
                 <FrontImage
@@ -138,7 +138,7 @@ export const PrevNext = ({
           onClick={resetCursorTheme}
           className={"overflow-hidden rounded-lg"}
         >
-          <div className="relative flex h-full w-full flex-col justify-end bg-faded-foreground wrap-break-word text-faded-background transition-colors duration-200 ease-out-power2 hover:bg-faded-background/40 hover:text-faded-foreground min-lg:px-[14px] min-lg:py-[10px]">
+          <div className="relative flex h-full w-full flex-col justify-end wrap-break-word transition-colors duration-200 ease-out-power2 min-lg:px-[14px] min-lg:py-[10px]">
             {next && "image" in next && next.image && (
               <div className="absolute inset-0 z-[0] opacity-0 mix-blend-overlay transition-opacity duration-400 ease-out-power2 hover:opacity-35">
                 <FrontImage
@@ -178,7 +178,7 @@ export const PrevNext = ({
         ></div>
       </div>
       <div
-        className="pointer-events-none absolute top-0 right-[2.4rem] left-[2.4rem] z-[30] h-full w-[calc(100%-4.8rem)] border-0 border-x-[1px] border-solid border-x-muted-faded-background opacity-20 lg:right-[2.8rem] lg:left-[2.8rem] lg:w-[calc(100%-56px)]"
+        className="pointer-events-none absolute top-0 right-[2.4rem] left-[2.4rem] z-[30] h-full w-[calc(100%-4.8rem)] border-0 border-x-[1px] border-solid opacity-20 lg:right-[2.8rem] lg:left-[2.8rem] lg:w-[calc(100%-56px)]"
         style={{
           borderImage: "initial"
         }}

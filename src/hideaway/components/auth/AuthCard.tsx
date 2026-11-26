@@ -109,7 +109,7 @@ export function AuthCard({
       className={cn("flex flex-col gap-6")}
       data-auth-ready={isHydrated ? "true" : "false"}
     >
-      <Card className="bg-faded-background/50">
+      <Card>
         <CardHeader className={cn("gap-0 text-center", classNames?.header)}>
           {cardHeader ? (
             cardHeader
@@ -117,7 +117,7 @@ export function AuthCard({
             <>
               <CardTitle
                 className={cn(
-                  "mb-2 font-sans text-4xl font-medium tracking-tight text-off-foreground",
+                  "mb-2 font-sans text-4xl font-medium tracking-tight",
                   classNames?.title
                 )}
               >
@@ -222,7 +222,7 @@ export function AuthCard({
         {accountSwitch && (
           <CardFooter
             className={cn(
-              "justify-center gap-1.5 text-sm text-muted-faded-foreground",
+              "justify-center gap-1.5 text-sm",
               classNames?.footer
             )}
           >
@@ -250,7 +250,7 @@ export function AuthCard({
           </CardFooter>
         )}
       </Card>
-      <p className="text-center text-sm text-balance text-muted-faded-foreground">
+      <p className="text-center text-sm text-balance">
         {t("footer.termsLead")}{" "}
         <AuthTextLink href="/terms">{t("footer.terms")}</AuthTextLink>{" "}
         {t("footer.termsAnd")}{" "}

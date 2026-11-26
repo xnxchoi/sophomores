@@ -50,7 +50,7 @@ export const Hideaway_Preloader = () => {
   return (
     <div
       className={
-        "fixed inset-0 z-330 h-screen w-full bg-faded-foreground text-faded-background"
+        "fixed inset-0 z-330 h-screen w-full"
       }
     >
       <div

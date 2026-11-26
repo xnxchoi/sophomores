@@ -181,16 +181,16 @@ const ResponseIndicator = (
         <div className={"relative"}>
           <MotionBtn
             onClick={onClick}
-            className="z-30 flex aspect-4/3 h-[var(--text-base)] w-auto items-center justify-center rounded-[5px_5px_5px_0] border border-muted bg-background px-[3px] py-[2px] text-center text-[calc(var(--text-base)*0.55)] whitespace-nowrap dark:border-muted-faded-foreground dark:bg-faded-background"
+            className="z-30 flex aspect-4/3 h-[var(--text-base)] w-auto items-center justify-center rounded-[5px_5px_5px_0] border border-muted bg-background px-[3px] py-[2px] text-center text-[calc(var(--text-base)*0.55)] whitespace-nowrap"
           >
             <span
               className={
-                "absolute -bottom-[3px] left-[0.5px] z-20 h-[4.5px] w-[4.5px] bg-background [clip-path:polygon(0_0,0_100%,100%_0)] dark:bg-faded-background"
+                "absolute -bottom-[3px] left-[0.5px] z-20 h-[4.5px] w-[4.5px] bg-background [clip-path:polygon(0_0,0_100%,100%_0)]"
               }
             />
             <span
               className={
-                "absolute bottom-[-6px] -left-[0.5px] z-15 h-[7px] w-[6px] bg-muted [clip-path:polygon(0_0,0_100%,100%_0)] dark:bg-muted-faded-foreground"
+                "absolute bottom-[-6px] -left-[0.5px] z-15 h-[7px] w-[6px] bg-muted [clip-path:polygon(0_0,0_100%,100%_0)]"
               }
             />
             <span className="leading-[1.5] uppercase">1</span>

@@ -32,7 +32,6 @@ import {
   RenderPass
 } from "postprocessing";
 import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
-import Color from "color";
 import {
   FrontSide,
   IUniform,
@@ -83,22 +82,21 @@ void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor)
 // Mid-stops lifted so intermediate tones survive the s-curve and read as a
 // graded palette, not a binary "black + orange" split. Valley is a warm
 // burgundy, not near-black, so depth stays inside the hue family.
-const DARK_BG = new ThreeColor().setHex(0x1a060a); // wine-black floor
-const DARK_COLOR1 = new ThreeColor().setHex(0x4a141c); // valley: warm burgundy (lifted from near-black)
-const DARK_COLOR2 = new ThreeColor().setHex(0x8a2418); // mid: rich blood red
-const DARK_COLOR3 = new ThreeColor().setHex(0xd13e1a); // ridge: vivid rosso corsa
-const DARK_COLOR4 = new ThreeColor().setHex(0xee9c70); // peak: warm peach-coral bloom
+const DARK_BG = new ThreeColor(); // wine-black floor
+const DARK_COLOR1 = new ThreeColor(); // valley: warm burgundy (lifted from near-black)
+const DARK_COLOR2 = new ThreeColor(); // mid: rich blood red
+const DARK_COLOR3 = new ThreeColor(); // ridge: vivid rosso corsa
+const DARK_COLOR4 = new ThreeColor(); // peak: warm peach-coral bloom
 //
 // ─── Light ── full bleu family, weighted to the LIGHT half of the value range
 // so the rendering stays predominantly cream/sky and never collapses to dark
 // navy patches. The brand bleu-700 sits at the peak, not in the middle —
 // preserves the "near-white silk with bleu shading" quality.
-const bgl = new Color("#0c4a87", "hex");
-const LIGHT_BG = new ThreeColor().setHex(0xf1e8d4); // creamy-white (brand)
-const LIGHT_COLOR1 = new ThreeColor().setHex(0xa9c0d2); // valley: barely-darker cream
-const LIGHT_COLOR2 = new ThreeColor().setHex(0x5097c7); // mid: cool mist (cream→bleu bridge)
-const LIGHT_COLOR3 = new ThreeColor().setHex(0x2677a6); // ridge: muted sky-bleu
-const LIGHT_COLOR4 = new ThreeColor().setHex(0xdee4e8); // peak: brand bleu-700 (deep stop, not navy-black)
+const LIGHT_BG = new ThreeColor(); // creamy-white (brand)
+const LIGHT_COLOR1 = new ThreeColor(); // valley: barely-darker cream
+const LIGHT_COLOR2 = new ThreeColor(); // mid: cool mist (cream→bleu bridge)
+const LIGHT_COLOR3 = new ThreeColor(); // ridge: muted sky-bleu
+const LIGHT_COLOR4 = new ThreeColor(); // peak: brand bleu-700 (deep stop, not navy-black)
 // Fold intensity — keep at 1 for full contrast; blur handles subtlety.
 const BLOB_INTENSITY_PLAYING = 0.92;
 const BLOB_INTENSITY_STOPPED = 1.0;

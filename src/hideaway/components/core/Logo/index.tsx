@@ -9,7 +9,7 @@ export const Logo = ({ className, ...props }: ComponentProps<"svg">) => {
       width={45}
       height={45}
       xmlns="http://www.w3.org/2000/svg"
-      className={cn("m-0 size-[45px] p-0 text-nav-foreground", className)}
+      className={cn("m-0 size-[45px] p-0", className)}
       viewBox="0 0 45 45"
       data-themed="color,fill"
       fill="none"
@@ -22,7 +22,6 @@ export const Logo = ({ className, ...props }: ComponentProps<"svg">) => {
         strokeWidth={0}
       />
       <circle
-        className="fill-rouge-500"
         cx="31.97"
         cy={7}
         r="2.91"
@@ -40,7 +39,7 @@ export const Mogo = ({
       width={45}
       height={45}
       xmlns="http://www.w3.org/2000/svg"
-      className={cn("m-0 size-[45px] p-0 text-nav-foreground", className)}
+      className={cn("m-0 size-[45px] p-0", className)}
       viewBox="0 0 45 45"
       data-themed="color"
       fill="none"
@@ -53,7 +52,6 @@ export const Mogo = ({
         strokeWidth={0}
       />
       <circle
-        className="fill-rouge-500"
         cx="31.97"
         cy={7}
         r="2.91"

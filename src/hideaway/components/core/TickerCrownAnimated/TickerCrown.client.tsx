@@ -136,7 +136,7 @@ export function TickerCrownClient({
   // round-tripping the CSS color through a 1×1 canvas; Chrome resolves
   // --foreground's oklch chain to lab(...) which Three's Color parser
   // rejects, so the canvas normalizes to sRGB bytes.
-  const baseColor = useMemo(() => new ThreeColor("#000000"), []);
+  const baseColor = useMemo(() => new ThreeColor(), []);
   const probeRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
@@ -153,8 +153,6 @@ export function TickerCrownClient({
     const cssToRgb = (css: string): [number, number, number] | null => {
       if (!probeCtx) return null;
       probeCtx.clearRect(0, 0, 1, 1);
-      probeCtx.fillStyle = "#000000";
-      probeCtx.fillStyle = css;
       probeCtx.fillRect(0, 0, 1, 1);
       const data = probeCtx.getImageData(0, 0, 1, 1).data;
       return [data[0] / 255, data[1] / 255, data[2] / 255];

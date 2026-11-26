@@ -58,7 +58,7 @@ export function LiminalHandoff({ suppress = false }: { suppress?: boolean }) {
     >
       <p
         key={caption}
-        className="max-w-lg px-8 text-center font-serif text-[clamp(1.4rem,2.2vw,2rem)] leading-[1.35] text-white/85"
+        className="max-w-lg px-8 text-center font-serif text-[clamp(1.4rem,2.2vw,2rem)] leading-[1.35]"
       >
         {caption}
       </p>

@@ -71,20 +71,6 @@ export default function Admin_Cursor() {
   const cursorTheme = useCursor(useShallow((l) => l.cursorTheme));
   const baseTheme = useCursor(useShallow((l) => l.baseCursorTheme));
 
-  const colors = useMemo(
-    () => ({
-      rouge: "62.41% 0.246 28.34",
-      dark: "0.9735 0.0013 218.99",
-      light: "10.17% 0.0013 218.99"
-    }),
-    []
-  );
-  const { rouge } = colors;
-  const [currentBase, setCurrentBase] = useState(colors[cursorTheme]);
-
-  useEffect(() => {
-    setCurrentBase(colors[cursorTheme]);
-  }, [cursorTheme, colors]);
   const theme = useTheme((r) => r.theme);
   const navIsOpen = useVault(useShallow((l) => l.navIsOpen));
 
@@ -135,8 +121,6 @@ export default function Admin_Cursor() {
     }),
     []
   );
-  const strokeColor = useMotionValue(`oklch(${colors[cursorTheme]}/1)`);
-
   const outerVariants = useMemo(
     () => ({
       ...circleVariants
@@ -156,8 +140,6 @@ export default function Admin_Cursor() {
     const isFocus = cursorState === "FOCUS";
     const isDrag = cursorState === "DRAG";
     const isTC = !(isFocus || isDrag) && !!cursorState;
-    const target = isFocus || isDrag ? rouge : currentBase;
-    strokeColor.set(`oklch(${target}/1)`);
     const rr = isFocus || isDrag ? c.MEDIUM : c.SMALL;
     const ii = isDrag ? 0 : isFocus ? 1 : rr;
     outerRad.set(rr);
@@ -184,10 +166,7 @@ export default function Admin_Cursor() {
     containerHeight,
     c,
     innerRad,
-    outerRad,
-    rouge,
-    currentBase,
-    strokeColor
+    outerRad
   ]);
   const textCursorVariants = useMemo(
     () => ({
@@ -337,7 +316,7 @@ export default function Admin_Cursor() {
                 key={"wrap"}
                 className={cn(
                   "pointer-events-none flex shrink-0 cursor-none flex-col items-center justify-center overflow-hidden outline-none",
-                  "rounded-[8px] bg-nav-button/10 font-dots backdrop-blur-xs perspective-distant"
+                  "rounded-[8px] font-dots backdrop-blur-xs perspective-distant"
                 )}
                 style={{ width: containerWidth, height: containerHeight }}
                 variants={textCursorVariants}
@@ -348,7 +327,7 @@ export default function Admin_Cursor() {
               >
                 <m.span
                   data-themed="color, background-color"
-                  className="pointer-events-none relative inline-block w-full origin-[50%_50%_0] text-center font-dots text-sm leading-none font-bold tracking-[0.05rem] whitespace-nowrap text-nav-foreground mix-blend-difference"
+                  className="pointer-events-none relative inline-block w-full origin-[50%_50%_0] text-center font-dots text-sm leading-none font-bold tracking-[0.05rem] whitespace-nowrap mix-blend-difference"
                   key={cursorState}
                   style={{
                     fontFeatureSettings: "normal",
@@ -390,7 +369,7 @@ export default function Admin_Cursor() {
               >
                 <m.circle
                   ref={oCircle}
-                  className="inline bg-transparent fill-transparent stroke-nav-button transition-[stroke] duration-150 ease-out-power3 data-[FOCUS]:stroke-rouge-400"
+                  className="inline bg-transparent fill-transparent transition-[stroke] duration-150 ease-out-power3"
                   cx={50}
                   cy={50}
                   r={outerRadius}
@@ -401,7 +380,6 @@ export default function Admin_Cursor() {
                   variants={outerVariants}
                   initial={"hidden"}
                   animate={circleVariant}
-                  style={{ stroke: strokeColor }}
                   exit={{
                     opacity: 0,
                     visibility: "hidden",
@@ -420,9 +398,6 @@ export default function Admin_Cursor() {
                   className="inline stroke-0"
                   cx={50}
                   cy={50}
-                  style={{
-                    fill: strokeColor
-                  }}
                   variants={innerVariants}
                   initial={"hidden"}
                   animate={circleVariant}

@@ -35,16 +35,6 @@ const formatShortDate = (d: string | null): string | null => {
   }
 };
 
-const STATUS_TINT: Record<TicketStubStatus, string> = {
-  pending: "oklch(0.7 0.16 70)",
-  active: "oklch(0.85 0.01 60)",
-  used: "oklch(0.5 0.01 30)",
-  canceled: "oklch(0.6 0.18 30)"
-};
-
-const PAPER = "oklch(0.965 0.008 80)";
-const PAPER_INK = "oklch(0.18 0.012 30)";
-
 export function TicketStub({
   href,
   ticketNumber,
@@ -78,10 +68,8 @@ export function TicketStub({
         <div
           className="relative overflow-hidden rounded-[3px] transition-transform duration-300 group-hover:-translate-y-0.5"
           style={{
-            background: PAPER,
-            color: PAPER_INK,
             boxShadow:
-              "0 14px 26px -16px rgba(0,0,0,0.5), 0 2px 6px -2px rgba(0,0,0,0.25), 0 0 0 1px rgba(0,0,0,0.05)"
+              "0 14px 26px -16px, 0 2px 6px -2px, 0 0 0 1px"
           }}
         >
           {/* Stub split: left main, right tear-off with the number */}
@@ -119,8 +107,6 @@ export function TicketStub({
                 className="absolute inset-y-3 left-0"
                 style={{
                   width: 2,
-                  backgroundImage:
-                    "radial-gradient(circle, oklch(0.18 0.012 30 / 0.35) 1px, transparent 1.5px)",
                   backgroundSize: "2px 8px",
                   backgroundRepeat: "repeat-y",
                   backgroundPosition: "center"
@@ -129,15 +115,13 @@ export function TicketStub({
               <span
                 className="absolute -top-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rounded-full"
                 style={{
-                  background: "var(--ticket-page-bg, transparent)",
-                  boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.08)"
+                  boxShadow: "inset 0 0 0 1px"
                 }}
               />
               <span
                 className="absolute -bottom-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rounded-full"
                 style={{
-                  background: "var(--ticket-page-bg, transparent)",
-                  boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.08)"
+                  boxShadow: "inset 0 0 0 1px"
                 }}
               />
             </div>
@@ -145,10 +129,6 @@ export function TicketStub({
             {/* Stub */}
             <div
               className="flex w-20 flex-col items-center justify-center px-3 py-5 text-center"
-              style={{
-                background:
-                  "linear-gradient(180deg, oklch(0.945 0.012 80) 0%, oklch(0.965 0.008 80) 100%)"
-              }}
             >
               <span
                 className="font-sans text-[8px] uppercase"
@@ -162,7 +142,6 @@ export function TicketStub({
                   className="mt-2 font-sans text-[8px] uppercase"
                   style={{
                     letterSpacing: "0.22em",
-                    color: "oklch(0.45 0.16 150)"
                   }}
                 >
                   ✓ in
@@ -183,17 +162,15 @@ interface StatusDotProps {
 
 function StatusDot({ status, checkedIn }: StatusDotProps) {
   const label = checkedIn ? "On site" : status;
-  const color = checkedIn ? "oklch(0.45 0.16 150)" : STATUS_TINT[status];
   return (
     <span className="inline-flex items-center gap-1.5">
       <span
         aria-hidden="true"
         className="inline-block h-1.5 w-1.5 rounded-full"
-        style={{ background: color }}
       />
       <span
         className="font-sans text-[9px] uppercase"
-        style={{ letterSpacing: "0.22em", color: PAPER_INK, opacity: 0.65 }}
+        style={{ letterSpacing: "0.22em", opacity: 0.65 }}
       >
         {label}
       </span>

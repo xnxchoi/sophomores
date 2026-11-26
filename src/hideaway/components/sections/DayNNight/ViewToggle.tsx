@@ -22,7 +22,7 @@ export function ViewToggle({ value, onChange }: ViewToggleProps) {
       data-dn-view-toggle
       role="radiogroup"
       aria-label={t("label")}
-      className="inline-flex gap-0.5 rounded-full border border-[var(--dn-chrome-line)] p-[3px]"
+      className="inline-flex gap-0.5 rounded-full border p-[3px]"
     >
       <Button
         type="button"
@@ -30,7 +30,7 @@ export function ViewToggle({ value, onChange }: ViewToggleProps) {
         aria-checked={value === "immersive"}
         data-active={value === "immersive"}
         data-dn-toggle-btn
-        className="ease cursor-pointer appearance-none rounded-full border-0 bg-transparent px-[13px] py-[7px] font-sans text-[10px] tracking-[0.16em] text-[var(--dn-chrome-fg-mute)] uppercase transition-[background,color] duration-[250ms]"
+        className="ease cursor-pointer appearance-none rounded-full border-0 bg-transparent px-[13px] py-[7px] font-sans text-[10px] tracking-[0.16em] uppercase transition-[background,color] duration-[250ms]"
         onClick={() => onChange("immersive")}
       >
         {t("immersive")}
@@ -41,7 +41,7 @@ export function ViewToggle({ value, onChange }: ViewToggleProps) {
         aria-checked={value === "simplified"}
         data-active={value === "simplified"}
         data-dn-toggle-btn
-        className="ease cursor-pointer appearance-none rounded-full border-0 bg-transparent px-[13px] py-[7px] font-sans text-[10px] tracking-[0.16em] text-[var(--dn-chrome-fg-mute)] uppercase transition-[background,color] duration-[250ms]"
+        className="ease cursor-pointer appearance-none rounded-full border-0 bg-transparent px-[13px] py-[7px] font-sans text-[10px] tracking-[0.16em] uppercase transition-[background,color] duration-[250ms]"
         onClick={() => onChange("simplified")}
       >
         {t("simplified")}

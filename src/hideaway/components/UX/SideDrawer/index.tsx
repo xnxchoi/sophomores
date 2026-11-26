@@ -141,7 +141,7 @@ export const SideVaul = (_props: { children: ReactNode }) => {
               onClick={() => {
                 setOpen(false);
               }}
-              className="fixed inset-0 z-[39] bg-nav-background/50 backdrop-blur-sm"
+              className="fixed inset-0 z-[39] backdrop-blur-sm"
             />
           ) : (
             <div
@@ -150,7 +150,7 @@ export const SideVaul = (_props: { children: ReactNode }) => {
               }}
               onMouseEnter={onMouseEnter}
               onMouseLeave={onMouseLeave}
-              className="fixed inset-0 z-[39] bg-nav-background/50 backdrop-blur-sm"
+              className="fixed inset-0 z-[39] backdrop-blur-sm"
             />
           ))}
         <MotionDrawerContent
@@ -313,12 +313,12 @@ export const SideDrawer = () => {
               setSideDrawerOpen(false);
             }}
             onMouseLeave={onMouseLeave}
-            className="fixed inset-0 z-39 bg-nav-background/50 backdrop-blur-sm"
+            className="fixed inset-0 z-39 backdrop-blur-sm"
           />
         )}
         <Mrawer
           data-tour="side-drawer"
-          className="fixed bottom-0 z-239 flex w-[calc(24vw+40px)] items-end gap-0 text-nav-foreground outline-none max-md:h-[65dvh] max-md:w-screen md:top-0"
+          className="fixed bottom-0 z-239 flex w-[calc(24vw+40px)] items-end gap-0 outline-none max-md:h-[65dvh] max-md:w-screen md:top-0"
           style={{
             borderTopRightRadius: borderTopRadius,
             borderTopLeftRadius: borderTopRadius,
@@ -350,7 +350,7 @@ export const SideDrawer = () => {
             - Desktop (≥ md): original 8×14 grid, kept intact.
           */}
           <m.div
-            className="z-239 flex h-[65dvh] w-full flex-col bg-nav-background max-md:pt-7 md:grid md:h-full md:w-[24vw] md:grid-cols-8 md:grid-rows-14 md:items-center md:justify-center md:gap-y-5"
+            className="z-239 flex h-[65dvh] w-full flex-col max-md:pt-7 md:grid md:h-full md:w-[24vw] md:grid-cols-8 md:grid-rows-14 md:items-center md:justify-center md:gap-y-5"
             key={"drawer-body"}
             onMouseEnter={() => {
               setCursor(null);

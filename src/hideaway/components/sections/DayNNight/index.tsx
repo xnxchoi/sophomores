@@ -86,7 +86,7 @@ export function DayNNightLanding({
       <div
         data-dn-shell
         data-view={view}
-        className="relative isolate min-h-svh bg-[var(--dn-bg)] p-0 text-[var(--dn-fg)]"
+        className="relative isolate min-h-svh p-0"
       >
         {view === "immersive" && <ViewportMask />}
         {view === "immersive" && <ExitAffordance />}
@@ -111,7 +111,7 @@ function ExitAffordance() {
       href="/public"
       data-dn-chrome-pill
       aria-label="Back to The Hideaway"
-      className="group fixed top-5 left-5 z-[46] inline-flex items-center gap-[10px] rounded-full border border-[var(--dn-chrome-line)] py-[7px] pr-[14px] pl-3 font-sans text-[10px] tracking-[0.18em] text-[var(--dn-chrome-fg-mute)] uppercase no-underline transition-colors hover:text-[var(--dn-chrome-fg)] md:top-8 md:left-8 xl:top-10 xl:left-12"
+      className="group fixed top-5 left-5 z-[46] inline-flex items-center gap-[10px] rounded-full border py-[7px] pr-[14px] pl-3 font-sans text-[10px] tracking-[0.18em] uppercase no-underline transition-colors md:top-8 md:left-8 xl:top-10 xl:left-12"
     >
       <span
         aria-hidden

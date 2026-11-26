@@ -67,8 +67,6 @@ export function AmbientBackgroundFallback() {
         className="absolute inset-0 transition-opacity duration-1000"
         style={{
           opacity: playing ? 0.15 : 0.3,
-          background:
-            "radial-gradient(ellipse 90% 80% at 45% 40%, oklch(30% 0.04 60 / 0.12) 0%, transparent 60%)"
         }}
       />
       {/* Heavy grain — triple pass */}

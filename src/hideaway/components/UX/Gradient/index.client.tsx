@@ -64,21 +64,21 @@ function GradientInner() {
   const { gl, set, scene, camera } = useThree();
   const colorSchemes = useMemo(
     () => [
-      [0xd40000, 0x9ecbd9],
-      [0xaa3422, 0x77a6a6],
-      [0x9ecbd9, 0xe7d5ba],
-      [0xf6b08a, 0xfdf1e8],
-      [0xfdf1e8, 0x9ecbd9],
-      [0xd40000, 0xffb400],
-      [0xd40000, 0x9eff00],
-      [0xf57b66, 0xc3ead2],
-      [0x4d8593, 0xf38b2b],
-      [0xaae935, 0xade9ff],
-      [0xf5c78e, 0xe74b58],
-      [0xc67006, 0x9ce8e3],
-      [0xf57b66, 0xc3ead2],
-      [0xd40000, 0xf6b08a],
-      [0xd40000, 0x9aa989]
+      [undefined, undefined],
+      [undefined, undefined],
+      [undefined, undefined],
+      [undefined, undefined],
+      [undefined, undefined],
+      [undefined, undefined],
+      [undefined, undefined],
+      [undefined, undefined],
+      [undefined, undefined],
+      [undefined, undefined],
+      [undefined, undefined],
+      [undefined, undefined],
+      [undefined, undefined],
+      [undefined, undefined],
+      [undefined, undefined]
     ],
     []
   );
@@ -97,12 +97,12 @@ function GradientInner() {
     () => [
       new ThreeColor().setHex(colorSchemes[0][0]),
       new ThreeColor().setHex(colorSchemes[0][1]),
-      new ThreeColor().setHex(0x353c45),
-      new ThreeColor().setHex(0x0f0a0a)
+      new ThreeColor(),
+      new ThreeColor()
     ],
     [colorSchemes]
   );
-  const colore = useMemo(() => new ThreeColor().setRGB(122, 122, 122), []);
+  const colore = useMemo(() => new ThreeColor(), []);
   const vecc = useMemo(() => new Vector3(0, 0, 0.46), []);
   const uniforms = useMemo(
     () => ({
@@ -268,7 +268,6 @@ function GradientInner() {
     <>
       <ambientLight args={[colore]} intensity={1} />
       <directionalLight
-        color={colore.setRGB(164, 164, 164)}
         intensity={1}
         position={vecc}
       />

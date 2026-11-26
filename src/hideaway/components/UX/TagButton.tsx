@@ -20,7 +20,7 @@ export const TagButton = ({
   return (
     <Link
       className={cn(
-        "relative mr-3.5 flex items-center rounded-[100px] border-[1px] border-solid border-transparent bg-faded-foreground/10 transition-colors ease-out-power2 hover:border-faded-foreground hover:bg-transparent data-[current=true]:border-faded-foreground data-[current=true]:bg-transparent",
+        "relative mr-3.5 flex items-center rounded-[100px] border-[1px] border-solid border-transparent transition-colors ease-out-power2 hover:bg-transparent data-[current=true]:bg-transparent",
         className
       )}
       {...props}

@@ -80,30 +80,30 @@ function InAppBrowserEscapeDialog({
 
   return (
     <DialogRoot open={open} onOpenChange={setOpen}>
-      <DialogContent className="max-h-[min(92svh,760px)] max-w-[calc(100%-1rem)] overflow-x-hidden overflow-y-auto border border-white/12 bg-[#08090b] p-0 text-white shadow-[0_30px_90px_rgba(0,0,0,0.55)] outline-white/10! sm:max-w-[42rem]">
+      <DialogContent className="max-h-[min(92svh,760px)] max-w-[calc(100%-1rem)] overflow-x-hidden overflow-y-auto border p-0 sm:max-w-[42rem]">
         <div className="relative overflow-hidden rounded-[inherit]">
           <div
             aria-hidden
-            className="absolute inset-0 bg-[radial-gradient(circle_at_14%_0%,rgba(72,159,250,0.28),transparent_34%),radial-gradient(circle_at_88%_16%,rgba(255,255,255,0.12),transparent_26%),linear-gradient(145deg,rgba(255,255,255,0.075),transparent_42%)]"
+            className="absolute inset-0"
           />
           <div
             aria-hidden
-            className="absolute inset-y-0 left-0 w-[3px] bg-[#489FFA]"
+            className="absolute inset-y-0 left-0 w-[3px]"
           />
           <div className="relative grid gap-5 p-5 sm:grid-cols-[0.72fr_1fr] sm:gap-7 sm:p-7">
             <DialogHeader className="gap-4 text-left">
               <div className="grid gap-4">
-                <span className="font-sans text-[10px] tracking-[0.34em] text-[#489FFA] uppercase">
+                <span className="font-sans text-[10px] tracking-[0.34em] uppercase">
                   {copy.eyebrow}
                 </span>
-                <DialogTitle className="max-w-[10ch] font-serif text-[clamp(2.7rem,12vw,4.4rem)] leading-[0.86] tracking-[-0.035em] text-white">
+                <DialogTitle className="max-w-[10ch] font-serif text-[clamp(2.7rem,12vw,4.4rem)] leading-[0.86] tracking-[-0.035em]">
                   {copy.title}
                 </DialogTitle>
-                <span className="inline-flex w-fit items-center border border-white/12 bg-white/[0.045] px-3 py-1.5 font-sans text-[10px] tracking-[0.18em] text-white/68 uppercase">
+                <span className="inline-flex w-fit items-center border px-3 py-1.5 font-sans text-[10px] tracking-[0.18em] uppercase">
                   {browserLabel}
                 </span>
               </div>
-              <DialogDescription className="max-w-[31rem] text-sm leading-6 text-white/72 sm:col-span-2 sm:text-[15px]">
+              <DialogDescription className="max-w-[31rem] text-sm leading-6 sm:col-span-2 sm:text-[15px]">
                 {copy.description}
               </DialogDescription>
             </DialogHeader>
@@ -112,17 +112,17 @@ function InAppBrowserEscapeDialog({
               <button
                 type="button"
                 onClick={copyLink}
-                className="inline-flex min-h-14 items-center justify-between border border-white/10 bg-[linear-gradient(135deg,rgba(72,159,250,0.16),rgba(255,255,255,0.055))] px-5 py-4 text-left transition-[transform,border-color,background-color] duration-200 hover:-translate-y-px hover:border-white/24"
+                className="inline-flex min-h-14 items-center justify-between border px-5 py-4 text-left transition-[transform,border-color,background-color] duration-200 hover:-translate-y-px"
               >
                 <span className="grid gap-1">
-                  <span className="font-serif text-xl leading-none text-white">
+                  <span className="font-serif text-xl leading-none">
                     {copied ? copy.copied : copy.copy}
                   </span>
                 </span>
                 {copied ? (
-                  <Check className="size-4 text-white/78" />
+                  <Check className="size-4" />
                 ) : (
-                  <Copy className="size-4 text-white/70" />
+                  <Copy className="size-4" />
                 )}
               </button>
             </div>

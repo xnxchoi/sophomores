@@ -259,7 +259,7 @@ export function EditableLocation({
               Cancel
             </button>
             {error ? (
-              <span className="text-xs text-rouge-500/85" role="alert">
+              <span className="text-xs" role="alert">
                 {error}
               </span>
             ) : null}
@@ -311,7 +311,7 @@ export function EditableLocation({
             {error ? (
               <span
                 id={errorId}
-                className="text-xs text-rouge-500/85"
+                className="text-xs"
                 role="alert"
               >
                 {error}

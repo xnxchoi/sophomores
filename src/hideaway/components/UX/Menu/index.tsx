@@ -502,9 +502,7 @@ export const RP_Menu = () => {
       if (!frame) return;
       Object.assign(frame.style, styles);
       frame.style.opacity = "1";
-      frame.style.outline = `${LOST_BAG_FRAME_OVERLAP} solid var(--n-s-bg)`;
       frame.style.pointerEvents = "none";
-      frame.style.backgroundColor = "var(--n-s-bg)";
       frame.style.willChange = "transform";
     };
     const onLostBagFrame = (event: Event) => {
@@ -786,9 +784,6 @@ const CornerStone = (
         clipRule="evenodd"
         fillRule="evenodd"
         strokeWidth={theme === "dark" ? 1.2 : 0}
-        stroke={
-          theme === "dark" ? "oklch(from var(--n-s-bbg) l c h/.04)" : "none"
-        }
         initial="initial"
         animate="animate"
         exit="exit"

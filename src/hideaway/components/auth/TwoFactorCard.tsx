@@ -79,9 +79,9 @@ export function TwoFactorCard({ mode }: { mode: "totp" | "otp" }) {
 
   return (
     <div data-auth-ready={isHydrated ? "true" : "false"}>
-      <Card className="bg-faded-background/50">
+      <Card>
         <CardHeader className="gap-0 text-center">
-          <CardTitle className="mb-2 font-sans text-4xl font-medium tracking-tight text-off-foreground">
+          <CardTitle className="mb-2 font-sans text-4xl font-medium tracking-tight">
             {t("title")}
           </CardTitle>
           <CardDescription className="font-sans text-xs text-muted-foreground md:text-sm">
@@ -166,7 +166,7 @@ export function TwoFactorCard({ mode }: { mode: "totp" | "otp" }) {
             </form>
           )}
         </CardContent>
-        <CardFooter className="justify-center text-sm text-muted-faded-foreground">
+        <CardFooter className="justify-center text-sm">
           {mode === "totp" ? (
             <AuthTextLink href="/two-factor/otp">{t("useEmail")}</AuthTextLink>
           ) : (

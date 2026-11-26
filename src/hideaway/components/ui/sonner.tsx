@@ -30,17 +30,9 @@ const Toaster = ({ ...props }: ToasterProps) => {
 export { Toaster };
 export const errorToast = (message: string) =>
   toast.error(message, {
-    duration: 3000,
-    style: {
-	    backgroundColor: "var(--rouge-400)",
-	    color: "var(--rouge-50)"
-    }
+    duration: 3000
   });
 export const successToast = (message: string) =>
   toast.success(message, {
-    duration: 3000,
-    style: {
-      backgroundColor: "var(--color-bleu-800)",
-      color: "var(--color-bleu-200)"
-    }
+    duration: 3000
   });

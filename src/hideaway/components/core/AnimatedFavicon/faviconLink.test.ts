@@ -33,7 +33,6 @@ describe("animated favicon link helpers", () => {
 
   it("suspends static favicon candidates while the animated icon is active", () => {
     document.head.innerHTML = `
-      <meta name="theme-color" content="#000000">
       <link rel="icon" href="/favicon.ico" sizes="32x32">
       <link rel="apple-touch-icon" href="/apple-touch-icon.png">
       <link rel="icon" href="/favicon.svg" type="image/svg+xml">

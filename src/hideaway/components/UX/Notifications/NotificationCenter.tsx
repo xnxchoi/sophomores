@@ -429,7 +429,7 @@ const NotificationCard = ({
         className={cn(
           "group transition-all duration-200",
           !notification.read && !notification.dismissed
-            ? "border-muted-faded-background/20 bg-muted-faded-background/5"
+            ? ""
             : notification.dismissed
               ? "opacity-60"
               : ""
@@ -446,8 +446,8 @@ const NotificationCard = ({
                 className={cn(
                   "flex h-[16px] w-[16px] items-center justify-center rounded border-2 transition-all",
                   isSelected
-                    ? "border-muted-faded-background/20 bg-muted-faded-background/5"
-                    : "border-muted-foreground/30 hover:border-muted-faded-background/20"
+                    ? ""
+                    : "border-muted-foreground/30"
                 )}
               >
                 {isSelected && (

@@ -309,7 +309,7 @@ export const PageRedirect = ({
   const router = useTransitionRouter();
   return (
     <m.div
-      className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 p-15 backdrop-blur-sm"
+      className="fixed inset-0 z-[1000] flex items-center justify-center p-15 backdrop-blur-sm"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1, zIndex: 1000 }}
       exit={{ opacity: 0, zIndex: 0 }}
@@ -335,7 +335,7 @@ export const PageRedirect = ({
             ease: "easeInOut"
           }
         }}
-        className="text-2xl font-bold text-white"
+        className="text-2xl font-bold"
       >
         {message}
       </m.div>

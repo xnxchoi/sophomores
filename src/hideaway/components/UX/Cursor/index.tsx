@@ -68,20 +68,6 @@ export default function RP_Cursor() {
   );
   const cursorTheme = useCursor(useShallow((l) => l.cursorTheme));
 
-  const colors = useMemo(
-    () => ({
-      rouge: "62.41% 0.246 28.34",
-      light: "10.17% 0.0013 218.99",
-      dark: "97.5% 0.0013 218.99"
-    }),
-    []
-  );
-  const { rouge } = colors;
-  const [currentBase, setCurrentBase] = useState(colors[cursorTheme]);
-
-  useEffect(() => {
-    setCurrentBase(colors[cursorTheme]);
-  }, [cursorTheme, colors]);
   const theme = useTheme((r) => r.theme);
   const navIsOpen = useRPStore(useShallow((l) => l.navIsOpen));
 
@@ -132,8 +118,6 @@ export default function RP_Cursor() {
     }),
     []
   );
-  const strokeColor = useMotionValue(`oklch(${currentBase}/1)`);
-
   const outerVariants = useMemo(
     () => ({
       ...circleVariants
@@ -153,8 +137,6 @@ export default function RP_Cursor() {
     const isFocus = cursorState === "FOCUS";
     const isDrag = cursorState === "DRAG";
     const isTC = !(isFocus || isDrag) && !!cursorState;
-    const target = isFocus || isDrag ? rouge : currentBase;
-    strokeColor.set(`oklch(${target}/1)`);
     const rr = isFocus || isDrag ? c.MEDIUM : c.SMALL;
     const ii = isDrag ? 0 : isFocus ? 1 : rr;
     outerRad.set(rr);
@@ -181,10 +163,7 @@ export default function RP_Cursor() {
     containerHeight,
     c,
     innerRad,
-    outerRad,
-    rouge,
-    currentBase,
-    strokeColor
+    outerRad
   ]);
   const textCursorVariants = useMemo(
     () => ({
@@ -338,7 +317,7 @@ export default function RP_Cursor() {
                 key={"wrap"}
                 className={cn(
                   "pointer-events-none flex shrink-0 cursor-none flex-col items-center justify-center overflow-hidden outline-none",
-                  "rounded-[8px] bg-nav-button/10 font-dots backdrop-blur-xs perspective-distant"
+                  "rounded-[8px] font-dots backdrop-blur-xs perspective-distant"
                 )}
                 style={{ width: containerWidth, height: containerHeight }}
                 variants={textCursorVariants}
@@ -349,7 +328,7 @@ export default function RP_Cursor() {
               >
                 <m.span
                   data-themed="color, background-color"
-                  className="pointer-events-none relative inline-block w-full origin-[50%_50%_0] text-center font-dots text-sm leading-none font-bold tracking-[0.05rem] whitespace-nowrap text-nav-foreground mix-blend-difference"
+                  className="pointer-events-none relative inline-block w-full origin-[50%_50%_0] text-center font-dots text-sm leading-none font-bold tracking-[0.05rem] whitespace-nowrap mix-blend-difference"
                   key={cursorState}
                   style={{
                     fontFeatureSettings: "normal",
@@ -389,7 +368,7 @@ export default function RP_Cursor() {
               >
                 <m.circle
                   ref={oCircle}
-                  className={"inline bg-transparent fill-transparent transition-[stroke] duration-150 ease-out-power3 data-[focus=true]:stroke-rouge-400"}
+                  className={"inline bg-transparent fill-transparent transition-[stroke] duration-150 ease-out-power3"}
                   cx={50}
                   cy={50}
                   r={outerRadius}
@@ -400,7 +379,6 @@ export default function RP_Cursor() {
                   variants={outerVariants}
                   initial={"hidden"}
                   animate={circleVariant}
-                  style={{ stroke: strokeColor }}
                   exit={{
                     opacity: 0,
                     visibility: "hidden",
@@ -425,7 +403,6 @@ export default function RP_Cursor() {
                   exit={"hidden"}
                   r={innerRadius}
                   strokeWidth={0}
-                  style={{ fill: strokeColor }}
                 />
               </m.svg>
             )}

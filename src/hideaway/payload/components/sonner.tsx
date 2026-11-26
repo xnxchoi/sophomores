@@ -26,15 +26,11 @@ export const errorToast = (message: string) =>
 	toast.error(message, {
 		duration: 3000,
 		style: {
-			backgroundColor: "var(--rouge-400)",
-			color: "var(--rouge-50)",
 		},
 	});
 export const successToast = (message: string) =>
 	toast.success(message, {
 		duration: 3000,
 		style: {
-			backgroundColor: "var(--bleu-400)",
-			color: "var(--bleu-50)",
 		},
 	});

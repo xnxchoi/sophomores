@@ -1,17 +1,5 @@
 .pricingShell {
-	--pricing-bg: oklch(0.135 0.005 240);
-	--pricing-fg: oklch(0.96 0.01 80);
-	--pricing-fg-mute: oklch(0.7 0.005 240);
-	--pricing-fg-faint: oklch(0.5 0.005 240);
-	--pricing-line: oklch(0.28 0.005 240);
-	--pricing-card: oklch(0.18 0.005 240);
-	--pricing-card-warm: oklch(0.22 0.012 60);
-	--pricing-accent: oklch(0.78 0.16 60);
-	--pricing-accent-cool: oklch(0.78 0.18 290);
-	--pricing-mint: oklch(0.85 0.13 160);
 
-	background: var(--pricing-bg);
-	color: var(--pricing-fg);
 	min-height: 100dvh;
 	position: relative;
 	isolation: isolate;
@@ -22,16 +10,6 @@
 	content: "";
 	position: absolute;
 	inset: -10%;
-	background: radial-gradient(
-			circle at 20% 0%,
-			oklch(0.25 0.05 290 / 0.45) 0%,
-			transparent 45%
-		),
-		radial-gradient(
-			circle at 80% 110%,
-			oklch(0.28 0.06 60 / 0.35) 0%,
-			transparent 50%
-		);
 	z-index: -2;
 	pointer-events: none;
 	filter: blur(60px);
@@ -49,12 +27,6 @@
 }
 
 .gradientTitle {
-	background: linear-gradient(
-		90deg,
-		oklch(0.78 0.18 290) 0%,
-		oklch(0.92 0.06 80) 50%,
-		oklch(0.96 0.005 80) 100%
-	);
 	-webkit-background-clip: text;
 	background-clip: text;
 	color: transparent;
@@ -63,7 +35,6 @@
 
 @supports not (background-clip: text) {
 	.gradientTitle {
-		color: var(--pricing-fg);
 		background: none;
 	}
 }
@@ -73,16 +44,14 @@
 	font-size: 11px;
 	letter-spacing: 0.22em;
 	text-transform: uppercase;
-	color: var(--pricing-fg-mute);
 }
 
 .toggleTrack {
 	display: inline-flex;
 	gap: 4px;
 	padding: 4px;
-	border: 1px solid var(--pricing-line);
+	border: 1px solid;
 	border-radius: 999px;
-	background: oklch(0.18 0.005 240 / 0.6);
 	backdrop-filter: blur(8px);
 	position: relative;
 }
@@ -94,7 +63,6 @@
 	text-transform: uppercase;
 	padding: 10px 22px;
 	border-radius: 999px;
-	color: var(--pricing-fg-mute);
 	background: transparent;
 	cursor: pointer;
 	transition:
@@ -104,8 +72,6 @@
 }
 
 .toggleButton[data-active="true"] {
-	color: var(--pricing-fg);
-	background: oklch(0.96 0.01 80 / 0.08);
 }
 
 .savePill {
@@ -114,16 +80,13 @@
 	font-size: 9px;
 	letter-spacing: 0.12em;
 	border-radius: 4px;
-	background: oklch(0.85 0.13 160 / 0.15);
-	color: oklch(0.85 0.13 160);
-	border: 1px solid oklch(0.85 0.13 160 / 0.3);
+	border: 1px solid;
 }
 
 .tierCard {
 	position: relative;
-	border: 1px solid var(--pricing-line);
+	border: 1px solid;
 	border-radius: 10px;
-	background: var(--pricing-card);
 	padding: 36px 32px 32px;
 	overflow: hidden;
 	display: flex;
@@ -136,59 +99,28 @@
 
 .tierCard:hover {
 	transform: translateY(-2px);
-	border-color: oklch(0.45 0.005 240);
 }
 
 .tierCard[data-featured="true"] {
-	background: linear-gradient(
-		180deg,
-		oklch(0.24 0.022 60) 0%,
-		oklch(0.18 0.008 240) 100%
-	);
-	border-color: oklch(0.4 0.04 60);
 }
 
 /* Member / standard — cool teal-violet counterpart to Patron's warm. */
 .tierCard[data-presentation="standard"] {
-	background:
-		radial-gradient(
-			ellipse at 80% 0%,
-			oklch(0.3 0.08 220 / 0.55) 0%,
-			transparent 55%
-		),
-		radial-gradient(
-			ellipse at 0% 100%,
-			oklch(0.26 0.09 290 / 0.4) 0%,
-			transparent 60%
-		),
-		linear-gradient(
-			180deg,
-			oklch(0.22 0.04 230) 0%,
-			oklch(0.16 0.02 240) 60%,
-			oklch(0.13 0.012 250) 100%
-		);
-	border-color: oklch(0.42 0.08 230);
 	box-shadow:
-		inset 0 1px 0 oklch(0.78 0.13 220 / 0.14),
-		0 24px 60px -32px oklch(0.3 0.16 250 / 0.5);
+		inset 0 1px 0,
+		0 24px 60px -32px;
 }
 
 .tierCard[data-presentation="standard"] .tierLabel {
-	color: oklch(0.88 0.08 220);
 }
 
 .tierCard[data-presentation="standard"] .seatLine {
-	color: oklch(0.82 0.12 220);
 }
 
 .tierCard[data-presentation="standard"] .cta {
-	background: oklch(0.78 0.13 220 / 0.06);
-	border-color: oklch(0.55 0.1 220 / 0.5);
 }
 
 .tierCard[data-presentation="standard"] .cta:hover {
-	border-color: oklch(0.78 0.13 220);
-	background: oklch(0.78 0.13 220 / 0.14);
 }
 
 .tierCard[data-featured="true"]::before {
@@ -212,7 +144,6 @@
 	font-size: 11px;
 	letter-spacing: 0.22em;
 	text-transform: uppercase;
-	color: var(--pricing-fg);
 }
 
 .priceBlock {
@@ -227,11 +158,6 @@
 	font-weight: 300;
 	letter-spacing: -0.045em;
 	line-height: 0.95;
-	background: linear-gradient(
-		180deg,
-		oklch(0.96 0.005 80 / 0.7) 0%,
-		oklch(0.96 0.005 80 / 0.18) 100%
-	);
 	-webkit-background-clip: text;
 	background-clip: text;
 	color: transparent;
@@ -243,7 +169,6 @@
 
 @supports not (background-clip: text) {
 	.priceMain {
-		color: oklch(0.96 0.005 80 / 0.4);
 		background: none;
 	}
 }
@@ -254,22 +179,18 @@
 	gap: 10px;
 	font-family: var(--font-mono, ui-monospace, monospace);
 	font-size: 13px;
-	color: var(--pricing-fg-mute);
 }
 
 .priceStrike {
 	text-decoration: line-through;
 	text-decoration-thickness: 1px;
-	color: var(--pricing-fg-faint);
 }
 
 .priceUnit {
-	color: var(--pricing-fg);
 }
 
 .divider {
 	height: 1px;
-	background: var(--pricing-line);
 	margin: 8px 0 20px;
 }
 
@@ -290,7 +211,6 @@
 }
 
 .featureRow[data-included="false"] {
-	color: var(--pricing-fg-faint);
 }
 
 .featureMark {
@@ -301,20 +221,17 @@
 	align-items: center;
 	justify-content: center;
 	margin-top: 3px;
-	color: var(--pricing-mint);
 }
 
 .featureRow[data-included="false"] .featureMark {
-	color: var(--pricing-fg-faint);
 }
 
 .cta {
 	width: 100%;
 	padding: 14px 22px;
-	border: 1px solid var(--pricing-line);
+	border: 1px solid;
 	border-radius: 6px;
 	background: transparent;
-	color: var(--pricing-fg);
 	font-family: var(--font-mono, ui-monospace, monospace);
 	font-size: 11px;
 	letter-spacing: 0.22em;
@@ -330,14 +247,12 @@
 }
 
 .cta:hover {
-	border-color: oklch(0.7 0.005 240);
-	background: oklch(0.96 0.005 80 / 0.04);
 }
 
 .cta:focus-visible,
 .toggleButton:focus-visible,
 .faqQuestion:focus-visible {
-	outline: 2px solid var(--pricing-accent);
+	outline: 2px solid;
 	outline-offset: 3px;
 	border-radius: 6px;
 }
@@ -347,44 +262,21 @@
 }
 
 .dropTile:hover {
-	border-color: oklch(0.45 0.005 240);
 }
 
 .tierCard[data-featured="true"] .cta {
-	background: oklch(0.96 0.005 80 / 0.06);
-	border-color: oklch(0.7 0.06 60);
 }
 
 .tierCard[data-featured="true"] .cta:hover {
-	background: oklch(0.96 0.005 80 / 0.12);
-	border-color: oklch(0.85 0.13 60);
 }
 
 /* Founder / Patron presentation — rich amber → burgundy → deep blue.
    Starliner moved out of the card; lives in the dedicated FounderRibbon section. */
 .tierCard[data-presentation="founder"] {
-	background:
-		radial-gradient(
-			ellipse at 70% 0%,
-			oklch(0.42 0.14 50 / 0.55) 0%,
-			transparent 55%
-		),
-		radial-gradient(
-			ellipse at 0% 100%,
-			oklch(0.32 0.1 20 / 0.45) 0%,
-			transparent 60%
-		),
-		linear-gradient(
-			180deg,
-			oklch(0.24 0.05 50) 0%,
-			oklch(0.16 0.03 30) 60%,
-			oklch(0.12 0.01 250) 100%
-		);
-	border-color: oklch(0.55 0.1 60);
 	min-height: 540px;
 	box-shadow:
-		inset 0 1px 0 oklch(0.85 0.13 60 / 0.18),
-		0 30px 80px -40px oklch(0.3 0.16 30 / 0.5);
+		inset 0 1px 0,
+		0 30px 80px -40px;
 }
 
 .tierCard[data-presentation="founder"]::before {
@@ -392,19 +284,14 @@
 }
 
 .tierCard[data-presentation="founder"] .tierLabel {
-	color: oklch(0.92 0.08 70);
 }
 
 .tierCard[data-presentation="founder"] .savePill {
-	background: oklch(0.85 0.13 60 / 0.18);
-	color: oklch(0.92 0.13 70);
-	border-color: oklch(0.85 0.13 60 / 0.4);
 }
 
 .tierCard[data-sold-out="true"] [data-strike="true"] {
 	text-decoration: line-through;
 	text-decoration-thickness: 2px;
-	text-decoration-color: oklch(0.7 0.18 30 / 0.7);
 }
 
 .tierCard[data-sold-out="true"] {
@@ -417,16 +304,13 @@
 	font-size: 11px;
 	letter-spacing: 0.18em;
 	text-transform: uppercase;
-	color: var(--pricing-accent);
 }
 
 .tierCard[data-sold-out="true"] .seatLine {
-	color: oklch(0.7 0.18 30);
 }
 
 .tierDescription {
 	font-size: 12px;
-	color: var(--pricing-fg-faint);
 	margin-bottom: 18px;
 	line-height: 1.5;
 }
@@ -467,8 +351,8 @@
 }
 
 .featureMatrix {
-	border-top: 1px solid var(--pricing-line);
-	border-bottom: 1px solid var(--pricing-line);
+	border-top: 1px solid;
+	border-bottom: 1px solid;
 }
 
 .featureMatrix table {
@@ -479,7 +363,7 @@
 .featureMatrix th,
 .featureMatrix td {
 	padding: 14px 16px;
-	border-bottom: 1px solid oklch(0.28 0.005 240 / 0.5);
+	border-bottom: 1px solid;
 	font-size: 13px;
 	text-align: left;
 }
@@ -489,7 +373,6 @@
 	font-size: 10px;
 	letter-spacing: 0.22em;
 	text-transform: uppercase;
-	color: var(--pricing-fg-mute);
 	font-weight: 400;
 	padding: 18px 16px;
 }
@@ -507,10 +390,9 @@
 }
 
 .dropTile {
-	border: 1px solid var(--pricing-line);
+	border: 1px solid;
 	border-radius: 8px;
 	padding: 22px;
-	background: oklch(0.16 0.005 240);
 	display: flex;
 	flex-direction: column;
 	gap: 12px;
@@ -522,7 +404,6 @@
 .dropRedacted {
 	font-family: var(--font-mono, ui-monospace, monospace);
 	letter-spacing: 0.18em;
-	color: oklch(0.96 0.005 80 / 0.55);
 	font-size: 18px;
 	user-select: none;
 	filter: blur(0.5px);
@@ -533,12 +414,11 @@
 	font-size: 10px;
 	letter-spacing: 0.22em;
 	text-transform: uppercase;
-	color: var(--pricing-fg-faint);
 	margin-top: auto;
 }
 
 .faqItem {
-	border-bottom: 1px solid var(--pricing-line);
+	border-bottom: 1px solid;
 }
 
 .faqQuestion {
@@ -550,7 +430,6 @@
 	background: transparent;
 	border: none;
 	cursor: pointer;
-	color: var(--pricing-fg);
 	font-size: 16px;
 	font-weight: 300;
 	letter-spacing: -0.01em;
@@ -558,7 +437,6 @@
 }
 
 .faqAnswer {
-	color: var(--pricing-fg-mute);
 	font-size: 14px;
 	line-height: 1.6;
 	/* The Motion-rewritten FAQAccordion (Track B) puts the bottom padding on
@@ -603,7 +481,6 @@
 /* New token: brand crimson (oklch equivalent of favicon #a4031f). Used by
    the BenefitList patron-exclusive glyph without hard-coding a second red. */
 .pricingShell {
-	--pricing-crimson: oklch(0.42 0.16 22);
 }
 
 
@@ -626,17 +503,7 @@
 	/* When embedded outside .pricingShell (e.g. on a future product detail
 	   page), the band must carry its own --pricing-* tokens. The "page"
 	   variant continues to inherit from the .pricingShell ancestor. */
-	--pricing-bg: oklch(0.135 0.005 240);
-	--pricing-fg: oklch(0.96 0.01 80);
-	--pricing-fg-mute: oklch(0.7 0.005 240);
-	--pricing-fg-faint: oklch(0.5 0.005 240);
-	--pricing-line: oklch(0.28 0.005 240);
-	--pricing-card: oklch(0.18 0.005 240);
-	--pricing-accent: oklch(0.78 0.16 60);
-	--pricing-mint: oklch(0.85 0.13 160);
-	--pricing-crimson: oklch(0.42 0.16 22);
 
-	color: var(--pricing-fg);
 	padding: 28px 0;
 	gap: 18px;
 }
@@ -659,7 +526,6 @@
 	font-weight: 300;
 	letter-spacing: -0.045em;
 	line-height: 0.95;
-	color: var(--pricing-fg);
 	font-variant-numeric: tabular-nums;
 	font-feature-settings: "tnum" 1;
 }
@@ -671,13 +537,11 @@
 .membershipValidity {
 	font-family: var(--font-mono, ui-monospace, monospace);
 	font-size: 13px;
-	color: var(--pricing-fg-mute);
 }
 
 .membershipDescription {
 	font-size: 16px;
 	line-height: 1.55;
-	color: var(--pricing-fg-mute);
 	max-width: 56ch;
 	margin: 0;
 }
@@ -698,18 +562,15 @@
 	gap: 12px;
 	font-size: 14px;
 	line-height: 1.5;
-	color: var(--pricing-fg);
 }
 
 .benefitGlyph {
 	font-family: var(--font-mono, ui-monospace, monospace);
 	font-size: 14px;
-	color: var(--pricing-fg-mute);
 	line-height: 1;
 }
 
 .benefitRow[data-tier="patron"] .benefitGlyph {
-	color: var(--pricing-crimson);
 }
 
 .benefitLabel {
@@ -721,7 +582,6 @@
 	font-size: 10px;
 	letter-spacing: 0.22em;
 	text-transform: uppercase;
-	color: var(--pricing-fg-mute);
 }
 
 .benefitLegend {
@@ -730,12 +590,11 @@
 	gap: 8px;
 	margin-top: 16px;
 	padding-top: 12px;
-	border-top: 1px solid var(--pricing-line);
+	border-top: 1px solid;
 	font-family: var(--font-mono, ui-monospace, monospace);
 	font-size: 10px;
 	letter-spacing: 0.22em;
 	text-transform: uppercase;
-	color: var(--pricing-fg-faint);
 	list-style: none;
 }
 
@@ -743,11 +602,9 @@
 	margin: 20px 0 0;
 	font-size: 14px;
 	line-height: 1.55;
-	color: var(--pricing-fg);
 }
 
 .residentMuted {
-	color: var(--pricing-fg-mute);
 }
 
 /* CofounderApply ────────────────────────────────────────────────────── */
@@ -770,7 +627,6 @@
 	font-weight: 300;
 	line-height: 1.05;
 	letter-spacing: -0.025em;
-	color: var(--pricing-fg);
 	margin: 0;
 }
 
@@ -779,16 +635,13 @@
 	font-size: 11px;
 	letter-spacing: 0.22em;
 	text-transform: uppercase;
-	color: var(--pricing-fg);
 	text-decoration: underline;
 	text-underline-offset: 6px;
 	text-decoration-thickness: 1px;
-	text-decoration-color: var(--pricing-line);
 	transition: text-decoration-color 220ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .cofounderCta:hover {
-	text-decoration-color: var(--pricing-fg);
 }
 
 /* FAQ — additive classes for the motion-enhanced rewrite ─────────────── */

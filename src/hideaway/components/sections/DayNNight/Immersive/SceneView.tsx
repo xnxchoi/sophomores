@@ -3,7 +3,7 @@
 import { lerp } from "@/hideaway/utilities/rp_utils";
 import { useMotionValue, useTransform } from "motion/react";
 import * as m from "motion/react-m";
-import { type CSSProperties, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import {
   SKY_STOPS,
   HORIZON_Y,
@@ -43,10 +43,6 @@ export function SceneView() {
   const horizonRef = useRef<HTMLDivElement>(null);
   const sunRef = useRef<HTMLDivElement>(null);
   const moonRef = useRef<HTMLDivElement>(null);
-  // Cached reference to the .shell ancestor — written by the rAF to
-  // crossfade `--dn-fg` between cream and ink as the sky brightens or
-  // darkens, so text floating on the sky stays legible across the loop.
-  const shellRef = useRef<HTMLElement | null>(null);
   const store = useDayNNightStore();
   const progressValue = useMotionValue(store.getState().progress);
   useEffect(
@@ -103,50 +99,6 @@ export function SceneView() {
     const apply = () => {
       const state = store.getState();
       const { horizonLoop, phase, progress } = state;
-      const sky = sky_.get();
-      const rgb = (c: [number, number, number]) =>
-        `rgb(${Math.round(c[0] * 255)} ${Math.round(c[1] * 255)} ${Math.round(c[2] * 255)})`;
-
-      if (skyRef.current) {
-        skyRef.current.style.setProperty("--sky-top", rgb(sky.top));
-        skyRef.current.style.setProperty("--sky-mid", rgb(sky.mid));
-        skyRef.current.style.setProperty("--sky-bottom", rgb(sky.bottom));
-      }
-
-      // Adaptive text color — find the .shell ancestor once, then write
-      // `--dn-fg` each frame based on sky luminance. Mid sky (where most
-      // act content sits vertically) is weighted heaviest. The result
-      // crossfades between a warm cream (oklch 96% — needed when sky is
-      // dark) and a deep editorial ink (oklch 22% — needed at golden
-      // hour and morning when the sky brightens past readable cream).
-      if (!shellRef.current && wrapRef.current) {
-        shellRef.current = wrapRef.current.closest(
-          "[data-dn-shell]"
-        ) as HTMLElement | null;
-      }
-      if (shellRef.current) {
-        // Perceived luminance from linear sRGB sky stops (Rec. 709
-        // weights). Stops are already in [0, 1].
-        const lum = (c: [number, number, number]) =>
-          0.21 * c[0] + 0.72 * c[1] + 0.07 * c[2];
-        const skyLum =
-          (lum(sky.top) + lum(sky.mid) * 1.5 + lum(sky.bottom)) / 3.5;
-        // smoothstep(0.22 → 0.40) — bias toward INK earlier in the
-        // luminance range. The prior range [0.32, 0.62] left text at
-        // mid-gray during sunset / golden hour, which sat on warm sky
-        // with poor contrast. Pulling the upper bound down to 0.40
-        // means Cookout (≈0.76), Dress (≈0.46) and Closing all land in
-        // full ink; only true night / pre-dawn pick cream. Lower bound
-        // 0.22 keeps the transition smooth instead of snapping.
-        const x = Math.max(0, Math.min(1, (skyLum - 0.22) / 0.18));
-        const inkT = x * x * (3 - 2 * x);
-        // Tighter ink — oklch 16% reads as deep editorial navy-black on
-        // any sky bright enough to call for ink. Cream stays at 96%.
-        const fg = `color-mix(in oklch, oklch(96% 0.005 80) ${Math.round(
-          (1 - inkT) * 100
-        )}%, oklch(16% 0.02 280) ${Math.round(inkT * 100)}%)`;
-        shellRef.current.style.setProperty("--dn-fg", fg);
-      }
 
       // Sun: phase-aware position. The loader owns progress [0, horizonLoop];
       // the scene takes over from horizonLoop onward — both use the same
@@ -155,7 +107,6 @@ export function SceneView() {
         let leftPct: number;
         let bottomPct: number;
         let opacity: number;
-        let sunColor: [number, number, number];
         let scale: number;
 
         if (phase === "loading" || phase === "loaded") {
@@ -187,7 +138,6 @@ export function SceneView() {
             leftPct = 50;
             bottomPct = sunY * 100;
             opacity = Math.max(0, Math.min(1, (sunY + 0.05) / 0.2));
-            sunColor = [1, 0.85, 0.55];
             scale = 1.15;
           } else {
             // Anchor at Opening: scene already at its resting state.
@@ -195,21 +145,18 @@ export function SceneView() {
             leftPct = 50 + c.sun.x * 40;
             bottomPct = c.sun.y.get() * 100;
             opacity = c.sun.opacity.get();
-            sunColor = c.sun.color.get();
             scale = c.sun.size.get() / 0.085;
           }
         } else {
           leftPct = 50 + c.sun.x * 40;
           bottomPct = c.sun.y.get() * 100;
           opacity = c.sun.opacity.get();
-          sunColor = c.sun.color.get();
           scale = c.sun.size.get() / 0.085;
         }
 
         sunRef.current.style.left = `${leftPct}%`;
         sunRef.current.style.bottom = `${bottomPct}%`;
         sunRef.current.style.opacity = String(opacity);
-        sunRef.current.style.setProperty("--body-color", rgb(sunColor));
         sunRef.current.style.setProperty("--body-scale", String(scale));
       }
 
@@ -252,11 +199,6 @@ export function SceneView() {
     raf = requestAnimationFrame(apply);
     return () => {
       cancelAnimationFrame(raf);
-      // Clear the inline `--dn-fg` we've been writing each frame so
-      // that when the user switches to the simplified view (SceneView
-      // unmounts), the simplified-view CSS override can take effect.
-      // Without this, the last inline value persists on .shell forever.
-      shellRef.current?.style.removeProperty("--dn-fg");
     };
   }, [c, sky_, store]);
 
@@ -275,13 +217,6 @@ export function SceneView() {
       // layers stay viewport-sized and iOS-safe.
       className="pointer-events-none absolute inset-0 z-0 max-lg:fixed"
       aria-hidden
-      style={
-        {
-          "--glow1": "86% 0.18 75",
-          "--glow2": "80% 0.18 65",
-          "--glow3": "70% 0.2 50"
-        } as CSSProperties
-      }
     >
       <div
         ref={skyRef}

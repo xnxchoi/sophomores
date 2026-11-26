@@ -49,16 +49,13 @@ export const Signature = () => {
     <div ref={ref}>
       <m.svg
         className={
-          "h-auto w-full [&_path]:fill-none [&_path]:stroke-faded-foreground/90 [&_path]:stroke-[98px] [&_path]:[stroke-linecap:round] [&_path]:[stroke-linejoin:round] [&_path]:[stroke-miterlimit:10]"
+          "h-auto w-full [&_path]:fill-none [&_path]:stroke-[98px] [&_path]:[stroke-linecap:round] [&_path]:[stroke-linejoin:round] [&_path]:[stroke-miterlimit:10]"
         }
         layout={true}
         animate={isVisible ? "revealed" : "initial"}
         variants={signatureSvgVariants}
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 14248.91 2723.74"
-        style={{
-          color: "oklch(from var(--faded-fg) l c h/.9)"
-        }}
       >
         <defs>
           <filter id="goo-1">

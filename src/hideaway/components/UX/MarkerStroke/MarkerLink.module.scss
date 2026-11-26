@@ -9,7 +9,6 @@
 }
 
 .link[data-active="true"] {
-	color: oklch(0.85 0.13 60);
 	transform: translateY(-1px);
 }
 
@@ -25,7 +24,6 @@
 	bottom: -8px;
 	height: 14px;
 	pointer-events: none;
-	color: oklch(0.85 0.13 60);
 	transition: opacity 180ms;
 	opacity: 0;
 }

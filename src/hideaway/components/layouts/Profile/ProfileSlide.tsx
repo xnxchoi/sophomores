@@ -175,7 +175,7 @@ const StickySection = (props: StickySectionProps) => {
     >
       <div
         className={
-          "relative flex h-full w-full items-center overflow-hidden rounded-xl bg-[#f4f4f4] px-[3.125vw] py-0 dark:bg-[#0f0a0a]"
+          "relative flex h-full w-full items-center overflow-hidden rounded-xl px-[3.125vw] py-0"
         }
         data-themed={"background-color, color"}
       >

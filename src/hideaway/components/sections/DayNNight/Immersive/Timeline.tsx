@@ -525,7 +525,7 @@ function ActSet({
             <RevealItem
               as="p"
               className={
-                "font-sans text-[11px] tracking-[0.32em] text-[var(--dn-fg-mute)] uppercase"
+                "font-sans text-[11px] tracking-[0.32em] uppercase"
               }
             >
               {t("opening.kicker")}
@@ -573,12 +573,12 @@ function ActSet({
         >
           <span
             aria-hidden
-            className="mr-auto mb-3 block h-px w-14 bg-[var(--dn-fg)] opacity-60"
+            className="mr-auto mb-3 block h-px w-14 opacity-60"
           />
-          <span className="font-sans text-[11px] leading-[1.7] tracking-[0.18em] text-[var(--dn-fg-mute)] uppercase">
+          <span className="font-sans text-[11px] leading-[1.7] tracking-[0.18em] uppercase">
             {t("date.full")}
           </span>
-          <span className="font-sans text-[11px] leading-[1.7] tracking-[0.18em] text-[var(--dn-fg-mute)] uppercase">
+          <span className="font-sans text-[11px] leading-[1.7] tracking-[0.18em] uppercase">
             {t("location.neighborhood")}
           </span>
         </m.div>
@@ -618,14 +618,14 @@ function ActSet({
           {detailItems.map((item, index) => (
             <li
               key={item.label}
-              className="grid gap-[6px] border-t border-[var(--dn-line)] pt-[12px] odd:lg:ml-0 even:lg:ml-12"
+              className="grid gap-[6px] border-t pt-[12px] odd:lg:ml-0 even:lg:ml-12"
             >
               <span className={LABEL_MONO}>{item.label}</span>
               <span
                 className={
                   index === 4
-                    ? "font-serif text-[clamp(1.16rem,1.34vw,1.42rem)] leading-[1.3] font-medium tracking-[-0.01em] text-[var(--dn-fg)]"
-                    : "font-serif text-[clamp(1.05rem,1.22vw,1.32rem)] leading-[1.32] font-medium tracking-[-0.01em] text-[var(--dn-fg-mute)]"
+                    ? "font-serif text-[clamp(1.16rem,1.34vw,1.42rem)] leading-[1.3] font-medium tracking-[-0.01em]"
+                    : "font-serif text-[clamp(1.05rem,1.22vw,1.32rem)] leading-[1.32] font-medium tracking-[-0.01em]"
                 }
               >
                 {item.body}
@@ -713,7 +713,7 @@ function ActSet({
           <MarkerText
             text={t("opening.hostedBy")}
             active
-            className="font-serif text-[clamp(0.95rem,5.2vw,1.35rem)] font-bold text-[var(--dn-fg)] italic opacity-85 lg:text-[2.25rem] lg:text-faded-black lg:opacity-90"
+            className="font-serif text-[clamp(0.95rem,5.2vw,1.35rem)] font-bold italic opacity-85 lg:text-[2.25rem] lg:opacity-90"
           />
         </div>
         <div className="col-start-1 col-end-6 row-start-2 row-end-3 hidden flex-col gap-6 self-end max-lg:col-span-full lg:flex">
@@ -722,7 +722,7 @@ function ActSet({
 
             <p
               className={
-                "max-w-[34ch] font-serif text-[clamp(1.45rem,1.75vw,1.9rem)] leading-[1.35] tracking-[-0.005em] text-(--dn-fg-mute) italic"
+                "max-w-[34ch] font-serif text-[clamp(1.45rem,1.75vw,1.9rem)] leading-[1.35] tracking-[-0.005em] italic"
               }
             >
               {t("tribute.body")}
@@ -744,18 +744,18 @@ function ActSet({
           >
             <RevealItem
               as="p"
-              className={`justify-self-end font-sans text-[11px] tracking-[0.32em] text-[var(--dn-fg-mute)] uppercase max-lg:justify-self-start`}
+              className={`justify-self-end font-sans text-[11px] tracking-[0.32em] uppercase max-lg:justify-self-start`}
             >
               {t("closing.kicker")}
             </RevealItem>
             <RevealItem as="h2" className={TITLE_HERO}>
-              <span className="max-lg:block max-lg:text-[clamp(88px,17.75vw,114px)] max-lg:leading-[0.78] max-lg:font-normal max-lg:tracking-[-0.025em] max-lg:text-[var(--color-off-white)]">
+              <span className="max-lg:block max-lg:text-[clamp(88px,17.75vw,114px)] max-lg:leading-[0.78] max-lg:font-normal max-lg:tracking-[-0.025em]">
                 RSVP
               </span>
             </RevealItem>
             <RevealItem
               as="p"
-              className={`${LEDE} max-w-[28ch] justify-self-end text-right max-lg:mt-2.5 max-lg:mb-[21px] max-lg:justify-self-start max-lg:text-left max-lg:text-base max-lg:text-[oklch(0.96_0.005_80/0.85)]`}
+              className={`${LEDE} max-w-[28ch] justify-self-end text-right max-lg:mt-2.5 max-lg:mb-[21px] max-lg:justify-self-start max-lg:text-left max-lg:text-base`}
             >
               {rsvpBody}
             </RevealItem>
@@ -765,7 +765,7 @@ function ActSet({
             >
               {!ariaHidden && <GuestListCaption />}
               {ariaHidden ? (
-                <span className="ease mt-3 inline-flex items-baseline gap-[18px] border-0 bg-transparent py-[18px] pb-4 font-wide text-[17px] font-semibold tracking-[0.32em] text-[var(--dn-fg)] uppercase no-underline">
+                <span className="ease mt-3 inline-flex items-baseline gap-[18px] border-0 bg-transparent py-[18px] pb-4 font-wide text-[17px] font-semibold tracking-[0.32em] uppercase no-underline">
                   <span>{rsvpCta}</span>
                   <span aria-hidden className="text-[1.2em] leading-none">
                     →
@@ -774,7 +774,7 @@ function ActSet({
               ) : (
                 <Link
                   href={rsvpHref}
-                  className="ease mt-3 inline-flex cursor-pointer items-baseline gap-[18px] border-0 bg-transparent py-[18px] pb-4 font-wide text-[17px] font-semibold tracking-[0.32em] text-[var(--dn-fg)] uppercase no-underline transition-[gap,padding] duration-300 hover:gap-7 hover:pr-3"
+                  className="ease mt-3 inline-flex cursor-pointer items-baseline gap-[18px] border-0 bg-transparent py-[18px] pb-4 font-wide text-[17px] font-semibold tracking-[0.32em] uppercase no-underline transition-[gap,padding] duration-300 hover:gap-7 hover:pr-3"
                 >
                   <span>{rsvpCta}</span>
                   <span aria-hidden className="text-[1.2em] leading-none">
@@ -788,12 +788,12 @@ function ActSet({
         <div className="col-start-9 col-end-13 row-start-3 row-end-4 grid max-w-[280px] gap-3 self-end justify-self-end text-right max-lg:absolute max-lg:top-[29%] max-lg:left-[12%] max-lg:z-[16] max-lg:w-[min(20rem,calc(100vw-3rem))] max-lg:gap-2 max-lg:justify-self-start max-lg:pb-0 max-lg:text-left">
           <span
             aria-hidden
-            className="mb-3 ml-auto block h-px w-14 bg-[var(--dn-fg)] opacity-60 max-lg:ml-0"
+            className="mb-3 ml-auto block h-px w-14 opacity-60 max-lg:ml-0"
           />
-          <span className="font-sans text-[11px] leading-[1.7] tracking-[0.18em] text-[var(--dn-fg-mute)] uppercase max-lg:block max-lg:w-[min(20rem,calc(100vw-3rem))] max-lg:font-sans max-lg:text-xs max-lg:leading-[1.45] max-lg:tracking-normal max-lg:normal-case">
+          <span className="font-sans text-[11px] leading-[1.7] tracking-[0.18em] uppercase max-lg:block max-lg:w-[min(20rem,calc(100vw-3rem))] max-lg:font-sans max-lg:text-xs max-lg:leading-[1.45] max-lg:tracking-normal max-lg:normal-case">
             {t("footer.hosts")}
           </span>
-          <span className="font-sans text-[11px] leading-[1.7] tracking-[0.18em] text-[var(--dn-fg-mute)] uppercase max-lg:block max-lg:w-[min(20rem,calc(100vw-3rem))] max-lg:font-sans max-lg:text-xs max-lg:leading-[1.45] max-lg:tracking-normal max-lg:normal-case">
+          <span className="font-sans text-[11px] leading-[1.7] tracking-[0.18em] uppercase max-lg:block max-lg:w-[min(20rem,calc(100vw-3rem))] max-lg:font-sans max-lg:text-xs max-lg:leading-[1.45] max-lg:tracking-normal max-lg:normal-case">
             {t("footer.rsvpClosesAt")}
           </span>
         </div>
@@ -806,8 +806,8 @@ function GuestListCaption() {
   const t = useTranslations("Event.DayNNight.guestsTease");
 
   return (
-    <div className="grid max-w-[min(25rem,100%)] justify-items-start gap-3 border border-[oklch(42%_0.07_255/0.42)] bg-[linear-gradient(135deg,oklch(94%_0.012_245/0.96),oklch(94%_0.022_58/0.92))] px-5 py-4 text-left text-[oklch(18%_0.012_250)] shadow-[0_18px_50px_-16px_rgba(0,0,0,0.78)] max-lg:px-4 max-lg:py-3.5">
-      <p className="m-0 bg-gradient-to-r from-[oklch(36%_0.075_255)] to-[oklch(45%_0.09_48)] bg-clip-text font-sans text-[10px] leading-[1.4] tracking-[0.28em] text-transparent uppercase">
+    <div className="grid max-w-[min(25rem,100%)] justify-items-start gap-3 border px-5 py-4 text-left max-lg:px-4 max-lg:py-3.5">
+      <p className="m-0 bg-gradient-to-r bg-clip-text font-sans text-[10px] leading-[1.4] tracking-[0.28em] text-transparent uppercase">
         {t("label")}
       </p>
       <p className="m-0 max-w-[30ch] font-serif text-[clamp(1.1rem,1.8vw,1.55rem)] leading-[1.25] tracking-[0.005em]">
@@ -815,7 +815,7 @@ function GuestListCaption() {
       </p>
       <Link
         href="/day-n-night/guests"
-        className="inline-flex items-baseline gap-3 border-b border-[oklch(35%_0.07_255/0.58)] pb-1 font-sans text-[10px] tracking-[0.24em] text-[oklch(24%_0.04_255)] uppercase no-underline transition-[gap,border-color,color] duration-200 hover:gap-5 hover:border-[oklch(45%_0.09_48)] hover:text-[oklch(34%_0.07_48)]"
+        className="inline-flex items-baseline gap-3 border-b pb-1 font-sans text-[10px] tracking-[0.24em] uppercase no-underline transition-[gap,border-color,color] duration-200 hover:gap-5"
       >
         <span>{t("cta")}</span>
         <span aria-hidden>→</span>

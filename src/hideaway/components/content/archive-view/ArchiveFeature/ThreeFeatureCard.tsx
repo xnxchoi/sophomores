@@ -148,7 +148,6 @@ function OuterWrap({ children }: { children: ReactNode }) {
         <CoverCard
           style={
             {
-              "--highlight": "var(--bleu-400)"
             } as CSSProperties
           }
         >

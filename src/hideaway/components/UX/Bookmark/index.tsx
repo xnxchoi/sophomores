@@ -156,7 +156,7 @@ export const BookmarkButton = ({
       disabled={isLoading || !userId}
       className={
         className ??
-        "flex h-8 w-8 items-center justify-center [&_path]:fill-muted-faded-background/55 [&_path]:stroke-none dark:[&_path]:fill-muted-faded-foreground/55 [&_svg]:size-[18px]"
+        "flex h-8 w-8 items-center justify-center [&_path]:stroke-none [&_svg]:size-[18px]"
       }
     >
       {bookmarked ? <BookmarkFilledIcon /> : <BookmarkIcon />}

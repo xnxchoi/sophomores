@@ -109,7 +109,7 @@ export const SoundBar = ({}: SoundBarProps) => {
         data-themed="color, background-color"
         className={cn(
           "c-soundwave__bar group-soundbar:data-[active=true]:animate-soundwave h-[4px] w-[2px] origin-center rounded-[1px] transition-[background-color] duration-300 ease-power4",
-          playing ? "bg-nav-foreground" : "bg-nav-foreground/50",
+          playing ? "" : "",
           "delay-[0s]"
         )}
       ></div>
@@ -117,7 +117,7 @@ export const SoundBar = ({}: SoundBarProps) => {
         data-themed="color, background-color"
         className={cn(
           "c-soundwave__bar group-soundbar:data-[active=true]:animate-soundwave h-[4px] w-[2px] origin-center rounded-[1px] transition-[background-color] duration-300 ease-power4",
-          playing ? "bg-nav-foreground" : "bg-nav-button-foreground/50",
+          playing ? "" : "",
           "delay-[-0.4s]"
         )}
       ></div>
@@ -125,7 +125,7 @@ export const SoundBar = ({}: SoundBarProps) => {
         data-themed="color, background-color"
         className={cn(
           "c-soundwave__bar group-soundbar:data-[active=true]:animate-soundwave h-[4px] w-[2px] origin-center rounded-[1px] transition-[background-color] duration-300 ease-power4",
-          playing ? "bg-nav-foreground" : "bg-nav-foreground/50",
+          playing ? "" : "",
           "delay-[-0.2s]"
         )}
       ></div>
@@ -133,7 +133,7 @@ export const SoundBar = ({}: SoundBarProps) => {
         data-themed="color, background-color"
         className={cn(
           "c-soundwave__bar group-soundbar:data-[active=true]:animate-soundwave h-[4px] w-[2px] origin-center rounded-[1px] transition-[background-color] duration-300 ease-power4",
-          playing ? "bg-nav-foreground" : "bg-nav-foreground/50",
+          playing ? "" : "",
           "delay-[-0.4s]"
         )}
       ></div>

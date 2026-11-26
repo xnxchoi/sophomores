@@ -31,28 +31,28 @@ const variantClasses: Record<GlassPanelVariant, string> = {
     // Light
     "bg-foreground/[0.035] backdrop-blur-md",
     "outline outline-1 outline-foreground/15 -outline-offset-1",
-    "shadow-[0_1px_0_0_oklch(from_var(--background)_l_c_h/0.7)_inset,_0_2px_8px_-3px_rgba(0,0,0,0.05),_0_8px_24px_-12px_rgba(0,0,0,0.08)]",
+    "shadow-[0_1px_0_0_oklch(from_var(--background)_l_c_h/0.7)_inset]",
     // Dark
     "dark:bg-foreground/[0.035] dark:outline-foreground/[0.10]",
-    "dark:shadow-[0_1px_0_0_oklch(from_var(--foreground)_l_c_h/0.06)_inset,_0_8px_24px_-12px_rgba(0,0,0,0.5)]"
+    "dark:shadow-[0_1px_0_0_oklch(from_var(--foreground)_l_c_h/0.06)_inset]"
   ),
   default: cn(
     // Light
     "bg-foreground/[0.06] backdrop-blur-md",
     "outline outline-1 outline-foreground/20 -outline-offset-1",
-    "shadow-[0_1px_0_0_oklch(from_var(--background)_l_c_h/0.85)_inset,_0_4px_12px_-3px_rgba(0,0,0,0.08),_0_16px_36px_-14px_rgba(0,0,0,0.12)]",
+    "shadow-[0_1px_0_0_oklch(from_var(--background)_l_c_h/0.85)_inset]",
     // Dark
     "dark:bg-foreground/[0.05] dark:outline-foreground/[0.14]",
-    "dark:shadow-[0_1px_0_0_oklch(from_var(--foreground)_l_c_h/0.08)_inset,_0_16px_40px_-16px_rgba(0,0,0,0.6),_0_2px_6px_-2px_rgba(0,0,0,0.4)]"
+    "dark:shadow-[0_1px_0_0_oklch(from_var(--foreground)_l_c_h/0.08)_inset]"
   ),
   elevated: cn(
     // Light
     "bg-foreground/[0.085] backdrop-blur-xl",
     "outline outline-1 outline-foreground/25 -outline-offset-1",
-    "shadow-[0_1px_0_0_oklch(from_var(--background)_l_c_h/0.9)_inset,_0_8px_20px_-4px_rgba(0,0,0,0.10),_0_28px_56px_-20px_rgba(0,0,0,0.18)]",
+    "shadow-[0_1px_0_0_oklch(from_var(--background)_l_c_h/0.9)_inset]",
     // Dark
     "dark:bg-foreground/[0.085] dark:outline-foreground/[0.22]",
-    "dark:shadow-[0_1px_0_0_oklch(from_var(--foreground)_l_c_h/0.12)_inset,_0_28px_60px_-24px_rgba(0,0,0,0.75),_0_4px_12px_-3px_rgba(0,0,0,0.5)]"
+    "dark:shadow-[0_1px_0_0_oklch(from_var(--foreground)_l_c_h/0.12)_inset]"
   )
 };
 

@@ -6,7 +6,7 @@ import {EASING} from "@/hideaway/constants/animations";
 function Skeleton({className, ...props}: React.ComponentProps<"div">) {
 	return (
 		<div data-slot="skeleton"
-		     className={cn("bg-muted-faded-background animate-pulse rounded-md", className)}
+		     className={cn("animate-pulse rounded-md", className)}
 		     {...props} />
 	)
 }
@@ -22,7 +22,7 @@ const ShimmerMotion = ({
                        }: HTMLMotionProps<"div">) => {
 	return (
 		<m.div data-slot={"skeleton"}
-		       className={cn("bg-muted-faded-background rounded-md select-none", className)}
+		       className={cn("rounded-md select-none", className)}
 		       initial={initial !== undefined ? initial : {
 			       opacity: 0,
 

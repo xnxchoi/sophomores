@@ -45,17 +45,17 @@ export function ComingSoonCard({
           "relative flex items-center justify-center bg-muted/10"
         )}
       >
-        <div className="absolute inset-0 bg-gradient-to-b from-bleu-700/80 to-muted/0" />
+        <div className="absolute inset-0 bg-gradient-to-b to-muted/0" />
         <span
           aria-hidden
           className="font-sans text-[20vw] leading-none font-light text-foreground/[0.04] select-none sm:text-[12vw] lg:text-[9vw] xl:text-[7vw]"
         >
           {glyph}
         </span>
-        <span className="text-muted-faded-background-faded-background absolute top-3 left-3 inline-flex items-center gap-1.5 rounded-full border border-dashed border-muted-off-foreground/40 bg-linear-to-br from-faded-black/70 to-bleu-800/0 px-2 py-0.5 font-sans text-[9px] tracking-widest uppercase xl:text-[10px]">
+        <span className="absolute top-3 left-3 inline-flex items-center gap-1.5 rounded-full border border-dashed bg-linear-to-br px-2 py-0.5 font-sans text-[9px] tracking-widest uppercase xl:text-[10px]">
           <span
             aria-hidden
-            className="size-1 rounded-full bg-piercing-orange"
+            className="size-1 rounded-full"
           />
           {chip}
         </span>

@@ -287,7 +287,6 @@ export function ContentMask(l: { children: ReactNode }) {
                 <m.rect
                   className="rect"
                   ref={rectRef}
-                  fill="white"
                   y={rectY}
                   x={rectX}
                   rx={rectRX}

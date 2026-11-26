@@ -111,7 +111,6 @@ function FocusHero({
     <div
       className={cn(
         "relative col-1 grid items-center gap-y-8 rounded-2xl p-8 text-center lg:mb-0 lg:grid-cols-[1fr_1fr] lg:gap-x-[2rem]",
-        "bg-[var(--accent-gradient,oklch(from_var(--foreground)_l_c_h/.05))]",
         direction === "left"
           ? "lg:col-[1/5] lg:row-[1/3]"
           : "lg:col-[3/-1] lg:row-[1/3]"
@@ -314,7 +313,7 @@ function SideHero({
   return (
     <div
       className={cn(
-        "relative grid grid-cols-[2rem_1fr_2rem] grid-rows-[1fr] gap-y-[2rem] overflow-hidden rounded-2xl bg-faded-foreground/20 text-faded-background",
+        "relative grid grid-cols-[2rem_1fr_2rem] grid-rows-[1fr] gap-y-[2rem] overflow-hidden rounded-2xl",
         direction === "left"
           ? "lg:col-[5/-1] lg:row-[1/4]"
           : "lg:col-[1/3] lg:row-[1/4]"
@@ -331,7 +330,7 @@ function SideHero({
       />
       <div
         className={
-          "absolute inset-0 z-[5] h-full w-full bg-linear-180 from-transparent via-faded-background/5 via-65% to-faded-background/90"
+          "absolute inset-0 z-[5] h-full w-full bg-linear-180 from-transparent via-65%"
         }
       />
       {category && (
@@ -340,14 +339,13 @@ function SideHero({
           content={category}
         />
       )}
-      <Title className="z-10 order-3 col-2 row-4 text-faded-foreground! uppercase lg:text-h1">
+      <Title className="z-10 order-3 col-2 row-4 uppercase lg:text-h1">
         {title}
       </Title>
       {author && (
-        <AuthorName name={author} className="text-faded-foreground!" />
+        <AuthorName name={author} />
       )}
       <Subtitle
-        className="text-faded-foreground!"
         subtitle={subtitle || undefined}
       />
     </div>
@@ -395,7 +393,7 @@ function SplitBar({
     <>
       <div
         className={cn(
-          "lg:border-b-solid lg:border-t-solid lg:border-r-solid relative grid grid-cols-[minmax(100px,1fr)_repeat(3,1fr)] grid-rows-[repeat(2,auto)_1fr] gap-x-[2rem] border-0 border-faded-foreground lg:border-t-[1px] lg:border-r-[1px] lg:border-b-[1px] lg:p-[2.4rem_2rem_2.4rem_0] lg:px-0 lg:py-[2.4rem]",
+          "lg:border-b-solid lg:border-t-solid lg:border-r-solid relative grid grid-cols-[minmax(100px,1fr)_repeat(3,1fr)] grid-rows-[repeat(2,auto)_1fr] gap-x-[2rem] border-0 lg:border-t-[1px] lg:border-r-[1px] lg:border-b-[1px] lg:p-[2.4rem_2rem_2.4rem_0] lg:px-0 lg:py-[2.4rem]",
           type === "left"
             ? "gap-y-[1rem] lg:col-[1/3]"
             : "gap-y-[2rem] lg:col-[3/5]"
@@ -421,7 +419,7 @@ function SplitBar({
       </div>
       <div
         className={cn(
-          "lg:border-b-solid lg:border-t-solid relative grid grid-cols-[minmax(100px,1fr)_repeat(3,1fr)] grid-rows-[repeat(2,auto)_1fr] gap-x-8 border-0 border-faded-foreground lg:-ml-8 lg:border-t lg:border-b lg:px-8 lg:py-[2.4rem]",
+          "lg:border-b-solid lg:border-t-solid relative grid grid-cols-[minmax(100px,1fr)_repeat(3,1fr)] grid-rows-[repeat(2,auto)_1fr] gap-x-8 border-0 lg:-ml-8 lg:border-t lg:border-b lg:px-8 lg:py-[2.4rem]",
           type === "left" ? "gap-y-4 lg:col-[3/5]" : "gap-y-8 lg:col-[5/-1]"
         )}
       >

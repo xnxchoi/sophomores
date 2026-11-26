@@ -31,7 +31,7 @@ export default function TextArea({
           "transition-colors duration-150 focus:outline-none",
           "min-h-[112px] resize-none leading-relaxed",
           errors.length > 0
-            ? "border-red-400/50 focus:border-red-400/70"
+            ? ""
             : "border-foreground/15 focus:border-foreground/45",
           className
         )}
@@ -44,7 +44,7 @@ export default function TextArea({
       <div className="flex items-center justify-between px-2">
         {errors.length > 0 ? (
           <m.span
-            className="text-xs text-red-400/80"
+            className="text-xs"
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2 }}

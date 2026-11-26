@@ -124,16 +124,16 @@ const VGradientModuleInner = () => {
   const colorSchemes = useMemo(
     () => [
       [
-        parseInt("3B1E1D", 16),
-        parseInt("603230", 16),
-        parseInt("85504D", 16),
-        parseInt("A5716E", 16)
+        undefined,
+        undefined,
+        undefined,
+        undefined
       ],
       [
-        parseInt("F9E2E0", 16),
-        parseInt("EAC0BD", 16),
-        parseInt("D89B95", 16),
-        parseInt("C07D78", 16)
+        undefined,
+        undefined,
+        undefined,
+        undefined
       ]
     ],
     []
@@ -161,7 +161,7 @@ const VGradientModuleInner = () => {
     [colorSchemes]
   );
   const uOpacity = useRef(1.0);
-  const colore = useMemo(() => new ThreeColor("rgb(122,122,122)"), []);
+  const colore = useMemo(() => new ThreeColor(), []);
   const vecc = useMemo(() => new Vector3(0, 0, 0.46), []);
   const uniforms = useMemo(
     () => ({
@@ -271,7 +271,7 @@ const VGradientModuleInner = () => {
   return (
     <>
       <ambientLight args={[colore]} intensity={1} />
-      <directionalLight color={colore} intensity={1} position={vecc} />
+      <directionalLight intensity={1} position={vecc} />
       <mesh raycast={meshBounds}>
         <planeGeometry args={[1.5, 1.5, 300, 300]} />
         <gradientShader

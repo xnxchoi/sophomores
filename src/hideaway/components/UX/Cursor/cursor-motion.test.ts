@@ -18,6 +18,6 @@ describe("global cursor motion", () => {
     );
     expect(source).toContain("setBaseCursorTheme(baseCursorTheme)");
     expect(source).toContain("style={{ fill: strokeColor }}");
-    expect(source).not.toContain('className="inline fill-nav-button stroke-0"');
+    expect(source).not.toContain('className="inline stroke-0"');
   });
 });

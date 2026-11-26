@@ -42,7 +42,7 @@ export const SaveStatus = ({
       className={cn(
         "font-sans text-[9px] tracking-[0.22em] uppercase transition-opacity duration-500",
         state === "error"
-          ? "text-rouge-500"
+          ? ""
           : "text-foreground/65 dark:text-foreground/55",
         className
       )}

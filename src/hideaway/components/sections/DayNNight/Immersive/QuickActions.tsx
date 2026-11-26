@@ -11,8 +11,6 @@ import { useDayNNightScene } from "../store";
 import { AudioBars } from "./AudioBars";
 import type { DayNNightRsvpState } from "../MainLanding";
 
-const FG = "rgb(244, 242, 235)"; // resolved --dn-fg cream
-
 /**
  * Bottom action chrome.
  *
@@ -57,11 +55,11 @@ export function QuickActions({
     ["--dn-rsvp-depth" as string]: `${(5 + rsvpStrength * 7).toFixed(1)}px`
   } satisfies CSSProperties;
   const rsvpBorderClass = isRsvped
-    ? "bg-[linear-gradient(90deg,oklch(51%_0.07_255),oklch(58%_0.08_48),oklch(51%_0.07_255))]"
-    : "animate-[dn-rsvp-chroma-field_6.8s_ease-in-out_infinite] bg-[radial-gradient(circle_at_18%_24%,oklch(54%_0.07_255/0.82)_0%,transparent_34%),radial-gradient(circle_at_76%_32%,oklch(58%_0.075_50/0.74)_0%,transparent_36%),conic-gradient(from_120deg_at_52%_50%,oklch(44%_0.06_255),oklch(53%_0.052_228),oklch(58%_0.07_56),oklch(48%_0.058_36),oklch(44%_0.06_255))] bg-[length:155%_155%,165%_165%,200%_200%]";
+    ? ""
+    : "animate-[dn-rsvp-chroma-field_6.8s_ease-in-out_infinite] bg-[length:155%_155%,165%_165%,200%_200%]";
   const rsvpTextClass = isRsvped
-    ? "bg-[linear-gradient(90deg,oklch(66%_0.07_255),oklch(70%_0.075_52),oklch(66%_0.07_255))] bg-clip-text text-transparent"
-    : "animate-[dn-rsvp-chroma-ink_5.2s_ease-in-out_infinite] bg-[linear-gradient(110deg,oklch(62%_0.062_255)_0%,oklch(66%_0.048_232)_16.666%,oklch(69%_0.068_52)_33.333%,oklch(64%_0.055_38)_41.666%,oklch(62%_0.062_255)_50%,oklch(66%_0.048_232)_66.666%,oklch(69%_0.068_52)_83.333%,oklch(64%_0.055_38)_91.666%,oklch(62%_0.062_255)_100%)] bg-[length:200%_100%] bg-clip-text text-transparent";
+    ? "bg-clip-text text-transparent"
+    : "animate-[dn-rsvp-chroma-ink_5.2s_ease-in-out_infinite] bg-[length:200%_100%] bg-clip-text text-transparent";
 
   return (
     <m.div
@@ -76,11 +74,9 @@ export function QuickActions({
       <div
         className="relative flex items-center rounded-[30px] p-[6px] backdrop-blur-[16px]"
         style={{
-          background:
-            "linear-gradient(180deg, rgba(24, 22, 38, 0.92) 0%, rgba(11, 10, 19, 0.9) 100%)",
-          border: "1px solid rgba(244, 242, 235, 0.16)",
+          border: "1px solid",
           boxShadow:
-            "0 18px 42px -18px rgba(0, 0, 0, 0.72), inset 0 1px 0 rgba(255,255,255,0.08)",
+            "0 18px 42px -18px, inset 0 1px 0",
           gap: "6px"
         }}
       >
@@ -95,12 +91,7 @@ export function QuickActions({
           onClick={() => setOpen(true)}
           aria-haspopup="dialog"
           aria-expanded={open}
-          className="inline-flex cursor-pointer appearance-none items-center rounded-full border px-[14px] py-[10px] font-sans text-[10px] font-medium tracking-[0.12em] uppercase transition-[background-color,color,border-color,box-shadow,transform] duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] hover:scale-[1.015] hover:border-[rgba(244,242,235,0.28)] hover:text-white active:scale-[0.985] lg:text-[11px]"
-          style={{
-            color: FG,
-            backgroundColor: "rgba(244, 242, 235, 0.08)",
-            borderColor: "rgba(244, 242, 235, 0.12)"
-          }}
+          className="inline-flex cursor-pointer appearance-none items-center rounded-full border px-[14px] py-[10px] font-sans text-[10px] font-medium tracking-[0.12em] uppercase transition-[background-color,color,border-color,box-shadow,transform] duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] hover:scale-[1.015] active:scale-[0.985] lg:text-[11px]"
         >
           {t("infoCta")}
         </Button>
@@ -116,7 +107,7 @@ export function QuickActions({
             aria-hidden
             className={`dn-rsvp-field absolute inset-0 ${rsvpBorderClass}`}
           />
-          <span className="dn-rsvp-core relative inline-flex items-center gap-[8px] rounded-full bg-[linear-gradient(180deg,rgba(10,10,13,0.98),rgba(0,0,0,0.92))] px-[16px] py-[11px] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] lg:px-[18px] lg:py-[12px]">
+          <span className="dn-rsvp-core relative inline-flex items-center gap-[8px] rounded-full px-[16px] py-[11px] lg:px-[18px] lg:py-[12px]">
             <span
               aria-hidden
               className="dn-rsvp-sheen absolute inset-0 rounded-full"
@@ -124,7 +115,7 @@ export function QuickActions({
             {isRsvped ? (
               <span
                 aria-hidden
-                className="h-[6px] w-[6px] rounded-full bg-[oklch(64%_0.07_255)]"
+                className="h-[6px] w-[6px] rounded-full"
               />
             ) : null}
             <span className={rsvpTextClass}>{rsvpLabel}</span>
@@ -169,15 +160,9 @@ export function QuickActions({
 
         .dn-rsvp-link:hover .dn-rsvp-core {
           transform: translateZ(var(--dn-rsvp-depth));
-          box-shadow:
-            inset 0 1px 0 rgba(255,255,255,0.09),
-            inset 0 -1px 0 rgba(255,255,255,0.035);
         }
 
         .dn-rsvp-sheen {
-          background:
-            radial-gradient(circle at 18% 18%, rgba(255,255,255,0.075), transparent 34%),
-            linear-gradient(105deg, transparent 0%, rgba(255,255,255,0.055) 44%, transparent 57%);
           opacity: calc(0.34 * var(--dn-rsvp-strength));
           mix-blend-mode: screen;
           transform: translateX(-18%);
@@ -261,15 +246,6 @@ function MusicChip({ enabled, onClick, ariaLabel }: MusicChipProps) {
       data-dn-audio-toggle
       data-on={enabled ? "true" : "false"}
       className="group/music inline-flex w-[44px] cursor-pointer appearance-none items-center justify-start gap-2 overflow-hidden rounded-full border px-[12px] py-[10px] font-sans text-[10px] font-medium tracking-[0.12em] uppercase transition-[width,background-color,color,border-color,transform] duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] hover:scale-[1.015] active:scale-[0.985] lg:w-[46px]"
-      style={{
-        backgroundColor: enabled
-          ? "rgba(244, 242, 235, 0.16)"
-          : "rgba(244, 242, 235, 0.06)",
-        borderColor: enabled
-          ? "rgba(244, 242, 235, 0.26)"
-          : "rgba(244, 242, 235, 0.1)",
-        color: enabled ? FG : "rgba(244, 242, 235, 0.58)"
-      }}
     >
       <AudioBars active={enabled} className="text-current" />
     </Button>

@@ -82,7 +82,7 @@ export const Controlbar = () => {
       className={cn(
         "relative w-full flex-none",
         "border-t border-border/20",
-        "bg-nav-background/95 backdrop-blur-xl",
+        "backdrop-blur-xl",
         "pb-[calc(env(safe-area-inset-bottom)+12px)]"
       )}
     >

@@ -278,32 +278,16 @@ const GradientModuleInner = () => {
   );
   const gradientt = useRef();
   const { gl } = useThree();
-  const colorSchemes = useMemo(
-    () => [
-      [
-        parseInt("021628", 16),
-        parseInt("044A66", 16),
-        parseInt("0EA5B5", 16),
-        parseInt("2358D6", 16)
-      ]
-    ],
-    []
-  );
   const uOffset = useMemo(() => new Vector2(0.42, 0.6), []);
   const u_pixels = useMemo(() => new Vector2(1, 1), []);
   const u_resolution = useMemo(() => new Vector2(1, 1), []);
   const uAdditionalOffset = useMemo(() => new Vector2(0), []);
   const u_color = useMemo(
-    () => [
-      new Color(colorSchemes[0][0]),
-      new Color(colorSchemes[0][1]),
-      new Color(colorSchemes[0][2]),
-      new Color(colorSchemes[0][3])
-    ],
-    [colorSchemes]
+    () => [new Color(), new Color(), new Color(), new Color()],
+    []
   );
   const uOpacity = useRef(1.0);
-  const colore = useMemo(() => new Color("rgb(122,122,122)"), []);
+  const colore = useMemo(() => new Color(), []);
   const vecc = useMemo(() => new Vector3(0, 0, 0.46), []);
   const uniforms = useMemo(
     () => ({
@@ -344,7 +328,6 @@ const GradientModuleInner = () => {
     <>
       <ambientLight args={[colore]} intensity={1} />
       <directionalLight
-        color={colore.setRGB(122, 122, 122)}
         intensity={1}
         position={vecc}
       />

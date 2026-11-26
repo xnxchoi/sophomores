@@ -6,7 +6,6 @@ import * as m from "motion/react-m";
 import {
   animate,
   MotionValue,
-  useMotionTemplate,
   useMotionValue,
   useSpring,
   useTransform
@@ -257,38 +256,18 @@ function TickBar({
 
   const opacity = useTransform(() => opacityBase.get() * entranceMv.get());
 
-  const accentWeight = useTransform(() => {
-    if (!accent) return 0;
-    if (index === focalIndex.get()) return 1;
-    if (!magnifyActive.get()) return 0;
-    const strengthAtCenter = magnifyStrengthValue;
-    if (strengthAtCenter <= 0) return 0;
-    const lift = magnifyResult.get().scaleY - 1;
-    return Math.min(1, Math.max(0, lift / strengthAtCenter));
-  });
-
-  const accentPctString = useTransform(
-    accentWeight,
-    (v) => `${Math.round(v * accentIntensity * 1000) / 10}%`
-  );
-  const background = useMotionTemplate`color-mix(in oklch, ${accent ?? "transparent"} ${accentPctString}, var(--n-s-fg))`;
-
   return (
     <m.span
       ref={elementRef}
       aria-hidden
       data-tick={index}
-      className={cn(
-        "block shrink-0 rounded-[0.5px] text-nav-foreground",
-        !accent && "bg-nav-foreground"
-      )}
+      className={cn("block shrink-0 rounded-[0.5px]")}
       style={{
         width: tickWidth,
         height,
         opacity,
         scaleY,
-        transformOrigin: "center",
-        background
+        transformOrigin: "center"
       }}
     />
   );

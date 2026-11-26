@@ -34,7 +34,7 @@ export function DataTable<TData>({
       {...props}
     >
       {children}
-      <div className="min-h-[50vh] overflow-hidden rounded-md border-muted-faded-foreground">
+      <div className="min-h-[50vh] overflow-hidden rounded-md">
         <Table className="h-full">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (

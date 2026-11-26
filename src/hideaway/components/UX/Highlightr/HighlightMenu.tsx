@@ -8,7 +8,6 @@ import { useRPSession } from "@/hideaway/lib/auth/session/RP_SessionProvider";
 import { cn } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import "./styles/_highlightMenu.scss";
-import { useMotionValue, useTransform } from "motion/react";
 
 import * as m from "motion/react-m";
 import { useTranslations } from "next-intl";
@@ -35,7 +34,7 @@ import { useFloater } from "./providers/FloatProvider";
 import { useHighlighter } from "./providers/HighlighterProvider";
 import { MemoInput } from "./providers/memo-input";
 import { useRanger } from "./providers/RangerProvider";
-import { HighlightColors, HighlightPalette, Palettes } from "./stores";
+import { HighlightColors, Palettes } from "./stores";
 
 type ViewStates = "edit" | "signin" | "new";
 type DialogText = "header" | "title" | "description";
@@ -371,7 +370,7 @@ export const FloatHighlightMenu = ({
           ref={innerRef}
           data-status={status}
           className={
-            "highlightMenu relative h-full w-full bg-faded-foreground/10 p-0 backdrop-blur-xl"
+            "highlightMenu relative h-full w-full p-0 backdrop-blur-xl"
           }
           style={{ ...style, backdropFilter: "blur(10px)" }}
         >
@@ -396,7 +395,7 @@ export const FloatHighlightMenu = ({
           />
           <m.div
             className={
-              "z-[23] flex h-[44px] items-center px-3.5 text-off-foreground"
+              "z-[23] flex h-[44px] items-center px-3.5"
             }
           >
             <DialogRoot open={dOpen} onOpenChange={setMemoOpen}>
@@ -536,11 +535,6 @@ const HighlightColorPickerItem = ({
 }) => {
   const currentColor = useHighlighter(useShallow((r) => r.currentColor));
   const [isActive, setIsActive] = useState(currentColor === color);
-  const palette = useMotionValue(color);
-  const paletteColor = useTransform(
-    palette,
-    (c) => `oklch(from ${HighlightPalette[c]} l c h/.9)`
-  );
   const onMouseDown: MouseEventHandler<HTMLButtonElement> = useCallback(
     (e) => {
       e.preventDefault();
@@ -588,7 +582,7 @@ const HighlightColorPickerItem = ({
   return (
     <m.button
       className={cn(
-        "relative h-[12px] w-[16px] border-[1px] border-solid border-transparent bg-off-foreground data-[active=true]:border-[1px] data-[active=true]:border-muted-faded-background/60",
+        "relative h-[12px] w-[16px] border-[1px] border-solid border-transparent data-[active=true]:border-[1px]",
         className
       )}
       onClick={onClick}
@@ -605,7 +599,6 @@ const HighlightColorPickerItem = ({
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       style={{
-        backgroundColor: paletteColor,
         ...style
       }}
       disabled={isActive}

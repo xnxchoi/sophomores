@@ -118,7 +118,7 @@ export function Tape3DScene({
         <div
           aria-hidden
           data-dn-tape-crt
-          className="pointer-events-none absolute inset-0 z-[1] [mix-blend-mode:screen] [background:repeating-linear-gradient(0deg,rgba(8,16,18,0)_0px,rgba(8,16,18,0)_2px,rgba(150,247,255,0.07)_2px,rgba(150,247,255,0.07)_3px)]"
+          className="pointer-events-none absolute inset-0 z-[1] [mix-blend-mode:screen]"
         />
       ) : null}
     </div>

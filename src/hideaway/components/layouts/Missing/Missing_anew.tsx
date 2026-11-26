@@ -141,7 +141,6 @@ const FF = () => {
         number
       ]
   );
-  const fillColor = useMemo(() => `oklch(46.3% 0.187 28.3)`, []);
 
   useFrame((state, delta, frame) => {
     const dt = delta;
@@ -167,7 +166,6 @@ const FF = () => {
       (canvass.width - hori * verho) / 2,
       (canvass.height - verti * verho) / 2
     );
-    ctx.fillStyle = fillColor;
     ctx.fill(pathD);
     if (textureRef.current?.needsUpdate) {
       textureRef.current.needsUpdate = true;

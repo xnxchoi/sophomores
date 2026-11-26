@@ -136,11 +136,23 @@ function StoryCard({
           ))}
         </div>
       </div>
-      <h2 className="font-teaser-serif text-teaser-copy teaser-wide:tall:text-teaser-heading short:max-md:text-[26px] short:md:text-[28px]">
+      {/* On the green card the hatching runs full-bleed; a blurred patch of the card colour sits behind each block of
+          copy (above the artwork, below the text), so the lines fade out where they would cross it (Review-B, 26 Nov). */}
+      <h2
+        className={cn(
+          "font-teaser-serif text-teaser-copy teaser-wide:tall:text-teaser-heading short:max-md:text-[26px] short:md:text-[28px]",
+          story.tone === "green" && "before:pointer-events-none before:absolute before:-inset-3 before:-z-1 before:bg-medici-cypress-tuned before:blur-md"
+        )}
+      >
         {story.title}
       </h2>
       {story.tone === "dark" && <StoryArtwork tone="dark" reveal={opacity} />}
-      <p className="text-teaser-body mt-auto font-sans whitespace-pre-line uppercase short:max-md:text-base short:max-md:leading-[1.1]">
+      <p
+        className={cn(
+          "text-teaser-body mt-auto font-sans whitespace-pre-line uppercase short:max-md:text-base short:max-md:leading-[1.1]",
+          story.tone === "green" && "before:pointer-events-none before:absolute before:-inset-3 before:-z-1 before:bg-medici-cypress-tuned before:blur-md"
+        )}
+      >
         {story.body}
       </p>
     </motion.article>

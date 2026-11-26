@@ -226,6 +226,51 @@ test("SRC rejects nested secrets, symlinks and symlinked patch parents", () => {
   }
 });
 
+test("SRC allows exactly the code-only key directories, and only TypeScript without key material in them", () => {
+  for (const directory of ["src/lib/commerce/keys", "tests/commerce/keys"]) {
+    const root = srcFixture();
+    fs.mkdirSync(path.join(root, directory, "unlock"), { recursive: true });
+    fs.writeFileSync(path.join(root, directory, "read.ts"), "export const read = 1;\n");
+    fs.writeFileSync(path.join(root, directory, "unlock/signer.ts"), "const PEM = /^-{5}BEGIN PRIVATE KEY-{5}\\n/; export const cert = `-----BEGIN CERTIFICATE-----`;\n");
+    assert.doesNotThrow(() => sourceFingerprint(root), directory);
+    const material: Array<[string, string]> = [
+      // The PEM headers are split so that the repository's secret scanner does not flag these fixtures.
+      ["unlock/pem.ts", "export const k = `-----BEGIN " + "PRIVATE KEY-----\nMIGH`;\n"],
+      ["unlock/ec.ts", "export const k = `-----BEGIN EC " + "PRIVATE KEY-----`;\n"],
+      ["hex.ts", `export const k = "0x${"ab".repeat(32)}";\n`],
+      ["hex128.ts", `export const k = "${"cd".repeat(64)}";\n`],
+      ["xprv.ts", `export const k = "xprv${"9".repeat(107)}";\n`],
+      ["notes.json", "{}\n"],
+      ["unlock/signer.pem", "x"]
+    ];
+    for (const [file, body] of material) {
+      const bad = srcFixture();
+      fs.mkdirSync(path.join(bad, directory, "unlock"), { recursive: true });
+      fs.writeFileSync(path.join(bad, directory, file), body);
+      assert.throws(() => sourceFingerprint(bad), /key|secret|sensitive|non-code/i, `${directory}/${file}`);
+    }
+  }
+  for (const directory of ["src/lib/commerce/keys", "tests/commerce/keys"]) {
+    const file = srcFixture();
+    fs.mkdirSync(path.join(file, path.dirname(directory)), { recursive: true });
+    fs.writeFileSync(path.join(file, directory), "export {};\n");
+    assert.throws(() => sourceFingerprint(file), /secret|sensitive/i, `regular file at ${directory}`);
+    const linked = srcFixture();
+    const target = fs.mkdtempSync(path.join(os.tmpdir(), "keys-target-"));
+    roots.push(target);
+    fs.writeFileSync(path.join(target, "a.ts"), "export {};\n");
+    fs.mkdirSync(path.join(linked, path.dirname(directory)), { recursive: true });
+    fs.symlinkSync(target, path.join(linked, directory));
+    assert.throws(() => sourceFingerprint(linked), /symlink/i, `symlink at ${directory}`);
+  }
+  for (const near of ["src/lib/commerce/key", "src/lib/commerce/keys2/keys", "src/lib/keys", "src/lib/commerce/keys/keys", "tests/keys"]) {
+    const root = srcFixture();
+    fs.mkdirSync(path.join(root, near), { recursive: true });
+    fs.writeFileSync(path.join(root, near, "a.ts"), "export {};\n");
+    assert.throws(() => sourceFingerprint(root), /secret|sensitive/i, near);
+  }
+});
+
 test("SRC enforces safe exclusive destinations without writing through symlink parents", () => {
   const root = srcFixture();
   assert.throws(() => snapshotSource(root, "relative"), /absolute/i);

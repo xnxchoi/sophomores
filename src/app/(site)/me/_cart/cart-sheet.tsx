@@ -8,13 +8,13 @@ import { XIcon } from "@phosphor-icons/react";
 import { motionTokens } from "@/components/arc/_shared/motion-tokens";
 import { CommerceAccountGate } from "@/components/commerce/checkout";
 import { CommerceCart } from "@/components/commerce/cart";
-import type { CommerceOffer } from "@/lib/commerce/catalogue";
+import type { CartProduct } from "@/lib/commerce/cart-products";
 import {
   Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle
 } from "@/components/ui/sheet";
 
-export function AccountCartSheet({ offer, initialCapabilities }: {
-  offer: CommerceOffer | null;
+export function AccountCartSheet({ products, initialCapabilities }: {
+  products: readonly CartProduct[];
   initialCapabilities: ComponentProps<typeof CommerceAccountGate>["initialCapabilities"];
 }) {
   const account = useTranslations("Customer.app_site_me_page");
@@ -77,7 +77,7 @@ export function AccountCartSheet({ offer, initialCapabilities }: {
           </SheetHeader>
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5 sm:px-6 sm:py-6">
             <CommerceAccountGate initialCapabilities={initialCapabilities}>
-              <CommerceCart offer={offer} />
+              <CommerceCart products={products} />
             </CommerceAccountGate>
           </div>
           <SheetFooter className="shrink-0 border-t border-border px-5 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6">

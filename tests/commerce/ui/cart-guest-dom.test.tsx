@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { after, afterEach, before, test } from "node:test";
 import { JSDOM } from "jsdom";
 import type { CommerceOffer } from "../../../src/lib/commerce/catalogue";
+import { membershipCartProduct } from "../../../src/lib/commerce/cart-products";
 
 // Signed out, /shop/cart shows the browser cart's line (Auth's browser-cart contract) and Checkout asks for sign-in.
 let dom: JSDOM;
@@ -41,7 +42,7 @@ test("signed out: the browser cart's line shows, Checkout asks for sign-in, and 
   dom.window.localStorage.setItem("sphmrs.cart.v1", JSON.stringify({ version: 1, lines: [{ productID: "p1", quantity: 1 }] }));
   let signIn = 0;
   ui.render(<MemberAuthProviders><CommerceProvider>
-    <CommerceCart offer={offer} wide signedIn={false} onSignIn={() => { signIn += 1; }} />
+    <CommerceCart products={[membershipCartProduct(offer)]} wide signedIn={false} onSignIn={() => { signIn += 1; }} />
   </CommerceProvider></MemberAuthProviders>);
   assert.ok(ui.screen.getByRole("heading", { name: "Book only" }));
   ui.fireEvent.click(ui.screen.getByRole("button", { name: /checkout/i }));
@@ -53,7 +54,7 @@ test("signed out: the browser cart's line shows, Checkout asks for sign-in, and 
 
 test("signed out with no browser line: the empty state, never a loading line", () => {
   ui.render(<MemberAuthProviders><CommerceProvider>
-    <CommerceCart offer={offer} wide signedIn={false} onSignIn={() => {}} />
+    <CommerceCart products={[membershipCartProduct(offer)]} wide signedIn={false} onSignIn={() => {}} />
   </CommerceProvider></MemberAuthProviders>);
   assert.ok(ui.screen.getByText("Your cart is empty"));
   assert.equal(ui.screen.queryByText("Loading your cart") === null, true);

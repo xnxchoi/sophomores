@@ -1,16 +1,16 @@
 import { getPayload } from "payload";
 import config from "@payload-config";
-import { loadCommerceOffer, type CommerceOffer } from "@/lib/commerce/catalogue";
+import { loadCartProducts, type CartProduct } from "@/lib/commerce/cart-products";
 import { loadPublicMemberCapabilities } from "@/lib/member-auth/public-capabilities.server";
 import { AccountCartSheet } from "./cart-sheet";
 
 export async function AccountCartEntry() {
-  let offer: CommerceOffer | null = null;
+  let products: readonly CartProduct[] = [];
   try {
-    offer = await loadCommerceOffer(await getPayload({ config }));
+    products = await loadCartProducts(await getPayload({ config }));
   } catch {
     console.error("Published cart pricing is unavailable.");
   }
 
-  return <AccountCartSheet offer={offer} initialCapabilities={await loadPublicMemberCapabilities()} />;
+  return <AccountCartSheet products={products} initialCapabilities={await loadPublicMemberCapabilities()} />;
 }

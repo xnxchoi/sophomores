@@ -4,6 +4,7 @@ import { CommerceAccountGate, CommerceCheckout } from "@/components/commerce/che
 import { CommerceCart } from "@/components/commerce/cart";
 import { PageFrame } from "@/components/commerce/page-frame";
 import type { CommerceOffer } from "@/lib/commerce/catalogue";
+import { membershipCartProduct } from "@/lib/commerce/cart-products";
 import { EnglishMessages } from "./english-messages";
 
 const query = new URLSearchParams(location.search);
@@ -72,7 +73,7 @@ function Fixture() {
         </div>
       </CommerceAccountGate> : <div className="dark min-w-0 rounded-2xl border border-border bg-background p-5 text-foreground sm:p-8">
         <CommerceAccountGate initialCapabilities={capabilities} signInOffInReview={review}>
-          <CommerceCart offer={offer} wide />
+          <CommerceCart products={[membershipCartProduct(offer)]} wide />
         </CommerceAccountGate>
       </div>}
     </PageFrame>

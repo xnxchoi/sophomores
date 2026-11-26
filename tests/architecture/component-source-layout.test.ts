@@ -62,6 +62,8 @@ test('feature hooks stay beside actual consumers and contain real React hook cod
     'src/components/commerce/shop/use-look-inside.tsx',
     'src/components/commerce/shop/use-reading-scroll.tsx',
     'src/components/commerce/shop/use-shelf-catch.tsx',
+    // The cart's state (cart.tsx and the cart redesign render from it): the member cart, the browser cart and its actions.
+    'src/components/commerce/use-commerce-cart-state.tsx',
   ]) {
     const source = readFileSync(resolve(repositoryRoot, file), 'utf8');
     assert.match(source, /from ["']react["']/);

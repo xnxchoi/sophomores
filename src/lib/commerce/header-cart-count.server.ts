@@ -30,10 +30,11 @@ const openCart = z.object({ items: z.array(z.unknown()).nullish() });
  * one doc; src/lib/commerce/ecommerce.ts), answered as a line count.
  */
 export async function countMemberCartLines(payload: Payload, userId: string): Promise<number | null> {
+  // The cart join is added by the commerce plugin at config time, so its select/joins keys aren't in the generated types.
   const user = await payload.findByID({ collection: "users", id: userId, overrideAccess: true, disableErrors: true,
-    depth: 1, select: { cart: true } as never, joins: { cart: { limit: 1 } } as never });
+    depth: 1, select: { cart: true } as never, joins: { cart: { limit: 1 } } as never }) as { id?: unknown; cart?: { docs?: unknown[] } } | null;
   if (!user || String(user.id) !== userId) return null;
-  const doc = (user as { cart?: { docs?: unknown[] } }).cart?.docs?.[0];
+  const doc = user.cart?.docs?.[0];
   if (doc == null) return 0;
   const cart = openCart.safeParse(doc);
   return cart.success ? cart.data.items?.length ?? 0 : null;

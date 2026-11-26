@@ -40,6 +40,8 @@ export function useBookDetail(hub: SceneHub, catalogue: SceneCatalogue, router: 
   const [leaving, setLeaving] = useState(false);
   /** Closing from the shelf, until the reverse carry starts: the scene stays shifted while the column fades. */
   const [holding, setHolding] = useState(false);
+  /** An open under way (their `ds`): set when one starts, cleared when it lands, or when the visitor takes the scroll first. */
+  const [pending, setPending] = useState<number | null>(null);
   const clock = useRef({ token: 0, frame: 0 }), fromShelf = useRef(false), pushed = useRef(false);
   const transition = () => hub.bookOpenTransitionLiveRef as { current: Transition };
   const openRef = useRef<(index: number) => boolean>(() => false), isOpen = useRef(false);
@@ -48,7 +50,7 @@ export function useBookDetail(hub: SceneHub, catalogue: SceneCatalogue, router: 
   const cancel = () => { clock.current.token += 1; if (clock.current.frame) cancelAnimationFrame(clock.current.frame); clock.current.frame = 0; };
   const settle = useCallback((index: number, arrived = false) => {
     source.current.pin(index, arrived, arrived || fromShelf.current);
-    setOpen(index); setLeaving(false);
+    setOpen(index); setLeaving(false); setPending(null);
     window.dispatchEvent(new Event("resize"));
   }, []);
 
@@ -57,7 +59,7 @@ export function useBookDetail(hub: SceneHub, catalogue: SceneCatalogue, router: 
   const openBook = useCallback((index: number, arrived = false) => {
     const current = transition().current;
     if (current.active && !current.returning && current.index === index) return true;
-    cancel();
+    cancel(); setPending(index);
     const raw = source.current.rawProgress(), onShelf = !arrived && raw >= catalogue.J + 0.5 && raw < catalogue.K + 1;
     // Already reading a book: the next one opens in place, with no scroll (theirs, 15063).
     if (isOpen.current && !arrived) {
@@ -81,7 +83,7 @@ export function useBookDetail(hub: SceneHub, catalogue: SceneCatalogue, router: 
           if (t >= 1) { arrivedAt = now; landed = window.scrollY; }
           clock.current.frame = requestAnimationFrame(step); return;
         }
-        if (Math.abs(window.scrollY - landed) > 8) { clock.current.frame = 0; return; }   // the visitor took the scroll
+        if (Math.abs(window.scrollY - landed) > 8) { clock.current.frame = 0; setPending(null); return; }   // the visitor took the scroll
         const selection = hub.spineSelectionLiveRef.current as { settled?: boolean } | null;
         if (!((hub.spineRowAssembleLiveRef.current as number) > 0.98 && selection?.settled) && now - arrivedAt < 900) {
           clock.current.frame = requestAnimationFrame(step); return;
@@ -246,5 +248,5 @@ export function useBookDetail(hub: SceneHub, catalogue: SceneCatalogue, router: 
   }, [open, router, source]);
   useEffect(() => () => { cancel(); transition().current = idle(); hub.shelfReturnRevealLiveRef.current = -1; hub.bookOpenRevealLiveRef.current = 1; }, [hub]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  return { open, presenting, leaving, shifted: shift !== 0, openBook, closeBook, setReading };
+  return { open, pending, presenting, leaving, shifted: shift !== 0, openBook, closeBook, setReading };
 }

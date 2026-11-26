@@ -16,7 +16,7 @@ import { reachableHref } from "@/lib/content/essays";
 
 function PanelRow({ href, title, hint, onClose, onClick }: { href: string; title: string; hint?: string; onClose: () => void; onClick?: (event: MouseEvent<HTMLElement>) => void }) {
   return (
-    <Link href={href} className="flex min-h-11 w-full items-center py-2 pr-8 pl-4 text-sm leading-4 text-foreground/90 outline-none transition-colors duration-200 hover:text-background focus-visible:underline focus-visible:underline-offset-4" onClick={(event: MouseEvent<HTMLElement>) => { onClick?.(event); onClose(); }}>
+    <Link href={href} className="flex min-h-11 w-full items-center rounded-md py-2 pr-8 pl-4 text-sm leading-4 text-foreground/90 outline-none transition-colors duration-150 hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground focus-visible:underline focus-visible:underline-offset-4" onClick={(event: MouseEvent<HTMLElement>) => { onClick?.(event); onClose(); }}>
       <span className="flex-1 truncate">{title}</span>
       {hint ? <span className="ml-3 text-xs opacity-60">{hint}</span> : null}
     </Link>
@@ -257,7 +257,7 @@ export function SearchPanel({
                 <p className="px-3 py-1 text-xs tracking-[0.08em] uppercase opacity-60">{t('quickActions')}</p>
                 <button
                   type="button"
-                  className="flex min-h-11 w-full items-center py-2 pr-8 pl-4 text-sm leading-4 text-foreground/90 outline-none focus-visible:underline focus-visible:underline-offset-4"
+                  className="flex min-h-11 w-full items-center rounded-md py-2 pr-8 pl-4 text-sm leading-4 text-foreground/90 outline-none transition-colors duration-150 hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground focus-visible:underline focus-visible:underline-offset-4"
                   onClick={() => {
                     toggleTheme();
                     onClose();

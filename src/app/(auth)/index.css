@@ -12,7 +12,7 @@
   --color-preview-input: var(--dark-grey);
   --color-preview-border: var(--light-grey);
   --color-preview-secondary: var(--stone);
-  --color-preview-muted: var(--light-grey);
+  --color-preview-muted: var(--stone);
   --color-preview-accent: var(--white);
   --color-preview-on-accent: var(--black);
   --color-preview-error: var(--bone);

@@ -1059,7 +1059,7 @@ type MapRouteProps = {
   id?: string;
   /** Array of [longitude, latitude] coordinate pairs defining the route */
   coordinates: [number, number][];
-  /** Line color as CSS color value (default: "#4285F4") */
+  /** Line color as CSS color value (default: "(colour removed)") */
   color?: string;
   /** Line width in pixels (default: 3) */
   width?: number;
@@ -1238,7 +1238,7 @@ type MapArcProps<T extends MapArcDatum = MapArcDatum> = {
   samples?: number;
   /**
    * MapLibre paint properties for the arc layer. Merged on top of sensible
-   * defaults (`line-color: #4285F4`, `line-width: 2`, `line-opacity: 0.85`).
+   * defaults (`line-color: (colour removed)`, `line-width: 2`, `line-opacity: 0.85`).
    * Any value can be a MapLibre expression for per-feature styling, every
    * field on each arc datum (besides `from`/`to`) is exposed via `["get", ...]`.
    */
@@ -1550,11 +1550,11 @@ type MapClusterLayerProps<
   clusterMaxZoom?: number;
   /** Radius of each cluster when clustering points in pixels (default: 50) */
   clusterRadius?: number;
-  /** Colors for cluster circles: [small, medium, large] based on point count (default: ["#22c55e", "#eab308", "#ef4444"]) */
+  /** Colors for cluster circles: [small, medium, large] based on point count (default: ["(colour removed)", "(colour removed)", "(colour removed)"]) */
   clusterColors?: [string, string, string];
   /** Point count thresholds for color/size steps: [medium, large] (default: [100, 750]) */
   clusterThresholds?: [number, number];
-  /** Color for unclustered individual points (default: "#3b82f6") */
+  /** Color for unclustered individual points (default: "(colour removed)") */
   pointColor?: string;
   /** Callback when an unclustered point is clicked */
   onPointClick?: (

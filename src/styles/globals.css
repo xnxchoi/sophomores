@@ -41,6 +41,8 @@
   --spacing-gutter: var(--gutter);
   --color-ring: var(--ring);
   --color-input: var(--input);
+  /* A form control's resting rule: Pewter, 3.5:1 or more on every page ground in both themes. Dividers keep --border. */
+  --color-control-rule: var(--light-grey);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
   --color-destructive-ink: var(--destructive-ink);
@@ -424,7 +426,7 @@
 }
 @layer components {
   input:not([type="checkbox"]):is(.w-input, .code-field) {
-    @apply border-foreground/35 bg-transparent text-inherit;
+    @apply border-control-rule bg-transparent text-inherit;
   }
   input.w-input {
     @apply mt-0 border-b p-0 pb-3.5 leading-none font-medium;

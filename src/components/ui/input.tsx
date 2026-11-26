@@ -11,10 +11,10 @@ export function Input({ className, type, ...props }: ComponentProps<"input">) {
       data-slot="input"
       suppressHydrationWarning
       className={cn(
-        "h-8 w-full min-w-0 rounded-none border border-input bg-transparent px-2.5 py-1 text-xs transition-colors outline-none file:inline-flex file:h-6 file:border-0 file:bg-transparent file:text-xs file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:border-ring disabled:pointer-events-none disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-1 aria-invalid:ring-destructive/20 md:text-xs dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40",
+        "h-8 w-full min-w-0 rounded-none border border-input bg-transparent px-2.5 py-1 text-xs transition-colors outline-none file:inline-flex file:h-6 file:border-0 file:bg-transparent file:text-xs file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:border-ring disabled:pointer-events-none disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-1 aria-invalid:ring-destructive/20 md:text-xs dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 dark:aria-invalid:focus-visible:border-ring dark:aria-invalid:focus-visible:ring-ring/50",
         "flex h-8 w-full min-w-0 border-b border-solid bg-transparent px-2.5 py-3.5 text-base shadow-xs transition-[color,box-shadow] outline-none selection:bg-background selection:text-foreground file:inline-flex file:h-6 file:border-0 file:bg-transparent file:font-medium file:text-foreground placeholder:text-base placeholder:text-muted-foreground disabled:pointer-events-none disabled:opacity-50",
         "focus-visible:ring-ring/0 focus-visible:ring-offset-0",
-        "aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40",
+        "aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 dark:aria-invalid:focus-visible:border-ring dark:aria-invalid:focus-visible:ring-ring/50",
         className
       )}
       {...props}
@@ -47,7 +47,7 @@ function HA_Input({
       className={cn(
         "flex h-8 w-full min-w-0 border-b border-solid border-background/60 bg-transparent px-2.5 py-3 text-base shadow-xs transition-[color,box-shadow] outline-none selection:bg-background selection:text-foreground file:inline-flex file:h-7 file:border-0 file:bg-transparent file:font-medium file:text-foreground placeholder:text-base placeholder:text-muted-foreground disabled:pointer-events-none disabled:opacity-50",
         "focus-visible:ring-ring/0 focus-visible:ring-offset-0",
-        "aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40",
+        "aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 dark:aria-invalid:focus-visible:border-ring dark:aria-invalid:focus-visible:ring-ring/50",
         className
       )}
       {...props}
@@ -91,7 +91,7 @@ export function DrawnField({
           {...props}
           id={fieldId}
           placeholder=" "
-          className="peer m-0 block h-10 w-full pointer-coarse:h-11 rounded-none border-0 border-b border-border bg-transparent p-0 pb-2 text-[length:var(--step-input,1rem)] leading-6 font-normal tracking-normal text-foreground normal-case outline-none placeholder:text-transparent disabled:opacity-60"
+          className="peer m-0 block h-10 w-full pointer-coarse:h-11 rounded-none border-0 border-b border-control-rule bg-transparent p-0 pb-2 text-[length:var(--step-input,1rem)] leading-6 font-normal tracking-normal text-foreground normal-case outline-none placeholder:text-transparent disabled:opacity-60"
         />
         <div className="pointer-events-none absolute right-0 bottom-0 left-0 h-px origin-right scale-x-0 bg-foreground transition-[transform,height] duration-[800ms] ease-[cubic-bezier(0.16,1,0.32,1)] peer-focus:origin-left peer-focus:scale-x-100 peer-not-placeholder-shown:origin-left peer-not-placeholder-shown:scale-x-100 peer-aria-invalid:h-0.5 peer-aria-invalid:origin-left peer-aria-invalid:scale-x-100" />
         <label
@@ -108,7 +108,7 @@ export function DrawnField({
         {...props}
         id={fieldId}
         placeholder=" "
-        className="w-input peer block w-full m-0 p-0 pb-[13.6px] border-0 border-b border-[oklch(from_var(--muted)_l_c_h_/_0.5)] rounded-none bg-transparent text-inherit font-[inherit] text-xs font-normal leading-[1.1] tracking-normal uppercase outline-none placeholder:text-[oklch(from_var(--foreground)_l_c_h_/_0.001)] not-placeholder-shown:pt-[3.6px] not-placeholder-shown:pb-[3.5px]"
+        className="w-input peer block w-full m-0 p-0 pb-[13.6px] border-0 border-b border-control-rule rounded-none bg-transparent text-inherit font-[inherit] text-xs font-normal leading-[1.1] tracking-normal uppercase outline-none placeholder:text-[oklch(from_var(--foreground)_l_c_h_/_0.001)] not-placeholder-shown:pt-[3.6px] not-placeholder-shown:pb-[3.5px]"
       />
       <div
         data-form="baseline"

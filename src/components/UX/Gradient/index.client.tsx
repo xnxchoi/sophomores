@@ -17,8 +17,7 @@ import {
   RepeatWrapping,
   ShaderMaterial,
   SRGBColorSpace,
-  Vector2,
-  Vector3
+  Vector2
 } from "three";
 import { useShallow } from "zustand/shallow";
 import { TWEEN_EASE } from "@/constants/animations";
@@ -106,8 +105,6 @@ function GradientInner() {
     ],
     [colorSchemes]
   );
-  const colore = useMemo(() => new ThreeColor().setRGB(122, 122, 122), []);
-  const vecc = useMemo(() => new Vector3(0, 0, 0.46), []);
   const uniforms = useMemo(
     () => ({
       u_color: u_color,
@@ -261,12 +258,6 @@ function GradientInner() {
   });
   return (
     <>
-      <ambientLight args={[colore]} intensity={1} />
-      <directionalLight
-        color={colore.setRGB(164, 164, 164)}
-        intensity={1}
-        position={vecc}
-      />
       <mesh raycast={meshBounds} visible={navIsOpen}>
         <planeGeometry args={[10, 10, 192, 192]} />
         {/** @ts-ignore */}

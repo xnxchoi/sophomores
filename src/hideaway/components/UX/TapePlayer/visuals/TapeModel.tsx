@@ -830,7 +830,7 @@ export function TapeModel({
         <Environment files={HDR_URL} background={false} />
 
         {/*
-         * PointLight — original: new J_(0xFF7829, 50, 3.5, 3.6)
+         * PointLight — original: new J_((colour removed), 50, 3.5, 3.6)
          * GSAP ScrollTrigger animates position.x and position.y.
          */}
         <pointLight

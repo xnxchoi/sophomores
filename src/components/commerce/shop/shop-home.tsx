@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode, type Ref } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode, type Ref } from "react";
 import { useTransitionRouter } from "next-transition-router";
 import { ArrowLeftIcon } from "@phosphor-icons/react/dist/ssr";
 import { Link } from "@/components/core/Link/Link";
@@ -391,8 +391,13 @@ function Home({ vendored, items, labels, initialOpen, cartPanel }: { vendored: V
   // What the stack shows: each product's quantity in the cart (their cartQuantitiesByBookId; our book ids are product
   // ids). Read from Auth's browser cart for now; the member's cart comes with Auth's cart-state hook.
   const guestKey = useSyncExternalStore(subscribeGuestCart, () => JSON.stringify(listGuestCart()), () => "[]");
-  const cartQuantities = useMemo(() => Object.fromEntries((JSON.parse(guestKey) as { productID: string; quantity: number }[])
-    .filter((line) => items.some((entry) => entry.id === line.productID) && line.quantity > 0).map((line) => [line.productID, line.quantity])), [guestKey, items]);
+  // In the cart column, its lines report what's in the cart (a member's too); until they do, the browser's cart.
+  const [panelQuantities, setPanelQuantities] = useState<Record<string, number> | null>(null);
+  const cartQuantities = useMemo(() => Object.fromEntries((panelQuantities
+    ? Object.entries(panelQuantities).map(([productID, quantity]) => ({ productID, quantity }))
+    : JSON.parse(guestKey) as { productID: string; quantity: number }[])
+    .filter((line) => items.some((entry) => entry.id === line.productID) && line.quantity > 0).map((line) => [line.productID, line.quantity])), [guestKey, panelQuantities, items]);
+  const backToShelf = useCallback(() => closeCart.current(), []);
   // Loaded on the cart's address: open at once (their openInstantly), the books not in the cart veiled until it closes.
   const [cartVeil, setCartVeil] = useState(false);
   useEffect(() => { if (cartPanel) { cartShiftFrom.current = 0; setCartVeil(true); cart.openInstantly(); } }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -665,7 +670,7 @@ function Home({ vendored, items, labels, initialOpen, cartPanel }: { vendored: V
   const readingHeight = reading.layout.total + Math.round(geometry.lvh / 2);
   return <div ref={page} className="relative overflow-x-clip" style={{ "--shop-shift": geometry.shift + "px", "--shop-drop": geometry.drop + "px" } as CSSProperties}>
     <CartBehind open={cart.cartMode} art={items[active]?.stageArt} cardTop={geometry.top} />
-    {cartPanel && <CartColumn open={cart.cartMode} shown={cart.panelOpen} back={labels.toShelf} onBack={() => closeCart.current()}>{cartPanel}</CartColumn>}
+    {cartPanel && <CartColumn open={cart.cartMode} shown={cart.panelOpen} back={labels.toShelf} onBack={backToShelf} onLines={setPanelQuantities}>{cartPanel}</CartColumn>}
     <div aria-hidden="true" className="h-(--page-height)" style={{ "--page-height": (readingOpen ? readingHeight : Math.max(0, nextTop)) + "px" } as CSSProperties} />
     {/* The section after the shelf (their Multimedia's place). A placeholder for now (owner, 26 Nov: "a whole new section
         … For now, make it a placeholder: min 100vh, 100vw section"). At least a screen tall, so the page scrolls on

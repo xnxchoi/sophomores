@@ -1540,7 +1540,8 @@
       "title": "Cart",
       "introduction": "Review your selection, then return to the shop to complete your purchase.",
       "signInTitle": "Sign in",
-      "backToCart": "Back to cart"
+      "backToCart": "Back to cart",
+      "buyOnItsPage": "Buy on its page"
     },
     "components_commerce_cart": {
     "estimatedTotalAnnouncement": "Estimated total: {amount} KRW",

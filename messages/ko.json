@@ -1540,7 +1540,8 @@
       "title": "",
       "introduction": "",
       "signInTitle": "",
-      "backToCart": ""
+      "backToCart": "",
+      "buyOnItsPage": ""
     },
     "components_commerce_cart": {
       "estimatedTotalAnnouncement": "",

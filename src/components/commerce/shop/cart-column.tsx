@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { createContext, useContext, useMemo, type ReactNode } from "react";
 import { ArrowLeftIcon } from "@phosphor-icons/react/dist/ssr";
 import { cn } from "@/lib/utils";
 
@@ -18,11 +18,19 @@ import { cn } from "@/lib/utils";
  * - The return link (ReturnToShelfWrap, 1imu): at 60vw + 24 px, 46 px down; in over 320 ms (opacity) and 420 ms
  *   (from 28 px right), 220 ms after it's asked for, out at once; desktop only.
  */
-export function CartColumn({ open, shown, back, onBack, children }: {
+/** What the column's contents can reach: its close (the way back to the shelf), that link's label, and where the lines
+ * report their quantities (the stack's cartQuantitiesByBookId), or null when they leave. */
+type CartColumnValue = { close: () => void; back: string; report: (quantities: Record<string, number> | null) => void };
+const CartColumnContext = createContext<CartColumnValue | null>(null);
+/** The cart column around the caller, or null outside one (the cart's own page). */
+export function useCartColumn() { return useContext(CartColumnContext); }
+
+export function CartColumn({ open, shown, back, onBack, onLines, children }: {
   /** The cart mode is on (the column is mounted and faded by the frame). */
   open: boolean;
   /** The column takes input (theirs: cartPanelOpen). */
-  shown: boolean; back: string; onBack: () => void; children: ReactNode }) {
+  shown: boolean; back: string; onBack: () => void; onLines: CartColumnValue["report"]; children: ReactNode }) {
+  const value = useMemo(() => ({ close: onBack, back, report: onLines }), [onBack, back, onLines]);
   if (!open) return null;
   return <>
     <div aria-hidden="true" className="pointer-events-none fixed top-0 right-0 z-[31] h-[125px] w-[40%] bg-background [mask-image:linear-gradient(#000_0_62px,transparent_100%)] max-[900px]:w-full"
@@ -37,7 +45,7 @@ export function CartColumn({ open, shown, back, onBack, children }: {
     <aside inert={!shown} data-lenis-prevent=""
       className="fixed top-[calc(80px+var(--shop-shift,0px))] right-0 z-30 isolate flex h-[calc(100vh-80px-var(--shop-shift,0px))] w-[40%] flex-col overflow-y-auto overscroll-contain rounded-bl-[8px] bg-background px-6 pt-[39px] pb-6 text-foreground max-[900px]:top-0 max-[900px]:h-dvh max-[900px]:w-full max-[900px]:rounded-none max-[900px]:pt-[110px] max-[900px]:pb-[60vh]"
       style={{ opacity: "var(--cart-panel-enter, 1)" }}>
-      <div className="mb-auto">{children}</div>
+      <div className="mb-auto"><CartColumnContext value={value}>{children}</CartColumnContext></div>
     </aside>
   </>;
 }

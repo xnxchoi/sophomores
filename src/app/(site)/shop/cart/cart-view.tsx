@@ -36,8 +36,10 @@ export type CartProps = {
  * guest cart's write-through once signed in. `frame` lays each step out: the cart page's PageFrame, or the shop's cart
  * panel (shop/cart-panel.tsx), which shows the same steps in stripe.press's cart column.
  */
-export function CartContents({ products, signedIn, initialCapabilities, signInOffInReview, copy, frame }: CartProps & {
+export function CartContents({ products, signedIn, initialCapabilities, signInOffInReview, copy, frame, cart }: CartProps & {
   frame: (props: { title: string; step: "cart" | "sign-in"; children: ReactNode }) => ReactNode;
+  /** The cart itself (default CommerceCart): the shop's cart column lays out its own lines. */
+  cart?: (props: { products: readonly CartProduct[]; signedIn: boolean; localPendingFor?: string; onSignIn?: () => void }) => ReactNode;
 }) {
   const [view, setView] = useState<"cart" | "sign-in">("cart");
   const [member, setMember] = useState(signedIn);
@@ -56,7 +58,8 @@ export function CartContents({ products, signedIn, initialCapabilities, signInOf
   return frame({ title: copy.title, step: "cart", children: <>
     <CommerceProvider>
       {member && <GuestCartWriteThrough running={transferring !== undefined} onRunning={setTransferring} />}
-      <CommerceCart products={products} wide signedIn={member} localPendingFor={transferring} onSignIn={member ? undefined : () => setView("sign-in")} />
+      {cart ? cart({ products, signedIn: member, localPendingFor: transferring, onSignIn: member ? undefined : () => setView("sign-in") })
+        : <CommerceCart products={products} wide signedIn={member} localPendingFor={transferring} onSignIn={member ? undefined : () => setView("sign-in")} />}
     </CommerceProvider>
   </> });
 }

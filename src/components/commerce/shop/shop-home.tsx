@@ -596,11 +596,11 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
     {/* On a phone the return link takes the label's place while a book is open (their Nav__FeaturedSlot: the label slides
         −10 px and fades, the link comes in from +10 px 100 ms later, 300 ms each). */}
     <div className="fixed top-[calc(53px+var(--shop-shift,0px))] left-4 z-20 grid text-[11px] uppercase leading-4 tracking-[0.06em] text-muted-foreground">
-      <p className={cn("col-start-1 row-start-1 transition-[opacity,translate] duration-300", phoneDetail ? "-translate-x-2.5 opacity-0" : "delay-100")}>
+      <p className={cn("col-start-1 row-start-1 transition-[opacity,translate] duration-300 ease-[ease]", phoneDetail ? "-translate-x-2.5 opacity-0" : "delay-100")}>
         [ {onShelf ? labels.shelf : labels.featured} ]
       </p>
       <button type="button" tabIndex={phoneDetail ? 0 : -1} aria-hidden={!phoneDetail} onClick={() => detail.closeBook()}
-        className={cn("col-start-1 row-start-1 -my-3.5 inline-flex min-h-11 min-w-11 items-center self-start text-left uppercase transition-[opacity,translate,color] duration-300 hover:text-foreground",
+        className={cn("col-start-1 row-start-1 -my-3.5 inline-flex min-h-11 min-w-11 items-center self-start text-left uppercase transition-[opacity,translate,color] duration-300 ease-[ease] hover:text-foreground",
           phoneDetail ? "pointer-events-auto delay-100" : "pointer-events-none translate-x-2.5 opacity-0")}>
         <ArrowLeftIcon aria-hidden="true" className="mr-1.5 size-3.5" />{labels.toShelf}
       </button>
@@ -714,6 +714,8 @@ function Cards({ items, featured, geometry, progressRef, listeners, reading, J, 
 }
 
 /**
+ * Easings here are their CSS keywords written as ease-[keyword]: Tailwind's named ease-* utilities and its default
+ * transition curve are cubic-bezier(0.4,0,0.2,1) variants, not the CSS keywords (the rail measured front-loaded, G9).
  * The title rail (FeaturedTitleList, 21ix): fixed at 70 px (63 on a phone), every title (three times over) in one line, the active one
  * upright and centred at 47.5 % of the width (500 ms ease-in-out), the rest italic at 0.8; each title's refund rule on a
  * line under it (owner, 25 Nov); the titles fade in 1.2 s after load and fade out as the shelf takes the screen.
@@ -745,10 +747,10 @@ function TitleRail({ railRef, label, titles, refunds, active, fade, shelf, detai
   }, [active, titles, detail, anchor]);
   return <nav ref={railRef} aria-label={label} aria-hidden={hidden || undefined} inert={hidden} style={{ opacity: shown && !hidden ? 1 - 2 * fade : 0 }}
     className={cn("pointer-events-none fixed inset-x-0 top-[calc(70px+var(--shop-shift,0px))] z-20 overflow-hidden px-5 pt-5 pb-3 transition-[opacity,clip-path] duration-[1600ms] max-[900px]:top-[calc(63px+var(--shop-shift,0px))]",
-      hidden ? "duration-300" : detail ? "[clip-path:inset(0_40%_0_0)] [transition-duration:1600ms,600ms] [transition-timing-function:ease,cubic-bezier(0.16,1,0.3,1)]" : "[clip-path:inset(0_0_0_0)]",
+      hidden ? "duration-300" : detail ? "[clip-path:inset(0_40%_0_0)] [transition-duration:1600ms,600ms] [transition-timing-function:ease,cubic-bezier(0.16,1,0.3,1)]" : "[clip-path:inset(0_0_0_0)] ease-[ease]",
       shown && shelf && !detail && !hidden && "duration-[350ms]")}>
     <ul style={{ transform: "translateX(" + shift + "px)" }}
-      className="flex w-max gap-x-[72px] transition-transform duration-500 ease-in-out max-[900px]:gap-x-[30px]">
+      className="flex w-max gap-x-[72px] transition-transform duration-500 ease-[ease-in-out] max-[900px]:gap-x-[30px]">
       {/* Three copies, the middle one active, so the active title always has neighbours on both sides (theirs: 21ix). */}
       {[...titles, ...titles, ...titles].map((title, slot) => { const index = slot % titles.length, middle = slot >= titles.length && slot < 2 * titles.length;
         return <li key={slot} aria-hidden={middle ? undefined : true}>
@@ -806,7 +808,7 @@ function DetailStack({ shown, height, toShelf, onClose, children }: { shown: boo
       // A phone (0ckg:125-183): full width, under the card and the book (their slot 10099 < card 10200 < canvas 10300), no slide.
       "max-[900px]:z-[1] max-[900px]:w-full max-[900px]:rounded-none max-[900px]:translate-x-0 max-[900px]:transition-opacity max-[900px]:duration-300",
       shown ? "translate-x-0 transition-transform duration-600 ease-[cubic-bezier(0.16,1,0.3,1)]" : "translate-x-full transition-transform duration-300 ease-[cubic-bezier(0.32,0,0.67,0)] max-[900px]:opacity-0")}>
-    <div className={cn("relative h-full transition-transform duration-[810ms] ease-out max-[900px]:translate-x-0", shown ? "translate-x-0" : "translate-x-[5vw]")}>
+    <div className={cn("relative h-full transition-transform duration-[810ms] ease-[ease-out] max-[900px]:translate-x-0", shown ? "translate-x-0" : "translate-x-[5vw]")}>
       {/* Under the site header (which overlays the top 72 px), where their 46 px under their own nav would be covered. On a
           phone the link sits in the label's slot instead. */}
       <div className="sticky top-[88px] z-10 px-6 max-[900px]:hidden">

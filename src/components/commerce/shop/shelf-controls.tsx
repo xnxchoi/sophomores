@@ -92,7 +92,7 @@ export function ShelfPills({ shown, hub, rects, labels, onDetails, onOpenBook }:
   }, [visible]);
 
   const to = () => hub.spineSelectionLiveRef.current.to;
-  return <div aria-hidden={!visible} className={cn("pointer-events-none fixed inset-0 z-30 max-[900px]:hidden", visible ? "opacity-100 transition-opacity duration-240 ease-out" : "opacity-0")}>
+  return <div aria-hidden={!visible} className={cn("pointer-events-none fixed inset-0 z-30 max-[900px]:hidden", visible ? "opacity-100 transition-opacity duration-240 ease-[ease-out]" : "opacity-0")}>
     <div ref={row} className="fixed top-0 left-0 flex -translate-x-1/2 -translate-y-1/2 items-center gap-3">
       <ShelfPill visible={visible} label={labels.details} onEnter={() => { hovered.current = true; }} onPress={() => onDetails(to())} />
       {onOpenBook && <ShelfPill visible={visible} label={labels.openBook} onEnter={() => { hovered.current = true; }} onPress={() => onOpenBook(to())} />}
@@ -155,7 +155,7 @@ export function ShelfPager({ shown, hub, rects, count, slotOf, sectionTop, label
     return () => { cancelAnimationFrame(frame); window.removeEventListener("resize", reset); setVisible(false); };
   }, [shown, hub, rects, slotOf, sectionTop]);
 
-  return <div aria-hidden={!visible} className={cn("pointer-events-none fixed inset-0 z-30 min-[901px]:hidden", visible ? "opacity-100 transition-opacity duration-240 ease-out" : "opacity-0")}>
+  return <div aria-hidden={!visible} className={cn("pointer-events-none fixed inset-0 z-30 min-[901px]:hidden", visible ? "opacity-100 transition-opacity duration-240 ease-[ease-out]" : "opacity-0")}>
     <div ref={row} role="group" aria-label={labels.group}
       className={cn("fixed top-0 left-1/2 flex -translate-x-1/2 items-center justify-between text-foreground select-none", visible ? "pointer-events-auto" : "pointer-events-none")}>
       <PagerButton visible={visible} label={labels.previous} disabled={position <= 1} onPress={() => hub.stepSpineSelection(-1, count)}>

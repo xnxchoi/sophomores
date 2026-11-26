@@ -15,6 +15,9 @@ test('non-React sibling-shared component modules use only the approved scoped ex
     // The product page's content shape: a pure zod reader and its types. The route's server read (shop/products/[id]) and
     // the client section component (product-page.tsx) both use it; the route must not import it through that component.
     'commerce/product-page/_shared/content.ts',
+    // The no-WebGL image set (the rendered manifest's reader and types): the two no-WebGL siblings, the book layer and the
+    // spine row, both read it; neither owns it, and neither should import it through the other.
+    'commerce/shop/_shared/fallback-images.ts',
     // AGENTS.md: a narrow documented exception for a small pure module shared by siblings (header-actions, UX/Menu).
     'shell/_shared/escape-layers.ts',
     // Checkout and result must validate the same persisted recovery record.

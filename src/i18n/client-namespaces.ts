@@ -84,7 +84,6 @@ export const segmentNamespaces = {
     "Customer.app_site_me_settings_page_client",
     "Customer.app_site_me_settings_security_page_client",
     "Customer.app_site_shop_cart_page",
-    "Customer.cartDrawer",
     "Customer.components_commerce_cart",
     "Customer.components_commerce_orders",
     "Customer.components_settings_SettingsRail",

@@ -1718,11 +1718,6 @@
       "pagesUnavailable": "Page count unavailable",
       "noPages": "No order pages"
     },
-    "cartDrawer": {
-    "description": "Review the items in your cart.",
-      "close": "Close cart",
-      "fullPage": "Open cart page"
-    },
     "components_membership_welcome": {
       "title": "Welcome",
       "membership": "Membership",

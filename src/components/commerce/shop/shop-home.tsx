@@ -395,8 +395,11 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
     arrived.current = undefined;
     if (!(index >= 0 && items[index]?.details && detail.openBook(index, true))) { setLanding(null); held.current = false; }
   }, []);   // eslint-disable-line react-hooks/exhaustive-deps
+  // A phone's rail fades as an open starts, not when the details arrive (their `dO`: `ah && ds != null`, 06w9:13545).
+  const [opening, setOpening] = useState(false);
+  useEffect(() => { if (detail.open != null) setOpening(false); }, [detail.open]);
   useEffect(() => { openRef.current = (index: number) => {
-    if (items[index]?.details && detail.openBook(index)) return;
+    if (items[index]?.details && detail.openBook(index)) { setOpening(true); return; }
     const item = items[index]; if (item) navigate.push(item.href);
   }; });
 
@@ -610,7 +613,7 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
     <TitleRail railRef={titles} label={labels.titles} titles={items.map((entry) => entry.title)} refunds={items.map((entry) => entry.refund)} active={detail.open ?? selected ?? railIndex}
       fade={detail.open != null ? 0 : rowOver >= 0 ? 0.5 * rowOver : Math.max(0, Math.min(1, (committed - K - 0.2) / 0.3))} shelf={committed >= J}
       detail={detail.shifted} anchor={detail.open != null ? null : anchor}
-      hidden={phoneDetail}
+      hidden={phoneDetail || (geometry.mobile && opening)}
       onPick={(index) => detail.open != null ? openRef.current(index) : index < catalogue.t ? scrollTo(bookY(index), stepMs(bookY(index))) : scrollTo(shelfY(), 1833)} />
     {item && <ViewDetails href={item.href} label={labels.viewDetails} hidden={(onShelf || detail.open != null) && !look.home} onOpen={() => openRef.current(active)}
       book={noWebgl ? undefined : { label: look.open && look.home ? labels.closeBook : labels.openBook, open: look.open && look.home,

@@ -39,6 +39,8 @@ type Item = { id: string; title: string; price: string; href: string; stageArt: 
   pageCount?: number;
   /** Its refund rule (RefundTerms), a line under its title wherever the shop lists it. */
   refund?: ReactNode };
+/** The shelf's state the scene can save and restore (their captureSpineView / restoreSpineView, 12s2:1737, 2178). */
+type SpineView = { selection: { to: number; settled: boolean } & Record<string, unknown>; yaws: number[]; offset: number; primed: boolean; dragOffset: number };
 type Labels = { featured: string; shelf: string; viewDetails: string; toShelf: string; openBook: string; closeBook: string;
   previousPage: string; nextPage: string; titles: string; sceneFailed: string; tryAgain: string;
   /** "Open {title}" and "Show {title} on the bookshelf": the no-WebGL books' names (theirs, 2548 and 27511). */
@@ -110,6 +112,9 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
     const flag = hub.homeStackDarkThemeActiveLiveRef as { current: boolean } | undefined;
     if (!flag) return;
     const root = document.documentElement;
+    // Their colour theme (a third, per-book-colour mode) has no counterpart here: off.
+    const colour = hub.homeStackColorThemeActiveLiveRef as { current: boolean } | undefined;
+    if (colour) colour.current = false;
     const read = () => { flag.current = root.dataset.theme === "dark"; };
     read();
     const watch = new MutationObserver(read);
@@ -307,7 +312,9 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
       // Where closing returns to (their origin snapshot `te`): the home scroll the book opened from; none for an address.
       const raw = hub.scrollProgressDirectLiveRef.current as number;
       if (arrived) origin.current = null;
-      else if (!held.current) origin.current = { y: window.scrollY, index, fromShelf: raw >= J + 0.5 && raw < K + 1 };
+      else if (!held.current) origin.current = { y: window.scrollY, index, fromShelf: raw >= J + 0.5 && raw < K + 1,
+        // …and the shelf as it stood (their `tl()` snapshot takes `captureSpineView`, 06w9:10624).
+        spine: (hub.captureSpineView as unknown as () => SpineView)() };
       held.current = true; stopDriving();
       progressRef.current = cardsRef.current = index; hub.scrollProgressDirectLiveRef.current = index;
       hub.spineViewProgressLiveRef.current = hub.spineViewProgressFor(index); setCommitted(index);
@@ -319,12 +326,15 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
     // the shelf returns onto its own card; the book it opened from returns where it was; any other to the shelf.
     unpin: (index) => {
       const from = origin.current;
-      returning.current = { y: index < catalogue.t && !from?.fromShelf ? bookY(index) : from && from.index === index ? from.y : null };
+      const card = index < catalogue.t && !from?.fromShelf;
+      returning.current = { y: card ? bookY(index) : from && from.index === index ? from.y : null, index, spine: card ? undefined : from?.spine ?? null };
     } }; });
   const detail = useBookDetail(hub, catalogue, router, tokens, detailSource);
   const openIndex = useRef<number | null>(null);
   useEffect(() => { openIndex.current = detail.open; }, [detail.open]);
-  const origin = useRef<{ y: number; index: number; fromShelf: boolean } | null>(null), returning = useRef<{ y: number | null } | null>(null);
+  const origin = useRef<{ y: number; index: number; fromShelf: boolean; spine: SpineView } | null>(null);
+  /** `spine`: the shelf to restore (null: the shelf as it is now); undefined when the book returns onto its card. */
+  const returning = useRef<{ y: number | null; index: number; spine?: SpineView | null } | null>(null);
 
   // The reading scroll (use-reading-scroll.tsx): while a book is open the page scrolls every book's details, and that
   // scroll moves the scene (the reading book's exit, the next one's arrival) and the cards; the address follows.
@@ -364,6 +374,14 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
     if (detail.open != null || !back) return;
     returning.current = null;
     window.scrollTo(0, back.y ?? seatY() ?? shelfY());
+    // Back on the shelf, the shelf is as it was, with the closed book the selected one (their `restoreSpineView(aj(…))`,
+    // 06w9:15283, 15291, 15892); without a snapshot the scene settles onto it itself (detailReturnSettleLiveRef).
+    if (back.spine !== undefined) {
+      const view = back.spine ?? (hub.captureSpineView as unknown as () => SpineView)();
+      (hub.restoreSpineView as unknown as (view: SpineView) => void)(view.selection.to === back.index ? view
+        : { ...view, selection: { ...view.selection, to: back.index, settled: true }, yaws: [], offset: 0, primed: false, dragOffset: 0 });
+      hub.detailReturnSettleLiveRef.current = back.spine ? null : back.index;
+    }
     held.current = false;
     hub.backgroundSnapScrollLiveRef.current = 6; hub.bookRowSeedLiveRef.current = 6;
     window.dispatchEvent(new Event("scroll"));

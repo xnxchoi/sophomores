@@ -135,7 +135,7 @@ export function ChapterNav({
               aria-current={current === chapter.id ? "location" : undefined}
               onClick={chapter.id === "hero" ? onHome : undefined}
             >
-              <FocusShape className="outline-offset-[5px] group-focus-visible/focus:outline-saffron-amber-lighter-1">{chapter.label}</FocusShape>
+              <FocusShape className="outline-offset-2 group-focus-visible/focus:outline-ring">{chapter.label}</FocusShape>
             </Link>
           ))}
         </div>
@@ -269,7 +269,7 @@ export function ChapterNav({
           exit={{ opacity: 0 }}
           transition={{ duration: motionTokens.duration.normal }}
         >
-          <FocusShape className="outline-offset-[5px] group-focus-visible/focus:outline-saffron-amber-lighter-1">{t("skipToNextChapter")}</FocusShape>
+          <FocusShape className="outline-offset-2 group-focus-visible/focus:outline-ring">{t("skipToNextChapter")}</FocusShape>
         </motion.a>
       )}
     </>

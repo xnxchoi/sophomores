@@ -114,7 +114,12 @@ function StoryCard({
         />
       )}
       {story.tone === "green" && <StoryArtwork tone="green" reveal={opacity} />}
-      <div className="relative flex flex-col gap-4">
+      <div
+        className={cn(
+          "relative flex flex-col gap-4",
+          story.tone === "green" && "before:pointer-events-none before:absolute before:-inset-3 before:-z-1 before:bg-medici-cypress-tuned before:blur-md"
+        )}
+      >
         <span
           className="text-teaser-label self-start bg-titanium/10 p-2 font-sans uppercase"
         >

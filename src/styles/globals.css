@@ -290,8 +290,9 @@
   --background-faded: var(--stone);
   --foreground-off: var(--black);
   --foreground-faded: var(--black-lighter-2);
-  /* The dark ground, one token (Cordy, 26 Nov): Carbon Darker -1 as the owner's file sets it. Swap here only. */
-  --dark-ground: var(--carbon-deep);
+  /* The dark ground, one token (Cordy, 26 Nov). Owner, 26 Nov (via Cordy): Carbon, with the frame rails kept at Carbon
+     Darker -1 so the frame stays visible against the page. */
+  --dark-ground: var(--black);
   /* The header pill buttons' glass: Singer Stone at a quarter, over the blur. */
   --button-background: color-mix(in oklab, var(--stone) 25%, transparent);
   /* Hideaway's viewport frame and its ink (the open menu's links): Carbon Darker -1 and Titanium in both themes. */
@@ -335,23 +336,25 @@
   --border-subtle: var(--border);
   --background: var(--dark-ground);
   --foreground: var(--white);
-  --card: var(--black);
+  /* Cards and popovers stand off the Carbon ground on Gunmetal; Carbon Lighter +2 is the border, so a card in it
+     would lose its edge (the owner's choice of the two, relayed by Cordy on 26 Nov). */
+  --card: var(--dark-grey);
   --card-foreground: var(--white);
-  --popover: var(--black);
+  --popover: var(--dark-grey);
   --popover-foreground: var(--white);
   --primary: var(--white);
   --primary-foreground: var(--carbon-deep);
-  --secondary: var(--black);
+  --secondary: var(--dark-grey);
   --secondary-foreground: var(--white);
   --muted: var(--dark-grey);
   --muted-foreground: var(--stone);
-  --accent: var(--dark-grey);
+  --accent: var(--black-lighter-2);
   --accent-foreground: var(--white);
   --destructive: var(--red);
   --border: var(--black-lighter-2);
   --input: var(--black-lighter-2);
   --ring: var(--light-grey);
-  --background-off: var(--black);
+  --background-off: var(--dark-grey);
   --background-faded: var(--black-lighter-2);
   --foreground-off: var(--white);
   --foreground-faded: var(--stone);

@@ -491,6 +491,8 @@ const TransitionInternal = (props: TransitionWrapperProps) => {
       exit="leaving"
       suppressHydrationWarning
       data-themed="background-color,color"
+      // The page layer the site's fade moves (TransitionProvider leaver, (site)/loading.tsx reveal).
+      data-rp-page=""
       ref={pageRef}
       variants={currentVariants}
       className={cn(

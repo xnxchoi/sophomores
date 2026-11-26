@@ -174,6 +174,7 @@ overrides:
   brace-expansion@1: ^1.1.17
 
 patchedDependencies:
+  next-transition-router@0.2.11: 184978af118934191c013ddc6bb7ab75ffd9b89bc49486f75c7ab7438deda8d5
   payload: 38e8aeb4045e81fa3fb049a6a783b3ac5a65cb17ebeeaae6139736a07f456316
 
 importers:
@@ -452,7 +453,7 @@ importers:
         version: 4.2.3(next@16.5.0-canary.27(@babel/core@7.29.7(supports-color@8.1.1))(@types/node@24.19.2)(babel-plugin-macros@3.1.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(sass@1.106.1))
       next-transition-router:
         specifier: ^0.2.11
-        version: 0.2.11(next@16.5.0-canary.27(@babel/core@7.29.7(supports-color@8.1.1))(@types/node@24.19.2)(babel-plugin-macros@3.1.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(sass@1.106.1))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+        version: 0.2.11(patch_hash=184978af118934191c013ddc6bb7ab75ffd9b89bc49486f75c7ab7438deda8d5)(next@16.5.0-canary.27(@babel/core@7.29.7(supports-color@8.1.1))(@types/node@24.19.2)(babel-plugin-macros@3.1.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(sass@1.106.1))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       nodemailer:
         specifier: ^10.2.1
         version: 10.2.1
@@ -15041,7 +15042,7 @@ snapshots:
       minimist: 1.2.8
       next: 16.5.0-canary.27(@babel/core@7.29.7(supports-color@8.1.1))(@types/node@24.19.2)(babel-plugin-macros@3.1.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(sass@1.106.1)
 
-  next-transition-router@0.2.11(next@16.5.0-canary.27(@babel/core@7.29.7(supports-color@8.1.1))(@types/node@24.19.2)(babel-plugin-macros@3.1.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(sass@1.106.1))(react-dom@19.3.1(react@19.3.1))(react@19.3.1):
+  next-transition-router@0.2.11(patch_hash=184978af118934191c013ddc6bb7ab75ffd9b89bc49486f75c7ab7438deda8d5)(next@16.5.0-canary.27(@babel/core@7.29.7(supports-color@8.1.1))(@types/node@24.19.2)(babel-plugin-macros@3.1.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(sass@1.106.1))(react-dom@19.3.1(react@19.3.1))(react@19.3.1):
     dependencies:
       delegate-it: 6.4.0
       next: 16.5.0-canary.27(@babel/core@7.29.7(supports-color@8.1.1))(@types/node@24.19.2)(babel-plugin-macros@3.1.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(sass@1.106.1)

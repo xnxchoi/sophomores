@@ -346,7 +346,8 @@ compatibility does not promise that every legacy snapshot builds with today's
 Docker recipe.
 
 The current profile includes `src/`, the required `messages/` directory, and the exact
-`patches/payload.patch` declared by `pnpm-workspace.yaml`, alongside the existing
+patches declared by `pnpm-workspace.yaml` (`patches/payload.patch` and
+`patches/next-transition-router@0.2.11.patch`), alongside the existing
 root fonts, configuration, public assets, tests, scripts and design inputs.
 A missing locale directory or declared patch fails closed; individual locale files
 are copied and fingerprinted, not checked for import completeness. `src/hideaway/` stays

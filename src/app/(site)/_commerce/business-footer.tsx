@@ -16,8 +16,8 @@ import { cn } from "@/lib/utils";
  * the row's end, then the business facts under one hairline. Help and Shipping live in the Help pill and the site menu.
  * The legal links and the switch don't depend on the business-info read; the facts stream into their own section.
  * Redesigned 26 Nov (owner: "It looks fucking ugly. I already gave you the freaking colors, so, you know, just fucking
- * pick something"): its own ground from his palette (globals.css --color-footer, Imperial Plum Darker -2 under
- * Mauve-Bone ink), the same in both themes, so the page visibly lifts off it. Quiet Host volume, with the contrast in
+ * pick something"): its own ground from his palette (globals.css --color-footer; owner, 26 Nov: "Carbon lighter":
+ * Carbon Lighter +2 under Titanium ink, Singer Stone labels), the same in both themes, so the page visibly lifts off it. Quiet Host volume, with the contrast in
  * styling: the legal links large and light (the sans at 300), the facts tiny-labelled in a ruled grid.
  * Children that ask for text-foreground get the ink: the footer sets --foreground for its own subtree.
  */
@@ -29,7 +29,7 @@ export function BusinessFooterView({ children }: { children?: ReactNode }) {
     <footer className="relative isolate bg-footer px-gutter pt-8 pb-8 text-foreground [--foreground:var(--color-footer-ink)] phone:after:absolute phone:after:inset-x-0 phone:after:top-full phone:after:h-[calc(max(var(--bar-target),var(--frame-bottom))_+_env(safe-area-inset-bottom))] phone:after:bg-footer md:pt-20 md:pb-16">
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between md:gap-10">
         {/* Large and light, so a hairline underline (1 px, 30 % ink) is enough to mark them as links. */}
-        <SellerPolicyLinks className="flex-col gap-x-8 gap-y-0 text-[22px] leading-tight font-light tracking-[-0.02em] sm:flex-row md:text-[28px] lg:text-[34px] [&_a]:decoration-current/30 [&_a]:decoration-1 [&_a]:underline-offset-[0.18em] [&_a]:hover:decoration-current" />
+        <SellerPolicyLinks className="flex-col gap-x-8 gap-y-0 text-[22px] leading-tight font-light max-md:text-shadow-footer-ground tracking-[-0.02em] sm:flex-row md:text-[28px] lg:text-[34px] [&_a]:decoration-current/30 [&_a]:decoration-1 [&_a]:underline-offset-[0.18em] [&_a]:hover:decoration-current" />
         <div className="-mx-3 shrink-0 self-start md:self-auto"><FooterLocaleSwitch /></div>
       </div>
       <div className="mt-6 min-w-0 border-t border-current/15 pt-5 empty:hidden md:mt-10 md:pt-6">{children}</div>
@@ -73,7 +73,7 @@ export function BusinessFooterFacts({ facts }: { facts: FooterSellerFacts | null
   return (
     <section id="seller-information" aria-label={t("section")} className="scroll-mt-header">
       {/* Four across from lg in the Korean form's order; the address takes two columns, so the seven close two rows. */}
-      <dl className="grid gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-4">
+      <dl className="grid gap-x-8 gap-y-5 text-shadow-footer-ground sm:grid-cols-2 lg:grid-cols-4">
         {facts.tradeName && <FooterFact label={t("name")}>{facts.tradeName}</FooterFact>}
         {facts.representative && <FooterFact label={t("representative")}>{facts.representative}</FooterFact>}
         {facts.businessRegistrationNumber && <FooterFact label={t("registrationNumber")}>{facts.businessRegistrationNumber}</FooterFact>}
@@ -91,13 +91,13 @@ export function BusinessFooterFacts({ facts }: { facts: FooterSellerFacts | null
 }
 
 /**
- * A tiny label over its value (DESIGN.md Label: 11 px, uppercase, 0.06em), at 80 % ink: 60 % measured 5.03:1 on flat
- * plum but about 3.9:1 over the screened grain (Review-B), and the grain stays at the owner's values.
+ * A tiny label over its value (DESIGN.md Label: 11 px, uppercase, 0.06em), in Singer Stone (--color-footer-muted) on
+ * the Carbon Lighter +2 ground; the grain stays at the owner's values.
  */
 function FooterFact({ label, wide, children }: { label: string; wide?: boolean; children: ReactNode }) {
   return (
     <div className={cn("flex min-w-0 flex-col gap-1", wide && "sm:col-span-2")}>
-      <dt className="text-[11px] leading-4 tracking-[0.06em] text-foreground/80 uppercase">{label}</dt>
+      <dt className="text-[11px] leading-4 tracking-[0.06em] text-footer-muted uppercase">{label}</dt>
       <dd className="min-w-0 text-[13px] leading-5 break-words text-foreground">{children}</dd>
     </div>
   );

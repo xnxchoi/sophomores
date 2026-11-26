@@ -1,5 +1,5 @@
 import { useTranslations } from "next-intl";
-import Link from "next/link";
+import { Link } from "next-transition-router";
 import { cn } from "@/lib/utils";
 import type { SellerInformation } from "@/lib/commerce/disclosures";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";

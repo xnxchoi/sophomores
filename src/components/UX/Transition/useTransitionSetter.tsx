@@ -311,7 +311,7 @@ function resolveTarget(fromHref: string, toHref: string): string {
  *   LOSTINSEOUL internal handoff → LOST_PRODUCT
  *   /me/settings ↔ /me/settings/* → SHELL (shell stays; pane owns the fade)
  *   /shop ↔ /shop/products/* → SHELL (one page; the shop layout owns the move)
- *   from.group ≠ to  → CURTAIN
+ *   (the cross-group CURTAIN is retired; owner, 26 Nov)
  *   default          → FADE
  */
 export function pickTransitionType(ctx: TransitionContext): TransitionDecision {
@@ -339,16 +339,9 @@ export function pickTransitionType(ctx: TransitionContext): TransitionDecision {
   if (isShopShelfPath(from.pathname) && isShopShelfPath(to.pathname) && from.pathname !== to.pathname) {
     return { type: "SHELL", from, to };
   }
-  // Finishing a purchase: from the shop or tickets to the buyer's own order under /me/orders, the page
-  // fades rather than taking the account curtain, so the step after payment doesn't read as leaving.
-  if (from.group === "commerce" && isOwnOrderPath(to.pathname)) return { type: "FADE", from, to };
-  if (from.group !== to.group) return { type: "CURTAIN", from, to };
+  // Every other page change takes the standard fade, between groups too: the curtain is retired (owner, 26 Nov: "Use the
+  // fucking standard fade").
   return { type: "FADE", from, to };
-}
-
-function isOwnOrderPath(pathname: string): boolean {
-  const path = normalizePath(pathname);
-  return path === "/me/orders" || path.startsWith("/me/orders/");
 }
 
 export function isShopShelfPath(pathname: string): boolean {

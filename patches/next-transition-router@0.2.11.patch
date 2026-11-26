@@ -1,0 +1,59 @@
+diff --git a/dist/index.js b/dist/index.js
+index 92a6e0f4fa50c02bfc4f1b219a415546d66dbeb6..a8c86bef2cdb8818949a2b0e033b6df4075ec486 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -1,6 +1,6 @@
+ 'use client';
+ import { jsx } from 'react/jsx-runtime';
+-import { useState, useRef, useCallback, useEffect, useMemo, use, createContext } from 'react';
++import { useState, useRef, useCallback, useEffect, useMemo, use, createContext, useTransition } from 'react';
+ import delegate from 'delegate-it';
+ import { useRouter, usePathname } from 'next/navigation';
+ import { format } from 'url';
+@@ -67,6 +67,13 @@ function TransitionRouter({ children, leave = /*#__PURE__*/ _async_to_generator(
+     const [stage, setStage] = useState("none");
+     const leaveRef = useRef(null);
+     const enterRef = useRef(null);
++    // sphmrs patch: a push that lands on the page it left (a redirect back to the current path) never changes the
++    // pathname, so the stage stayed "leaving" and every later link was ignored. The leave's push runs in a transition,
++    // which stays pending until Next commits the navigation; if it settles on the same path, enter as usual.
++    const [isPushPending, startPush] = useTransition();
++    const pathnameRef = useRef(pathname);
++    pathnameRef.current = pathname;
++    const pushedFrom = useRef(null);
+     const navigate = useCallback(/*#__PURE__*/ _async_to_generator(function*(href, pathname, method = "push", options) {
+         if (stage === "leaving") return Promise.resolve();
+         let next = ()=>router[method](href, options);
+@@ -97,7 +104,10 @@ function TransitionRouter({ children, leave = /*#__PURE__*/ _async_to_generator(
+         !isSamePathDifferentParams // not same pathname but different params
+         ) {
+             setStage("leaving");
+-            leaveRef.current = yield leave(next, pathname, href);
++            leaveRef.current = yield leave(()=>{
++                pushedFrom.current = pathnameRef.current;
++                startPush(next);
++            }, pathname, href);
+         } else {
+             next();
+         }
+@@ -156,6 +166,20 @@ function TransitionRouter({ children, leave = /*#__PURE__*/ _async_to_generator(
+         stage,
+         pathname
+     ]);
++    useEffect(()=>{
++        const from = pushedFrom.current;
++        if (isPushPending || from === null) return;
++        pushedFrom.current = null;
++        if (stage === "leaving" && pathname === from) {
++            if (typeof enterRef.current === "function") enterRef.current();
++            enterRef.current = null;
++            setStage("entering");
++        }
++    }, [
++        isPushPending,
++        stage,
++        pathname
++    ]);
+     const value = useMemo(()=>({
+             stage,
+             navigate,

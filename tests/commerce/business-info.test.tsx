@@ -1,4 +1,3 @@
-import { EnglishMessages } from "../fixtures/english-messages";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
@@ -69,7 +68,7 @@ test("an empty global leaves the policy page unchanged", () => {
 
 test("the footer merges the global and the approved disclosure per field, and no page shows seller details", () => {
   const seller = { name: "Fixture seller", representative: "Fixture rep", registrationNumber: "000-00-00000", address: "Fixture address", phone: "02-0000-0000" };
-  const render = (value: ReturnType<typeof mergeSellerFacts>) => renderToStaticMarkup(<EnglishMessages><BusinessFooterView><BusinessFooterFacts facts={value} /></BusinessFooterView></EnglishMessages>);
+  const render = (value: ReturnType<typeof mergeSellerFacts>) => renderToStaticMarkup(<MemberAuthProviders><BusinessFooterView><BusinessFooterFacts facts={value} /></BusinessFooterView></MemberAuthProviders>);
   // A complete global: all seven facts, the disclosure unused.
   const complete = render(mergeSellerFacts(parseBusinessInformation(facts).filled, seller));
   for (const value of Object.values(facts)) assert.equal(complete.includes(value), true, value);
@@ -86,9 +85,9 @@ test("the footer merges the global and the approved disclosure per field, and no
 test("the footer keeps the legal links and EN / KO without rendering unapproved business facts", () => {
   for (const candidate of [null, facts]) {
     const html = renderToStaticMarkup(
-      <EnglishMessages>
+      <MemberAuthProviders>
         <BusinessFooterView><BusinessFooterFacts facts={candidate} /></BusinessFooterView>
-      </EnglishMessages>,
+      </MemberAuthProviders>,
     );
     for (const value of Object.values(facts)) assert.equal(html.includes(value), !!candidate, value);
     for (const path of ["/terms", "/privacy", "/refund"]) assert.equal(html.split(`href="${path}"`).length, 2, path);

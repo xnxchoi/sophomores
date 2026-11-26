@@ -147,7 +147,6 @@ const tU = {
   overflowX: "visible",
   overflowY: "visible"
 };
-const dlay = 0.7;
 type TransitionAnimation =
   | { [y in keyof CSSProperties]: CSSProperties[keyof CSSProperties] }
   | Variant;
@@ -161,28 +160,23 @@ const transitionMappings: TransitionMap = {
     entering: { opacity: 1, transition: { duration: 0 } },
     leaving: { opacity: 1, transition: { duration: 0 } }
   },
+  // The site's standard fade (owner, 26 Nov: "Use the fucking standard fade, with adjusted timing if need be; fade out
+  // should complete before the current page is unmounted, and the next page should be mounted before fading in"). The
+  // leaving page fades out in TransitionProvider's leaver before the router moves on; the arriving page mounts at 0 and
+  // fades in here at once, with no wait and no position swap, so its box never changes.
   FADE: {
     none: {
-      ...tz,
-      opacity: "0"
+      opacity: 0
     },
     entering: {
-      ...tU,
-      opacity: "1",
+      opacity: 1,
       transition: {
-        ease: "easeIn",
-        duration: 0.3,
-        delay: dlay
+        ease: "easeOut",
+        duration: 0.28
       }
     },
     leaving: {
-      ...tz,
-      opacity: "0",
-      transition: {
-        delay: dlay,
-        duration: 0.3,
-        ease: "easeOut"
-      }
+      opacity: 0
     }
   },
   FROM_MENU: {

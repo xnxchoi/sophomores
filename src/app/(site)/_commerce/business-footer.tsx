@@ -29,7 +29,7 @@ export function BusinessFooterView({ children }: { children?: ReactNode }) {
     <footer className="relative isolate bg-footer px-gutter pt-8 pb-8 text-foreground [--foreground:var(--color-footer-ink)] phone:after:absolute phone:after:inset-x-0 phone:after:top-full phone:after:h-[calc(max(var(--bar-target),var(--frame-bottom))_+_env(safe-area-inset-bottom))] phone:after:bg-footer md:pt-20 md:pb-16">
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between md:gap-10">
         {/* Large and light, so a hairline underline (1 px, 30 % ink) is enough to mark them as links. */}
-        <SellerPolicyLinks className="flex-col gap-x-8 gap-y-0 text-[22px] leading-tight font-light tracking-[-0.02em] sm:flex-row md:text-[28px] lg:text-[34px] [&_a]:decoration-current/30 [&_a]:decoration-1 [&_a]:underline-offset-[0.18em] [&_a]:hover:decoration-current" />
+        <SellerPolicyLinks className="flex-col gap-x-8 gap-y-0 text-[22px] leading-tight font-light max-md:text-shadow-footer-ground tracking-[-0.02em] sm:flex-row md:text-[28px] lg:text-[34px] [&_a]:decoration-current/30 [&_a]:decoration-1 [&_a]:underline-offset-[0.18em] [&_a]:hover:decoration-current" />
         <div className="-mx-3 shrink-0 self-start md:self-auto"><FooterLocaleSwitch /></div>
       </div>
       <div className="mt-6 min-w-0 border-t border-current/15 pt-5 empty:hidden md:mt-10 md:pt-6">{children}</div>

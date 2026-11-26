@@ -421,7 +421,7 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
   // a screen below the seat's 0.15 lift; on a phone, a screen below a fifth of the shelf. So the row has barely seated
   // when the section comes up and lifts it (measured on stripe.press: their section sits at 4524 px, the formula
   // gives 4524; ours stood 1,500 px further down, leaving the shelf still for a whole screen and more).
-  const next = useRef<HTMLDivElement>(null);
+  const next = useRef<HTMLElement>(null);
   useEffect(() => { hub.homeWebsitesSectionElLiveRef.current = next.current; return () => { hub.homeWebsitesSectionElLiveRef.current = null; }; }, [hub]);
   const nextTop = useMemo(() => {
     const { extents, starts, lvh, mobile, total } = geometry;
@@ -477,10 +477,12 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
   const readingHeight = reading.layout.total + Math.round(geometry.lvh / 2);
   return <div ref={page} className="relative overflow-x-clip">
     <div aria-hidden="true" className="h-(--page-height)" style={{ "--page-height": (readingOpen ? readingHeight : Math.max(0, nextTop)) + "px" } as CSSProperties} />
-    {/* A screen tall, so the page scrolls on until its top passes the window's: their row lift (spineRowLiftForWebsitesTop)
-        only takes the row fully off once the section's top is ~100 px from the window's. At 40lvh the page ended at
-        213 px and left the row half under the header (measured, G5). Theirs scrolls on through its Multimedia section. */}
-    <div ref={next} aria-hidden="true" className="h-lvh" />
+    {/* The section after the shelf (their Multimedia's place). A placeholder for now (owner, 26 Nov: "a whole new section
+        … For now, make it a placeholder: min 100vh, 100vw section"). At least a screen tall, so the page scrolls on
+        until its top passes the window's: their row lift (spineRowLiftForWebsitesTop) only takes the row fully off once
+        the section's top is ~100 px from the window's (at 40lvh the page ended at 213 px, row half under the header, G5).
+        Its top is the anchor the seat and the lift read: nothing may go above it inside it. */}
+    <section ref={next} aria-hidden="true" className="relative min-h-lvh w-screen" />
     <Cards items={items} featured={catalogue.t} geometry={geometry} progressRef={cardsRef} listeners={listeners} reading={held} J={J}
       hub={hub} openRef={openIndex} />
     <StripeScene vendored={vendored} props={sceneProps} className="pointer-events-none fixed inset-0 isolate z-10" />

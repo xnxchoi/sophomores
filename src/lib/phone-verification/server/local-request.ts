@@ -43,7 +43,6 @@ function trustedProxyListener(env: Env): string | null {
  * address (preview, 26 Nov: every member status call was refused for that reason). With the
  * trusted-proxy opt-in only, that exact listener origin is accepted when the proxy's Host, and
  * any X-Forwarded-Host, name the configured host. Forwarded headers alone never grant trust.
- * Commerce callers still use the local-only helper above.
  */
 export function hasConfiguredRequestAuthority(request: Request, origin: string, env: Env = process.env): boolean {
   const expected = new URL(origin);

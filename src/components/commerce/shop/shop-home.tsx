@@ -12,9 +12,10 @@ import { lockedProgressFor, scenePageCount, StripeScene, useStripeScene, type Sc
 import { useLookInside, type LookInsideSource } from "./use-look-inside";
 import { useShelfCatch, type ShelfCatchSource } from "./use-shelf-catch";
 import { useBookDetail, type BookDetailSource } from "./use-book-detail";
-import { useReadingScroll, type ReadingSource } from "./use-reading-scroll";
+import { READING_RUN_ON, useReadingScroll, type ReadingSource } from "./use-reading-scroll";
 import { useBookSounds } from "./use-book-sounds";
 import { LookInsideBar } from "./look-inside-bar";
+import { ShelfPager, ShelfPills, type ShelfHub } from "./shelf-controls";
 
 /**
  * The shop's home, rebuilt from stripe.press's home code (06w9 module 43181; .tmp/stripe-notes/home-layout-inventory.md,
@@ -41,7 +42,9 @@ type Item = { id: string; title: string; price: string; href: string; stageArt: 
 type Labels = { featured: string; shelf: string; viewDetails: string; toShelf: string; openBook: string; closeBook: string;
   previousPage: string; nextPage: string; titles: string; sceneFailed: string; tryAgain: string;
   /** "Open {title}" and "Show {title} on the bookshelf": the no-WebGL books' names (theirs, 2548 and 27511). */
-  openTitle: string; showOnShelf: string };
+  openTitle: string; showOnShelf: string;
+  /** The phone pager's buttons on the shelf. */
+  previousProduct: string; nextProduct: string };
 type Geometry = { lvh: number; mobile: boolean; top: number;
   /** How far our header pushes theirs down (px): see `measure`. */
   shift: number; height: number; offset: number; extents: number[];
@@ -114,6 +117,10 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
     return () => { watch.disconnect(); flag.current = false; };
   }, [hub]);
   const flatBooks = useMemo(() => items.map(({ id, title }) => ({ id, title })), [items]);
+  // The book rects the scene (or the 2D row) writes each frame (module 50883 `i`), and the row's slot order: what the
+  // shelf's pills and pager place themselves by.
+  const bookRects = useMemo(() => (vendored.module(50883) as { i: { current: Map<number, { leftPx: number; topPx: number; widthPx: number; heightPx: number }> } }).i, [vendored]);
+  const slotOf = useMemo(() => (index: number) => (hub.spineSlotForIndex as unknown as number[] | undefined)?.[index] ?? index, [hub]);
   // Their "page is scrolling" flag (module 50883 `R`), which the no-WebGL layers read: true on each scroll, false 120 ms
   // after the last (06w9:14730-14733).
   useEffect(() => {
@@ -475,6 +482,7 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
   // when the section comes up and lifts it (measured on stripe.press: their section sits at 4524 px, the formula
   // gives 4524; ours stood 1,500 px further down, leaving the shelf still for a whole screen and more).
   const next = useRef<HTMLElement>(null);
+  const sectionTop = useMemo(() => () => next.current?.getBoundingClientRect().top ?? null, []);
   useEffect(() => { hub.homeWebsitesSectionElLiveRef.current = next.current; return () => { hub.homeWebsitesSectionElLiveRef.current = null; }; }, [hub]);
   const nextTop = useMemo(() => {
     const { extents, starts, lvh, mobile, total } = geometry;
@@ -591,6 +599,13 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
       * Without WebGL there is no open book, so theirs leaves out the pill and the corner's "Open book" (06w9:17936, 18224). */}
     {!noWebgl && <OpenBookPill label={labels.openBook} shown={detail.open != null && !detail.leaving && !look.open && (look.peek || look.pillHover)}
       onHover={look.setPillHover} onOpen={() => { look.setPillHover(false); look.openInDetail(); }} />}
+    {/* On the shelf, over the face-out book: the pills on desktop, the pager on a phone (their HomeBookCornerButtons and
+        CoverflowPager, 06w9:17969-18042), while nothing is open. */}
+    {!geometry.mobile && <ShelfPills shown={onShelf && detail.open == null && !look.open} hub={hub as unknown as ShelfHub} rects={bookRects}
+      labels={{ details: labels.viewDetails, openBook: labels.openBook }} onDetails={(index) => openRef.current(index)}
+      onOpenBook={noWebgl ? undefined : (index) => look.openOnHome(index)} />}
+    {geometry.mobile && <ShelfPager shown={onShelf && detail.open == null && !look.open} hub={hub as unknown as ShelfHub} rects={bookRects} count={count}
+      slotOf={slotOf} sectionTop={sectionTop} labels={{ group: labels.shelf, previous: labels.previousProduct, next: labels.nextProduct }} />}
     <LookInsideBar shown={look.open} wide={look.home} page={look.page}
       leaves={Math.ceil(scenePageCount(items[lookHome ?? detail.open ?? 0]?.pages, items[lookHome ?? detail.open ?? 0]?.pageCount) / 2)} labels={labels}
       onBack={() => look.turnBy(-1, Math.ceil(scenePageCount(items[lookHome ?? detail.open ?? 0]?.pages, items[lookHome ?? detail.open ?? 0]?.pageCount) / 2))}
@@ -598,6 +613,7 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
       onClose={look.close} />
     <DetailStack shown={readingOpen && !detail.leaving} height={readingOpen ? readingHeight : 0} toShelf={labels.toShelf} onClose={() => detail.closeBook()}>
       {readingOpen && items.map((entry, index) => <DetailSlot key={entry.id} index={index} top={reading.layout.tops[index] ?? 0}
+        active={READING_RUN_ON || index === detail.open}
         onMeasured={reading.measured} anchors={reading.anchors}>{entry.details}</DetailSlot>)}
     </DetailStack>
   </div>;
@@ -791,7 +807,9 @@ function DetailStack({ shown, height, toShelf, onClose, children }: { shown: boo
  * of tail; its content measured (height + 300, theirs) for the reading scroll's sections, and its exit anchor
  * registered: the top of its full-width section (praise, details), when it has one.
  */
-function DetailSlot({ index, top, onMeasured, anchors, children }: { index: number; top: number; onMeasured: (index: number, px: number) => void;
+function DetailSlot({ index, top, active, onMeasured, anchors, children }: { index: number; top: number;
+  /** False for the other products' panels while the run-on is off: measured, but out of reach (inert). */
+  active: boolean; onMeasured: (index: number, px: number) => void;
   anchors: { current: Map<number, HTMLElement> }; children: ReactNode }) {
   const content = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -805,7 +823,7 @@ function DetailSlot({ index, top, onMeasured, anchors, children }: { index: numb
     observer.observe(element);
     return () => { observer.disconnect(); anchors.current.delete(index); };
   }, [index, onMeasured, anchors]);
-  return <div className="absolute inset-x-0 top-0 px-6 pt-[118px] pb-[260px] max-[900px]:px-4" style={{ transform: "translateY(" + top + "px)" }}>
+  return <div inert={!active} aria-hidden={!active || undefined} className="absolute inset-x-0 top-0 px-6 pt-[118px] pb-[260px] max-[900px]:px-4" style={{ transform: "translateY(" + top + "px)" }}>
     {/* A phone: the details start under a window for the book (MobileBookViewGap, calc(94vh − 185px)), inside the
         measured block, which is at least a screen tall (theirs). */}
     <div ref={content} data-detail-panel-index={index} className="max-[900px]:min-h-[100vh]">

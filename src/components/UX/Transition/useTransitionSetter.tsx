@@ -310,7 +310,7 @@ function resolveTarget(fromHref: string, toHref: string): string {
  *   menu open        → FROM_MENU
  *   LOSTINSEOUL internal handoff → LOST_PRODUCT
  *   /me/settings ↔ /me/settings/* → SHELL (shell stays; pane owns the fade)
- *   /shop ↔ /shop/products/* → SHELL (one page; the shop layout owns the move)
+ *   /shop ↔ /shop/products/* ↔ /shop/cart → SHELL (one page; the shop layout owns the move)
  *   (the cross-group CURTAIN is retired; owner, 26 Nov)
  *   default          → FADE
  */
@@ -346,11 +346,12 @@ export function pickTransitionType(ctx: TransitionContext): TransitionDecision {
 
 export function isShopShelfPath(pathname: string): boolean {
   const path = normalizePath(pathname);
-  return path === "/shop" || path.startsWith("/shop/products/");
+  return path === "/shop" || path === "/shop/cart" || path.startsWith("/shop/products/");
 }
 
 // The shop shelf and a product page are one mounted page (SHELL): the shelf keeps its scroll when a product opens
-// and when it closes, as stripe.press's does (UI-Commerce, 24 Nov). The router's enter gets no from/to
+// and when it closes, as stripe.press's does (UI-Commerce, 24 Nov); the cart is the same page in cart mode (stripe's
+// /cart), so closing it back to /shop keeps the scene mounted (26 Nov). The router's enter gets no from/to
 // (next-transition-router dist/index.js:139), so this reads where the move arrived: SHELL is only picked within
 // one family (pickTransitionType above), so a SHELL arrival on a shelf path came from one.
 export function keepsShelfScroll(type: string | null | undefined, arrivedAt: string): boolean {

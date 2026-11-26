@@ -410,6 +410,13 @@ function Home({ vendored, items, labels, initialOpen, cartPanel }: { vendored: V
     window.addEventListener("keydown", key); window.addEventListener("popstate", back);
     return () => { window.removeEventListener("keydown", key); window.removeEventListener("popstate", back); };
   }, [cart]);
+  // Forward (or Back) onto the cart's address after it closed opens it again in place (their router entering /cart).
+  useEffect(() => {
+    if (!cartPanel || cart.cartMode) return;
+    const again = () => { if (window.location.pathname === "/shop/cart") { cartShiftFrom.current = Number(hub.detailCanvasShiftVwLiveRef.current) || 0; setCartVeil(true); cart.toggle({}); } };
+    window.addEventListener("popstate", again);
+    return () => window.removeEventListener("popstate", again);
+  }, [cart, cartPanel]);
   const lookOpen = useRef(false);
   useEffect(() => { lookOpen.current = look.open; });
   // The scene hears the book being read 200 ms late (their `uK`), the first one at once.

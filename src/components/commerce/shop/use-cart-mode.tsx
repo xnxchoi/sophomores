@@ -50,8 +50,8 @@ export function useCartMode({ timing, k, coverReady, onFrame }: { timing: CartTi
   const [shelfSlide, setShelfSlide] = useState<number | null>(null);
   const [entry, setEntry] = useState<CartEntry | null>(null);
   const clock = useRef<Clock | null>(null), motion = useRef<CartMotion>(rest()), pending = useRef<CartMotion | null>(null), frame = useRef<number | null>(null);
+  /** Set with every mode change, not after render, so a close right after an open sees it. */
   const modeRef = useRef(false);
-  useEffect(() => { modeRef.current = cartMode; }, [cartMode]);
   const frameRef = useRef(onFrame);
   useEffect(() => { frameRef.current = onFrame; });
 
@@ -67,14 +67,14 @@ export function useCartMode({ timing, k, coverReady, onFrame }: { timing: CartTi
 
   /** A direct load of the cart's address: everything at 1 at once (their openInstantly). */
   const openInstantly = useCallback(() => {
-    cancel(); setCartMode(true); setPanelOpen(true); setLayoutBlend(1); setPhase("idle"); setNonCartSlide(1);
+    cancel(); modeRef.current = true; setCartMode(true); setPanelOpen(true); setLayoutBlend(1); setPhase("idle"); setNonCartSlide(1);
     setStackExit(null); setShelfSlide(null); setEntry(null); clock.current = null; write(open());
   }, [cancel, write]);
 
   const toggle = useCallback((options?: CartToggle) => {
     if (phase === "toBrowse") return;
     if (!modeRef.current) {
-      cancel(); setPhase("toCart"); setLayoutBlend(0); setNonCartSlide(0); setStackExit(null);
+      cancel(); modeRef.current = true; setPhase("toCart"); setLayoutBlend(0); setNonCartSlide(0); setStackExit(null);
       const from = options?.entry ?? null, fromShelf = from?.fromShelf === true;
       setEntry(from); setShelfSlide(fromShelf ? 0 : null); setPanelOpen(true); setCartMode(true);
       write({ ...rest(), active: true, shelfSlide: fromShelf ? 0 : null });
@@ -134,7 +134,7 @@ export function useCartMode({ timing, k, coverReady, onFrame }: { timing: CartTi
       if (!seen.exit && c.stackExit != null && c.stackExit >= 1) { seen.exit = true; setStackExit(1); }
       if (c.done) {
         frame.current = null; setLayoutBlend(0); setNonCartSlide(0); setStackExit(null); setShelfSlide(null); setEntry(null);
-        clock.current = null; setPhase("idle"); setCartMode(false); hold(rest());
+        clock.current = null; modeRef.current = false; setPhase("idle"); setCartMode(false); hold(rest());
         return;
       }
       write({ active: true, layout: c.layout, panel: c.panel, bookSlide: c.bookSlide, nonCartSlide: c.nonCartSlide, shelfSlide: c.shelfSlide,

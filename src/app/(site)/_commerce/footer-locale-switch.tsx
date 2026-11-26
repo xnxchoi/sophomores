@@ -34,7 +34,7 @@ export function FooterLocaleSwitch() {
               "group/focus flex min-h-11 min-w-11 items-center justify-center",
               // The pick shows by an underline, not by dimming the other (Review-B: 40 % ink on the footer ground was
               // 2.87:1); both hold 80 % ink or more.
-              current === locale ? "text-foreground underline decoration-1 underline-offset-4" : "text-foreground/80 transition-colors hover:text-foreground disabled:opacity-40"
+              current === locale ? "text-foreground underline decoration-1 underline-offset-4" : "text-footer-muted transition-colors hover:text-foreground disabled:opacity-40"
             )}
           >
             <FocusShape>{t(locale === "en" ? "languageEn" : "languageKo")}</FocusShape>

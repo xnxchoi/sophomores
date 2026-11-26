@@ -38,7 +38,7 @@ test("transition classification and selection preserve their current behavior", 
   assert.equal(classifyPath("/account").authGated, true);
   assert.equal(classifyPath("/two-factor").group, "auth");
   for (const [fromHref, toHref, navIsOpen, override, expected] of [
-    ["/", "/account", false, null, "CURTAIN"],
+    ["/", "/account", false, null, "FADE"],
     ["/privacy", "/terms", false, null, "FADE"],
     ["/me/settings", "/me/settings/profile", false, null, "SHELL"],
     ["/shop", "/shop/products/abc", false, null, "SHELL"],

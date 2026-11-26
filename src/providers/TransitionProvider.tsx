@@ -755,10 +755,16 @@ const TransitionManager = ({ children }: { children: ReactNode }) => {
       // leave supersedes it: the router enters the restored entry, so the delayed push must not follow.
       const leave = entryScroll.push();
       const goOn = () => {
-        if (!entryScroll.current(leave)) return;
+        if (!entryScroll.current(leave)) return false;
         completeExfil();
         next();
+        return true;
       };
+      // The standard fade (owner, 26 Nov): the page fades out completely, and only then does the router move on, so the
+      // next page mounts after it is gone (RP_Ui FADE fades that one in). Only the page layer fades: the header, frame
+      // and footer rail stay put. A link the transition type leaves at null takes the same fade, as RPage does.
+      const shouldFade =
+        (tro.current === "FADE" || tro.current === null) && !navisopref.current;
       const shouldRunWipe =
         tro.current === "CURTAIN" && !navisopref.current && !hasRun.current;
       const shouldRunLostProduct =
@@ -783,6 +789,18 @@ const TransitionManager = ({ children }: { children: ReactNode }) => {
           });
         });
         void transition.finished;
+      } else if (shouldFade) {
+        const page = document.querySelector<HTMLElement>("[data-rp-page]");
+        if (!page) {
+          scheduleTransitionWork(goOn);
+          return;
+        }
+        animate(page, { opacity: 0 }, { duration: 0.18, ease: "easeIn" }).then(() => {
+          scheduleTransitionWork(() => {
+            // A Back/Forward during the fade supersedes the link: that page stays, so it comes back.
+            if (!goOn()) animate(page, { opacity: 1 }, { duration: 0.18, ease: "easeOut" });
+          });
+        });
       } else {
         scheduleTransitionWork(goOn);
       }

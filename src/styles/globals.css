@@ -163,14 +163,13 @@
   --texture-grain: url("/assets/textures/texture-grain.webp");
   --texture-travertine: url("/assets/textures/texture-travertine.webp");
 }
-/* The business footer: the layer the lifted page reveals (owner, 26 Nov: "I already gave you the freaking colors, so,
-   you know, just fucking pick something"). One pair from his palette: Imperial Plum Darker -2 as the ground and
-   Mauve-Bone as the ink, the palette's own matched hue (355). Not a green: the footer also shows under
-   /sign-in and the purchase steps, which stay monochrome with no green. The same in both themes: it is the layer under
-   the page, not a theme surface. Not inline, so the footer can hand the ink to its children as --foreground. */
+/* The footer's own ground (owner, 26 Nov: "Carbon lighter"; the plum is retired): Carbon Lighter +2 under Titanium ink,
+   with Singer Stone for its small labels. The same in both themes: it is the layer under the page, not a theme surface.
+   Not inline, so the footer can hand the ink to its children as --foreground. */
 @theme {
-  --color-footer: var(--purple-darker-2);
-  --color-footer-ink: var(--bone);
+  --color-footer: var(--black-lighter-2);
+  --color-footer-ink: var(--white);
+  --color-footer-muted: var(--stone);
 }
 
 @theme static {

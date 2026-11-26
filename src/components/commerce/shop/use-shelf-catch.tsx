@@ -7,7 +7,10 @@ type Selection = { to?: number; settled?: boolean };
 export type ShelfCatchSource = { seatY: () => number | null; driving: () => boolean; stopDriving: () => void;
   /** True while the page holds still (a book is open): the catch stands down. */
   held: () => boolean;
-  titles: () => HTMLElement | null };
+  titles: () => HTMLElement | null;
+  /** The seated row's bottom (px from the viewport top) while the seat is locked, or null: the page places its next
+   * section by it (their `lq`). */
+  seatBottom: (px: number | null) => void };
 
 /** The bottom of the title rail's lowest line of text (their `ap`, 06w9:10032-10051). */
 function titlesBottom(element: HTMLElement | null) {
@@ -38,6 +41,7 @@ export function useShelfCatch(hub: SceneHub, catalogue: SceneCatalogue, source: 
     const root = document.documentElement, coarse = window.matchMedia?.("(pointer: coarse)").matches ?? false;
     let frame = 0, glide = 0, wrote: number | null = null, glideTarget: number | null = null, inputAt = -Infinity;
     let touching = false, reseatPending = false, activation = false, settledBefore: boolean | null = null;
+    let seatBottomBefore: number | null = null;
     let selectionBefore: number | null = null, lastY = -1, movedAt = -Infinity, hint = false, hinted = false, clearAt = -Infinity;
     let armed: boolean | null = null, lockedAt = -1, kind: "wheel" | "touch" = "wheel", inertia = false, minDelta = Infinity;
     let bigger = 0, wheelAt = -Infinity, wheelVelocity = 0, touchMoved = false, touchUntil = -Infinity, touchPending = false;
@@ -175,6 +179,14 @@ export function useShelfCatch(hub: SceneHub, catalogue: SceneCatalogue, source: 
         clearAt = now;
         const bottom = titlesBottom(source.current.titles());
         if (bottom != null) hub.homeTitlesClearLinePxLiveRef.current = bottom + titleClearance(window.innerWidth || 1, ih());
+      }
+      // The seated row's bottom (06w9:15666-15669): passed on when the seat locks or lets go, or when it moves 2 px or
+      // more while the page is still.
+      const geom = hub.spineRowSeatGeomLiveRef.current as { valid?: boolean; lock?: boolean; seatBottomPx?: number } | null;
+      const seatBottom = geom?.valid && geom.lock && typeof geom.seatBottomPx === "number" ? Math.round(geom.seatBottomPx) : null;
+      const still = !touching && now - movedAt > 250 && now - inputAt > 250;
+      if (seatBottom !== seatBottomBefore && (seatBottom == null || seatBottomBefore == null || (still && Math.abs(seatBottom - seatBottomBefore) >= 2))) {
+        seatBottomBefore = seatBottom; source.current.seatBottom(seatBottom);
       }
       frame = requestAnimationFrame(loop);
     };

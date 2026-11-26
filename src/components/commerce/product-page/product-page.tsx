@@ -14,8 +14,8 @@ import { editionRefundTerms } from "@/lib/commerce/refund-policy";
 import { FormatRow } from "./format-row";
 import type { ProductMedia, ProductPageContent } from "./_shared/content";
 
-type EditionProduct = Extract<CommerceEditionCatalogue, { status: "displayable" }>["product"];
-type Translate = ReturnType<typeof useTranslations<"Customer.components_commerce_book_offer">>;
+export type EditionProduct = Extract<CommerceEditionCatalogue, { status: "displayable" }>["product"];
+export type Translate = ReturnType<typeof useTranslations<"Customer.components_commerce_book_offer">>;
 export type ShelfEntry = { productID: string; title: string; current: boolean };
 
 /**
@@ -204,7 +204,8 @@ function DetailRow({ label, items }: { label: string; items: string[] }) {
   </div>;
 }
 
-function physicalDetails(content: ProductPageContent, locale: string, t: Translate) {
+/** The physical-details lines (trim, spine, weight, pages, words); shared with the shop's colophon (detail-panel.tsx). */
+export function physicalDetails(content: ProductPageContent, locale: string, t: Translate) {
   const d = content.details; if (!d) return [];
   const n = (value: number, digits = 0) => new Intl.NumberFormat(locale, { maximumFractionDigits: digits }).format(value);
   return [

@@ -7,8 +7,11 @@ import { test } from "node:test";
 // is left as it is; its --font-mono reads now resolve to the sans (globals.css). Each place the owner names is listed
 // here with his words.
 // Owner, 24 Nov, on the open book's bottom bar: "bottom bar is mono - Geist for now" ("No mono here is exception").
-// That bar was book3d's, removed with it (26 Nov); the shop's bar is sans, so nothing is listed now.
-const OWNER_NAMED: Record<string, string> = {};
+// That bar was book3d's, removed with it (26 Nov). The owner, 26 Nov, on the shop's bar: "The book's page turn bar
+// should use Geist Mono".
+const OWNER_NAMED: Record<string, string> = {
+  "src/components/commerce/shop/look-inside-bar.tsx": "The book's page turn bar should use Geist Mono"
+};
 
 const root = new URL("../../", import.meta.url);
 const files = globSync("src/**/*.{ts,tsx,css,scss}", {

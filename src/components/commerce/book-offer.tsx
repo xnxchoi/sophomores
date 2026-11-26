@@ -9,7 +9,8 @@ import { Badge } from "@/components/arc/badge/badge";
 import { ArcRoles } from "./arc-roles";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { ShopHome } from "./shop/shop-home";
-import { firstImage, pageTextures, ProductExtras, ProductInfo } from "./product-page/product-page";
+import { firstImage, pageTextures } from "./product-page/product-page";
+import { DetailPanel } from "./shop/detail-panel";
 import { readProductPageContent, type ProductPageContent } from "./product-page/_shared/content";
 
 /**
@@ -31,18 +32,21 @@ export function CommerceShopView({ shop, contents = {}, initialOpen }: { shop: C
     .sort((a, b) => (a.content.shelfOrder ?? Number.MAX_SAFE_INTEGER) - (b.content.shelfOrder ?? Number.MAX_SAFE_INTEGER) || a.index - b.index)
     .map(({ entry, content }) => ({ product: entry.product, offer: entry.offer, content, title: content.shelfTitle ?? entry.product.title,
       price: money.format(entry.offer.priceKRW), href: "/shop/products/" + encodeURIComponent(entry.product.productID) }));
-  return <PageInset as="main" className="pt-[4.5rem] pb-24 text-foreground">
+  // Full window width, no page inset: the scene, its cards and the details stack are laid out against the window, as
+  // on stripe.press (their details are 40 % of the window, the praise and colophon bands its full width). The plain
+  // fallback list sets its own inset (ShopFallback).
+  return <main className="pt-[4.5rem] pb-24 text-foreground">
     <h1 className="sr-only">{t("book")}</h1>
     <ShopHome initialOpen={initialOpen} labels={{ featured: t("featured"), shelf: t("allProducts"), viewDetails: t("viewDetails"), toShelf: t("allProducts"),
       openBook: t("openBook"), closeBook: t("closeTheBook"), previousPage: t("previousPage"), nextPage: t("nextPage"),
       titles: t("titles"), sceneFailed: t("sceneFailed"), tryAgain: t("tryAgain") }} items={entries.map(({ product, offer, content, title, price, href }) => ({
-      id: product.productID, title, price, href, stageArt: content.stageArt ?? firstImage(product), pages: pageTextures(content),
-      // The details column for this book, opened in the scene (the product page's own column, unchanged).
-      details: <><ProductInfo product={product} offer={offer} content={content} /><ProductExtras content={content} /></>,
+      id: product.productID, title, price, href, stageArt: content.stageArt ?? firstImage(product), pages: pageTextures(content), pageCount: content.details?.pages ?? undefined,
+      // The details for this book, opened in the scene: stripe.press's detail panel on our fields (slice G).
+      details: <DetailPanel product={product} offer={offer} content={content} />,
       // Its refund rule, a line under its title wherever the shop lists it (owner, 25 Nov; Review-B r3).
       refund: <RefundTerms terms={editionRefundTerms(offer.editionEntitlements)} as="span" />,
     }))} />
-  </PageInset>;
+  </main>;
 }
 
 /** Price, what the product includes and the per-account limit, from E1's server offer. Shared by the shop, product and checkout. */

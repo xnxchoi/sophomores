@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type Ref } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type Ref } from "react";
 import { useTransitionRouter } from "next-transition-router";
 import { ArrowLeftIcon } from "@phosphor-icons/react/dist/ssr";
 import { Link } from "@/components/core/Link/Link";
 import { PageInset } from "@/components/core/PageInset/PageInset";
 import { cn } from "@/lib/utils";
-import { lockedProgressFor, scenePages, StripeScene, useStripeScene, type SceneBook, type Vendored } from "./stripe-scene";
+import { lockedProgressFor, scenePageCount, StripeScene, useStripeScene, type SceneBook, type Vendored } from "./stripe-scene";
 import { useLookInside, type LookInsideSource } from "./use-look-inside";
 import { useShelfCatch, type ShelfCatchSource } from "./use-shelf-catch";
 import { useBookDetail, type BookDetailSource } from "./use-book-detail";
@@ -287,7 +287,7 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
   const lookSource = useRef<LookInsideSource>({ place: () => undefined, book: () => null });
   useEffect(() => { lookSource.current = {
     place: (index) => window.scrollTo({ top: Math.max(0, index < catalogue.t ? bookY(index) : (seatY() ?? shelfY())), behavior: "smooth" }),
-    book: (index) => (items[index] ? { pageCount: scenePages(items[index].pages, items[index].pageCount).length, startPage: 1 } : null) }; });
+    book: (index) => (items[index] ? { pageCount: scenePageCount(items[index].pages, items[index].pageCount), startPage: 1 } : null) }; });
   const look = useLookInside(hub, detail.open, lookSource);
   const lookOpen = useRef(false);
   useEffect(() => { lookOpen.current = look.open; });
@@ -476,7 +476,7 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
   // home's own scroll.
   const readingHeight = reading.layout.total + Math.round(geometry.lvh / 2);
   return <div ref={page} className="relative overflow-x-clip">
-    {readingOpen ? <div style={{ height: readingHeight }} /> : <div aria-hidden="true" style={{ height: Math.max(0, nextTop) }} />}
+    <div aria-hidden="true" className="h-(--page-height)" style={{ "--page-height": (readingOpen ? readingHeight : Math.max(0, nextTop)) + "px" } as CSSProperties} />
     {/* A screen tall, so the page scrolls on until its top passes the window's: their row lift (spineRowLiftForWebsitesTop)
         only takes the row fully off once the section's top is ~100 px from the window's. At 40lvh the page ended at
         213 px and left the row half under the header (measured, G5). Theirs scrolls on through its Multimedia section. */}
@@ -508,9 +508,9 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
     <OpenBookPill label={labels.openBook} shown={detail.open != null && !detail.leaving && !look.open && (look.peek || look.pillHover)}
       onHover={look.setPillHover} onOpen={() => { look.setPillHover(false); look.openInDetail(); }} />
     <LookInsideBar shown={look.open} wide={look.home} page={look.page}
-      leaves={Math.ceil(scenePages(items[lookHome ?? detail.open ?? 0]?.pages, items[lookHome ?? detail.open ?? 0]?.pageCount).length / 2)} labels={labels}
-      onBack={() => look.turnBy(-1, Math.ceil(scenePages(items[lookHome ?? detail.open ?? 0]?.pages, items[lookHome ?? detail.open ?? 0]?.pageCount).length / 2))}
-      onForward={() => look.turnBy(1, Math.ceil(scenePages(items[lookHome ?? detail.open ?? 0]?.pages, items[lookHome ?? detail.open ?? 0]?.pageCount).length / 2))}
+      leaves={Math.ceil(scenePageCount(items[lookHome ?? detail.open ?? 0]?.pages, items[lookHome ?? detail.open ?? 0]?.pageCount) / 2)} labels={labels}
+      onBack={() => look.turnBy(-1, Math.ceil(scenePageCount(items[lookHome ?? detail.open ?? 0]?.pages, items[lookHome ?? detail.open ?? 0]?.pageCount) / 2))}
+      onForward={() => look.turnBy(1, Math.ceil(scenePageCount(items[lookHome ?? detail.open ?? 0]?.pages, items[lookHome ?? detail.open ?? 0]?.pageCount) / 2))}
       onClose={look.close} />
     <DetailStack shown={readingOpen && !detail.leaving} height={readingOpen ? readingHeight : 0} toShelf={labels.toShelf} onClose={() => detail.closeBook()}>
       {readingOpen && items.map((entry, index) => <DetailSlot key={entry.id} index={index} top={reading.layout.tops[index] ?? 0}

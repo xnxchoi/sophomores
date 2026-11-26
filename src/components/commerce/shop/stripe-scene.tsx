@@ -69,12 +69,14 @@ const READY_MS = 20000;
 
 /** Their runtime, their chunks, then our one module (990001). Our catalogue goes in first: their modules read it once.
  * Fails (and the page shows its plain list) when a chunk doesn't load, our module's imports throw, or nothing is ready
- * within READY_MS (a chunk that loads but never registers). */
-function load(books: unknown[], featured: number) {
+ * within READY_MS (a chunk that loads but never registers); also when one of our books can't be built. */
+function load(books: SceneBook[], featured: number) {
   loaded ??= Promise.race([(async () => {
+    // Built in here, so a book that can't be built rejects like a chunk that fails and the page shows its list.
+    const built = books.map(stripeBook);
     const global = window as unknown as Record<string, unknown>;
     global.SPTURBOPACK_CHUNK_BASE_PATH = BASE;
-    global.__SPBOOKS = books; global.__SPFEATURED = featured;
+    global.__SPBOOKS = built; global.__SPFEATURED = featured;
     await script(DIR + RUNTIME);
     await Promise.all(CHUNKS.map((file) => script(DIR + file)));
     return new Promise<Vendored>((resolve, reject) => {
@@ -111,7 +113,15 @@ const BLANK_PAGES = 288;
  * edition (their `blank.png` is the endpaper texture, tiled, so blank interior pages need a plain image of their own).
  * The open book's page blocks are as deep as its leaves: 48 blank pages made them a sixth of theirs, too thin to see. */
 export function scenePages(pages: string[] | undefined, pageCount?: number) {
-  return pages && pages.length >= 2 ? pages : Array.from({ length: pageCount && pageCount >= 2 ? pageCount : BLANK_PAGES }, () => TEX + "shared/page_plain.png");
+  const count = scenePageCount(pages, pageCount);
+  return pages && pages.length >= 2 ? pages.slice(0, count) : Array.from({ length: count }, () => TEX + "shared/page_plain.png");
+}
+/** The most pages a scene book carries: the edition's page count comes from Payload unbounded (Review-B G). */
+const MAX_PAGES = 1000;
+/** How many pages {@link scenePages} gives, without building them. */
+export function scenePageCount(pages: string[] | undefined, pageCount?: number) {
+  if (pages && pages.length >= 2) return Math.min(pages.length, MAX_PAGES);
+  return pageCount != null && Number.isFinite(pageCount) && pageCount >= 2 ? Math.min(Math.floor(pageCount), MAX_PAGES) : BLANK_PAGES;
 }
 
 /** One of our products in their built book shape: our placeholder cover and neutral maps (no cover art exists yet). */
@@ -140,7 +150,7 @@ export function useStripeScene(books: SceneBook[], featured: number) {
   const first = useRef({ books, featured });
   useEffect(() => {
     let live = true;
-    load(first.current.books.map(stripeBook), first.current.featured).then((value) => { if (live) setVendored(value); },
+    load(first.current.books, first.current.featured).then((value) => { if (live) setVendored(value); },
       () => { if (live) setFailed(true); });
     return () => { live = false; };
   }, []);

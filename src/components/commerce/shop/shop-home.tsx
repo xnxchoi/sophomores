@@ -623,7 +623,7 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
     {/* On a phone the return link takes the label's place while a book is open (their Nav__FeaturedSlot: the label slides
         −10 px and fades, the link comes in from +10 px 100 ms later, 300 ms each). */}
     <div className="fixed top-[calc(53px+var(--shop-shift,0px))] left-4 z-20 grid text-[11px] uppercase leading-4 tracking-[0.06em] text-muted-foreground">
-      <p className={cn("col-start-1 row-start-1 transition-[opacity,translate] duration-300 ease-[ease]", phoneDetail ? "-translate-x-2.5 opacity-0" : "delay-100")}>
+      <p className={cn("pointer-events-none col-start-1 row-start-1 transition-[opacity,translate] duration-300 ease-[ease]", phoneDetail ? "-translate-x-2.5 opacity-0" : "delay-100")}>
         {/* Theirs reads the label from the first section at the nav (header.sampler, 06w9:11821-11922); with details open
             no section is there, so it shows the default (traced 26 Nov). */}
         [ {onShelf && detail.open == null ? labels.shelf : labels.featured} ]

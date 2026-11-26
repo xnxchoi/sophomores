@@ -62,6 +62,11 @@
         "width": 441,
         "height": 614
       }
+    },
+    "cart": {
+      "src": "/assets/three/book/fallback/placeholder/cart.webp",
+      "width": 824,
+      "height": 118
     }
   },
   "books": {}

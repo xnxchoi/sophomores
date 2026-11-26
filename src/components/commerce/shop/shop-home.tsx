@@ -18,6 +18,7 @@ import { LookInsideBar } from "./look-inside-bar";
 import { ShelfPager, ShelfPills, type ShelfHub } from "./shelf-controls";
 import { useCartMode, type CartConstants, type CartMotion, type CartTiming } from "./use-cart-mode";
 import { CartBehind, CartColumn } from "./cart-column";
+import { NoWebglCartStack } from "./no-webgl-cart-stack";
 import { listGuestCart, subscribeGuestCart } from "@/lib/commerce/browser-cart";
 
 /**
@@ -398,12 +399,13 @@ function Home({ vendored, items, labels, initialOpen, cartPanel }: { vendored: V
     : JSON.parse(guestKey) as { productID: string; quantity: number }[])
     .filter((line) => items.some((entry) => entry.id === line.productID) && line.quantity > 0).map((line) => [line.productID, line.quantity])), [guestKey, panelQuantities, items]);
   const backToShelf = useCallback(() => closeCart.current(), []);
+  const itemIds = useMemo(() => items.map((entry) => entry.id), [items]);
   // Loaded on the cart's address: open at once (their openInstantly), the books not in the cart veiled until it closes.
   const [cartVeil, setCartVeil] = useState(false);
   useEffect(() => { if (cartPanel) { cartShiftFrom.current = 0; setCartVeil(true); cart.openInstantly(); } }, []); // eslint-disable-line react-hooks/exhaustive-deps
   // How it closes (their c5): with books in the cart and the shelf's book not one of them, the stack leaves first
-  // (500 ms) and the page comes back after; on a phone it doesn't.
-  const closing = () => ({ exitStackFirst: !geo.current.mobile && Object.values(cartQuantities).some((count) => count > 0)
+  // (500 ms) and the page comes back after; on a phone, or without WebGL (no stack to send off), it doesn't.
+  const closing = () => ({ exitStackFirst: !geo.current.mobile && !noWebgl && Object.values(cartQuantities).some((count) => count > 0)
     && !((cartQuantities[items[activeRef.current]?.id ?? ""] ?? 0) > 0) });
   const closeCart = useRef(() => {});
   useEffect(() => { closeCart.current = () => {
@@ -670,6 +672,8 @@ function Home({ vendored, items, labels, initialOpen, cartPanel }: { vendored: V
   const readingHeight = reading.layout.total + Math.round(geometry.lvh / 2);
   return <div ref={page} className="relative overflow-x-clip" style={{ "--shop-shift": geometry.shift + "px", "--shop-drop": geometry.drop + "px" } as CSSProperties}>
     <CartBehind open={cart.cartMode} art={items[active]?.stageArt} cardTop={geometry.top} />
+    {/* Without WebGL the cart's books are images (theirs: NoWebglCartStack, desktop only). */}
+    {cart.cartMode && noWebgl && !geometry.mobile && <NoWebglCartStack ids={itemIds} quantities={cartQuantities} cardTop={geometry.top} />}
     {cartPanel && <CartColumn open={cart.cartMode} shown={cart.panelOpen} back={labels.toShelf} onBack={backToShelf} onLines={setPanelQuantities}>{cartPanel}</CartColumn>}
     <div aria-hidden="true" className="h-(--page-height)" style={{ "--page-height": (readingOpen ? readingHeight : Math.max(0, nextTop)) + "px" } as CSSProperties} />
     {/* The section after the shelf (their Multimedia's place). A placeholder for now (owner, 26 Nov: "a whole new section

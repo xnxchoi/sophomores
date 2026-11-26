@@ -17,21 +17,35 @@ export function hasLocalRequestAuthority(request: Request, origin: string): bool
   return host === null ? actual.origin === expected.origin : host === expected.host;
 }
 
+/** The addresses a standalone `next start` listener binds (deployment/Dockerfile sets HOSTNAME=0.0.0.0). */
+const LISTENER_HOSTS = ["0.0.0.0", "localhost", "127.0.0.1", "[::]", "[::1]"];
+type Env = Readonly<Record<string, string | undefined>>;
+
 /**
- * The addresses `next start` (standalone) binds and builds a route's request.url from: deployment/Dockerfile sets
- * HOSTNAME=0.0.0.0, and Next's initURL is `${X-Forwarded-Proto}://${hostname}:${port}`, whatever Host the browser used.
+ * The trusted-proxy opt-in (Review-B, 26 Nov: off by default, exact listener only, never inferred from forwarded
+ * headers). TRUSTED_PROXY_LISTENER_ORIGIN names the origin Next builds a route's request.url from behind the proxy,
+ * `${X-Forwarded-Proto}://${HOSTNAME}:${PORT}` (next-server.js attachRequestMeta), e.g. https://0.0.0.0:3000. Set it
+ * only where that proxy is the one way to the listener. Anything but an exact https listener origin with a port is off.
  */
-const BIND_HOSTS = ["0.0.0.0", "localhost", "127.0.0.1", "[::]", "[::1]"];
+function trustedProxyListener(env: Env): string | null {
+  const value = env.TRUSTED_PROXY_LISTENER_ORIGIN;
+  if (!value) return null;
+  let url: URL;
+  try { url = new URL(value); } catch { return null; }
+  return url.protocol === "https:" && url.port !== "" && LISTENER_HOSTS.includes(url.hostname) && url.origin === value
+    ? value : null;
+}
 
 /**
  * Request authority for the configured auth origin. A loopback `http:` origin keeps the
  * exact local rules above. An `https:` production origin matches `request.url` exactly and,
- * when a Host header is present, its host. Behind the proxy, request.url is the server's own
- * bind address (preview, 26 Nov: every member status call was refused for that reason), so a
- * bind-address https URL is accepted only when the proxy's Host, and any X-Forwarded-Host,
- * name the configured host. Any other host in request.url is refused.
+ * when a Host header is present, its host. Behind the proxy, request.url is the listener's own
+ * address (preview, 26 Nov: every member status call was refused for that reason). With the
+ * trusted-proxy opt-in only, that exact listener origin is accepted when the proxy's Host, and
+ * any X-Forwarded-Host, name the configured host. Forwarded headers alone never grant trust.
+ * Commerce callers still use the local-only helper above.
  */
-export function hasConfiguredRequestAuthority(request: Request, origin: string): boolean {
+export function hasConfiguredRequestAuthority(request: Request, origin: string, env: Env = process.env): boolean {
   const expected = new URL(origin);
   if (expected.protocol === "http:") return hasLocalRequestAuthority(request, origin);
   if (expected.protocol !== "https:") return false;
@@ -39,7 +53,8 @@ export function hasConfiguredRequestAuthority(request: Request, origin: string):
   if (actual.username || actual.password) return false;
   const host = request.headers.get("host");
   if (actual.origin === expected.origin) return host === null || host === expected.host;
+  const listener = trustedProxyListener(env);
   const forwardedHost = request.headers.get("x-forwarded-host");
-  return actual.protocol === "https:" && BIND_HOSTS.includes(actual.hostname) && host === expected.host
+  return listener !== null && actual.origin === listener && host === expected.host
     && (forwardedHost === null || forwardedHost === expected.host);
 }

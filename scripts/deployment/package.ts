@@ -123,9 +123,11 @@ function manifest(root: string): Entry[] {
   if (!proxyStat.isFile()) throw new Error(`Unexpected build input type (file): ${proxy}`);
   const selectedDirectories = srcProfile ? ["src", "messages", "public", "tests", "scripts"] : directories;
   // src/proxy.ts is mandatory above, but src recursion must copy it only once.
-  const selectedFiles = srcProfile ? [...files.filter((file) => file !== "proxy.ts"), "patches/payload.patch"] : files;
+  // Every patch pnpm-workspace.yaml declares: the frozen install fails without its exact file.
+  const workspacePatches = ["patches/payload.patch", "patches/next-transition-router@0.2.11.patch"];
+  const selectedFiles = srcProfile ? [...files.filter((file) => file !== "proxy.ts"), ...workspacePatches] : files;
   const selectedMandatory = srcProfile
-    ? new Set([...mandatory].filter((relative) => relative !== "app" && relative !== "proxy.ts").concat(["src", "messages", "patches/payload.patch"]))
+    ? new Set([...mandatory].filter((relative) => relative !== "app" && relative !== "proxy.ts").concat(["src", "messages", ...workspacePatches]))
     : mandatory;
   return [...selectedDirectories, ...selectedFiles]
     .flatMap((relative) => {

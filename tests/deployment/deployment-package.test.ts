@@ -48,7 +48,8 @@ function srcFixture() {
   fs.writeFileSync(path.join(root, "messages/ko.json"), '{"locale":"한국어"}\n');
   fs.mkdirSync(path.join(root, "patches"));
   fs.writeFileSync(path.join(root, "patches/payload.patch"), "diff --git a/fixture b/fixture\n+fixture patch\n");
-  fs.writeFileSync(path.join(root, "pnpm-workspace.yaml"), "patchedDependencies:\n  payload: patches/payload.patch\n");
+  fs.writeFileSync(path.join(root, "patches/next-transition-router@0.2.11.patch"), "diff --git a/router b/router\n+router patch\n");
+  fs.writeFileSync(path.join(root, "pnpm-workspace.yaml"), "patchedDependencies:\n  next-transition-router@0.2.11: patches/next-transition-router@0.2.11.patch\n  payload: patches/payload.patch\n");
   return root;
 }
 
@@ -122,7 +123,7 @@ test("SRC profile roundtrips locales, exact patch, references and executable inp
   assert.equal(result.fingerprint, before);
   assert.equal(sourceFingerprint(destination), before);
   assert.equal(proxyCopies, 1);
-  for (const relative of [...inputs, "src/app/page.tsx", "src/proxy.ts", "messages/en.json", "messages/ko.json", "patches/payload.patch", "pnpm-workspace.yaml"]) {
+  for (const relative of [...inputs, "src/app/page.tsx", "src/proxy.ts", "messages/en.json", "messages/ko.json", "patches/payload.patch", "patches/next-transition-router@0.2.11.patch", "pnpm-workspace.yaml"]) {
     assert.equal(fs.readFileSync(path.join(destination, relative)).equals(fs.readFileSync(path.join(root, relative))), true, relative);
   }
   assert.equal(fs.statSync(path.join(destination, "scripts/tool.sh")).mode & 0o111, 0o111);
@@ -135,7 +136,7 @@ test("SRC profile roundtrips locales, exact patch, references and executable inp
 test("SRC fingerprint tracks source, locale, patch bytes and executable modes", () => {
   const root = srcFixture();
   const original = sourceFingerprint(root);
-  for (const relative of ["src/app/page.tsx", "src/proxy.ts", "messages/en.json", "messages/ko.json", "patches/payload.patch"]) {
+  for (const relative of ["src/app/page.tsx", "src/proxy.ts", "messages/en.json", "messages/ko.json", "patches/payload.patch", "patches/next-transition-router@0.2.11.patch"]) {
     const absolute = path.join(root, relative);
     const bytes = fs.readFileSync(absolute);
     fs.appendFileSync(absolute, "changed\n");
@@ -195,12 +196,12 @@ test("each profile requires its matching regular proxy and application root", ()
 });
 
 test("SRC requires locale directory, exact patch and shared mandatory build inputs", () => {
-  for (const relative of ["messages", "patches/payload.patch", "public", "package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", "deployment/Dockerfile", "deployment/Dockerfile.dockerignore"]) {
+  for (const relative of ["messages", "patches/payload.patch", "patches/next-transition-router@0.2.11.patch", "public", "package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", "deployment/Dockerfile", "deployment/Dockerfile.dockerignore"]) {
     const root = srcFixture();
     fs.rmSync(path.join(root, relative), { recursive: true });
     assert.throws(() => sourceFingerprint(root), /required|missing/i, relative);
   }
-  for (const relative of ["messages", "patches/payload.patch"]) {
+  for (const relative of ["messages", "patches/payload.patch", "patches/next-transition-router@0.2.11.patch"]) {
     const root = srcFixture();
     fs.rmSync(path.join(root, relative), { recursive: true });
     if (relative === "messages") fs.writeFileSync(path.join(root, relative), "not a directory");
@@ -216,7 +217,7 @@ test("SRC rejects nested secrets, symlinks and symlinked patch parents", () => {
     fs.writeFileSync(path.join(root, "src/nested", name), "not a real secret");
     assert.throws(() => sourceFingerprint(root), /secret|sensitive/i, name);
   }
-  for (const relative of ["src/app/linked", "messages", "patches", "patches/payload.patch"]) {
+  for (const relative of ["src/app/linked", "messages", "patches", "patches/payload.patch", "patches/next-transition-router@0.2.11.patch"]) {
     const root = srcFixture();
     const outside = srcFixture();
     fs.rmSync(path.join(root, relative), { recursive: true, force: true });
@@ -292,9 +293,15 @@ test("Docker runtime copies match WORKDIR and patched install receives its exact
     assert.ok(dockerfile.includes(`COPY --from=builder --chown=node:node ${source} ${target}`));
   }
   assert.doesNotMatch(dockerfile, /^COPY --from=builder[^\n]*\/src\/app\//m);
-  const patch = dockerfile.indexOf("COPY patches/payload.patch ./patches/payload.patch");
   const install = dockerfile.indexOf("RUN corepack install && pnpm install --frozen-lockfile");
-  assert.ok(patch >= 0 && install > patch, "The workspace patch must exist before frozen installation");
+  // Every patch the workspace declares is copied before the frozen install.
+  const workspace = fs.readFileSync(new URL("../../pnpm-workspace.yaml", import.meta.url), "utf8");
+  const declared = [...workspace.matchAll(/^\s+\S+:\s+(patches\/\S+\.patch)\s*$/gm)].map((match) => match[1]);
+  assert.deepEqual(declared.toSorted(), ["patches/next-transition-router@0.2.11.patch", "patches/payload.patch"]);
+  for (const relative of declared) {
+    const patch = dockerfile.indexOf(`COPY ${relative} ./${relative}`);
+    assert.ok(patch >= 0 && install > patch, `${relative} must exist before frozen installation`);
+  }
 });
 
 test("fingerprint ignores excluded inputs, is stable, and detects bytes and executable mode", () => {

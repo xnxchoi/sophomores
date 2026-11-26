@@ -5,6 +5,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN corepack enable
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY patches/payload.patch ./patches/payload.patch
+COPY patches/next-transition-router@0.2.11.patch ./patches/next-transition-router@0.2.11.patch
 # Corepack reads and verifies the exact pnpm version/integrity in packageManager.
 RUN corepack install && pnpm install --frozen-lockfile
 COPY . .

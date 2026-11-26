@@ -6,6 +6,7 @@ import { PKPass } from "passkit-generator";
 import messages from "../../../../messages/en.json";
 import type { PassEvent } from "./google-wallet-pass";
 import { readOwnerOnly, signerDirectory } from "./unlock/signer";
+import { appleRGB, WALLET_PASS_COLOURS } from "./wallet-pass-colours";
 
 /*
  * Our own Apple Wallet event ticket (owner GO, 26 Nov: "And the passkit generator please"). Same QR as the Google pass:
@@ -15,8 +16,9 @@ import { readOwnerOnly, signerDirectory } from "./unlock/signer";
  *   apple-pass-cert.pem   the Pass Type ID certificate (PEM)
  *   apple-pass-key.pem    its private key, encrypted
  *   apple-pass-signing.env  APPLE_PASS_KEY_PASSPHRASE=...
- * Pass art (icon.png is required by Wallet) is public and comes from public/wallet-pass/; until the owner approves it,
- * there is none and the Apple pass refuses.
+ * Pass art (icon.png is required by Wallet) is public and comes from public/wallet-pass/, drawn from BrandMark by
+ * scripts/wallet-pass-art.tsx; until it is there the Apple pass refuses. The icon is the full wordmark at 29 pt, a
+ * placeholder: the owner's incoming logo replaces it (owner, 26 Nov: "leave it for now, we have a logo incoming").
  */
 export const APPLE_PASS_TYPE_ID = "pass.co.sophomores.ticket";
 export const appleSigningFiles = {
@@ -108,9 +110,13 @@ export async function appleWalletPass(signer: AppleSigner, { serial, event, barc
     passTypeIdentifier: APPLE_PASS_TYPE_ID,
     teamIdentifier: signer.teamIdentifier,
     serialNumber: serial,
-    // A name, not interface copy; the pass art's wordmark is with the owner (26 Nov).
+    // A name, not interface copy; the pass shows the wordmark as its logo image (public/wallet-pass/logo*.png).
     organizationName: "Sophomores",
     description: copy.description,
+    // The owner's pick (wallet-pass-colours.ts): one ink for labels and values.
+    backgroundColor: appleRGB(WALLET_PASS_COLOURS.background.hex),
+    foregroundColor: appleRGB(WALLET_PASS_COLOURS.ink.hex),
+    labelColor: appleRGB(WALLET_PASS_COLOURS.ink.hex),
   });
   pass.type = "eventTicket";
   pass.primaryFields.push({ key: "event", label: copy.event, value: event.name });

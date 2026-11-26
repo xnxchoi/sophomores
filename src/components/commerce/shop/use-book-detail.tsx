@@ -38,6 +38,8 @@ export function useBookDetail(hub: SceneHub, catalogue: SceneCatalogue, router: 
   const constant = hub as unknown as Record<string, number>;
   const [open, setOpen] = useState<number | null>(null), [presenting, setPresenting] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  /** Closing from the shelf, until the reverse carry starts: the scene stays shifted while the column fades. */
+  const [holding, setHolding] = useState(false);
   const clock = useRef({ token: 0, frame: 0 }), fromShelf = useRef(false), pushed = useRef(false);
   const transition = () => hub.bookOpenTransitionLiveRef as { current: Transition };
   const openRef = useRef<(index: number) => boolean>(() => false), isOpen = useRef(false);
@@ -151,7 +153,7 @@ export function useBookDetail(hub: SceneHub, catalogue: SceneCatalogue, router: 
   }, [hub, catalogue, settle, source]);   // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { openRef.current = openBook; }, [openBook]);
 
-  const closeState = useCallback((index: number) => { source.current.unpin(index); setOpen(null); setPresenting(false); setLeaving(false); }, [source]);
+  const closeState = useCallback((index: number) => { source.current.unpin(index); setOpen(null); setPresenting(false); setLeaving(false); setHolding(false); }, [source]);
   /** Reading on into another book's details (the page's reading scroll): it becomes the open book. */
   const setReading = useCallback((index: number) => { setOpen((current) => (current == null ? current : index)); }, []);
 
@@ -167,7 +169,7 @@ export function useBookDetail(hub: SceneHub, catalogue: SceneCatalogue, router: 
         constant.DETAIL_EXIT_SLIDE_MS);
       return;
     }
-    setLeaving(true);                                                              // pb: fade, then the reverse carry
+    setLeaving(true); setHolding(true);                                            // pb: fade, then the reverse carry
     hub.shelfReturnRevealLiveRef.current = index; hub.bookOpenRevealLiveRef.current = 1;
     let faded = 0, last = performance.now();
     const fade = (now: number) => {
@@ -180,6 +182,7 @@ export function useBookDetail(hub: SceneHub, catalogue: SceneCatalogue, router: 
     requestAnimationFrame(fade);
     window.setTimeout(() => {
       if (token !== clock.current.token) return;
+      setHolding(false);
       transition().current = { active: true, index, progress: 1, activeProgress: 1, activeProgressY: 1, returning: true, landingFrac: 0 };
       setPresenting(true); closeState(index);
       requestAnimationFrame(() => { if (token === clock.current.token) setPresenting(false); });
@@ -214,7 +217,8 @@ export function useBookDetail(hub: SceneHub, catalogue: SceneCatalogue, router: 
   // The scene shift (17079-17100): −20vw while the detail is presented, eased over 640 ms on every change; none on a
   // phone, where the details run full width under the book.
   const phone = typeof window !== "undefined" && window.innerWidth < 900;
-  const shift = !phone && (presenting || (open != null && !leaving)) ? -20 : 0, lastShift = useRef(0);
+  // Theirs keeps the shift (`hy`) through the close's fade and lets it go as the reverse carry starts (16424-16562).
+  const shift = !phone && (presenting || (open != null && (!leaving || holding))) ? -20 : 0, lastShift = useRef(0);
   useEffect(() => {
     hub.detailCanvasShiftVwLiveRef.current = shift;
     if (lastShift.current === shift) return;
@@ -242,5 +246,5 @@ export function useBookDetail(hub: SceneHub, catalogue: SceneCatalogue, router: 
   }, [open, router, source]);
   useEffect(() => () => { cancel(); transition().current = idle(); hub.shelfReturnRevealLiveRef.current = -1; hub.bookOpenRevealLiveRef.current = 1; }, [hub]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  return { open, presenting, leaving, openBook, closeBook, setReading };
+  return { open, presenting, leaving, shifted: shift !== 0, openBook, closeBook, setReading };
 }

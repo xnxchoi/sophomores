@@ -235,6 +235,8 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
   /** A drag on a no-WebGL hero stops the idle advance for good (their onBookDragStart, 06w9:14928-14934). */
   const idleOff = useRef(false);
   const stopDriving = () => { drive.current.token += 1; drive.current.active = false; };
+  /** Their step to a featured book (`p_`, 06w9:16683-16722): sine in-out over 1000·√(distance / viewport) ms, 400-1800. */
+  const stepMs = (target: number) => Math.min(1800, Math.max(400, 1000 * Math.sqrt(Math.abs(target - window.scrollY) / Math.max(1, window.innerHeight))));
   const scrollTo = (target: number, ms: number) => {
     const from = window.scrollY, start = performance.now(), token = ++drive.current.token;
     drive.current.active = true;
@@ -461,7 +463,7 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
         if (lookOpen.current) return true;
         const move = motion.current, current = activeRef.current, next = current + step;
         if (next >= catalogue.t) move.scrollTo(move.shelfY(), 1833);
-        else if (next >= 0) move.scrollTo(move.bookY(next), 1000);
+        else if (next >= 0) move.scrollTo(move.bookY(next), stepMs(move.bookY(next)));
         else return false;
         return true;
       },
@@ -471,7 +473,7 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
       drag: { begin: hub.beginSpineDrag, move: hub.moveSpineDrag, end: hub.endSpineDrag },
       vertical: (step: number) => {
         const move = motion.current;
-        if (step === -1) move.scrollTo(move.bookY(J), 1000); else move.scrollTo(geo.current.total, 1000);
+        if (step === -1) move.scrollTo(move.bookY(J), stepMs(move.bookY(J))); else move.scrollTo(geo.current.total, 1000);
       },
     });
     return () => { featuredScope(); shelfScope(); if (typeof uninstall === "function") uninstall(); };
@@ -607,9 +609,9 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
     </div>
     <TitleRail railRef={titles} label={labels.titles} titles={items.map((entry) => entry.title)} refunds={items.map((entry) => entry.refund)} active={detail.open ?? selected ?? railIndex}
       fade={detail.open != null ? 0 : rowOver >= 0 ? 0.5 * rowOver : Math.max(0, Math.min(1, (committed - K - 0.2) / 0.3))} shelf={committed >= J}
-      detail={detail.open != null && !detail.leaving} anchor={detail.open != null ? null : anchor}
+      detail={detail.shifted} anchor={detail.open != null ? null : anchor}
       hidden={phoneDetail}
-      onPick={(index) => detail.open != null ? openRef.current(index) : index < catalogue.t ? scrollTo(bookY(index), 1000) : scrollTo(shelfY(), 1833)} />
+      onPick={(index) => detail.open != null ? openRef.current(index) : index < catalogue.t ? scrollTo(bookY(index), stepMs(bookY(index))) : scrollTo(shelfY(), 1833)} />
     {item && <ViewDetails href={item.href} label={labels.viewDetails} hidden={(onShelf || detail.open != null) && !look.home} onOpen={() => openRef.current(active)}
       book={noWebgl ? undefined : { label: look.open && look.home ? labels.closeBook : labels.openBook, open: look.open && look.home,
         onToggle: () => (look.open ? look.close() : look.openOnHome(active)) }} />}

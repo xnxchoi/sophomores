@@ -134,6 +134,11 @@ export function useReadingScroll(hub: SceneHub, scroll: SceneScroll, open: numbe
   const blend = useRef<{ index: number; t0: number } | null>(null);
 
   const reading = open != null;
+  // Whether details are open right now: a layout effect, so it is false before the page's own close handler scrolls home
+  // (that runs in a later layout effect and dispatches a scroll this listener must not clamp; G9 trace, close landed at
+  // the page's bottom).
+  const openNow = useRef(reading);
+  useLayoutEffect(() => { openNow.current = reading; });
   useLayoutEffect(() => {
     const offset = base();
     hub.detailSectionTopsLiveRef.current = reading ? layout.tops.map((top) => top + offset) : null;
@@ -151,6 +156,7 @@ export function useReadingScroll(hub: SceneHub, scroll: SceneScroll, open: numbe
       const { layout: L, geometry: G, count: n } = live.current, vh = window.innerHeight || 1, top = base();
       let y = window.scrollY, sceneY = y;
       // Stop at the open product's ends (run-on off): the page at its details' bottom, the scene before the next one rises.
+      if (!openNow.current) return;
       if (!READING_RUN_ON && pending.current == null) {
         const range = holdRange(index.current.shown, L, G.height);
         const held = Math.max(range.min, Math.min(range.max, y));

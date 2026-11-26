@@ -7,7 +7,7 @@ import { useTranslations } from "next-intl";
 
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import Link from "next/link";
+import { Link } from "next-transition-router";
 import { useCart, useEcommerce, usePayments } from "@payloadcms/plugin-ecommerce/client/react";
 import { requestPayment as portOneRequestPayment, type PaymentRequest } from "@portone/browser-sdk/v2";
 import { z } from "zod";

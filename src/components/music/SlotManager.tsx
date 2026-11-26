@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { Link } from "next-transition-router";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
 import {

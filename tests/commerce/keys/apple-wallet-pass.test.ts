@@ -34,7 +34,11 @@ test("a signer made the manual's way loads, and the pass it signs verifies and s
   assert.deepEqual(pass.eventTicket.primaryFields, [{ key: "event", label: "Event", value: "Launch night" }]);
   assert.equal(pass.eventTicket.secondaryFields[0].value, event.startsAt);
   assert.deepEqual(pass.barcodes, [{ message: barcode, format: "PKBarcodeFormatQR", messageEncoding: "iso-8859-1" }]);
-  for (const absent of ["backgroundColor", "foregroundColor", "logoText", "expirationDate", "voided"]) assert.equal(absent in pass, false, absent);
+  // The owner's pick: Saffron Amber on Medici Cypress Darker -1, one ink for labels and values; the logo is an image.
+  assert.equal(pass.backgroundColor, "rgb(2, 34, 27)");
+  assert.equal(pass.foregroundColor, "rgb(251, 147, 66)");
+  assert.equal(pass.labelColor, "rgb(251, 147, 66)");
+  for (const absent of ["logoText", "expirationDate", "voided"]) assert.equal(absent in pass, false, absent);
 });
 
 test("every way the signing material can be wrong refuses with its own fixed code", { skip }, async t => {

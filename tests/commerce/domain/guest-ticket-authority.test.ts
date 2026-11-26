@@ -492,6 +492,9 @@ test("own passes: Unlock's proved QR goes into our signed save JWT, with nothing
   const [object] = body.eventTicketObjects;
   assert.equal(klass.id, googleEventClassID(m.issuer.issuerID, "e"));
   assert.deepEqual(klass.eventName, { defaultValue: { language: "en-US", value: "Launch night" } });
+  assert.equal(klass.hexBackgroundColor, "#02221B", "the owner's pick: Medici Cypress Darker -1");
+  assert.deepEqual(klass.wideLogo, { sourceUri: { uri: new URL("/wallet-pass/logo@3x.png", m.origin).href },
+    contentDescription: { defaultValue: { language: "en-US", value: "Sophomores" } } }, "the BrandMark art, from our own site");
   assert.equal(object.id, googleTicketObjectID(m.issuer.issuerID, { lock: guestLock, tokenID: "7", recipient: m.safe.safeAddress }));
   assert.match(String(object.id), /^3388000000022222222\.ticket-[0-9a-f]{32}$/);
   assert.equal(object.classId, klass.id);

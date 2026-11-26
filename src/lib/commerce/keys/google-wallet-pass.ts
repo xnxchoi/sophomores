@@ -4,6 +4,7 @@ import { importPKCS8, SignJWT } from "jose";
 import { z } from "zod";
 import type { PassKey } from "./unlock/pass-holder";
 import { readOwnerOnly, signerDirectory } from "./unlock/signer";
+import { WALLET_PASS_COLOURS } from "./wallet-pass-colours";
 
 /*
  * Our own Google Wallet event ticket (owner GO, 26 Nov, relayed by Cordy: our own passes; jose for Google). One "fat"
@@ -62,11 +63,15 @@ export async function googleWalletSaveURL(issuer: GoogleWalletIssuer,
     payload: {
       eventTicketClasses: [{
         id: classId,
-        // A name, not interface copy; the wordmark question for the pass art is with the owner (26 Nov).
+        // A name, not interface copy; the card shows the wordmark itself as its wide logo.
         issuerName: "Sophomores",
         reviewStatus: "UNDER_REVIEW",
         eventName: text(event.name),
         dateTime: { start: event.startsAt, ...(event.endsAt ? { end: event.endsAt } : {}) },
+        // The owner's pick (wallet-pass-colours.ts); Google chooses the text colour for it. The wide logo is the Apple
+        // pass's BrandMark art at 480×150 (3.2:1, Google's 1280×400 ratio), served from public/ by our own site.
+        hexBackgroundColor: WALLET_PASS_COLOURS.background.hex,
+        wideLogo: { sourceUri: { uri: new URL("/wallet-pass/logo@3x.png", origin).href }, contentDescription: text("Sophomores") },
       }],
       eventTicketObjects: [{
         id: googleTicketObjectID(issuer.issuerID, key),

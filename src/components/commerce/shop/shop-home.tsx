@@ -100,6 +100,19 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
   // Without WebGL their page shows the 2D layers (no-webgl-book-layer.tsx, no-webgl-spine-row.tsx), and the 2D row
   // reports its seat in module 44870 (`rD.f`), which the seat and the title fade read first (06w9:11117, 11874).
   const noWebgl = useMemo(() => vendored.noWebgl(), [vendored]);
+  // Their page tells the scene which theme is on (06w9:13594, `homeStackDarkThemeActiveLiveRef = !light && !colour`), and
+  // the scene blends to its dark lights (HOME_STACK_LIGHTS_DARK_TUNING) while it is set. Ours never set it, so our dark
+  // page ran their light page's lights. It follows the site's theme attribute.
+  useEffect(() => {
+    const flag = hub.homeStackDarkThemeActiveLiveRef as { current: boolean } | undefined;
+    if (!flag) return;
+    const root = document.documentElement;
+    const read = () => { flag.current = root.dataset.theme === "dark"; };
+    read();
+    const watch = new MutationObserver(read);
+    watch.observe(root, { attributes: true, attributeFilter: ["data-theme"] });
+    return () => { watch.disconnect(); flag.current = false; };
+  }, [hub]);
   const flatBooks = useMemo(() => items.map(({ id, title }) => ({ id, title })), [items]);
   // Their "page is scrolling" flag (module 50883 `R`), which the no-WebGL layers read: true on each scroll, false 120 ms
   // after the last (06w9:14730-14733).

@@ -30,9 +30,11 @@ import * as THREE from "three"; import { GLTFLoader } from "three/addons/loaders
 const r = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
 r.setClearColor(0x000000, 0); r.outputColorSpace = THREE.SRGBColorSpace; document.body.appendChild(r.domElement);
 const scene = new THREE.Scene();
-scene.add(new THREE.HemisphereLight(0xffffff, 0x9a9890, 1.5));
-const key = new THREE.DirectionalLight(0xffffff, 1.6); key.position.set(-3, 4, 5); scene.add(key);
-const fill = new THREE.DirectionalLight(0xffffff, 0.5); fill.position.set(4, 1, 2); scene.add(fill);
+// The scene's own lights on our dark page: their HOME_STACK_LIGHTS_DARK_TUNING (12s2:170-196), the ambient, the key and
+// the "sun" (the mouse spot is left out: it follows the pointer, which a still image has none of).
+scene.add(new THREE.AmbientLight(0xddcbb4, 0.58));
+const key = new THREE.DirectionalLight(0xfdb958, 1.77); key.position.set(-35.8, 26, 41.4); scene.add(key);
+const sun = new THREE.DirectionalLight(0xd6fffc, 2.33); sun.position.set(-4.5, -4.5, 7.5); scene.add(sun);
 const book = (await new GLTFLoader().loadAsync("/assets/three/book/book-rest.glb")).scene;
 const tex = await new THREE.TextureLoader().loadAsync("/cover"); tex.flipY = false; tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8;
 const cover = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.8 }), page = new THREE.MeshStandardMaterial({ color: 0xf3f2ee, roughness: 0.9 }),

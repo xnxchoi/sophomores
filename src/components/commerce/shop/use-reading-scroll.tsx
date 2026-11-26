@@ -31,6 +31,13 @@ export type ReadingSource = {
 };
 
 const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
+/**
+ * stripe.press runs one book's details on into the next book's (its section, its 3D book, its address). Owner, 26 Nov:
+ * "build and keep the stripe transition as we may use it at some point, and 2) just stop at end for now". So the page
+ * holds the open product's section: it stops before the next product starts to rise (and above the open one's park).
+ * `true` restores their run-on; nothing else changes.
+ */
+const RUN_ON = false;
 const HEADER_TRIM = 122, PANEL_TOP = 68, SECTION_TAIL = 70, MEASURE_TAIL = 300, ANCHOR_LEAD = 220;
 /** Their phone nav height (`eL.k`), which the phone's detail offset uses instead of the card top (06w9:11619-11621). */
 const MOBILE_NAV = 162, PARK_ABOVE = 44, SECTION_HEAD = 127;
@@ -105,6 +112,18 @@ export function useReadingScroll(hub: SceneHub, scroll: SceneScroll, open: numbe
     : Math.max(0, base() + (L.tops[at] ?? 0) + HEADER_TRIM - scroll.p(scroll.X()));
   /** Where an open lands: desktop the park; a phone the landing, lower, so the book shows above its details (`lp`). */
   const landingY = (at: number, L: ReadingLayout) => L.mobile ? Math.max(0, base() + phone(at, L).landing) : park(at, L);
+  /** Without the run-on, the scroll range that keeps book `at` on its own: from its park to the last scroll before the
+   * detail lock lets the next book rise (found by bisection, as `scroll.m` is theirs). */
+  const holdRange = (at: number, L: ReadingLayout, canvasHeight: number) => {
+    const top = base(), from = top + (L.starts[at] ?? 0), extent = L.extents[at] ?? 0;
+    const floor = Math.max(0, Math.min(top + (L.tops[at] ?? 0) - PARK_ABOVE, park(at, L)));
+    let lo = from, hi = from + extent;
+    for (let i = 0; i < 24; i += 1) {
+      const mid = (lo + hi) / 2;
+      if (lockedFor(scroll.m(mid - top, L.extents), L, canvasHeight) <= at + 1e-6) lo = mid; else hi = mid;
+    }
+    return { min: floor, max: Math.max(floor, landingY(at, L), Math.floor(lo)) };
+  };
   // The open's blend on a phone (their `lf`): the exits ease in from the park over 450 ms; none for a shelf or address open.
   const blend = useRef<{ index: number; t0: number } | null>(null);
 
@@ -123,7 +142,14 @@ export function useReadingScroll(hub: SceneHub, scroll: SceneScroll, open: numbe
     const [praise, card, cardAt, turn, reveal] = arrays;
     let settle = 0, still = 0, rerun = 0;
     const run = () => {
-      const { layout: L, geometry: G, count: n } = live.current, y = window.scrollY, vh = window.innerHeight || 1, top = base();
+      const { layout: L, geometry: G, count: n } = live.current, vh = window.innerHeight || 1, top = base();
+      let y = window.scrollY;
+      // Stop at the open product's ends (RUN_ON off): its details neither run on into the next one nor back into the last.
+      if (!RUN_ON && pending.current == null) {
+        const range = holdRange(index.current.shown, L, G.height);
+        const held = Math.max(range.min, Math.min(range.max, y));
+        if (Math.abs(held - y) > 0.5) { window.scrollTo(0, held); y = held; }
+      }
       scrolling.current = true; window.clearTimeout(still); still = window.setTimeout(() => { scrolling.current = false; }, 120);
       const progress = scroll.m(y - top, L.extents);
       hub.scrollProgressDirectLiveRef.current = progress;

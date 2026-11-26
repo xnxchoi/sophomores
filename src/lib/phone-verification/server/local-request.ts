@@ -18,17 +18,28 @@ export function hasLocalRequestAuthority(request: Request, origin: string): bool
 }
 
 /**
+ * The addresses `next start` (standalone) binds and builds a route's request.url from: deployment/Dockerfile sets
+ * HOSTNAME=0.0.0.0, and Next's initURL is `${X-Forwarded-Proto}://${hostname}:${port}`, whatever Host the browser used.
+ */
+const BIND_HOSTS = ["0.0.0.0", "localhost", "127.0.0.1", "[::]", "[::1]"];
+
+/**
  * Request authority for the configured auth origin. A loopback `http:` origin keeps the
- * exact local rules above; an `https:` production origin must match `request.url`
- * exactly and, when a Host header is present, its host. Forwarded headers are ignored.
- * Commerce callers still use the local-only helper above.
+ * exact local rules above. An `https:` production origin matches `request.url` exactly and,
+ * when a Host header is present, its host. Behind the proxy, request.url is the server's own
+ * bind address (preview, 26 Nov: every member status call was refused for that reason), so a
+ * bind-address https URL is accepted only when the proxy's Host, and any X-Forwarded-Host,
+ * name the configured host. Any other host in request.url is refused.
  */
 export function hasConfiguredRequestAuthority(request: Request, origin: string): boolean {
   const expected = new URL(origin);
   if (expected.protocol === "http:") return hasLocalRequestAuthority(request, origin);
   if (expected.protocol !== "https:") return false;
   const actual = new URL(request.url);
-  if (actual.origin !== expected.origin || actual.username || actual.password) return false;
+  if (actual.username || actual.password) return false;
   const host = request.headers.get("host");
-  return host === null || host === expected.host;
+  if (actual.origin === expected.origin) return host === null || host === expected.host;
+  const forwardedHost = request.headers.get("x-forwarded-host");
+  return actual.protocol === "https:" && BIND_HOSTS.includes(actual.hostname) && host === expected.host
+    && (forwardedHost === null || forwardedHost === expected.host);
 }

@@ -307,6 +307,8 @@
     "refreshAccountStatus": "Refresh account status",
     "checkingSignInOptions": "Checking sign-in options…",
     "checkingYourAccount": "Checking your account…",
+    "yourAccount": "Your account",
+    "weCouldntLoadYourAccountTryAgain": "We couldn’t load your account. Try again.",
     "switchAccount": "Switch account",
     "signInAgain": "Sign in again",
     "continueRegistrationAfterSigningIn": "Sign in to continue setting up your account.",

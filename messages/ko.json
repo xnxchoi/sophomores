@@ -307,6 +307,8 @@
     "refreshAccountStatus": "계정 상태 새로고침",
     "checkingSignInOptions": "로그인 옵션을 확인하고 있어요…",
     "checkingYourAccount": "계정을 확인하고 있어요…",
+    "yourAccount": "",
+    "weCouldntLoadYourAccountTryAgain": "",
     "switchAccount": "다른 계정으로 로그인",
     "signInAgain": "다시 로그인하기",
     "continueRegistrationAfterSigningIn": "계정 설정을 계속하려면 로그인해 주세요.",

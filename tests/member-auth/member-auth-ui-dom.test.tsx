@@ -395,6 +395,42 @@ test("a signed-in /account is a normal page: the member's account inline, no she
   assert.deepEqual(visited, [], "the account page has no next: it never navigates away");
 });
 
+test("a signed-in /account whose status check fails shows the account with a retry, never the sign-in step", async () => {
+  // Owner, 26 Nov, signed in through /vault: "Account page shoulda fucking should show the account page when logged
+  // in". The preview's status call was refused (403), and the page fell back to the sign-in step's "Sign-in is
+  // unavailable". The server already knew he was signed in.
+  const c = client();
+  c.setStatus(active);
+  const read = c.value.status;
+  let refused = true;
+  c.value.status = async () => { if (refused) throw new Error("403"); return read(); };
+  ui.render(<SignIn initialFlow="login" signedIn client={c.value} navigate={() => {}} authenticatedAction={<a href="/me">Account home</a>} />, { wrapper: MemberAuthProviders });
+  const retry = await untilAsserted(ui, () => ui.screen.getByRole("button", { name: messages.MemberAuth.refreshAccountStatus }));
+  ui.screen.getByText(messages.MemberAuth.weCouldntLoadYourAccountTryAgain);
+  ui.screen.getByRole("heading", { name: messages.MemberAuth.yourAccount });
+  assert.equal(ui.screen.queryByLabelText(/^Email(?: address)?$/) === null, true, "no sign-in form");
+  assert.equal(ui.screen.queryByText(messages.AuthPhase.failures.unavailable) === null, true, "no sign-in failure");
+  assert.equal(ui.screen.queryByRole("button", { name: messages.MemberAuth.cancel }) === null, true, "signed in: nothing to go back to");
+  refused = false;
+  ui.fireEvent.click(retry);
+  await untilAsserted(ui, () => ui.screen.getByRole("link", { name: "Account home" }));
+  ui.screen.getByText(messages.MemberAuth.accountReady);
+});
+
+test("a signed-in /account shows no sign-in form while its status is still loading", async () => {
+  const c = client();
+  let release!: () => void;
+  const read = c.value.status;
+  c.value.status = async () => { await new Promise<void>((resolve) => { release = resolve; }); return read(); };
+  c.setStatus(active);
+  ui.render(<SignIn initialFlow="login" signedIn client={c.value} navigate={() => {}} />, { wrapper: MemberAuthProviders });
+  await untilAsserted(ui, () => assert.equal(typeof release, "function"));
+  assert.equal(ui.screen.queryByLabelText(/^Email(?: address)?$/) === null, true);
+  ui.screen.getByRole("heading", { name: messages.MemberAuth.yourAccount });
+  ui.act(() => release());
+  await untilAsserted(ui, () => ui.screen.getByText(messages.MemberAuth.accountReady));
+});
+
 test("a sign-in button opens the in-place sheet on a plain click and keeps its sign-in page href", async () => {
   // Owner, 24 Nov: "Sign-in buttons should in general be modal-togglers"; only a typed or navigated URL gets the page.
   const { AccountSheetProvider } = Sheet;

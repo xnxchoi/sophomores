@@ -20,12 +20,15 @@ export function TicketAccountEntry({
   client,
   initialFlow,
   initialCapabilities,
-  showAccountNavigation = false
+  showAccountNavigation = false,
+  signedIn = false
 }: {
   client?: MemberClient;
   initialFlow?: "login" | "signup";
   initialCapabilities?: Readonly<MemberCapabilities>;
   showAccountNavigation?: boolean;
+  /** The server read a session for this request (/account): never fall back to the sign-in step. */
+  signedIn?: boolean;
 } = {}) {
   const [draft, setDraft] = useState<TicketSelectionDraft | null>(null);
   const [storageIssue, setStorageIssue] = useState(false);
@@ -87,6 +90,7 @@ export function TicketAccountEntry({
     // The account is a normal page (owner, 24 Nov); a signed-out visitor never gets here (/account redirects to /sign-in).
     <MemberAccountPage
       client={client}
+      signedIn={signedIn}
       initialFlow={initialFlow ?? "login"}
       initialCapabilities={initialCapabilities}
       authenticatedAction={showAccountNavigation ? <AccountNavigation /> : undefined}

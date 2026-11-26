@@ -300,6 +300,30 @@ test("configured authority accepts only the exact production origin and keeps lo
   assert.equal(hasLocalRequestAuthority(request("/x"), origin), false);
 });
 
+// The preview, 26 Nov: every GET /api/member/status was a 403 (Review-copy's nginx counts). Under `next start`
+// (standalone) a route's request.url is built from the server's own bind address (deployment/Dockerfile sets
+// HOSTNAME=0.0.0.0 PORT=3000) and X-Forwarded-Proto, so it is https://0.0.0.0:3000/..., never the site's origin.
+// The authority then comes from the Host the proxy sets.
+test("configured authority accepts the standalone server's bind-address URL when the proxy's Host is the site", () => {
+  for (const url of ["https://0.0.0.0:3000", "https://localhost:3000", "https://127.0.0.1:3000", "https://[::1]:3000"])
+    assert.equal(hasConfiguredRequestAuthority(request("/api/member/status", { url }), origin), true, url);
+  assert.equal(hasConfiguredRequestAuthority(request("/x", { url: "https://0.0.0.0:3000",
+    headers: { "X-Forwarded-Host": "sophomores.co", "X-Forwarded-Proto": "https" } }), origin), true);
+  for (const bad of [
+    // The bind address alone proves nothing: the proxy's Host must name the site.
+    new Request("https://0.0.0.0:3000/x"),
+    request("/x", { url: "https://0.0.0.0:3000", headers: { Host: "evil.example" } }),
+    request("/x", { url: "https://0.0.0.0:3000", headers: { Host: "0.0.0.0:3000" } }),
+    request("/x", { url: "https://0.0.0.0:3000", headers: { "X-Forwarded-Host": "evil.example" } }),
+    // Plain http behind the proxy (no X-Forwarded-Proto https) is not the configured origin.
+    request("/x", { url: "http://0.0.0.0:3000" }),
+    // Any other host in request.url is still refused, whatever the Host header says.
+    request("/x", { url: "https://10.0.0.5:3000" }),
+    request("/x", { url: "https://evil.example:3000" })
+  ])
+    assert.equal(hasConfiguredRequestAuthority(bad, origin), false, bad.url);
+});
+
 test("member status accepts the production origin and rejects localhost and foreign origins", async () => {
   const handlers = createMemberHandlers({
     production: true,

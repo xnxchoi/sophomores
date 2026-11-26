@@ -278,7 +278,10 @@ export function SiteHeader({ member: memberProp }: { member?: Promise<HeaderMemb
     const alpha = scrollToBtbgop.get();
     return navState.get() ? 0 : alpha;
   });
-  const btBackground = useMotionTemplate`oklch(${themeOK}% 0.008 176.48/${btbgop})`;
+  // The pill glass from the owner's palette (Palette r3): the scrubbed lightness above becomes a mix of Singer Stone
+  // (86.6 %) and Pewter (57.3 %), so 78.94 and 66.06 land where they were, at the same scrubbed alpha.
+  const btStonePct = useTransform(() => ((themeOK.get() - 57.3) / (86.6 - 57.3)) * 100);
+  const btBackground = useMotionTemplate`oklch(from color-mix(in oklab, var(--stone) ${btStonePct}%, var(--light-grey)) l c h / ${btbgop})`;
   const btBlurPx = useTransform(() => {
     const progress = scrubPosition.get();
     return navState.get() ? 0 : 4 + progress * 10;

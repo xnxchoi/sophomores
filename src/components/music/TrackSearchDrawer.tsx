@@ -248,7 +248,7 @@ export function TrackSearchDrawer({
                           "inline-flex h-9 items-center justify-center rounded-lg px-3 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white",
                           isSelected
                             ? "bg-gunmetal text-singer-stone"
-                            : "bg-white text-black hover:bg-titanium"
+                            : "bg-white text-black hover:bg-singer-stone"
                         )}
                       >
                         {isSelected ? (

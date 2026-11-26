@@ -245,7 +245,7 @@ function HA_DialogContent({
         >
           <m.div
             className={HA_cn(
-              "pointer-events-auto fixed top-[45%] left-[50%] z-[245] grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-xl p-6 shadow-lg/25 outline-1 outline-muted-faded-foreground/20! backdrop-blur-xs duration-200 ease-out-power2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-[550px] dark:shadow-xl/40 dark:shadow-carbon/30 dark:outline-muted-faded-foreground/40!",
+              "pointer-events-auto fixed top-[45%] left-[50%] z-[245] grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-xl p-6 shadow-lg/25 outline-1 backdrop-blur-xs duration-200 ease-out-power2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-[550px] dark:shadow-xl/40 dark:shadow-carbon/30",
               className
             )}
             data-lenis-prevent="true"

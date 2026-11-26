@@ -153,7 +153,7 @@ export function SetlistHeader({ setlist, contributedCount, archiveOnly = false }
               href={appleUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white px-4 text-xs font-medium text-black transition-colors hover:bg-titanium focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white shrink-0"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white px-4 text-xs font-medium text-black transition-colors hover:bg-singer-stone focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white shrink-0"
             >
               <span>Open in Apple Music</span>
               <ArrowSquareOutIcon className="size-4" />

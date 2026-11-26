@@ -276,7 +276,7 @@ function Light({ lit, confirming }: { lit: boolean; confirming: boolean }) {
         >
           {confirming ? (
             <m.div
-              className="absolute inset-y-0 w-1/4 bg-[linear-gradient(90deg,transparent,white,transparent)]"
+              className="absolute inset-y-0 w-1/4 bg-[linear-gradient(90deg,transparent,var(--color-titanium),transparent)]"
               initial={{ x: "-100%" }}
               animate={{ x: "400%" }}
               transition={{

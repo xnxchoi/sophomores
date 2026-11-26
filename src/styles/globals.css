@@ -43,6 +43,7 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-destructive-ink: var(--destructive-ink);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -282,6 +283,8 @@
   --accent: var(--stone);
   --accent-foreground: var(--carbon-deep);
   --destructive: var(--red);
+  /* Destructive TEXT. Light: Deep Cinnabar (5.06:1 on Titanium). */
+  --destructive-ink: var(--red);
   --border: var(--stone);
   --input: var(--stone);
   --ring: var(--light-grey);
@@ -351,6 +354,9 @@
   --accent: var(--black-lighter-2);
   --accent-foreground: var(--white);
   --destructive: var(--red);
+  /* No palette red reaches 4.5:1 on the dark ground (Deep Cinnabar 2.89:1 on Carbon), so destructive text takes the
+     Titanium ink and a Deep Cinnabar mark (icon, rule or ring) carries the colour (Cordy, 26 Nov). */
+  --destructive-ink: var(--white);
   --border: var(--black-lighter-2);
   --input: var(--black-lighter-2);
   --ring: var(--light-grey);

@@ -66,7 +66,7 @@ export function SlotManager({
           <Link
             href={signIn.href}
             onClick={signIn.onClick}
-            className="inline-flex h-11 shrink-0 items-center justify-center rounded-xl bg-white px-5 text-xs font-medium text-black transition-colors hover:bg-titanium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            className="inline-flex h-11 shrink-0 items-center justify-center rounded-xl bg-white px-5 text-xs font-medium text-black transition-colors hover:bg-singer-stone focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
           >
             Sign in to nominate
           </Link>
@@ -206,7 +206,7 @@ export function SlotManager({
                     <button
                       type="button"
                       onClick={() => onOpenSearch(slot.position)}
-                      className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white px-5 text-xs font-medium text-black transition-colors hover:bg-titanium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                      className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white px-5 text-xs font-medium text-black transition-colors hover:bg-singer-stone focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                     >
                       <PlusIcon className="size-4" />
                       <span>Search catalog</span>
@@ -340,7 +340,7 @@ export function SlotManager({
                           type="button"
                           disabled={isSavingNote}
                           onClick={() => handleSaveNote(slot.position)}
-                          className="inline-flex h-7 items-center justify-center rounded bg-white px-3 text-xs font-medium text-black hover:bg-titanium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                          className="inline-flex h-7 items-center justify-center rounded bg-white px-3 text-xs font-medium text-black hover:bg-singer-stone focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                         >
                           {isSavingNote ? "Saving..." : "Save note"}
                         </button>

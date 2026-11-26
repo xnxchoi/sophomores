@@ -83,7 +83,7 @@ export function CuratorControlBar({
                   type="button"
                   disabled={isSyncing}
                   onClick={() => syncNow()}
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-white px-4 text-xs font-medium text-black transition-colors hover:bg-titanium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:opacity-50"
+                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-white px-4 text-xs font-medium text-black transition-colors hover:bg-singer-stone focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:opacity-50"
                 >
                   {isSyncing ? (
                     <CircleNotchIcon className="size-4 animate-spin" />
@@ -114,7 +114,7 @@ export function CuratorControlBar({
                 type="button"
                 disabled={isLoading}
                 onClick={() => authorizeCurator()}
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-white px-5 text-xs font-medium text-black transition-colors hover:bg-titanium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:opacity-50"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-white px-5 text-xs font-medium text-black transition-colors hover:bg-singer-stone focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:opacity-50"
               >
                 {isLoading ? (
                   <CircleNotchIcon className="size-4 animate-spin" />

@@ -396,17 +396,21 @@ function Home({ vendored, items, labels, initialOpen, cartPanel }: { vendored: V
   // Loaded on the cart's address: open at once (their openInstantly), the books not in the cart veiled until it closes.
   const [cartVeil, setCartVeil] = useState(false);
   useEffect(() => { if (cartPanel) { cartShiftFrom.current = 0; setCartVeil(true); cart.openInstantly(); } }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // How it closes (their c5): with books in the cart and the shelf's book not one of them, the stack leaves first
+  // (500 ms) and the page comes back after; on a phone it doesn't.
+  const closing = () => ({ exitStackFirst: !geo.current.mobile && Object.values(cartQuantities).some((count) => count > 0)
+    && !((cartQuantities[items[activeRef.current]?.id ?? ""] ?? 0) > 0) });
   const closeCart = useRef(() => {});
   useEffect(() => { closeCart.current = () => {
     if (!cart.cartMode || cart.phase === "toBrowse") return;
-    setCartVeil(false); cart.toggle({});
+    setCartVeil(false); cart.toggle(closing());
     if (window.location.pathname === "/shop/cart") window.history.pushState(null, "", "/shop");
   }; });
   // Escape and Back close it (theirs: Esc, and their router leaving /cart).
   useEffect(() => {
     if (!cart.cartMode) return;
     const key = (event: KeyboardEvent) => { if (event.key === "Escape") { event.preventDefault(); closeCart.current(); } };
-    const back = () => { if (window.location.pathname !== "/shop/cart") { setCartVeil(false); if (cart.phase !== "toBrowse") cart.toggle({}); } };
+    const back = () => { if (window.location.pathname !== "/shop/cart") { setCartVeil(false); if (cart.phase !== "toBrowse") cart.toggle(closing()); } };
     window.addEventListener("keydown", key); window.addEventListener("popstate", back);
     return () => { window.removeEventListener("keydown", key); window.removeEventListener("popstate", back); };
   }, [cart]);

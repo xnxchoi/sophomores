@@ -6,6 +6,7 @@ import { pathToFileURL } from "node:url";
 import { createElement, isValidElement, type ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { NextIntlClientProvider } from "next-intl";
+import { AppRouterContext, type AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { messagesByLocale } from "@/i18n/messages";
 import type { SetlistData, UserSlotState } from "@/lib/music/types";
 import { Setlists } from "@/payload/collections/setlists";
@@ -865,13 +866,17 @@ test("actual entry DELETE removes one entry by id and returns the rest without c
   assert.deepEqual(body.entries, [{ id: "track-2", title: "Synthetic track 2", artist: "Synthetic artist", note: "Synthetic note 2" }]);
 });
 
+// SlotManager's links go through the transition router, which needs a mounted app router (a render, never a push).
+const renderRouter = { back() {}, forward() {}, refresh() {}, push() {}, replace() {}, prefetch() {} } as unknown as AppRouterInstance;
+
 function renderSetlist(props: Awaited<ReturnType<typeof pageProps>>) {
-  return renderToStaticMarkup(createElement(NextIntlClientProvider, {
-    locale: "en",
-    timeZone: "Asia/Seoul",
-    messages: messagesByLocale.en,
-    children: createElement(SetlistView, { ...props, initialUserSlotState: null })
-  }));
+  return renderToStaticMarkup(createElement(AppRouterContext.Provider, { value: renderRouter },
+    createElement(NextIntlClientProvider, {
+      locale: "en",
+      timeZone: "Asia/Seoul",
+      messages: messagesByLocale.en,
+      children: createElement(SetlistView, { ...props, initialUserSlotState: null })
+    })));
 }
 
 test("actual client view consumes boolean configuration without raw credential props", async () => {

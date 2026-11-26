@@ -25,9 +25,9 @@ export function CartColumn({ open, shown, back, onBack, children }: {
   shown: boolean; back: string; onBack: () => void; children: ReactNode }) {
   if (!open) return null;
   return <>
-    <div aria-hidden="true" className="pointer-events-none fixed top-0 right-0 z-[31] h-[125px] w-[40%] bg-background [mask-image:linear-gradient(#000_0_62px,transparent_100%)] max-[899px]:w-full"
+    <div aria-hidden="true" className="pointer-events-none fixed top-0 right-0 z-[31] h-[125px] w-[40%] bg-background [mask-image:linear-gradient(#000_0_62px,transparent_100%)] max-[900px]:w-full"
       style={{ opacity: "var(--cart-panel-enter, 1)" }} />
-    <div className={cn("fixed top-[calc(46px+var(--shop-shift,0px))] left-[calc(60vw+24px)] z-[32] max-[899px]:hidden",
+    <div className={cn("fixed top-[calc(46px+var(--shop-shift,0px))] left-[calc(60vw+24px)] z-[32] max-[900px]:hidden",
       shown ? "translate-x-0 opacity-100 transition-[opacity,translate] delay-220 duration-[320ms,420ms] ease-[ease-out]" : "pointer-events-none translate-x-7 opacity-0")}>
       <button type="button" tabIndex={shown ? 0 : -1} onClick={onBack}
         className="inline-flex min-h-8 items-center text-[11px] uppercase tracking-[0.04em] text-muted-foreground transition-colors hover:text-foreground pointer-coarse:min-h-11">
@@ -35,7 +35,7 @@ export function CartColumn({ open, shown, back, onBack, children }: {
       </button>
     </div>
     <aside inert={!shown} data-lenis-prevent=""
-      className="fixed top-[calc(80px+var(--shop-shift,0px))] right-0 z-30 isolate flex h-[calc(100vh-80px-var(--shop-shift,0px))] w-[40%] flex-col overflow-y-auto overscroll-contain rounded-bl-[8px] bg-background px-6 pt-[39px] pb-6 text-foreground max-[899px]:top-0 max-[899px]:h-dvh max-[899px]:w-full max-[899px]:rounded-none max-[899px]:pt-[110px] max-[899px]:pb-[60vh]"
+      className="fixed top-[calc(80px+var(--shop-shift,0px))] right-0 z-30 isolate flex h-[calc(100vh-80px-var(--shop-shift,0px))] w-[40%] flex-col overflow-y-auto overscroll-contain rounded-bl-[8px] bg-background px-6 pt-[39px] pb-6 text-foreground max-[900px]:top-0 max-[900px]:h-dvh max-[900px]:w-full max-[900px]:rounded-none max-[900px]:pt-[110px] max-[900px]:pb-[60vh]"
       style={{ opacity: "var(--cart-panel-enter, 1)" }}>
       <div className="mb-auto">{children}</div>
     </aside>
@@ -48,7 +48,7 @@ export function CartBehind({ open, art, cardTop }: { open: boolean; art: { url: 
   return <>
     <div aria-hidden="true" className="fixed top-[calc(80px+var(--shop-shift,0px))] left-0 z-[11] h-[calc(100vh-80px-var(--shop-shift,0px))] w-full min-[900px]:w-[60vw]"
       style={{ opacity: "var(--cart-backdrop-opacity, 0)" }} />
-    {art && <div aria-hidden="true" className="pointer-events-none fixed bottom-6 left-4 z-[9] w-[calc((100vw-32px)*0.6)] overflow-hidden rounded-[8px] bg-muted max-[899px]:hidden"
+    {art && <div aria-hidden="true" className="pointer-events-none fixed bottom-6 left-4 z-[9] w-[calc((100vw-32px)*0.6)] overflow-hidden rounded-[8px] bg-muted max-[900px]:hidden"
       style={{ top: cardTop, opacity: "var(--cart-backdrop-opacity, 0)" }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={art.url} alt="" draggable={false} className="absolute inset-0 size-full object-cover" />

@@ -54,7 +54,11 @@ const publicPagesReadingTheMember: Record<string, string> = {
   "/essays": "the member's reading slots (load-reading)",
   "/essays/[slug]": "the member's reading slots (load-reading)",
   "/essays/in": "the member's reading slots (load-reading)",
-  "/essays/in/[pageNumber]": "the member's reading slots (load-reading)"
+  "/essays/in/[pageNumber]": "the member's reading slots (load-reading)",
+  // Cordy, 26 Nov (Hamlet's cart mode): the cart opens in place, so these carry the member's cart; its panel mounts
+  // PrivateRoute (PrivatePageGuard) while open. Requested by UI-Commerce, 27 Nov.
+  "/shop": "the in-place cart panel (loadCartProps), behind PrivateRoute",
+  "/shop/products/[id]": "the in-place cart panel (loadCartProps), behind PrivateRoute"
 };
 // Reads a staff session only in draft mode, which Next never caches; not a member's page.
 const staffDraftOnly = new Set(["/"]);

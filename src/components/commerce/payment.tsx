@@ -310,7 +310,7 @@ function PaymentPanel({ onRefundTermsChanged, shippingAddress, disabled = false,
     </div>}
     {offerTicketEmailConsent && !recovery && !retained && !orderID && <label className="flex min-h-11 items-center gap-3 text-sm">
       <input type="checkbox" checked={ticketEmailConsent} disabled={unavailable || disabled}
-        onChange={event => setTicketEmailConsent(event.target.checked)} className="size-5 shrink-0 accent-foreground" />
+        onChange={event => setTicketEmailConsent(event.target.checked)} className="size-5 shrink-0 accent-foreground outline-offset-2 focus-visible:outline-2 focus-visible:outline-foreground" />
       <span>{t('ticketEmailConsent')}</span>
     </label>}
     {/* Always settles back to idle: a confirmed payment replaces this button with the order, so it never shows a success state. */}

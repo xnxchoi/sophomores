@@ -75,7 +75,7 @@ function PurchaseForm({ customerID, productID, title, priceKRW, available, limit
     <h2 className="text-xl">{title}</h2>
     <p>{t("memberLimit", { limit })}</p>
     <p>{t("priceEach", { price: price.format(priceKRW) })}</p>
-    {!compatible ? <p>{t("differentCart")} <Link href="/shop/cart" className="underline">{t("viewCart")}</Link></p> : (
+    {!compatible ? <p>{t("differentCart")} <Link href="/shop/cart" className="rounded-xs underline outline-offset-2 focus-visible:outline-2 focus-visible:outline-current">{t("viewCart")}</Link></p> : (
       <div className="flex flex-wrap items-end gap-4">
         <label className="grid gap-2">
           {t("selectQuantity")}

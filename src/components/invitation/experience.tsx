@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import Link from "next/link";
+import { Link } from "next-transition-router";
 import { useRouter } from "next/navigation";
 import { InvitationForm } from "./invitation-form";
 import { FilmStudy } from "./film-study";

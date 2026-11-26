@@ -8,6 +8,8 @@ import { CuratorControlBar } from "@/components/music/CuratorControlBar";
 import type { AudioPreviewState } from "@/components/music/use-audio-preview";
 import type { SetlistData, UserSlotState } from "@/lib/music/types";
 import { EnglishMessages } from "../fixtures/english-messages";
+// SlotManager's links go through the transition router, which needs a mounted app router.
+import { MemberAuthProviders } from "../member-auth/fixtures/providers";
 
 const mockAudioPreview: AudioPreviewState = {
   activeId: null,
@@ -70,7 +72,7 @@ test("SetlistHeader renders BrandMark, title, metadata and Apple Music link", ()
 
 test("SlotManager displays sign-in prompt for unauthenticated users", () => {
   const html = renderToStaticMarkup(
-    <EnglishMessages>
+    <MemberAuthProviders>
       <SlotManager
         userSlotState={null}
         isAuthenticated={false}
@@ -80,7 +82,7 @@ test("SlotManager displays sign-in prompt for unauthenticated users", () => {
         audioPreview={mockAudioPreview}
         isPastDeadline={false}
       />
-    </EnglishMessages>
+    </MemberAuthProviders>
   );
 
   assert.match(html, /Attendee nominations/);
@@ -100,7 +102,7 @@ test("SlotManager displays verification required prompt for ineligible users", (
   };
 
   const html = renderToStaticMarkup(
-    <EnglishMessages>
+    <MemberAuthProviders>
       <SlotManager
         userSlotState={ineligibleState}
         isAuthenticated={true}
@@ -110,7 +112,7 @@ test("SlotManager displays verification required prompt for ineligible users", (
         audioPreview={mockAudioPreview}
         isPastDeadline={false}
       />
-    </EnglishMessages>
+    </MemberAuthProviders>
   );
 
   assert.match(html, /Verification required/);
@@ -128,7 +130,7 @@ test("SlotManager displays activation required prompt for unactivated users with
   };
 
   const html = renderToStaticMarkup(
-    <EnglishMessages>
+    <MemberAuthProviders>
       <SlotManager
         userSlotState={unactivatedState}
         isAuthenticated={true}
@@ -138,7 +140,7 @@ test("SlotManager displays activation required prompt for unactivated users with
         audioPreview={mockAudioPreview}
         isPastDeadline={false}
       />
-    </EnglishMessages>
+    </MemberAuthProviders>
   );
 
   assert.match(html, /Activation required/);
@@ -175,7 +177,7 @@ test("SlotManager renders 2 nomination slots for eligible users", () => {
   };
 
   const html = renderToStaticMarkup(
-    <EnglishMessages>
+    <MemberAuthProviders>
       <SlotManager
         userSlotState={eligibleState}
         isAuthenticated={true}
@@ -185,7 +187,7 @@ test("SlotManager renders 2 nomination slots for eligible users", () => {
         audioPreview={mockAudioPreview}
         isPastDeadline={false}
       />
-    </EnglishMessages>
+    </MemberAuthProviders>
   );
 
   assert.match(html, /Your nomination slots/);

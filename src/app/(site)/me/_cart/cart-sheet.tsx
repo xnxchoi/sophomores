@@ -2,6 +2,7 @@
 
 import { useId, useLayoutEffect, useRef, useState, type ComponentProps } from "react";
 import NextLink from "next/link";
+import { Link } from "next-transition-router";
 import { useTranslations } from "next-intl";
 import { animate, resize, type AnimationPlaybackControls } from "motion";
 import { XIcon } from "@phosphor-icons/react";
@@ -81,11 +82,13 @@ export function AccountCartSheet({ offer, initialCapabilities }: {
             </CommerceAccountGate>
           </div>
           <SheetFooter className="shrink-0 border-t border-border px-5 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6">
-            <NextLink href="/shop/cart" onNavigate={() => {
+            <Link href="/shop/cart" onClick={(event) => {
+              // A new-tab click stays on this page with the sheet open, as Next's onNavigate did.
+              if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
               leavingForCartPage.current = true;
               setOpen(false);
             }}
-              className="inline-flex min-h-12 items-center justify-center rounded-full border border-border px-5 text-sm outline-offset-4 transition-colors hover:bg-muted focus-visible:outline-2">{t("fullPage")}</NextLink>
+              className="inline-flex min-h-12 items-center justify-center rounded-full border border-border px-5 text-sm outline-offset-4 transition-colors hover:bg-muted focus-visible:outline-2">{t("fullPage")}</Link>
           </SheetFooter>
         </div>
       </SheetContent>

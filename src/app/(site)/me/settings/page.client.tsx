@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import Link from "next/link";
+import { Link as TransitionLink } from "next-transition-router";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { AddressBookIcon, ArrowLeftIcon, BellIcon, CaretRightIcon, IdentificationCardIcon, ShieldCheckIcon, SlidersHorizontalIcon, UserCircleIcon } from "@phosphor-icons/react";
 import type { User } from "@/payload-types";
@@ -42,12 +43,12 @@ export default function SettingsHubClient({ user }: SettingsHubClientProps) {
   return (
     <div className="dark flex w-full flex-col gap-8 text-foreground">
       <header>
-        <Link href="/me" className="group group/focus -mt-2 mb-2 inline-flex min-h-12 items-center rounded-sm text-sm text-muted-foreground hover:text-foreground">
+        <TransitionLink href="/me" className="group group/focus -mt-2 mb-2 inline-flex min-h-12 items-center rounded-sm text-sm text-muted-foreground hover:text-foreground">
           <FocusShape className="inline-flex items-center gap-2 outline-offset-4">
             <ArrowLeftIcon aria-hidden="true" className="size-4 transition-transform group-hover:-translate-x-0.5 group-focus-visible:-translate-x-0.5" />
             {t("backToAccount")}
           </FocusShape>
-        </Link>
+        </TransitionLink>
         <h1 className="text-3xl font-light tracking-tight sm:text-4xl">
           {t("settings")}
         </h1>

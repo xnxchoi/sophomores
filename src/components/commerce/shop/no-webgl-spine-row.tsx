@@ -426,7 +426,7 @@ export function NoWebglSpineRow({ vendored, books, hidden, onBookOpen, labels }:
             {set ? <>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img ref={(element) => { spineEls.current[index] = element; }} src={set.spine.src} alt="" draggable={false} decoding="async"
-                className="absolute block select-none transition-opacity duration-160 ease-[ease]" />
+                className="absolute block max-w-none select-none transition-opacity duration-160 ease-[ease]" />
             </> : <div ref={(element) => { spineEls.current[index] = element; }}
               className="absolute flex items-center justify-center overflow-hidden rounded-[2px] bg-muted text-[11px] leading-none font-semibold tracking-[0.02em] whitespace-nowrap text-foreground transition-opacity duration-160 ease-[ease] [writing-mode:vertical-rl]">
               {title}
@@ -434,7 +434,7 @@ export function NoWebglSpineRow({ vendored, books, hidden, onBookOpen, labels }:
             {set ? <>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img ref={(element) => { coverEls.current[index] = element; }} src={set.cover.src} alt="" draggable={false} decoding="async"
-                loading={near ? "eager" : "lazy"} className="absolute block opacity-0 select-none transition-opacity duration-160 ease-[ease]" />
+                loading={near ? "eager" : "lazy"} className="absolute block max-w-none opacity-0 select-none transition-opacity duration-160 ease-[ease]" />
             </> : <div ref={(element) => { coverEls.current[index] = element; }}
               className="absolute box-border flex flex-col items-center justify-center gap-2 rounded-[3px] bg-muted p-4 text-center text-[18px] leading-[1.2] font-semibold text-foreground opacity-0 transition-opacity duration-160 ease-[ease]">
               <span>{title}</span>

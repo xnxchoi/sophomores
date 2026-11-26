@@ -73,7 +73,7 @@ export function BusinessFooterFacts({ facts }: { facts: FooterSellerFacts | null
   return (
     <section id="seller-information" aria-label={t("section")} className="scroll-mt-header">
       {/* Four across from lg in the Korean form's order; the address takes two columns, so the seven close two rows. */}
-      <dl className="grid gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-4">
+      <dl className="grid gap-x-8 gap-y-5 text-shadow-footer-ground sm:grid-cols-2 lg:grid-cols-4">
         {facts.tradeName && <FooterFact label={t("name")}>{facts.tradeName}</FooterFact>}
         {facts.representative && <FooterFact label={t("representative")}>{facts.representative}</FooterFact>}
         {facts.businessRegistrationNumber && <FooterFact label={t("registrationNumber")}>{facts.businessRegistrationNumber}</FooterFact>}

@@ -498,14 +498,25 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
     return () => { cancelAnimationFrame(frame); window.removeEventListener("scroll", request); window.removeEventListener("resize", request); };
   }, [hub]);
 
-  // On the shelf the rail names the selected spine (their rail follows the spine selection there).
+  // On the shelf the rail names the selected spine (their rail follows the spine selection there). While the selection
+  // is settled the active title also stands over the face-out book, 2.5vw left of its centre (their `getActiveBookRect`,
+  // 06w9:17748, read once per settle in 21ix's coverflow loop: centerPx + j(width)); at the row's ends, where the row
+  // stops sliding, that is off-centre. Otherwise it is centred as on the stack.
   const [selected, setSelected] = useState<number | null>(null);
+  const [anchor, setAnchor] = useState<number | null>(null);
   useEffect(() => {
-    if (!onShelf) { setSelected(null); return; }
-    let frame = 0;
+    if (!onShelf) { setSelected(null); setAnchor(null); return; }
+    let frame = 0, key = "";
     const follow = () => {
-      const to = (hub.spineSelectionLiveRef.current as { to?: number } | null)?.to;
+      const selection = hub.spineSelectionLiveRef.current as { to?: number; settled?: boolean } | null;
+      const settled = hub.spineSelectedSettledLiveRef.current as { valid: boolean; to: number; nonce: number; centerPx: number };
+      const to = selection?.to;
       if (typeof to === "number") setSelected(to);
+      if (!selection?.settled || !settled.valid || settled.to !== to) { key = ""; setAnchor(null); }
+      else if (key !== to + "|" + settled.nonce) {
+        key = to + "|" + settled.nonce;
+        setAnchor(Math.round(settled.centerPx - 0.025 * window.innerWidth));
+      }
       frame = requestAnimationFrame(follow);
     };
     frame = requestAnimationFrame(follow);
@@ -555,15 +566,16 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
     </div>
     <TitleRail railRef={titles} label={labels.titles} titles={items.map((entry) => entry.title)} refunds={items.map((entry) => entry.refund)} active={detail.open ?? selected ?? railIndex}
       fade={detail.open != null ? 0 : rowOver >= 0 ? 0.5 * rowOver : Math.max(0, Math.min(1, (committed - K - 0.2) / 0.3))} shelf={committed >= J}
-      detail={detail.open != null && !detail.leaving}
+      detail={detail.open != null && !detail.leaving} anchor={detail.open != null ? null : anchor}
       hidden={phoneDetail}
       onPick={(index) => detail.open != null ? openRef.current(index) : index < catalogue.t ? scrollTo(bookY(index), 1000) : scrollTo(shelfY(), 1833)} />
     {item && <ViewDetails href={item.href} label={labels.viewDetails} hidden={(onShelf || detail.open != null) && !look.home} onOpen={() => openRef.current(active)}
-      book={{ label: look.open && look.home ? labels.closeBook : labels.openBook, open: look.open && look.home,
+      book={noWebgl ? undefined : { label: look.open && look.home ? labels.closeBook : labels.openBook, open: look.open && look.home,
         onToggle: () => (look.open ? look.close() : look.openOnHome(active)) }} />}
-    {/* The peek pill (their "+ Open book +", left 30 %): while the open book in the details is hovered, or the pill is. */}
-    <OpenBookPill label={labels.openBook} shown={detail.open != null && !detail.leaving && !look.open && (look.peek || look.pillHover)}
-      onHover={look.setPillHover} onOpen={() => { look.setPillHover(false); look.openInDetail(); }} />
+    {/* The peek pill (their "+ Open book +", left 30 %): while the open book in the details is hovered, or the pill is.
+      * Without WebGL there is no open book, so theirs leaves out the pill and the corner's "Open book" (06w9:17936, 18224). */}
+    {!noWebgl && <OpenBookPill label={labels.openBook} shown={detail.open != null && !detail.leaving && !look.open && (look.peek || look.pillHover)}
+      onHover={look.setPillHover} onOpen={() => { look.setPillHover(false); look.openInDetail(); }} />}
     <LookInsideBar shown={look.open} wide={look.home} page={look.page}
       leaves={Math.ceil(scenePageCount(items[lookHome ?? detail.open ?? 0]?.pages, items[lookHome ?? detail.open ?? 0]?.pageCount) / 2)} labels={labels}
       onBack={() => look.turnBy(-1, Math.ceil(scenePageCount(items[lookHome ?? detail.open ?? 0]?.pages, items[lookHome ?? detail.open ?? 0]?.pageCount) / 2))}
@@ -657,12 +669,14 @@ function Cards({ items, featured, geometry, progressRef, listeners, reading, J, 
  * upright and centred at 47.5 % of the width (500 ms ease-in-out), the rest italic at 0.8; each title's refund rule on a
  * line under it (owner, 25 Nov); the titles fade in 1.2 s after load and fade out as the shelf takes the screen.
  */
-function TitleRail({ railRef, label, titles, refunds, active, fade, shelf, detail, hidden, onPick }: { railRef: Ref<HTMLElement>; label: string; titles: string[];
+function TitleRail({ railRef, label, titles, refunds, active, fade, shelf, detail, anchor, hidden, onPick }: { railRef: Ref<HTMLElement>; label: string; titles: string[];
   /** Each title's refund rule, a line under it. */
   refunds: ReactNode[]; active: number; fade: number;
   /** Past the featured books: the rail fades with the rising row over 350 ms (theirs: opacity 350 ms ease on the shelf). */
   shelf: boolean;
   detail: boolean;
+  /** Where the active title's centre stands while the shelf's selection is settled (px), or null for the usual 47.5vw. */
+  anchor: number | null;
   /** A phone's open book: the rail fades out over 300 ms (theirs `footerFade`, no delay). */
   hidden: boolean; onPick: (index: number) => void }) {
   const items = useRef<(HTMLButtonElement | null)[]>([]);
@@ -671,13 +685,15 @@ function TitleRail({ railRef, label, titles, refunds, active, fade, shelf, detai
   useEffect(() => {
     const place = () => {
       const item = items.current[titles.length + active];
-      // Centred at 47.5vw, or 27.5vw over the shifted scene while a book is open (their centerOffsetVw −20).
-      if (item) setShift((detail ? 0.275 : 0.475) * window.innerWidth - 20 - (item.offsetLeft + item.offsetWidth / 2));
+      // Centred at 47.5vw, or 27.5vw over the shifted scene while a book is open (their centerOffsetVw −20), or over the
+      // shelf's face-out book.
+      const centre = anchor != null && !detail ? anchor : (detail ? 0.275 : 0.475) * window.innerWidth;
+      if (item) setShift(centre - 20 - (item.offsetLeft + item.offsetWidth / 2));
     };
     place();
     window.addEventListener("resize", place);
     return () => window.removeEventListener("resize", place);
-  }, [active, titles, detail]);
+  }, [active, titles, detail, anchor]);
   return <nav ref={railRef} aria-label={label} aria-hidden={hidden || undefined} inert={hidden} style={{ opacity: shown && !hidden ? 1 - 2 * fade : 0 }}
     className={cn("pointer-events-none fixed inset-x-0 top-[calc(70px+var(--shop-shift,0px))] z-20 overflow-hidden px-5 pt-5 pb-3 transition-[opacity,clip-path] duration-[1600ms] max-[900px]:top-[calc(63px+var(--shop-shift,0px))]",
       hidden ? "duration-300" : detail ? "[clip-path:inset(0_40%_0_0)] [transition-duration:1600ms,600ms] [transition-timing-function:ease,cubic-bezier(0.16,1,0.3,1)]" : "[clip-path:inset(0_0_0_0)]",
@@ -705,14 +721,16 @@ function TitleRail({ railRef, label, titles, refunds, active, fade, shelf, detai
  * "Close book [-]" while it is open) and "View details [+]".
  */
 function ViewDetails({ href, label, hidden, onOpen, book }: { href: string; label: string; hidden: boolean; onOpen: () => void;
-  book: { label: string; open: boolean; onToggle: () => void } }) {
+  book?: { label: string; open: boolean; onToggle: () => void } }) {
   const [shown, setShown] = useState(false);
   useEffect(() => { const timer = window.setTimeout(() => setShown(true), 2000); return () => window.clearTimeout(timer); }, []);
   return <div className={cn("fixed right-4 -bottom-0.5 z-20 flex h-[30px] items-center gap-3 pointer-coarse:h-11 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] max-[900px]:hidden",
     shown && !hidden ? "translate-y-0" : "translate-y-[calc(100%+24px)]")}>
-    <button type="button" onPointerDown={(event) => event.stopPropagation()} onClick={book.onToggle}
-      className="text-xs uppercase tracking-[-0.02em] transition-opacity hover:opacity-70 pointer-coarse:min-h-11 pointer-coarse:min-w-11">{book.label} {book.open ? "[-]" : "[+]"}</button>
-    <span aria-hidden="true" className="text-xs">·</span>
+    {book && <>
+      <button type="button" onPointerDown={(event) => event.stopPropagation()} onClick={book.onToggle}
+        className="text-xs uppercase tracking-[-0.02em] transition-opacity hover:opacity-70 pointer-coarse:min-h-11 pointer-coarse:min-w-11">{book.label} {book.open ? "[-]" : "[+]"}</button>
+      <span aria-hidden="true" className="text-xs">·</span>
+    </>}
     <Link href={href} onClick={(event) => { if (event.metaKey || event.ctrlKey || event.shiftKey) return; event.preventDefault(); onOpen(); }}
       className="inline-flex items-center text-xs uppercase tracking-[-0.02em] transition-opacity hover:opacity-70 pointer-coarse:min-h-11 pointer-coarse:min-w-11">{label} [+]</Link>
   </div>;

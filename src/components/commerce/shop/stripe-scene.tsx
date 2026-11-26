@@ -140,7 +140,9 @@ function stripeBook({ id, title, stageArt, pages, pageCount }: SceneBook) {
     startPage: 1, stackThicknessPct: 0.8, pageColor: PALETTE.titanium.hex, images: { background: stageArt ?? blank },
     material: {
       id, title, author: "", slug: id,
-      palette: { backgroundColor: PALETTE.singerStone.hex, color: PALETTE.gunmetal.hex, coverColor: PALETTE.titanium.hex, gradientSwatch: TEX + "shared/diffuse_none.png" },
+      // No gradientSwatch: on theirs only the holographic-foil books carry one (nomad, tdm), and its presence turns on the
+      // iridescent page-edge gradient (traced 26 Nov: our edges glowed green and red).
+      palette: { backgroundColor: PALETTE.singerStone.hex, color: PALETTE.gunmetal.hex, coverColor: PALETTE.titanium.hex },
       material: {
         shininess: 8, reflectiveness: 0.2, thickness: 3, diffuseMapCustom: TEX + "cover-placeholder.png", diffuseBaseColor: paletteRGB("titanium"),
         bumpMapBase: TEX + "shared/bump_paper.png", bumpScaleBase: 0.03, bumpMapCustom: TEX + "shared/bump_none.png", bumpScaleCustom: 0,

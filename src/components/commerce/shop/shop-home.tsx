@@ -602,7 +602,9 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
         −10 px and fades, the link comes in from +10 px 100 ms later, 300 ms each). */}
     <div className="fixed top-[calc(53px+var(--shop-shift,0px))] left-4 z-20 grid text-[11px] uppercase leading-4 tracking-[0.06em] text-muted-foreground">
       <p className={cn("col-start-1 row-start-1 transition-[opacity,translate] duration-300 ease-[ease]", phoneDetail ? "-translate-x-2.5 opacity-0" : "delay-100")}>
-        [ {onShelf ? labels.shelf : labels.featured} ]
+        {/* Theirs reads the label from the first section at the nav (header.sampler, 06w9:11821-11922); with details open
+            no section is there, so it shows the default (traced 26 Nov). */}
+        [ {onShelf && detail.open == null ? labels.shelf : labels.featured} ]
       </p>
       <button type="button" tabIndex={phoneDetail ? 0 : -1} aria-hidden={!phoneDetail} onClick={() => detail.closeBook()}
         className={cn("col-start-1 row-start-1 -my-3.5 inline-flex min-h-11 min-w-11 items-center self-start text-left uppercase transition-[opacity,translate,color] duration-300 ease-[ease] hover:text-foreground",

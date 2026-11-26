@@ -116,11 +116,13 @@ export function ChapterNav({
 
   return (
     <>
+      {/* Both sit their old 12 px (Skip: 16 px on phones) above the frame's bottom side, --frame-bottom, not above the
+          viewport edge, so the frame no longer covers them (Cordy, 26 Nov). */}
       <motion.nav
         ref={root}
         aria-label={t("chapterNav")}
         inert={!isPresent}
-        className="chapter-nav pointer-events-none fixed inset-x-3 bottom-[max(12px,env(safe-area-inset-bottom))] z-20 flex justify-center"
+        className="chapter-nav pointer-events-none fixed inset-x-3 bottom-[calc(var(--frame-bottom)+12px+env(safe-area-inset-bottom))] z-20 flex justify-center"
         initial={{ opacity: 0, y: motionTokens.distance.xl }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: motionTokens.distance.xl }}
@@ -263,7 +265,7 @@ export function ChapterNav({
         <motion.a
           ref={skip}
           inert={!isPresent}
-          className="skip-chapter group/focus fixed right-2 bottom-4 z-21 p-2 font-sans text-teaser-fine leading-[17px] uppercase focus-visible:outline-none md:right-4 md:bottom-3 md:text-teaser-nav pointer-coarse:inline-flex pointer-coarse:min-h-12 pointer-coarse:items-center"
+          className="skip-chapter group/focus fixed right-2 bottom-[calc(var(--frame-bottom)+16px+env(safe-area-inset-bottom))] z-21 p-2 font-sans text-teaser-fine leading-[17px] uppercase focus-visible:outline-none md:right-4 md:bottom-[calc(var(--frame-bottom)+12px+env(safe-area-inset-bottom))] md:text-teaser-nav pointer-coarse:inline-flex pointer-coarse:min-h-12 pointer-coarse:items-center"
           href={`#${nextChapter.id}`}
           aria-label={t("skipToChapter", { chapter: nextChapter.label })}
           exit={{ opacity: 0 }}

@@ -23,7 +23,7 @@ input.code-field:not([type="checkbox"]) {
   letter-spacing: 0.2em;
   text-align: center;
   background: transparent;
-  border: 1px solid oklch(from var(--foreground) l c h / 0.35);
+  border: 1px solid var(--light-grey); /* the control rule (Pewter), as --color-control-rule */
   border-radius: 8px;
 }
 
@@ -759,7 +759,7 @@ input.code-field:not([type="checkbox"]) {
   margin: 0;
   padding: 0 0 13.6px;
   border: 0;
-  border-bottom: 1px solid oklch(from var(--muted) l c h / 0.5);
+  border-bottom: 1px solid var(--light-grey); /* the control rule (Pewter), as --color-control-rule */
   border-radius: 0;
   background: transparent;
   color: inherit;

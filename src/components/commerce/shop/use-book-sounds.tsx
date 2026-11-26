@@ -178,7 +178,16 @@ const exports = {
   X: bookSound.grab, G: bookSound.rub, r: bookSound.shuffle, z: bookSound.turn
 };
 
-function mount() { mounted = true; generation += 1; listen(); }
+// Making Howler's AudioContext takes 130–190 ms on the main thread (G14 profile, 27 Nov). Made on the first input it
+// stalled that input: Escape closing a directly loaded cart started ~200 ms late. So it's made while the page is idle,
+// suspended until an input resumes it; the input itself then only resumes it. Howler.volume() makes the context.
+function prepareContext() {
+  if (Howler.ctx) return;
+  const make = () => { if (mounted && !Howler.ctx) Howler.volume(Howler.volume()); };
+  // Safari has no requestIdleCallback yet; a second's delay stands in for it there.
+  if (typeof window.requestIdleCallback === "function") window.requestIdleCallback(make, { timeout: 3000 }); else setTimeout(make, 1000);
+}
+function mount() { mounted = true; generation += 1; listen(); prepareContext(); }
 function unmount() {
   mounted = false; generation += 1; stopListening();
   timers.forEach((id) => window.clearTimeout(id)); timers.clear();

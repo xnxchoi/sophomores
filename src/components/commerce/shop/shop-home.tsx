@@ -401,8 +401,10 @@ function Home({ vendored, items, labels, initialOpen, cartPanel }: { vendored: V
   const backToShelf = useCallback(() => closeCart.current(), []);
   const itemIds = useMemo(() => items.map((entry) => entry.id), [items]);
   // Loaded on the cart's address: open at once (their openInstantly), the books not in the cart veiled until it closes.
+  // cartOn is set first: the open frame is written at rest (not active), and the scene only takes the cart's −20vw shift
+  // while the cart is on (G14: the stack sat ~180 px right of the card without it).
   const [cartVeil, setCartVeil] = useState(false);
-  useEffect(() => { if (cartPanel) { cartShiftFrom.current = 0; setCartVeil(true); cart.openInstantly(); } }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (cartPanel) { cartShiftFrom.current = 0; cartOn.current = true; setCartVeil(true); cart.openInstantly(); } }, []); // eslint-disable-line react-hooks/exhaustive-deps
   // How it closes (their c5): with books in the cart and the shelf's book not one of them, the stack leaves first
   // (500 ms) and the page comes back after; on a phone, or without WebGL (no stack to send off), it doesn't.
   const closing = () => ({ exitStackFirst: !geo.current.mobile && !noWebgl && Object.values(cartQuantities).some((count) => count > 0)

@@ -19,7 +19,6 @@ export const EventTeaserParallaxIsland = dynamic(
         aria-hidden
         style={{
           minHeight: "120vh",
-          background: "oklch(0.08 0.005 240)"
         }}
       />
     )

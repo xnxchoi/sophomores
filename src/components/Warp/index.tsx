@@ -1031,7 +1031,7 @@ export const Warp = () => {
           </div>
           <motion.p
             className={
-              "absolute inset-x-4 top-0 block p-0 text-center font-sans text-[clamp(19px,2vw,26px)] leading-[1.3] tracking-[-.025em] text-white [text-shadow:0_2px_12px_#0008] md:inset-x-[30vw]"
+              "absolute inset-x-4 top-0 block p-0 text-center font-sans text-[clamp(19px,2vw,26px)] leading-[1.3] tracking-[-.025em] text-white [text-shadow:0_2px_12px_color-mix(in_oklab,var(--color-carbon-deep)_53%,transparent)] md:inset-x-[30vw]"
             }
 
             ref={passageScope}
@@ -1053,7 +1053,7 @@ export const Warp = () => {
             </span>
           </motion.p>
           <p
-            className="pointer-events-none absolute inset-x-4 top-1/2 -translate-y-1/2 p-0 text-center font-sans text-[clamp(19px,2vw,26px)] leading-[1.3] tracking-[-.025em] text-white [text-shadow:0_2px_12px_#0008] md:inset-x-[30vw]"
+            className="pointer-events-none absolute inset-x-4 top-1/2 -translate-y-1/2 p-0 text-center font-sans text-[clamp(19px,2vw,26px)] leading-[1.3] tracking-[-.025em] text-white [text-shadow:0_2px_12px_color-mix(in_oklab,var(--color-carbon-deep)_53%,transparent)] md:inset-x-[30vw]"
             data-warp-caption=""
             data-sequence-clips="passageTravel warpApproach"
           >

@@ -40,7 +40,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Box3,
   CatmullRomCurve3,
-  Color,
   Euler,
   LinearFilter,
   LinearMipmapLinearFilter,
@@ -347,7 +346,6 @@ export function Plaque({
       <mesh ref={band}>
         <meshLineGeometry />
         <meshLineMaterial
-          color={new Color().setRGB(144 / 255, 144 / 255, 144 / 255)}
           depthTest={false}
           useMap={1}
           map={bandTexture}
@@ -527,7 +525,6 @@ function Model({
       anisotropy: 1,
       metalness: 1,
       opacity: 1,
-      color: "rgb(144,144,144)",
       sheen: 1,
       anisotropyRotation: 0.66,
       sheenRoughness: 0.4,
@@ -542,7 +539,6 @@ function Model({
       opacity: 1,
       sheenRoughness: 1,
       sheen: 1,
-      color: "rgb(11, 11, 11)",
       roughness: 0.3,
       metalness: 1
     }),
@@ -623,7 +619,6 @@ function Model({
           <Text3D {...text3dProps}>
             <meshStandardMaterial
               {...textPhysicalMeshProps}
-              color={new Color(144 / 255, 144 / 255, 144 / 255)}
               ref={textTopMat}
             />
             {smoothText}
@@ -643,7 +638,6 @@ function Model({
           roughness={0.2}
           metalness={1}
           iridescence={0.3}
-          color={new Color(0.1, 0.1, 0.1)}
         />
       </mesh>
       <mesh geometry={nodes.clamp.geometry}>
@@ -652,7 +646,6 @@ function Model({
           roughness={0.2}
           metalness={1}
           iridescence={0.3}
-          color={new Color(0.1, 0.1, 0.1)}
         />
       </mesh>
       <group>
@@ -675,11 +668,9 @@ function Model({
             map={titaniumMap}
             anisotropy={1}
             sheen={0.2}
-            sheenColor={new Color(0.61, 0.57, 0.54)}
             sheenColorMap={titaniumAnisoMap}
             sheenRoughness={0.1}
             transmission={0}
-            color={new Color(0.61, 0.57, 0.54)}
             // map={materials.card_m.map}
 
             // bumpMap={card_images.bump}
@@ -741,7 +732,6 @@ function Model({
           normalScale={new Vector2(1, 1)}
           roughness={0.9}
           metalness={1}
-          color={new Color(144 / 255, 144 / 255, 144 / 255)}
           roughnessMap={titaniumAnisoMap}
           anisotropyRotation={0.7}
           clearcoat={0}

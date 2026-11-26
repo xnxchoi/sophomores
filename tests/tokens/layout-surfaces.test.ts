@@ -10,7 +10,7 @@ const globals = read("src/styles/globals.css");
 const roles: Record<string, string> = {
   "--spacing-header": "7rem",
   "--blur-floating": "20px",
-  "--shadow-floating": "0 8px 28px -12px rgb(0 0 0 / 0.55)",
+  "--shadow-floating": "0 8px 28px -12px oklch(from var(--color-shadow) l c h / 0.55)",
   "--shadow-resting": "none",
 };
 

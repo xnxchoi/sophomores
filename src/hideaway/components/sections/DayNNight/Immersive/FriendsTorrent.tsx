@@ -196,19 +196,10 @@ export function FriendsTorrent({
       {atmosphere ? (
         <div
           className="absolute inset-0"
-          style={{
-            background: [
-              "radial-gradient(circle at 18% 18%, oklch(44% 0.08 255 / 0.2) 0%, transparent 36%)",
-              "radial-gradient(circle at 80% 22%, oklch(52% 0.09 48 / 0.18) 0%, transparent 36%)",
-              "linear-gradient(135deg, oklch(9% 0.04 255) 0%, oklch(8% 0.032 242) 46%, oklch(7.5% 0.026 42) 100%)",
-              `linear-gradient(180deg, rgba(0,0,0,${darkenOpacity * 0.6}), rgba(0,0,0,${darkenOpacity}))`
-            ].join(", ")
-          }}
         />
       ) : (
         <div
           className="absolute inset-0"
-          style={{ background: `rgba(0,0,0,${darkenOpacity})` }}
         />
       )}
 
@@ -285,24 +276,17 @@ export function FriendsTorrent({
       {/* Edge vignette */}
       <div
         className="absolute inset-0"
-        style={{
-          background: [
-            "linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, transparent 12%, transparent 88%, rgba(0,0,0,0.55) 100%)",
-            "linear-gradient(to right, oklch(8% 0.045 255 / 0.88) 0%, transparent 18%, transparent 82%, oklch(12% 0.06 42 / 0.68) 100%)",
-            "linear-gradient(90deg, oklch(48% 0.08 255 / 0.1), transparent 38%, oklch(54% 0.09 48 / 0.12))"
-          ].join(", ")
-        }}
       />
 
       {(title || caption) && (
-        <div className="absolute right-6 bottom-[calc(132px+env(safe-area-inset-bottom))] left-6 z-10 grid max-w-[min(30rem,calc(100vw-3rem))] gap-3 text-[oklch(96%_0.005_80)] md:right-auto md:left-10 lg:left-14">
+        <div className="absolute right-6 bottom-[calc(132px+env(safe-area-inset-bottom))] left-6 z-10 grid max-w-[min(30rem,calc(100vw-3rem))] gap-3 md:right-auto md:left-10 lg:left-14">
           {title ? (
-            <p className="m-0 font-sans text-[10px] leading-[1.4] tracking-[0.32em] text-white/62 uppercase md:text-[11px]">
+            <p className="m-0 font-sans text-[10px] leading-[1.4] tracking-[0.32em] uppercase md:text-[11px]">
               {title}
             </p>
           ) : null}
           {caption ? (
-            <p className="m-0 max-w-[34ch] font-serif text-[clamp(1.35rem,3.4vw,2.65rem)] leading-[1.05] font-bold tracking-[-0.02em] text-white [text-shadow:0_16px_50px_rgba(0,0,0,0.84)] md:max-w-[22ch]">
+            <p className="m-0 max-w-[34ch] font-serif text-[clamp(1.35rem,3.4vw,2.65rem)] leading-[1.05] font-bold tracking-[-0.02em] md:max-w-[22ch]">
               {caption}
             </p>
           ) : null}
@@ -331,12 +315,12 @@ function PhotoCard({ photo, rowIndex, localIdx, isDesktop }: PhotoCardProps) {
     ? {
         width: `${w}px`,
         aspectRatio: `${aspect}`,
-        boxShadow: "0 16px 38px -12px rgba(0,0,0,0.7)"
+        boxShadow: "0 16px 38px -12px"
       }
     : {
         width: "100%",
         aspectRatio: `${aspect}`,
-        boxShadow: "0 8px 20px -6px rgba(0,0,0,0.5)"
+        boxShadow: "0 8px 20px -6px"
       };
 
   const wrapClass = isDesktop

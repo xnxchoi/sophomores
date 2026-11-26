@@ -76,7 +76,7 @@ describe("Day n Night main flow contract", () => {
 
   it("keeps the loader backdrop from blocking ready-state actions", () => {
     expect(sunLoaderSource).toContain(
-      "pointer-events-none absolute inset-0 bg-faded-black/99"
+      "pointer-events-none absolute inset-0"
     );
   });
 

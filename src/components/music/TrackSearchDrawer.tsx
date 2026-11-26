@@ -105,21 +105,21 @@ export function TrackSearchDrawer({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="fixed top-1/2 left-1/2 z-50 flex h-auto max-h-[85vh] w-full max-w-xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl border border-white/10 bg-neutral-950 p-0 text-white shadow-2xl backdrop-blur-xl">
+      <DialogContent className="fixed top-1/2 left-1/2 z-50 flex h-auto max-h-[85vh] w-full max-w-xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl border border-white/10 bg-carbon-deep p-0 text-white shadow-2xl backdrop-blur-xl">
         <DialogHeader className="border-b border-white/10 p-5 pb-4">
           <div className="flex items-center justify-between">
             <div className="flex flex-col gap-1">
               <DialogTitle className="text-base font-medium tracking-tight text-white">
                 Nominate track for entry {position}
               </DialogTitle>
-              <p className="text-xs text-neutral-400">
+              <p className="text-xs text-pewter">
                 Search Apple Music catalog by title, artist, or album.
               </p>
             </div>
             <button
               type="button"
               onClick={handleClose}
-              className="flex size-9 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-neutral-400 transition-colors hover:bg-white/[0.08] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+              className="flex size-9 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-pewter transition-colors hover:bg-white/[0.08] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
             >
               <XIcon className="size-4" />
               <span className="sr-only">Close</span>
@@ -128,7 +128,7 @@ export function TrackSearchDrawer({
 
           {/* Search input field */}
           <div className="relative mt-3">
-            <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-neutral-400" />
+            <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-pewter" />
             <Input
               type="text"
               value={query}
@@ -137,7 +137,7 @@ export function TrackSearchDrawer({
                 if (!e.target.value.trim()) setResults([]);
               }}
               placeholder="Search Apple Music..."
-              className="h-11 rounded-xl border-white/10 bg-neutral-900/80 pl-9 pr-9 text-sm font-sans text-white placeholder:font-sans placeholder:text-neutral-500 focus-visible:border-white/30"
+              className="h-11 rounded-xl border-white/10 bg-carbon/80 pl-9 pr-9 text-sm font-sans text-white placeholder:font-sans placeholder:text-pewter focus-visible:border-white/30"
               autoFocus
             />
             {query && (
@@ -147,7 +147,7 @@ export function TrackSearchDrawer({
                   setQuery("");
                   setResults([]);
                 }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-pewter hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
               >
                 <XIcon className="size-4" />
                 <span className="sr-only">Clear search</span>
@@ -159,7 +159,7 @@ export function TrackSearchDrawer({
         {/* Search Results Area */}
         <div className="flex-1 overflow-y-auto p-4 min-h-[300px]">
           {isLoading && (
-            <div className="flex flex-col items-center justify-center py-16 gap-3 text-neutral-400">
+            <div className="flex flex-col items-center justify-center py-16 gap-3 text-pewter">
               <Spinner className="size-5 text-white" />
               <span className="text-xs font-sans">Searching Apple Music...</span>
             </div>
@@ -177,11 +177,11 @@ export function TrackSearchDrawer({
                 return (
                   <li
                     key={track.id}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-white/[0.06] bg-neutral-900/40 p-2.5 transition-colors hover:border-white/15 hover:bg-neutral-900/80"
+                    className="flex items-center justify-between gap-3 rounded-xl border border-white/[0.06] bg-carbon/40 p-2.5 transition-colors hover:border-white/15 hover:bg-carbon/80"
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       {/* Artwork thumbnail with play button overlay */}
-                      <div className="relative size-12 shrink-0 overflow-hidden rounded-lg bg-neutral-800">
+                      <div className="relative size-12 shrink-0 overflow-hidden rounded-lg bg-gunmetal">
                         {track.coverUrl ? (
                           <Image
                             src={track.coverUrl}
@@ -192,7 +192,7 @@ export function TrackSearchDrawer({
                             className="size-full object-cover"
                           />
                         ) : (
-                          <div className="flex size-full items-center justify-center text-neutral-500">
+                          <div className="flex size-full items-center justify-center text-pewter">
                             <MusicNotesIcon className="size-5" />
                           </div>
                         )}
@@ -205,12 +205,12 @@ export function TrackSearchDrawer({
                         <span className="text-sm font-medium text-white truncate">
                           {track.title}
                         </span>
-                        <span className="text-xs text-neutral-400 truncate">
+                        <span className="text-xs text-pewter truncate">
                           {track.artist}
                           {track.albumTitle && ` • ${track.albumTitle}`}
                         </span>
                         {isActive && (previewLoading || previewFailed) && (
-                          <p role="status" className="text-xs text-neutral-300">
+                          <p role="status" className="text-xs text-singer-stone">
                             {t(previewFailed ? "previewError" : "previewLoading")}
                           </p>
                         )}
@@ -236,7 +236,7 @@ export function TrackSearchDrawer({
                         </Button>
                       )}
 
-                      <span className="font-sans text-xs tabular-nums text-neutral-500 hidden sm:inline">
+                      <span className="font-sans text-xs tabular-nums text-pewter hidden sm:inline">
                         {formatDuration(track.duration)}
                       </span>
 
@@ -247,8 +247,8 @@ export function TrackSearchDrawer({
                         className={cn(
                           "inline-flex h-9 items-center justify-center rounded-lg px-3 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white",
                           isSelected
-                            ? "bg-neutral-800 text-neutral-300"
-                            : "bg-white text-black hover:bg-neutral-200"
+                            ? "bg-gunmetal text-singer-stone"
+                            : "bg-white text-black hover:bg-singer-stone"
                         )}
                       >
                         {isSelected ? (
@@ -270,7 +270,7 @@ export function TrackSearchDrawer({
           {!isLoading && hasQuery && displayedResults.length === 0 && (
             <div className="flex flex-col items-center justify-center py-16 gap-2 text-center">
               <span className="text-sm font-medium text-white">No tracks found</span>
-              <p className="text-xs text-neutral-400 max-w-sm">
+              <p className="text-xs text-pewter max-w-sm">
                 We couldn&apos;t find any matches for &ldquo;{query}&rdquo;. Check spelling or search with artist name.
               </p>
             </div>
@@ -278,11 +278,11 @@ export function TrackSearchDrawer({
 
           {!isLoading && !hasQuery && (
             <div className="flex flex-col items-center justify-center py-16 gap-2 text-center">
-              <MusicNotesIcon className="size-8 text-neutral-600" />
-              <span className="text-sm font-medium text-neutral-300">
+              <MusicNotesIcon className="size-8 text-gunmetal-lighter-2" />
+              <span className="text-sm font-medium text-singer-stone">
                 Explore the Apple Music catalog
               </span>
-              <p className="text-xs text-neutral-500 max-w-sm">
+              <p className="text-xs text-pewter max-w-sm">
                 Enter a track name or artist to audition previews and select your choice.
               </p>
             </div>

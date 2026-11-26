@@ -48,7 +48,7 @@ test("notification-free return retains the completed wordmark layout", () => {
     const notifications = elements.find((tag) => hasClass(tag, "md:w-(--notification-width)"));
     assert.ok(notifications);
     assert.doesNotMatch(notifications, /\bstyle=/);
-    const cards = elements.filter((tag) => hasClass(tag, "bg-teaser-notice"));
+    const cards = elements.filter((tag) => hasClass(tag, "bg-ultramarine"));
     assert.equal(cards.length, 2);
     for (const card of cards) assert.match(card, /style="[^"]*opacity:0;/);
   }

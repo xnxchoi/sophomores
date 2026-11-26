@@ -44,7 +44,7 @@ export const MemoInput = (
       />
       <p
         id={`${id}-description`}
-        className="mt-2 text-right text-xs text-off-foreground"
+        className="mt-2 text-right text-xs"
         role="status"
         aria-live="polite"
       >

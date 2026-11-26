@@ -47,8 +47,6 @@ export const HeroPlayer = ({
       <div
         className="pointer-events-none absolute inset-0 opacity-20"
         style={{
-          background:
-            "radial-gradient(ellipse at center, oklch(from var(--piercing-orange) l c h /.55) 0%, transparent 70%)",
           visibility: "hidden"
         }}
         aria-hidden="true"
@@ -80,7 +78,7 @@ export const ScrollHint = ({
   return (
     <m.div
       className={cn(
-        "text-faded-fg/40 mt-8 flex flex-col items-center gap-1",
+        "mt-8 flex flex-col items-center gap-1",
         className
       )}
       animate={{

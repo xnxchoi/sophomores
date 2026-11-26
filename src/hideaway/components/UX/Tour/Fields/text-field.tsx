@@ -26,7 +26,7 @@ export default function TextField({
           "transition-colors duration-150 focus:outline-none",
           "autofill:bg-transparent",
           errors.length > 0
-            ? "border-red-400/50 focus:border-red-400/70"
+            ? ""
             : "border-foreground/15 focus:border-foreground/45",
           className
         )}
@@ -39,7 +39,7 @@ export default function TextField({
       />
       {errors.length > 0 && (
         <m.span
-          className="px-2 text-xs text-red-400/80"
+          className="px-2 text-xs"
           initial={{ opacity: 0, y: -4 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2 }}

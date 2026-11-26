@@ -11,7 +11,7 @@ interface TicketQRProps {
 export function TicketQR({ value, size = 240, label }: TicketQRProps) {
   return (
     <div className="flex flex-col items-center gap-3">
-      <div className="rounded-sm border border-border/30 bg-white p-4">
+      <div className="rounded-sm border border-border/30 p-4">
         <QRCodeSVG value={value} size={size} level="M" includeMargin={false} />
       </div>
       {label ? (

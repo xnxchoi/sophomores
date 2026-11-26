@@ -35,4 +35,4 @@ export const CRESTS_SVG_PATHS = [
 ];
 
 /** Single inline-SVG string for use inside pdfmake (which takes raw markup). */
-export const CRESTS_SVG_MARKUP = `<svg xmlns="http://www.w3.org/2000/svg" width="${CRESTS_SVG_WIDTH}" height="${CRESTS_SVG_HEIGHT}" viewBox="0 0 ${CRESTS_SVG_WIDTH} ${CRESTS_SVG_HEIGHT}"><g fill="#1a1612">${CRESTS_SVG_PATHS.map((d) => `<path d="${d}"/>`).join("")}</g></svg>`;
+export const CRESTS_SVG_MARKUP = `<svg xmlns="http://www.w3.org/2000/svg" width="${CRESTS_SVG_WIDTH}" height="${CRESTS_SVG_HEIGHT}" viewBox="0 0 ${CRESTS_SVG_WIDTH} ${CRESTS_SVG_HEIGHT}"><g>${CRESTS_SVG_PATHS.map((d) => `<path d="${d}"/>`).join("")}</g></svg>`;

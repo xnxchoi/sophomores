@@ -153,7 +153,7 @@ export function Ticket3D({
         // shadow stretches and tilts with the card — much better than a
         // flat orthogonal contact shadow on a ground plane.
         filter:
-          "drop-shadow(0 28px 36px rgba(20, 14, 8, 0.18)) drop-shadow(0 8px 14px rgba(20, 14, 8, 0.10))",
+          "drop-shadow(0 28px 36px) drop-shadow(0 8px 14px)",
         ...style
       }}
       onClick={handleClick}

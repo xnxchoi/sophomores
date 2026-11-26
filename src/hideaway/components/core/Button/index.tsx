@@ -139,8 +139,8 @@ export const MotionPillButton = ({
             ? "h-[3.2rem] rounded-[3.2rem] max-md:h-[2.56rem] max-md:rounded-[2.56rem]"
             : "h-[3.6rem] rounded-[3.6rem] text-3xl max-md:h-[2.56rem] max-md:rounded-[2.88rem]",
         inverted
-          ? "bg-button-background-inverted text-nav-button-inverted/90 hover:border-nav-button-border-inverted/80 data-[hover=true]:border-nav-button-border-inverted/80"
-          : "bg-button-background text-nav-button/90 hover:border-nav-button-border/80 data-[hover=true]:border-nav-button-border/80",
+          ? ""
+          : "",
         className
       )}
       data-hover={hover}
@@ -195,8 +195,8 @@ export const MotionPill = ({
             ? "h-[3.2rem] rounded-[3.2rem] max-md:h-[2.56rem] max-md:rounded-[2.56rem]"
             : "h-[3.6rem] rounded-[3.6rem] text-3xl max-md:h-[2.56rem] max-md:rounded-[2.88rem]",
         inverted
-          ? "bg-button-background-inverted text-nav-button-inverted/90 hover:border-nav-button-border-inverted/80 data-[hover=true]:border-nav-button-border-inverted/80"
-          : "bg-button-background text-nav-button/90 hover:border-nav-button-border/80 data-[hover=true]:border-nav-button-border/80",
+          ? ""
+          : "",
         className
       )}
       data-disabled={disabled}
@@ -235,7 +235,7 @@ export const PillButton = ({
     <button
       disabled={disabled}
       className={cn(
-        `flex appearance-none items-center justify-center overflow-hidden border border-solid border-off-foreground/0 px-[1.4rem] text-sm leading-[2] font-light tracking-[-0.01em] backdrop-blur-[2.4rem] transition-[border-color,background-color,padding] duration-200 outline-none [text-decoration:none] md:px-[1.2rem]`,
+        `flex appearance-none items-center justify-center overflow-hidden border border-solid px-[1.4rem] text-sm leading-[2] font-light tracking-[-0.01em] backdrop-blur-[2.4rem] transition-[border-color,background-color,padding] duration-200 outline-none [text-decoration:none] md:px-[1.2rem]`,
 
         {
           "h-[2rem] rounded-[2rem] md:h-[2.4rem] md:rounded-[2.4rem]":
@@ -250,8 +250,8 @@ export const PillButton = ({
             size === "lg"
         },
         inverted
-          ? "bg-button-background-inverted text-background/90 hover:border-off-foreground/80"
-          : "bg-button-background text-foreground/90 hover:border-off-background/80",
+          ? "text-background/90"
+          : "text-foreground/90",
         className
       )}
       onClick={onClick}

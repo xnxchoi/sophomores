@@ -22,7 +22,7 @@ export function AuthShell({
       <div className="relative z-[100] flex min-h-svh flex-col items-center justify-center px-6 py-12 md:px-10">
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-6 rounded-[28px] bg-opaque-background/50 backdrop-blur-xl md:inset-9"
+          className="pointer-events-none absolute inset-6 rounded-[28px] backdrop-blur-xl md:inset-9"
         />
         <div
           className={cn(
@@ -55,13 +55,13 @@ function AuthCardFallback() {
   return (
     <div
       aria-hidden
-      className="rounded-xl bg-faded-background/50 px-6 py-10"
+      className="rounded-xl px-6 py-10"
     >
       <div className="mx-auto h-10 w-36 bg-foreground/[0.06]" />
       <div className="mx-auto mt-3 h-3 w-52 bg-foreground/[0.04]" />
       <div className="mt-10 h-10 w-full border-b border-border/20" />
       <div className="mt-6 h-10 w-full border-b border-border/20" />
-      <div className="mt-8 h-14 w-full rounded-md border border-faded-foreground/25" />
+      <div className="mt-8 h-14 w-full rounded-md border" />
     </div>
   );
 }

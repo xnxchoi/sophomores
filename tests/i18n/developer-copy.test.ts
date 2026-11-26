@@ -13,7 +13,7 @@ test("developer interface copy remains canonical without translating sequence id
   assert.deepEqual(SEQUENCE_CLIPS.map(({ id }) => id), ["openingText", "openingField", "headlineSplit", "headlineScale", "headlineFade", "passageLine1", "passageLine2", "passageTravel", "passageFadeIn", "passageFadeOut", "warpApproach", "ringSettlement"]);
   assert.equal(SEQUENCE_CLIPS.find(({ id }) => id === "ringSettlement")?.domain, "scroll");
   assert.equal(WARP_TUNING_CONTROLS.find(({ key }) => key === "interiorBrightness")?.group, "Interior");
-  assert.equal(DEFAULT_WARP_TUNING.interiorColor, "#ffffff");
+  assert.equal(DEFAULT_WARP_TUNING.interiorColor, "#E4E6EA");
   assert.deepEqual(Object.keys(createDefaultSequence().clips), SEQUENCE_CLIPS.map(({ id }) => id));
 });
 

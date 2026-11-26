@@ -74,7 +74,7 @@ function NotificationSurface({
   return (
     <motion.div
       data-notification=""
-      className="flex min-w-0 flex-col gap-6 rounded-teaser-card bg-teaser-notice p-6 md:min-w-(--notification-width)"
+      className="flex min-w-0 flex-col gap-6 rounded-teaser-card bg-ultramarine p-6 md:min-w-(--notification-width)"
       style={{
         opacity: opacity,
         scale: scale,
@@ -144,7 +144,7 @@ export function Hero({
           </BrandMark>}
           <div className="absolute top-[calc(clamp(28px,8.2vw,48px)*0.85+36px)] right-3 left-3 flex w-auto flex-col gap-1 md:top-3 md:left-auto md:w-(--notification-width)">
             <NotificationSurface position={position} step={0}>
-              <div className="flex justify-between gap-4 font-sans text-teaser-caption leading-[1.1] text-teaser-notice-meta uppercase">
+              <div className="flex justify-between gap-4 font-sans text-teaser-caption leading-[1.1] text-mauve-bone uppercase">
                 <span>{content.notice1Sender}</span>
                 <span>{content.notice1Time}</span>
               </div>
@@ -153,7 +153,7 @@ export function Hero({
               </p>
             </NotificationSurface>
             <NotificationSurface position={position} step={1}>
-              <div className="flex justify-between gap-4 font-sans text-teaser-caption leading-[1.1] text-teaser-notice-meta uppercase">
+              <div className="flex justify-between gap-4 font-sans text-teaser-caption leading-[1.1] text-mauve-bone uppercase">
                 <span>{content.notice2Sender}</span>
                 <span>{content.notice2Time}</span>
               </div>

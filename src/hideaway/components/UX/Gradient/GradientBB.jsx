@@ -219,16 +219,16 @@ const VGradientModuleInner = () => {
   const colorSchemes = useMemo(
     () => [
       [
-        parseInt("3B1E1D", 16),
-        parseInt("603230", 16),
-        parseInt("85504D", 16),
-        parseInt("A5716E", 16)
+        undefined,
+        undefined,
+        undefined,
+        undefined
       ],
       [
-        parseInt("F9E2E0", 16),
-        parseInt("EAC0BD", 16),
-        parseInt("D89B95", 16),
-        parseInt("C07D78", 16)
+        undefined,
+        undefined,
+        undefined,
+        undefined
       ]
     ],
     []
@@ -256,7 +256,7 @@ const VGradientModuleInner = () => {
     [colorSchemes]
   );
   const uOpacity = useRef(1.0);
-  const colore = useMemo(() => new ThreeColor("rgb(122,122,122)"), []);
+  const colore = useMemo(() => new ThreeColor(), []);
   const vecc = useMemo(() => new Vector3(0, 0, 0.46), []);
   const uniforms = useMemo(
     () => ({
@@ -366,16 +366,16 @@ const GradientModuleInner = () => {
   const colorSchemes = useMemo(
     () => [
       [
-        parseInt("3B1E1D", 16),
-        parseInt("603230", 16),
-        parseInt("85504D", 16),
-        parseInt("A5716E", 16)
+        undefined,
+        undefined,
+        undefined,
+        undefined
       ],
       [
-        parseInt("F9E2E0", 16),
-        parseInt("EAC0BD", 16),
-        parseInt("D89B95", 16),
-        parseInt("C07D78", 16)
+        undefined,
+        undefined,
+        undefined,
+        undefined
       ]
     ],
     []
@@ -403,7 +403,7 @@ const GradientModuleInner = () => {
     [colorSchemes]
   );
   const uOpacity = useRef(1.0);
-  const colore = useMemo(() => new Color("rgb(122,122,122)"), []);
+  const colore = useMemo(() => new Color(), []);
   const vecc = useMemo(() => new Vector3(0, 0, 0.46), []);
   const uniforms = useMemo(
     () => ({
@@ -484,7 +484,7 @@ const GradientModuleInner = () => {
     <>
       <ambientLight args={[colore]} intensity={1} />
       <directionalLight
-        color={colore.setRGB(122, 122, 122)}
+        color={colore}
         intensity={1}
         position={vecc}
       />
@@ -518,22 +518,22 @@ function GradientInner() {
   const { gl, set, scene, camera } = useThree();
   const colorSchemes = useMemo(
     () => [
-      [parseInt("d40000", 16), parseInt("9ecbd9", 16)],
-      [parseInt("AA3422", 16), parseInt("77A6A6", 16)],
-      [parseInt("9ecbd9", 16), parseInt("e7d5ba", 16)],
-      [parseInt("f6b08a", 16), parseInt("fdf1e8", 16)],
+      [undefined, undefined],
+      [undefined, undefined],
+      [undefined, undefined],
+      [undefined, undefined],
 
-      [parseInt("fdf1e8", 16), parseInt("9ecbd9", 16)],
-      [parseInt("d40000", 16), parseInt("ffb400", 16)],
-      [parseInt("d40000", 16), parseInt("9eff00", 16)],
-      [parseInt("F57B66", 16), parseInt("C3EAD2", 16)],
-      [parseInt("4D8593", 16), parseInt("F38B2B", 16)],
-      [parseInt("AAE935", 16), parseInt("ADE9FF", 16)],
-      [parseInt("F5C78E", 16), parseInt("E74B58", 16)],
-      [parseInt("C67006", 16), parseInt("9CE8E3", 16)],
-      [parseInt("F57B66", 16), parseInt("C3EAD2", 16)],
-      [parseInt("d40000", 16), parseInt("f6b08a", 16)],
-      [parseInt("d40000", 16), parseInt("9aa989", 16)]
+      [undefined, undefined],
+      [undefined, undefined],
+      [undefined, undefined],
+      [undefined, undefined],
+      [undefined, undefined],
+      [undefined, undefined],
+      [undefined, undefined],
+      [undefined, undefined],
+      [undefined, undefined],
+      [undefined, undefined],
+      [undefined, undefined]
     ],
     []
   );
@@ -549,12 +549,12 @@ function GradientInner() {
     () => [
       new Color(colorSchemes[0][0]),
       new Color(colorSchemes[0][1]),
-      new Color().setHex(0x353c45),
-      new Color().setHex(0x0f0a0a)
+      new Color(),
+      new Color()
     ],
     [colorSchemes]
   );
-  const colore = useMemo(() => new Color().setRGB(122, 122, 122), []);
+  const colore = useMemo(() => new Color(), []);
   const vecc = useMemo(() => new Vector3(0, 0, 0.46), []);
   const uniforms = useMemo(
     () => ({
@@ -647,7 +647,7 @@ function GradientInner() {
     <>
       <ambientLight args={[colore]} intensity={1} />
       <directionalLight
-        color={colore.setRGB(164, 164, 164)}
+        color={colore}
         intensity={1}
         position={vecc}
       />

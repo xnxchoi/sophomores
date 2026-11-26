@@ -45,8 +45,6 @@ export function Panel({ children, className, as = "section" }: PanelProps) {
         "before:bg-gradient-to-r before:from-transparent before:via-foreground/25 before:to-transparent",
         "dark:before:via-foreground/30",
         // Soft outer shadow: the float. Slightly stronger in dark mode.
-        "shadow-[0_2px_24px_-8px_rgba(0,0,0,0.35)]",
-        "dark:shadow-[0_2px_28px_-8px_rgba(0,0,0,0.6)]",
         className
       )}
     >

@@ -181,11 +181,11 @@ function HeaderFX({ progressRate, fxVisibility }: { progressRate: MotionValue<nu
     >
       <m.div
         data-themed="background-color"
-        className="absolute top-[10px] bottom-auto z-[19] h-[80px] bg-[#ffffff03] mask-linear-from-[#000] mask-linear-to-[transparent] opacity-50 backdrop-blur-[5px] backdrop-contrast-500 backdrop-saturate-[1500%]"
+        className="absolute top-[10px] bottom-auto z-[19] h-[80px] bg-titanium/1 mask-linear-from-black mask-linear-to-[transparent] opacity-50 backdrop-blur-[5px] backdrop-contrast-500 backdrop-saturate-[1500%]"
       />
       <m.div
         data-themed="background-color"
-        className="absolute top-[10px] bottom-auto z-[19] h-[60px] bg-[#ffffff03] mask-linear-from-[#000] mask-linear-to-[transparent] opacity-75 blur-[5px] contrast-[500%] hue-rotate-0 saturate-[1500%]"
+        className="absolute top-[10px] bottom-auto z-[19] h-[60px] bg-titanium/1 mask-linear-from-black mask-linear-to-[transparent] opacity-75 blur-[5px] contrast-[500%] hue-rotate-0 saturate-[1500%]"
         style={{ filter: fx2Filter }}
       />
     </m.div>
@@ -278,7 +278,10 @@ export function SiteHeader({ member: memberProp }: { member?: Promise<HeaderMemb
     const alpha = scrollToBtbgop.get();
     return navState.get() ? 0 : alpha;
   });
-  const btBackground = useMotionTemplate`oklch(${themeOK}% 0.008 176.48/${btbgop})`;
+  // The pill glass from the owner's palette (Palette r3): the scrubbed lightness above becomes a mix of Singer Stone
+  // (86.6 %) and Pewter (57.3 %), so 78.94 and 66.06 land where they were, at the same scrubbed alpha.
+  const btStonePct = useTransform(() => ((themeOK.get() - 57.3) / (86.6 - 57.3)) * 100);
+  const btBackground = useMotionTemplate`oklch(from color-mix(in oklab, var(--stone) ${btStonePct}%, var(--light-grey)) l c h / ${btbgop})`;
   const btBlurPx = useTransform(() => {
     const progress = scrubPosition.get();
     return navState.get() ? 0 : 4 + progress * 10;
@@ -353,7 +356,7 @@ export function SiteHeader({ member: memberProp }: { member?: Promise<HeaderMemb
     const shown = ringShown.get();
     return 0.7 * scrub * shown;
   });
-  const mainBS = useMotionTemplate`0 0 ${bsSpread}px ${bsBlur}px oklch(36.76% 0.003 58.67/${bsOKOp})`;
+  const mainBS = useMotionTemplate`0 0 ${bsSpread}px ${bsBlur}px oklch(from var(--black-lighter-2) l c h / ${bsOKOp})`;
   const boxShadow = useTransform(() => {
     const progress = scrubPosition.get();
     const dark = themeValue.get() === "dark";
@@ -531,7 +534,7 @@ export function SiteHeader({ member: memberProp }: { member?: Promise<HeaderMemb
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocused(false);
       }}
-      className="site-header group/header fixed left-1/2 m-0 w-full max-md:w-[calc(100%-20px)] overflow-hidden rounded-full p-0 data-[menu=open]:text-[var(--n-s-menu-i)] data-[menu=open]:[--faded-fg:var(--n-s-menu-i)]"
+      className="site-header group/header fixed left-1/2 m-0 w-full max-md:w-[calc(100%-20px)] overflow-hidden rounded-full p-0 data-[menu=open]:text-[var(--n-s-menu-i)] data-[menu=open]:[--foreground:var(--n-s-menu-i)]"
       // Open menu (The Hideaway: HeaderClient.tsx:164-175): the mark and controls take the frame's ink,
       // --n-s-menu-i, following the menu state.
       data-menu={open ? "open" : "closed"}
@@ -550,7 +553,7 @@ export function SiteHeader({ member: memberProp }: { member?: Promise<HeaderMemb
       {/* The pill's tint and blur follow the scrub (HeaderClient.tsx:555-570). They fade with the hidden header, so
           Home shows no header (owner, 19 Nov). */}
       <div className="pointer-events-none absolute inset-0 transition-opacity duration-300 group-data-[visible=false]/header:opacity-0" aria-hidden="true">
-        <m.div className="absolute top-0 left-0 z-1 h-full w-full bg-(--off-l-gray)/35 dark:bg-faded-l-gray/35" style={{ opacity: scrubPosition }} />
+        <m.div className="absolute top-0 left-0 z-1 h-full w-full bg-(--stone)/35 dark:bg-singer-stone/35" style={{ opacity: scrubPosition }} />
         <m.div className="absolute top-0 left-0 z-2 h-full w-full backdrop-blur-[20px]" style={{ opacity: scrubPosition }} />
       </div>
       <HeaderFX progressRate={ssss} fxVisibility={visible} />

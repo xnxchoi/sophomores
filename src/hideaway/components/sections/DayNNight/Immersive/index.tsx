@@ -170,7 +170,7 @@ export function ImmersiveView({ rsvpState, isSignedIn }: ImmersiveViewProps) {
         <div
           data-hidden={hintHidden || phase !== "playing" || revealStage < 2}
           aria-hidden
-          className="ease pointer-events-none fixed bottom-1/4 left-1/2 z-[45] hidden -translate-x-1/2 items-center gap-[10px] font-sans text-[10px] tracking-[0.28em] text-[var(--dn-fg-mute)] uppercase transition-opacity duration-500 data-[hidden=true]:opacity-0 lg:inline-flex"
+          className="ease pointer-events-none fixed bottom-1/4 left-1/2 z-[45] hidden -translate-x-1/2 items-center gap-[10px] font-sans text-[10px] tracking-[0.28em] uppercase transition-opacity duration-500 data-[hidden=true]:opacity-0 lg:inline-flex"
         >
           <span
             data-dn-scroll-hint-line

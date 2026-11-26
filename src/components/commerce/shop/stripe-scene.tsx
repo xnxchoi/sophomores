@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { PALETTE, paletteRGB } from "@/utils/palette";
 
 /**
  * stripe.press's book scene, copied verbatim (owner, 25 Nov: "only copy over the 3D parts verbatim … Dont build webgl
@@ -128,14 +129,14 @@ export function scenePageCount(pages: string[] | undefined, pageCount?: number) 
 function stripeBook({ id, title, stageArt, pages, pageCount }: SceneBook) {
   const blank = TEX + "shared/blank.png", pageImages = scenePages(pages, pageCount);
   return {
-    id, title, author: "", type: "book", shaderType: "sophomores", backgroundColor: "#d9d8d4", chordSku: "",
+    id, title, author: "", type: "book", shaderType: "sophomores", backgroundColor: PALETTE.singerStone.hex, chordSku: "",
     pageCount: pageImages.length, pageImages, folios: { romanCount: 0, lastFolio: pageImages.length },
-    startPage: 1, stackThicknessPct: 0.8, pageColor: "#f3f2ee", images: { background: stageArt ?? blank },
+    startPage: 1, stackThicknessPct: 0.8, pageColor: PALETTE.titanium.hex, images: { background: stageArt ?? blank },
     material: {
       id, title, author: "", slug: id,
-      palette: { backgroundColor: "#d9d8d4", color: "#1d1d1b", coverColor: "#e6e5e1", gradientSwatch: TEX + "shared/diffuse_none.png" },
+      palette: { backgroundColor: PALETTE.singerStone.hex, color: PALETTE.gunmetal.hex, coverColor: PALETTE.titanium.hex, gradientSwatch: TEX + "shared/diffuse_none.png" },
       material: {
-        shininess: 8, reflectiveness: 0.2, thickness: 3, diffuseMapCustom: TEX + "cover-placeholder.png", diffuseBaseColor: [0.9, 0.9, 0.88],
+        shininess: 8, reflectiveness: 0.2, thickness: 3, diffuseMapCustom: TEX + "cover-placeholder.png", diffuseBaseColor: paletteRGB("titanium"),
         bumpMapBase: TEX + "shared/bump_paper.png", bumpScaleBase: 0.03, bumpMapCustom: TEX + "shared/bump_none.png", bumpScaleCustom: 0,
         foilMap: TEX + "shared/foil_none.png", foilSpecular: 0, foilDetail: 1, foilOpacity: 0, foilOffset: 0, foilSilver: 0,
       },

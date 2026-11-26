@@ -161,12 +161,9 @@ export function SunLoader({ onEnter, onSummary }: SunLoaderProps) {
 
   return (
     <div
-      className="group fixed inset-0 z-[60] text-[var(--dn-fg)]"
+      className="group fixed inset-0 z-[60]"
       style={
         {
-          "--dn-fg": "oklch(96% 0.005 80)",
-          "--dn-fg-mute": "oklch(96% 0.005 80 / 0.7)",
-          "--dn-bg": "oklch(8% 0 0)"
         } as React.CSSProperties
       }
       data-hiding={hiding}
@@ -174,7 +171,7 @@ export function SunLoader({ onEnter, onSummary }: SunLoaderProps) {
       {/* Dark backdrop */}
       <div
         aria-hidden
-        className="ease pointer-events-none absolute inset-0 bg-faded-black/99 transition-opacity duration-700 group-data-[hiding='true']:opacity-0"
+        className="ease pointer-events-none absolute inset-0 transition-opacity duration-700 group-data-[hiding='true']:opacity-0"
       />
 
       {/* Sky clip — hides sun below the horizon during rise */}
@@ -184,7 +181,7 @@ export function SunLoader({ onEnter, onSummary }: SunLoaderProps) {
       >
         <div
           ref={sunRef}
-          className="absolute top-1/2 left-1/2 h-16 w-16 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle_at_center,oklch(92%_0.12_75)_0%,oklch(85%_0.16_60)_40%,oklch(75%_0.18_45)_70%,oklch(65%_0.14_35/0)_100%)] shadow-[0_0_40px_0_oklch(85%_0.16_60/0.5),0_0_80px_0_oklch(80%_0.14_50/0.3)] will-change-transform group-data-[hiding='true']:opacity-0 group-data-[hiding='true']:transition-opacity group-data-[hiding='true']:duration-700"
+          className="absolute top-1/2 left-1/2 h-16 w-16 -translate-x-1/2 -translate-y-1/2 rounded-full will-change-transform group-data-[hiding='true']:opacity-0 group-data-[hiding='true']:transition-opacity group-data-[hiding='true']:duration-700"
           aria-hidden
         />
       </div>
@@ -204,7 +201,7 @@ export function SunLoader({ onEnter, onSummary }: SunLoaderProps) {
         {/* Core glow line — flickers organically */}
         <div
           data-dn-loader-line
-          className="absolute inset-x-0 top-0 h-px -translate-y-1/2 bg-faded-white/85 shadow-[0_0_6px_0_oklch(85%_0.08_70/0.35),0_0_18px_0_oklch(80%_0.06_60/0.18)]"
+          className="absolute inset-x-0 top-0 h-px -translate-y-1/2"
         />
         {/* Shimmer pass A — left to right */}
         <div
@@ -221,11 +218,11 @@ export function SunLoader({ onEnter, onSummary }: SunLoaderProps) {
       {/* Top-edge fill bar */}
       <div
         aria-hidden
-        className="pointer-events-none relative h-px w-full overflow-hidden bg-[oklch(from_var(--dn-fg)_l_c_h_/_0.18)]"
+        className="pointer-events-none relative h-px w-full overflow-hidden"
       >
         <div
           ref={fillRef}
-          className="ease absolute inset-0 origin-left scale-x-0 bg-[oklch(from_var(--dn-fg)_l_c_h_/_0.7)] transition-transform duration-300"
+          className="ease absolute inset-0 origin-left scale-x-0 transition-transform duration-300"
         />
       </div>
 
@@ -239,7 +236,7 @@ export function SunLoader({ onEnter, onSummary }: SunLoaderProps) {
         >
           <NumberFlow
             value={count}
-            className="font-sans text-[clamp(2rem,5vw,3.5rem)] font-light text-[var(--dn-fg)] tabular-nums"
+            className="font-sans text-[clamp(2rem,5vw,3.5rem)] font-light tabular-nums"
             format={{ minimumIntegerDigits: 2 }}
             respectMotionPreference={false}
           />
@@ -256,7 +253,7 @@ export function SunLoader({ onEnter, onSummary }: SunLoaderProps) {
           <MotionPillButton
             type="button"
             onClick={() => handleEnter(true)}
-            className="inline-flex items-center gap-2.5 border border-[var(--dn-fg)] px-9 py-3 font-sans text-sm font-medium tracking-tight text-[var(--dn-fg)] transition-[background-color,color] duration-200 hover:bg-[var(--dn-fg)] hover:text-[var(--dn-bg)]"
+            className="inline-flex items-center gap-2.5 border px-9 py-3 font-sans text-sm font-medium tracking-tight transition-[background-color,color] duration-200"
           >
             <span aria-hidden className="text-[12px] leading-none opacity-55">
               ♪
@@ -267,7 +264,7 @@ export function SunLoader({ onEnter, onSummary }: SunLoaderProps) {
           <Button
             type="button"
             onClick={handleSummary}
-            className="mt-1 font-sans text-[10px] tracking-[0.2em] text-[var(--dn-fg-mute)] uppercase opacity-30 transition-opacity duration-200 hover:opacity-70"
+            className="mt-1 font-sans text-[10px] tracking-[0.2em] uppercase opacity-30 transition-opacity duration-200 hover:opacity-70"
           >
             {t("loader.summary")}
           </Button>

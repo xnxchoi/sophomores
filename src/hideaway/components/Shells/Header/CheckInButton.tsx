@@ -136,7 +136,6 @@ export const CheckInButton = ({
         href="/sign-in"
         {...rest}
         //deliberate; parent styling currently messes up the styles
-        style={{}}
       >
         <svg
           ref={svgRef}

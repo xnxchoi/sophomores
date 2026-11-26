@@ -92,7 +92,7 @@ export function TicketSpotlightStage({
         touchAction: "manipulation",
         cursor: "pointer",
         filter:
-          "drop-shadow(0 36px 48px rgba(20, 14, 8, 0.32)) drop-shadow(0 12px 22px rgba(20, 14, 8, 0.18))",
+          "drop-shadow(0 36px 48px) drop-shadow(0 12px 22px)",
         ...style
       }}
       onPointerUp={handleClick}

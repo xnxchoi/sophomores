@@ -70,8 +70,8 @@ test("the home page's black ground stays on the home page", () => {
     /^\s*(html|body)\s*\{[^}]*background/m,
     "no global black html or body"
   );
-  assert.match(css, /html:has\(\.teaser\)[^{]*\{[^}]*background:\s*#000/);
-  assert.match(css, /body:has\(\.teaser\)[^{]*\{[^}]*background:\s*#000/);
+  assert.match(css, /html:has\(\.teaser\)[^{]*\{[^}]*background:\s*var\(--color-carbon-deep\)/);
+  assert.match(css, /body:has\(\.teaser\)[^{]*\{[^}]*background:\s*var\(--color-carbon-deep\)/);
 });
 
 test("the colour fade is in the theme layer and lasts as long as the provider keeps it armed", () => {

@@ -152,10 +152,8 @@ function SubtitleCard({ content, visible, fadeMs }: SubtitleCardProps) {
       <div
         className={cn(
           "rounded-2xl px-7 py-5",
-          "bg-[oklch(95%_0.01_85)] text-[oklch(18%_0.012_280)]",
           "font-serif text-[clamp(1.3rem,2.6vw,1.8rem)] leading-[1.4]",
-          "tracking-[0.005em]",
-          "shadow-[0_18px_50px_-16px_rgba(0,0,0,0.78)]"
+          "tracking-[0.005em]"
         )}
       >
         {content}

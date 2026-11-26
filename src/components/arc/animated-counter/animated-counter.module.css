@@ -3,7 +3,7 @@
 /* Each digit is a clipped wheel; separators clip sideways only so a comma keeps its tail. */
 .value { display: inline-flex; align-items: flex-start; white-space: nowrap; user-select: none; }
 /* The wheel's window reaches a little past the line box and feathers out, so a turning digit fades at the edge instead of being cut. */
-.column { --feather: .16em; position: relative; display: inline-block; overflow: hidden; margin-block: calc(var(--feather) * -1); padding-block: var(--feather); mask-image: linear-gradient(to bottom, transparent, #000 calc(var(--feather) * 1.5), #000 calc(100% - var(--feather) * 1.5), transparent); }
+.column { --feather: .16em; position: relative; display: inline-block; overflow: hidden; margin-block: calc(var(--feather) * -1); padding-block: var(--feather); mask-image: linear-gradient(to bottom, transparent, var(--color-carbon-deep) calc(var(--feather) * 1.5), var(--color-carbon-deep) calc(100% - var(--feather) * 1.5), transparent); }
 .sizer { visibility: hidden; }
 .glyph { position: absolute; inset: var(--feather) 0; text-align: center; }
 .labelText { display: inline-block; }

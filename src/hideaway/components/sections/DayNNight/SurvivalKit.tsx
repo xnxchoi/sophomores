@@ -321,11 +321,11 @@ export function SurvivalKit({ variant = "standalone" }: SurvivalKitProps) {
 
       {/* ── Address / Map fragment ────────────────────────────────── */}
       <div className="grid gap-2">
-        <p className="font-sans text-[11px] tracking-[0.32em] text-[var(--dn-fg-faint)] uppercase">
+        <p className="font-sans text-[11px] tracking-[0.32em] uppercase">
           {t("address.label")}
         </p>
         <div
-          className="relative aspect-[16/7] overflow-hidden rounded-sm bg-neutral-900"
+          className="relative aspect-[16/7] overflow-hidden rounded-sm"
           onPointerEnter={handleMapPointerEnter}
           onPointerLeave={handleMapPointerLeave}
           onPointerDownCapture={handleMapPointerDown}
@@ -345,7 +345,7 @@ export function SurvivalKit({ variant = "standalone" }: SurvivalKitProps) {
               <MarkerContent>
                 <div
                   aria-hidden
-                  className="size-2.5 rounded-full bg-white shadow-[0_0_0_5px_rgba(255,255,255,0.18)]"
+                  className="size-2.5 rounded-full"
                 />
               </MarkerContent>
             </MapMarker>
@@ -361,23 +361,18 @@ export function SurvivalKit({ variant = "standalone" }: SurvivalKitProps) {
             <Button
               type="button"
               onClick={() => resetVenueViewport(360)}
-              className="pointer-events-auto inline-flex items-center gap-2 rounded-full border px-3.5 py-2.5 font-sans text-[11px] tracking-[0.12em] text-white/84 uppercase shadow-[0_16px_40px_rgba(0,0,0,0.42)] transition-[border-color,background-color,color,box-shadow,transform] duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] hover:scale-[1.015] hover:text-white hover:shadow-[0_18px_44px_rgba(0,0,0,0.5)] active:scale-[0.985]"
-              style={{
-                borderColor: "rgba(71, 107, 143, 0.28)",
-                backgroundColor: "rgba(2, 8, 14, 0.78)"
-              }}
+              className="pointer-events-auto inline-flex items-center gap-2 rounded-full border px-3.5 py-2.5 font-sans text-[11px] tracking-[0.12em] uppercase transition-[border-color,background-color,color,box-shadow,transform] duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] hover:scale-[1.015] active:scale-[0.985]"
             >
               <span
                 aria-hidden
                 className="inline-block size-1.5 rounded-full"
-                style={{ backgroundColor: "rgba(137, 73, 39, 0.82)" }}
               />
               <span>{t("map.reset")}</span>
             </Button>
           </m.div>
           {/* Address text overlaid bottom-left with gradient scrim */}
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/95 via-black/76 to-transparent px-4 pt-14 pb-4">
-            <p className="font-serif text-[clamp(1rem,1.7vw,1.32rem)] leading-[1.16] tracking-[-0.01em] text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.75)]">
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t to-transparent px-4 pt-14 pb-4">
+            <p className="font-serif text-[clamp(1rem,1.7vw,1.32rem)] leading-[1.16] tracking-[-0.01em]">
               {address}
             </p>
           </div>
@@ -387,23 +382,17 @@ export function SurvivalKit({ variant = "standalone" }: SurvivalKitProps) {
           <MapAppAction
             href={MAP_LINKS.kakao}
             icon={SiKakao}
-            accent="#5C2E22"
-            iconTone="#A66B4B"
-            text={t("map.kakao")}
+                        text={t("map.kakao")}
           />
           <MapAppAction
             href={MAP_LINKS.naver}
             icon={SiNaver}
-            accent="#1B334F"
-            iconTone="#7894B3"
-            text={t("map.naver")}
+                        text={t("map.naver")}
           />
           <MapAppAction
             href={MAP_LINKS.google}
             icon={SiGooglemaps}
-            accent="#24384F"
-            iconTone="#8A9BAD"
-            text={t("map.google")}
+                        text={t("map.google")}
           />
           <RowAction
             onClick={() => copyToClipboard(address, "address")}
@@ -415,16 +404,16 @@ export function SurvivalKit({ variant = "standalone" }: SurvivalKitProps) {
 
       {/* ── Payment fragment ──────────────────────────────────────── */}
       <div className="mt-16 grid gap-2">
-        <p className="font-sans text-[11px] tracking-[0.32em] text-[var(--dn-fg-faint)] uppercase">
+        <p className="font-sans text-[11px] tracking-[0.32em] uppercase">
           {t("toss.label")}
         </p>
-        <p className="font-serif text-[clamp(2rem,2.4vw,2.6rem)] leading-[1.15] tracking-[-0.01em] text-[var(--dn-fg)]">
+        <p className="font-serif text-[clamp(2rem,2.4vw,2.6rem)] leading-[1.15] tracking-[-0.01em]">
           {tossAccount}
         </p>
-        <p className="font-serif text-[clamp(1.4rem,1.6vw,1.6rem)] leading-[1.3] tracking-[-0.005em] text-[var(--dn-fg-mute)]">
+        <p className="font-serif text-[clamp(1.4rem,1.6vw,1.6rem)] leading-[1.3] tracking-[-0.005em]">
           {tossHolder}
         </p>
-        <p className="font-sans text-[14px] tracking-[0.08em] text-[var(--dn-fg-mute)]">
+        <p className="font-sans text-[14px] tracking-[0.08em]">
           {tossAmount}
         </p>
         <div className="mt-3">
@@ -447,10 +436,10 @@ export function SurvivalKit({ variant = "standalone" }: SurvivalKitProps) {
             key={key}
             className="grid grid-cols-[64px_1fr] items-baseline gap-x-6"
           >
-            <dt className="font-serif text-sm tracking-wider text-[var(--dn-fg)] italic">
+            <dt className="font-serif text-sm tracking-wider italic">
               {label}
             </dt>
-            <dd className="text-base leading-[1.4] font-light tracking-[-0.005em] text-[var(--dn-fg)]">
+            <dd className="text-base leading-[1.4] font-light tracking-[-0.005em]">
               {value}
             </dd>
           </div>
@@ -459,17 +448,12 @@ export function SurvivalKit({ variant = "standalone" }: SurvivalKitProps) {
 
       {/* ── Contact fragment — italic serif pull ──────────────────── */}
       <div className="mt-16 grid grid-cols-[64px_1fr] items-baseline gap-x-6">
-        <span className="font-sans text-[11px] tracking-[0.22em] text-[var(--dn-fg-faint)] uppercase">
+        <span className="font-sans text-[11px] tracking-[0.22em] uppercase">
           {t("host.label")}
         </span>
         <a
           href={hostHref}
-          className="ease inline-flex w-fit items-center gap-3 rounded-full border px-5 py-3 font-serif text-[clamp(1.05rem,1.7vw,1.35rem)] leading-[1.2] text-[var(--dn-fg)] italic no-underline transition-[border-color,background-color,transform,gap] duration-200 hover:-translate-y-px hover:gap-4"
-          style={{
-            borderColor: "color-mix(in oklch, var(--dn-fg) 12%, transparent)",
-            backgroundColor:
-              "color-mix(in oklch, var(--dn-bg) 78%, transparent)"
-          }}
+          className="ease inline-flex w-fit items-center gap-3 rounded-full border px-5 py-3 font-serif text-[clamp(1.05rem,1.7vw,1.35rem)] leading-[1.2] italic no-underline transition-[border-color,background-color,transform,gap] duration-200 hover:-translate-y-px hover:gap-4"
         >
           <span>{hostContact}</span>
           <span aria-hidden className="text-[0.85em] leading-none">
@@ -489,47 +473,33 @@ export function SurvivalKit({ variant = "standalone" }: SurvivalKitProps) {
 function MapAppAction({
   text,
   href,
-  icon: Icon,
-  accent,
-  iconTone
+  icon: Icon
 }: {
   text: string;
   href: string;
   icon: IconType;
-  accent: string;
-  iconTone: string;
 }) {
   return (
     <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="group relative inline-flex items-center gap-2.5 overflow-hidden rounded-full border px-3.5 py-2.5 font-sans text-[11px] leading-none font-medium tracking-[0.1em] text-white/82 uppercase no-underline shadow-[0_10px_30px_rgba(0,0,0,0.16)] transition-[border-color,background-color,color,box-shadow,transform] duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] hover:scale-[1.015] hover:text-white hover:shadow-[0_14px_34px_rgba(0,0,0,0.24)] focus-visible:ring-2 focus-visible:ring-white/35 focus-visible:outline-none active:scale-[0.985]"
-      style={{
-        borderColor: "rgba(255, 255, 255, 0.12)",
-        backgroundColor: "rgba(2, 6, 12, 0.56)"
-      }}
+      className="group relative inline-flex items-center gap-2.5 overflow-hidden rounded-full border px-3.5 py-2.5 font-sans text-[11px] leading-none font-medium tracking-[0.1em] uppercase no-underline transition-[border-color,background-color,color,box-shadow,transform] duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] hover:scale-[1.015] focus-visible:ring-2 focus-visible:outline-none active:scale-[0.985]"
     >
       <span
         aria-hidden
         className="absolute inset-y-2 left-1 w-px rounded-full opacity-55 transition-opacity duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] group-hover:opacity-80"
-        style={{ backgroundColor: accent }}
       />
       <span
         aria-hidden
         className="grid size-5 place-items-center rounded-full transition-[background-color,box-shadow,transform] duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] group-hover:scale-[1.04]"
-        style={{
-          backgroundColor: `${accent}1F`,
-          boxShadow: `inset 0 0 0 1px ${accent}42`,
-          color: iconTone
-        }}
       >
         <Icon className="size-3.5" />
       </span>
       <span>{text}</span>
       <span
         aria-hidden
-        className="inline-block w-[0.8em] text-[0.9em] leading-none text-white/40 transition-[color,transform] duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] group-hover:translate-x-0.5 group-hover:text-white/68"
+        className="inline-block w-[0.8em] text-[0.9em] leading-none transition-[color,transform] duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] group-hover:translate-x-0.5"
       >
         →
       </span>
@@ -557,18 +527,14 @@ function RowAction({
   ariaLabel?: string;
 }) {
   const className =
-    "group inline-flex items-center gap-2 rounded-full border px-3.5 py-2.5 font-sans text-[11px] leading-none font-medium tracking-[0.1em] text-white/82 uppercase no-underline shadow-[0_10px_30px_rgba(0,0,0,0.14)] transition-[border-color,background-color,color,box-shadow,transform] duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] hover:scale-[1.015] hover:text-white hover:shadow-[0_14px_34px_rgba(0,0,0,0.22)] active:scale-[0.985] focus-visible:ring-2 focus-visible:ring-white/35 focus-visible:outline-none";
-  const style = {
-    borderColor: "rgba(255, 255, 255, 0.12)",
-    backgroundColor: "rgba(2, 6, 12, 0.5)"
-  } as const;
+    "group inline-flex items-center gap-2 rounded-full border px-3.5 py-2.5 font-sans text-[11px] leading-none font-medium tracking-[0.1em] uppercase no-underline transition-[border-color,background-color,color,box-shadow,transform] duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] hover:scale-[1.015] active:scale-[0.985] focus-visible:ring-2 focus-visible:outline-none";
   const inner = (
     <>
       <span>{text}</span>
       {arrow ? (
         <span
           aria-hidden
-          className="inline-block w-[0.8em] text-[1em] leading-none text-white/45 transition-transform duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] group-hover:translate-x-0.5"
+          className="inline-block w-[0.8em] text-[1em] leading-none transition-transform duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] group-hover:translate-x-0.5"
         >
           →
         </span>
@@ -584,7 +550,6 @@ function RowAction({
           : undefined)}
         className={className}
         aria-label={ariaLabel}
-        style={style}
       >
         {inner}
       </a>
@@ -596,7 +561,6 @@ function RowAction({
       onClick={onClick}
       className={className}
       aria-label={ariaLabel}
-      style={style}
     >
       {inner}
     </button>

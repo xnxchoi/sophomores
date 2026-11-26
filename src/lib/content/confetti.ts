@@ -1,3 +1,4 @@
+import { PALETTE } from "@/utils/palette";
 export type ConfettiPiece = {
   front: string;
   back: string;
@@ -11,12 +12,12 @@ export type ConfettiPiece = {
 };
 
 const COLORS = [
-  ["#e23d3d", "#8e1010"],
-  ["#3dae5a", "#0f6b2c"],
-  ["#3d6fe2", "#123a8e"],
-  ["#e2c43d", "#8e760f"],
-  ["#e27a3d", "#8e3a10"],
-  ["#b43de2", "#5c108e"]
+  [PALETTE.deepCinnabar.hex, PALETTE.arterialRed.hex],
+  [PALETTE.mutedOlive.hex, PALETTE.ultramarine.hex],
+  [PALETTE.gulfCerulean.hex, PALETTE.ultramarine.hex],
+  [PALETTE.saffronAmberLighter1.hex, PALETTE.signalOrange.hex],
+  [PALETTE.signalOrange.hex, PALETTE.arterialRed.hex],
+  [PALETTE.gulfCerulean.hex, PALETTE.imperialPlum.hex]
 ] as const;
 
 function between(min: number, max: number) {

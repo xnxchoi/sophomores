@@ -1,6 +1,5 @@
 "use client";
 
-import type { CSSProperties } from "react";
 import { useTranslations } from "next-intl";
 import { SurvivalKit } from "../SurvivalKit";
 import { useDomCursor } from "@/hideaway/components/core/cursorWrapper";
@@ -22,14 +21,6 @@ const PAPER_TEXTURE = "/assets/three/materials/paper/paper_d.png";
  * to the kit itself.
  */
 
-// Inverted dn-theme tokens — dark colors that map to the white paper.
-const PAPER_THEME: CSSProperties = {
-  ["--dn-fg" as string]: "oklch(18% 0.012 280)",
-  ["--dn-fg-mute" as string]: "oklch(34% 0.012 280)",
-  ["--dn-fg-faint" as string]: "oklch(50% 0.012 280 / 0.78)",
-  ["--dn-line" as string]: "oklch(18% 0.012 280 / 0.16)"
-};
-
 export function OpeningCard() {
   const t = useTranslations("Event.DayNNight");
 
@@ -48,21 +39,19 @@ export function OpeningCard() {
     // its parent grid cell, so a plain div is the right primitive.
     <div
       className="group ease relative w-full -rotate-2 duration-400 hover:rotate-2"
-      style={PAPER_THEME}
       onClick={() => setOpen(true)}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
       <div
-        className="relative flex flex-col overflow-hidden transition-[transform,box-shadow] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] hover:shadow-[0_42px_80px_-22px_rgba(0,0,0,0.65),_0_12px_32px_-10px_rgba(0,0,0,0.45)]"
+        className="relative flex flex-col overflow-hidden transition-[transform,box-shadow] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
         style={{
           aspectRatio: "1 / 1.414",
           backgroundImage: "url(/assets/papier.png)",
 
           backgroundBlendMode: "screen",
-          backgroundColor: "var(--color-faded-white)",
           boxShadow:
-            "0 28px 60px -22px rgba(0,0,0,0.55), 0 8px 22px -10px rgba(0,0,0,0.35)"
+            "0 28px 60px -22px, 0 8px 22px -10px"
         }}
       >
         {/* Paper grain — tiled like the Invoice Certificate. Multiplied
@@ -79,17 +68,14 @@ export function OpeningCard() {
         {/* Postmark eyebrow — magazine masthead at the top edge */}
         <div
           className="relative flex items-baseline justify-between gap-4 border-b px-7 pt-7 pb-4 xl:px-8 xl:pt-8"
-          style={{ borderColor: "var(--dn-line)" }}
         >
           <span
             className="font-sans text-[10px] tracking-[0.32em] uppercase"
-            style={{ color: "var(--dn-fg)" }}
           >
             {t("opening.invitationLabel")}
           </span>
           <span
             className="font-sans text-[10px] tracking-[0.18em] uppercase tabular-nums"
-            style={{ color: "var(--dn-fg-mute)" }}
           >
             {t("date.short")}
           </span>
@@ -103,7 +89,7 @@ export function OpeningCard() {
           style={{
             zoom: 0.86,
             letterSpacing: "0.005em",
-            textShadow: "0 0 0.4px rgba(0, 0, 0, 0.12)"
+            textShadow: "0 0 0.4px"
           }}
         >
           <SurvivalKit variant="embedded" />

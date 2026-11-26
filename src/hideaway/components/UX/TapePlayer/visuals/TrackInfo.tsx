@@ -86,7 +86,7 @@ const FullInfo = ({ track, className }: InfoProps) => (
       <TrackTitlePopover
         kind="artist"
         entity={artistEntity(track)}
-        className="text-faded-fg font-sans text-xs font-medium tracking-widest uppercase"
+        className="font-sans text-xs font-medium tracking-widest uppercase"
       >
         {track.artist}
       </TrackTitlePopover>
@@ -101,7 +101,7 @@ const FullInfo = ({ track, className }: InfoProps) => (
         <TrackTitlePopover
           kind="album"
           entity={albumEntity(track)}
-          className="text-faded-fg/60 font-sans text-[0.65rem] tracking-wide"
+          className="font-sans text-[0.65rem] tracking-wide"
         >
           {track.album}
         </TrackTitlePopover>
@@ -123,7 +123,7 @@ const HeroInfo = ({ track, className }: InfoProps) => (
       <TrackTitlePopover
         kind="artist"
         entity={artistEntity(track)}
-        className="text-faded-fg font-sans text-sm font-medium tracking-[0.2em] uppercase"
+        className="font-sans text-sm font-medium tracking-[0.2em] uppercase"
       >
         {track.artist}
       </TrackTitlePopover>
@@ -138,7 +138,7 @@ const HeroInfo = ({ track, className }: InfoProps) => (
         <TrackTitlePopover
           kind="album"
           entity={albumEntity(track)}
-          className="text-faded-fg/50 font-sans text-xs tracking-wide"
+          className="font-sans text-xs tracking-wide"
         >
           {track.album}
         </TrackTitlePopover>
@@ -163,11 +163,11 @@ const CompactInfo = ({ track, className }: InfoProps) => (
       <TrackTitlePopover
         kind="artist"
         entity={artistEntity(track)}
-        className="text-faded-fg truncate font-sans text-xs font-medium"
+        className="truncate font-sans text-xs font-medium"
       >
         {track.artist}
       </TrackTitlePopover>
-      <span className="text-faded-fg/30">·</span>
+      <span>·</span>
       <TrackTitlePopover
         kind="track"
         entity={trackEntity(track)}

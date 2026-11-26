@@ -84,7 +84,7 @@ export function ToggleField({
 
           value
             ? // "On" state — the only saturated hue we allow on a row pill.
-              "bg-[oklch(72%_0.10_50)]"
+              ""
             : "bg-foreground/15 dark:bg-foreground/12",
           (disabled || pending) && "opacity-50"
         )}
@@ -92,7 +92,7 @@ export function ToggleField({
         <span
           aria-hidden="true"
           className={cn(
-            "inline-flex size-4 items-center justify-center rounded-full bg-background shadow-[0_1px_2px_rgba(0,0,0,0.4)] transition-transform",
+            "inline-flex size-4 items-center justify-center rounded-full bg-background transition-transform",
             value ? "translate-x-4" : "translate-x-0.5"
           )}
         >

@@ -420,13 +420,13 @@ test("expired and unusable registration proof has an obvious full-width restart 
     assert.ok(restart);
     assert.ok(restart.classList.contains("min-h-12"));
     assert.ok(restart.classList.contains("w-full"));
-    assert.ok(restart.classList.contains("bg-neutral-100"));
+    assert.ok(restart.classList.contains("bg-titanium"));
     assert.equal(restart.disabled, false);
   }
   const verified = render("verified");
   const restart = [...verified.querySelectorAll("button")].find(button => button.textContent?.trim() === "Start again");
   assert.ok(restart);
-  assert.ok(!restart.classList.contains("bg-neutral-100"), "valid proof keeps Finish registration as its primary next action");
+  assert.ok(!restart.classList.contains("bg-titanium"), "valid proof keeps Finish registration as its primary next action");
 });
 
 // The phone step is always English (owner), even inside a Korean page; its own bilingual delivery makes that so.

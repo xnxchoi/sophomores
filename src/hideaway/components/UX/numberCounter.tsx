@@ -80,7 +80,7 @@ export function NumberCounter(props: NumberCounterProps) {
         flexDirection: "row",
         alignItems: "left"
       }}
-      className={cn(classNameString, "text-nav-foreground/90")}
+      className={cn(classNameString)}
     >
       {prefix}
       {formatCount(count)}

@@ -53,7 +53,7 @@ const STAR_MOTION = [
 /**
  * Travelling lines over the repeating star field, on its own (owner, 24 Nov: off the reading pages, "make it their own,
  * like, actually usable components"). Tailwind only; its stars read --starliner-star, set here from the global
- * --faded-white with a literal fallback, so it renders the same on any page.
+ * palette Titanium (--white), so it renders the same on any page.
  */
 export function Starliner({ className }: { className?: string }) {
   const frame = useRef<HTMLDivElement>(null);
@@ -131,7 +131,7 @@ export function Starliner({ className }: { className?: string }) {
   }, [inView]);
 
   return (
-    <div ref={frame} className={cn("relative mx-auto h-72 w-full max-w-3xl overflow-hidden bg-[radial-gradient(at_left_top,rgba(179,16,21,0.75)_4%,rgba(179,16,21,0.44)_12%,rgba(179,16,21,0.3)_20%,rgba(179,16,21,0.2)_30%,rgba(0,0,0,0.96)_75%)] [--starliner-star:var(--faded-white,oklch(97.5%_0.003_58.67))]", className)}>
+    <div ref={frame} className={cn("relative mx-auto h-72 w-full max-w-3xl overflow-hidden bg-[radial-gradient(at_left_top,color-mix(in_oklab,var(--color-deep-cinnabar)_75%,transparent)_4%,color-mix(in_oklab,var(--color-deep-cinnabar)_44%,transparent)_12%,color-mix(in_oklab,var(--color-deep-cinnabar)_30%,transparent)_20%,color-mix(in_oklab,var(--color-deep-cinnabar)_20%,transparent)_30%,color-mix(in_oklab,var(--color-carbon-deep)_96%,transparent)_75%)] [--starliner-star:var(--white)]", className)}>
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 bg-[url(/assets/starliner-backdrop.svg)] bg-[length:220px_auto] bg-center bg-repeat opacity-85"

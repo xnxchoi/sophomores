@@ -33,6 +33,7 @@
   --bone: oklch(90.5% 0.014 355); /* #E8DCE0 - Mauve-Bone */
   --white: oklch(92.5% 0.006 265); /* #E4E6EA - Titanium */
   --black: oklch(19.6% 0.006 271); /* #141518 - Carbon */
+  --carbon-deep: oklch(11.6% 0.006 285); /* #050507 - Carbon Darker -1 */
   --black-lighter-2: oklch(35.6% 0.005 271); /* #3B3C3F - Carbon Lighter +2 */
   --celadon: oklch(90.9% 0.01 155); /* #DCE3DE - Celadon */
   --stone: oklch(86.6% 0.009 237); /* #CED4D8 - Singer Stone (Tuned) */
@@ -64,8 +65,7 @@
 }
 
 :root {
-  --background: var(--white) /* #E4E6EA - Titanium */
-    --background: oklch(90.9% 0.01 155); /* #DCE3DE - Celadon */
+  --background: var(--white); /* #E4E6EA - Titanium */
   --muted: oklch(90.5% 0.014 355); /* #E8DCE0 - Mauve-Bone */
   --background-faded: oklch(
     86.6% 0.009 237

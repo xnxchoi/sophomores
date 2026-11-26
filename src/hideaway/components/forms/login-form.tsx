@@ -9,7 +9,7 @@ import { authClient } from "@/lib/auth/client";
 export function LoginForm({ className, ...props }: ComponentProps<"div">) {
   return (
     <div className={cn("flex flex-col gap-9", className)} {...props}>
-      <Card className="bg-faded-background/50">
+      <Card>
         <CardHeader className="text-center">
           <CardTitle className="text-3xl">Welcome back.</CardTitle>
           <CardDescription>Check in with your social account</CardDescription>
@@ -28,7 +28,7 @@ export function LoginForm({ className, ...props }: ComponentProps<"div">) {
               >
                 <Button
                   variant="outline"
-                  className="*:ease ease border-faded-foreground/&.65)] inline-flex h-14 min-h-[35px] w-full items-center justify-center gap-[8px] rounded-md border bg-off-background/30 px-4 py-3 text-base font-medium whitespace-nowrap text-foreground shadow-sm transition-colors duration-300 *:transition-colors *:duration-300 hover:bg-off-background/50 hover:*:text-rouge-500 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-6 [&_svg]:shrink-0"
+                  className="*:ease ease inline-flex h-14 min-h-[35px] w-full items-center justify-center gap-[8px] rounded-md border px-4 py-3 text-base font-medium whitespace-nowrap text-foreground shadow-sm transition-colors duration-300 *:transition-colors *:duration-300 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-6 [&_svg]:shrink-0"
                 >
                   {authProviderIcons["Google"] || null}
                   <span>
@@ -79,11 +79,11 @@ export function LoginForm({ className, ...props }: ComponentProps<"div">) {
               <span className="group relative mx-1 inline-flex items-center justify-center p-0">
                 <Link
                   href="#"
-                  className="ease no-underline decoration-0 transition-colors duration-200 hover:text-rouge-500"
+                  className="ease no-underline decoration-0 transition-colors duration-200"
                 >
                   Contact us
                 </Link>
-                <span className="ease absolute bottom-[1px] left-0 z-0 h-[1px] w-full origin-left scale-x-0 bg-rouge-500/80 transition-transform duration-300 group-hover:scale-x-100"></span>
+                <span className="ease absolute bottom-[1px] left-0 z-0 h-[1px] w-full origin-left scale-x-0 transition-transform duration-300 group-hover:scale-x-100"></span>
                 <span className="ease absolute bottom-[1px] left-0 z-0 h-[1px] w-full origin-right scale-x-100 bg-foreground/80 transition-transform duration-300 group-hover:scale-x-0"></span>
               </span>
             </div>

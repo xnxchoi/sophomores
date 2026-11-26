@@ -161,19 +161,6 @@ export const HeaderClient = ({ children }: { children: ReactNode }) => {
     isWipeTransition.set(_tw);
   }, [_tw, isWipeTransition]);
 
-  const _themeColour = useTransform(() => {
-    const currentTheme = themeValue.get(),
-      currentNav = navState.get();
-    return currentTheme === "dark"
-      ? currentNav
-        ? 10.17
-        : 97.5
-      : currentNav
-        ? 97.5
-        : 10.17;
-  });
-  const themeColour = useMotionTemplate`oklch(${_themeColour}% 0.001 218.99)`;
-
   const tweenNumber = useRef(0);
 
   const getTweenPercentBasedOnScroll = useCallback(
@@ -290,22 +277,6 @@ export const HeaderClient = ({ children }: { children: ReactNode }) => {
     }
   }, [stage]);
 
-  const themeOK = useTransform(() => {
-    const progress = scrubPosition.get();
-    const isDark = themeValue.get() === "dark";
-    const darkValue = 78.94,
-      lightValue = 66.06;
-    const [from, to]: [number, number] = isDark
-      ? [darkValue, lightValue]
-      : [lightValue, darkValue];
-    return from + (from - to) * progress;
-  });
-  const _scrollToBtbgop = useTransform(scrubPosition, [0, 1], [0.25, 0.1]);
-  const btbgop = useTransform(() =>
-    navState.get() ? 0 : _scrollToBtbgop.get()
-  );
-
-  const btBackground = useMotionTemplate`oklch(${themeOK}% 0.008 176.48/${btbgop})`;
   const logoSize = useTransform(scrubPosition, [0.1, 0.3], [28, 22]);
   const fxInnerTop = useTransform(() => (navState.get() ? -top.get() : 0));
   const initialInnerLeft = useTransform(() =>
@@ -360,15 +331,6 @@ export const HeaderClient = ({ children }: { children: ReactNode }) => {
     return ww + progress * (kw - ww);
   });
   const mainZIndex = useTransform(scrubPosition, [0, 1], [249, 245]);
-  const _bsSpread = useTransform(() => 0.5 * scrubPosition.get()),
-    _bsBlur = useTransform(() => 1.2 * scrubPosition.get()),
-    _bsOKOp = useTransform(() => 0.7 * scrubPosition.get());
-  const mainBS = useMotionTemplate`0 0 ${_bsSpread}px ${_bsBlur}px oklch(36.76% 0.003 58.67/${_bsOKOp})`;
-  const mainBoxShadow = useTransform(() => {
-    const progress = scrubPosition.get();
-    const dark = progress > 0.3 && themeValue.get() === "dark";
-    return dark ? mainBS.get() : "none";
-  });
 
   // Track running animate-to-full animation so we can cancel it before starting a new one
   const runningAnimation = useRef<AnimationPlaybackControls | null>(null);
@@ -540,7 +502,6 @@ export const HeaderClient = ({ children }: { children: ReactNode }) => {
             transform: translate,
             paddingBottom,
             left: "50%",
-            boxShadow: mainBoxShadow
           }}
           {...((!showHeader && {
             onMouseEnter: onEnter,
@@ -558,7 +519,7 @@ export const HeaderClient = ({ children }: { children: ReactNode }) => {
               opacity: scrubPosition
             }}
             className={
-              "absolute top-0 left-0 z-1 h-full w-full bg-off-l-gray/35 opacity-[0.00001] dark:bg-faded-l-gray/35"
+              "absolute top-0 left-0 z-1 h-full w-full opacity-[0.00001]"
             }
           />
           <m.div
@@ -595,9 +556,7 @@ export const HeaderClient = ({ children }: { children: ReactNode }) => {
               <div className="flex">
                 <MenuButton
                   style={{
-                    backgroundColor: btBackground,
-                    backdropFilter: btBlur,
-                    color: themeColour
+                    backdropFilter: btBlur
                   }}
                 />
               </div>
@@ -623,7 +582,6 @@ export const HeaderClient = ({ children }: { children: ReactNode }) => {
                   style={{
                     width: logoSize,
                     height: logoSize,
-                    color: themeColour
                   }}
                 />
               </Link>
@@ -644,16 +602,12 @@ export const HeaderClient = ({ children }: { children: ReactNode }) => {
                     {!isMobile && (
                       <NotificationButton
                         style={{
-                          color: themeColour,
-                          backgroundColor: btBackground,
                           backdropFilter: btBlur
                         }}
                       />
                     )}
                     <UserDropdown
                       style={{
-                        color: themeColour,
-                        backgroundColor: btBackground,
                         backdropFilter: btBlur
                       }}
                     />
@@ -663,7 +617,6 @@ export const HeaderClient = ({ children }: { children: ReactNode }) => {
                   <CheckInButton
                     key="signed-out"
                     style={{
-                      backgroundColor: btBackground,
                       backdropFilter: btBlur
                     }}
                   />
@@ -673,8 +626,6 @@ export const HeaderClient = ({ children }: { children: ReactNode }) => {
                     key={"search-component"}
                     ref={commandRef}
                     style={{
-                      color: themeColour,
-                      backgroundColor: btBackground,
                       backdropFilter: btBlur
                     }}
                   />
@@ -683,8 +634,6 @@ export const HeaderClient = ({ children }: { children: ReactNode }) => {
                   <DarkmodeButton
                     key={"darkmode-component"}
                     style={{
-                      color: themeColour,
-                      backgroundColor: btBackground,
                       backdropFilter: btBlur
                     }}
                   />
@@ -749,18 +698,18 @@ const FXs = ({
     >
       <m.div
         data-themed={"background-color"}
-        className="absolute top-[10px] bottom-auto z-[19] h-[80px] bg-[#ffffff03] mask-linear-from-[#000] mask-linear-to-[transparent] opacity-50 backdrop-blur-[5px] backdrop-contrast-500 backdrop-saturate-[1500%]"
+        className="absolute top-[10px] bottom-auto z-[19] h-[80px] mask-linear-to-[transparent] opacity-50 backdrop-blur-[5px] backdrop-contrast-500 backdrop-saturate-[1500%]"
       />
       <m.div
         data-themed={"background-color"}
-        className="absolute top-[10px] bottom-auto z-[19] h-[60px] bg-[#ffffff03] mask-linear-from-[#000] mask-linear-to-[transparent] opacity-75 blur-[5px] contrast-[500%] hue-rotate-0 saturate-[1500%]"
+        className="absolute top-[10px] bottom-auto z-[19] h-[60px] mask-linear-to-[transparent] opacity-75 blur-[5px] contrast-[500%] hue-rotate-0 saturate-[1500%]"
         style={{
           filter: fx2Filter
         }}
       />
       <m.div
         data-themed={"background-color"}
-        className="top-fx-bottom fixed inset-x-0 top-0 bottom-auto z-[10] hidden h-[50px] bg-[#ffffff03] mask-linear-from-[#000] mask-linear-to-[transparent] blur-[5px] contrast-[500%] saturate-[1500%]"
+        className="top-fx-bottom fixed inset-x-0 top-0 bottom-auto z-[10] hidden h-[50px] mask-linear-to-[transparent] blur-[5px] contrast-[500%] saturate-[1500%]"
         style={{
           filter: fx3Filter
         }}

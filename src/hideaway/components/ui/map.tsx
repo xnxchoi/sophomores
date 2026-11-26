@@ -542,7 +542,7 @@ function MarkerContent({ children, className }: MarkerContentProps) {
 
 function DefaultMarkerIcon() {
   return (
-    <div className="relative h-4 w-4 animate-pulse rounded-full border-2 border-white bg-blue-500 shadow-lg" />
+    <div className="relative h-4 w-4 animate-pulse rounded-full border-2 shadow-lg" />
   );
 }
 
@@ -945,8 +945,8 @@ function CompassButton({ onClick }: { onClick: () => void }) {
         className="size-5 transition-transform duration-200"
         style={{ transformStyle: "preserve-3d" }}
       >
-        <path d="M12 2L16 12H12V2Z" className="fill-red-500" />
-        <path d="M12 2L8 12H12V2Z" className="fill-red-300" />
+        <path d="M12 2L16 12H12V2Z" />
+        <path d="M12 2L8 12H12V2Z" />
         <path d="M12 22L16 12H12V22Z" className="fill-muted-foreground/60" />
         <path d="M12 22L8 12H12V22Z" className="fill-muted-foreground/30" />
       </svg>
@@ -1059,7 +1059,7 @@ type MapRouteProps = {
   id?: string;
   /** Array of [longitude, latitude] coordinate pairs defining the route */
   coordinates: [number, number][];
-  /** Line color as CSS color value (default: "#4285F4") */
+  /** Line color as CSS color value (default: "(colour removed)") */
   color?: string;
   /** Line width in pixels (default: 3) */
   width?: number;
@@ -1080,7 +1080,7 @@ type MapRouteProps = {
 function MapRoute({
   id: propId,
   coordinates,
-  color = "#4285F4",
+  color,
   width = 3,
   opacity = 0.8,
   dashArray,
@@ -1238,7 +1238,7 @@ type MapArcProps<T extends MapArcDatum = MapArcDatum> = {
   samples?: number;
   /**
    * MapLibre paint properties for the arc layer. Merged on top of sensible
-   * defaults (`line-color: #4285F4`, `line-width: 2`, `line-opacity: 0.85`).
+   * defaults (`line-color: (colour removed)`, `line-width: 2`, `line-opacity: 0.85`).
    * Any value can be a MapLibre expression for per-feature styling, every
    * field on each arc datum (besides `from`/`to`) is exposed via `["get", ...]`.
    */
@@ -1271,7 +1271,6 @@ const ARC_HIT_MIN_WIDTH = 12;
 const ARC_HIT_PADDING = 6;
 
 const DEFAULT_ARC_PAINT: MapArcLinePaint = {
-  "line-color": "#4285F4",
   "line-width": 2,
   "line-opacity": 0.85
 };
@@ -1410,7 +1409,7 @@ function MapArc<T extends MapArcDatum = MapArcDatum>({
         source: sourceId,
         layout: DEFAULT_ARC_LAYOUT,
         paint: {
-          "line-color": "rgba(0, 0, 0, 0)",
+          "line-color": "transparent",
           "line-width": hitWidth,
           "line-opacity": 1
         }
@@ -1551,11 +1550,11 @@ type MapClusterLayerProps<
   clusterMaxZoom?: number;
   /** Radius of each cluster when clustering points in pixels (default: 50) */
   clusterRadius?: number;
-  /** Colors for cluster circles: [small, medium, large] based on point count (default: ["#22c55e", "#eab308", "#ef4444"]) */
+  /** Colors for cluster circles: [small, medium, large] based on point count (default: ["(colour removed)", "(colour removed)", "(colour removed)"]) */
   clusterColors?: [string, string, string];
   /** Point count thresholds for color/size steps: [medium, large] (default: [100, 750]) */
   clusterThresholds?: [number, number];
-  /** Color for unclustered individual points (default: "#3b82f6") */
+  /** Color for unclustered individual points (default: "(colour removed)") */
   pointColor?: string;
   /** Callback when an unclustered point is clicked */
   onPointClick?: (
@@ -1576,9 +1575,9 @@ function MapClusterLayer<
   data,
   clusterMaxZoom = 14,
   clusterRadius = 50,
-  clusterColors = ["#22c55e", "#eab308", "#ef4444"],
+  clusterColors = ["", "", ""],
   clusterThresholds = [100, 750],
-  pointColor = "#3b82f6",
+  pointColor,
   onPointClick,
   onClusterClick
 }: MapClusterLayerProps<P>) {
@@ -1634,7 +1633,6 @@ function MapClusterLayer<
           40
         ],
         "circle-stroke-width": 1,
-        "circle-stroke-color": "#fff",
         "circle-opacity": 0.85
       }
     });
@@ -1651,7 +1649,6 @@ function MapClusterLayer<
         "text-size": 12
       },
       paint: {
-        "text-color": "#fff"
       }
     });
 
@@ -1665,7 +1662,6 @@ function MapClusterLayer<
         "circle-color": pointColor,
         "circle-radius": 5,
         "circle-stroke-width": 2,
-        "circle-stroke-color": "#fff"
       }
     });
 

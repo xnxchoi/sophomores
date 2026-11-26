@@ -62,7 +62,7 @@ export function SetlistHeader({ setlist, contributedCount, archiveOnly = false }
   const isClosed = Boolean(countdown?.isExpired) || setlist.isPastDeadline || setlist.status !== "active";
 
   return (
-    <header className="relative w-full overflow-hidden rounded-2xl border border-white/10 bg-neutral-900/60 p-6 backdrop-blur-md shadow-[0_4px_24px_-4px_rgba(0,0,0,0.5)] md:p-8">
+    <header className="relative w-full overflow-hidden rounded-2xl border border-white/10 bg-carbon/60 p-6 backdrop-blur-md shadow-[0_4px_24px_-4px_color-mix(in_oklab,var(--color-shadow)_50%,transparent)] md:p-8">
       {/* Subtle top edge specular highlight */}
       <div
         aria-hidden="true"
@@ -75,10 +75,10 @@ export function SetlistHeader({ setlist, contributedCount, archiveOnly = false }
             <span className="flex size-7 items-center justify-center text-white">
               <MusicNotesIcon className="size-4" />
             </span>
-            <span className="text-xs font-sans tracking-tight text-neutral-400">
+            <span className="text-xs font-sans tracking-tight text-pewter">
               {archiveOnly ? t("publicArchive") : t("collaborativeSetlist")}
             </span>
-            <span className="text-xs font-sans text-neutral-300">
+            <span className="text-xs font-sans text-singer-stone">
               Apple Music
             </span>
           </div>
@@ -90,24 +90,24 @@ export function SetlistHeader({ setlist, contributedCount, archiveOnly = false }
               <wbr />
               <span>{setlist.title}</span>
             </h1>
-            <p className="text-xs md:text-sm text-neutral-400 leading-relaxed">
+            <p className="text-xs md:text-sm text-pewter leading-relaxed">
               {archiveOnly ? t("archiveReadOnly") : setlist.description}
             </p>
           </div>
 
           {/* Metric badges */}
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1">
-            <div className="flex items-center gap-1.5 text-xs text-neutral-300">
-              <span className="text-neutral-400">Total tracks:</span>
+            <div className="flex items-center gap-1.5 text-xs text-singer-stone">
+              <span className="text-pewter">Total tracks:</span>
               <span className="font-sans text-white tabular-nums">{setlist.totalTracks}</span>
             </div>
             {!archiveOnly && <>
-            <div className="flex items-center gap-1.5 text-xs text-neutral-300">
-              <span className="text-neutral-400">Attendee additions:</span>
+            <div className="flex items-center gap-1.5 text-xs text-singer-stone">
+              <span className="text-pewter">Attendee additions:</span>
               <span className="font-sans text-white tabular-nums">{contributedCount}</span>
             </div>
-            <div className="flex items-center gap-1.5 text-xs text-neutral-300">
-              <span className="text-neutral-400">Limit:</span>
+            <div className="flex items-center gap-1.5 text-xs text-singer-stone">
+              <span className="text-pewter">Limit:</span>
               <span className="font-sans text-white">2 slots per ticket</span>
             </div>
             </>}
@@ -120,16 +120,16 @@ export function SetlistHeader({ setlist, contributedCount, archiveOnly = false }
           {!archiveOnly && <div
             className={cn(
               "flex flex-col gap-1.5 border-t border-white/10 pt-4",
-              isClosed ? "text-neutral-400" : "text-white"
+              isClosed ? "text-pewter" : "text-white"
             )}
           >
             <div className="flex items-center gap-2 text-xs">
               {isClosed ? (
-                <LockKeyIcon className="size-3.5 text-neutral-400" />
+                <LockKeyIcon className="size-3.5 text-pewter" />
               ) : (
-                <ClockIcon className="size-3.5 text-neutral-300" />
+                <ClockIcon className="size-3.5 text-singer-stone" />
               )}
-              <span className="font-medium text-neutral-300">
+              <span className="font-medium text-singer-stone">
                 {isClosed ? "Nominations closed" : "Nominations close in"}
               </span>
             </div>
@@ -137,11 +137,11 @@ export function SetlistHeader({ setlist, contributedCount, archiveOnly = false }
             {!isClosed && countdown && (
               <div className="flex items-baseline gap-2 font-sans text-lg font-medium tabular-nums text-white">
                 <span>{countdown.days}d</span>
-                <span className="text-neutral-500">:</span>
+                <span className="text-pewter">:</span>
                 <span>{String(countdown.hours).padStart(2, "0")}h</span>
-                <span className="text-neutral-500">:</span>
+                <span className="text-pewter">:</span>
                 <span>{String(countdown.minutes).padStart(2, "0")}m</span>
-                <span className="text-neutral-500">:</span>
+                <span className="text-pewter">:</span>
                 <span>{String(countdown.seconds).padStart(2, "0")}s</span>
               </div>
             )}
@@ -153,7 +153,7 @@ export function SetlistHeader({ setlist, contributedCount, archiveOnly = false }
               href={appleUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white px-4 text-xs font-medium text-black transition-colors hover:bg-neutral-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white shrink-0"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white px-4 text-xs font-medium text-black transition-colors hover:bg-singer-stone focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white shrink-0"
             >
               <span>Open in Apple Music</span>
               <ArrowSquareOutIcon className="size-4" />
@@ -164,7 +164,7 @@ export function SetlistHeader({ setlist, contributedCount, archiveOnly = false }
                 type="button"
                 onClick={async () => setShowManualCopy(!(await copy(shareUrl)))}
                 aria-label={t("copySetlistLink")}
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-white/15 bg-neutral-900/90 px-4 text-xs font-medium text-white transition-colors hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white shrink-0"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-white/15 bg-carbon/90 px-4 text-xs font-medium text-white transition-colors hover:bg-gunmetal focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white shrink-0"
               >
                 {copyState === "copied" ? (
                   <>
@@ -173,12 +173,12 @@ export function SetlistHeader({ setlist, contributedCount, archiveOnly = false }
                   </>
                 ) : showManualCopy ? (
                   <>
-                    <CircleAlert className="size-4 text-neutral-400" />
+                    <CircleAlert className="size-4 text-pewter" />
                     <span>{t("copyLinkFailed")}</span>
                   </>
                 ) : (
                   <>
-                    <Copy className="size-4 text-neutral-400" />
+                    <Copy className="size-4 text-pewter" />
                     <span>{t("copySetlistLink")}</span>
                   </>
                 )}
@@ -190,7 +190,7 @@ export function SetlistHeader({ setlist, contributedCount, archiveOnly = false }
               : showManualCopy ? t("copyLinkFailed") : null}
           </p>
           {showManualCopy && (
-            <label className="grid min-w-0 gap-1 text-sm text-neutral-300">
+            <label className="grid min-w-0 gap-1 text-sm text-singer-stone">
               {t("copyLinkManually")}
               <input
                 className="mt-0 min-h-11 w-full rounded-none border-0 border-b border-white/15 bg-transparent px-0 py-0 font-normal tracking-normal text-white"

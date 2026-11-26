@@ -35,9 +35,8 @@ export const RewindButton = ({ size = 44, className }: RewindButtonProps) => {
       transition={{ type: "spring", stiffness: 400, damping: 15 }}
       className={cn(
         "flex items-center justify-center rounded-full",
-        "text-fg transition-colors duration-200",
-        "hover:text-rouge-400 active:text-rouge-500",
-        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bleu-400",
+        "transition-colors duration-200",
+        "focus-visible:outline-2 focus-visible:outline-offset-2",
         className
       )}
       style={{ width: size, height: size }}

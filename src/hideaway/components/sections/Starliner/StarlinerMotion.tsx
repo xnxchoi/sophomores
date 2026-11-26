@@ -102,17 +102,6 @@ export function StarlinerMotion({
   const ready = w > 0 && h > 0;
   const animationsActive = ready && inView;
 
-  const tailGradient =
-    tint === "warm"
-      ? "linear-gradient(270deg, oklch(0.95 0.08 80 / 0.7) 0%, oklch(0.95 0.08 80 / 0) 100%)"
-      : "linear-gradient(270deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 100%)";
-  const headColor =
-    tint === "warm" ? "oklch(0.95 0.08 80 / 0.85)" : "rgba(255,255,255,0.92)";
-  const headGlow =
-    tint === "warm"
-      ? "oklch(0.95 0.13 80 / 0.7) 0 0 8px 1px"
-      : "rgba(255,255,255,0.6) 0 0 6px 1px";
-
   return (
     <m.div
       ref={wrapperRef}
@@ -203,7 +192,6 @@ export function StarlinerMotion({
                     className="relative h-px overflow-visible"
                     style={{
                       width: lineWidth,
-                      background: tailGradient
                     }}
                   >
                     <div
@@ -211,9 +199,7 @@ export function StarlinerMotion({
                       style={{
                         width: isComet ? 2 : 1,
                         height: isComet ? 2 : 1,
-                        backgroundColor: headColor,
                         borderRadius: 1,
-                        boxShadow: headGlow
                       }}
                     />
                   </m.div>

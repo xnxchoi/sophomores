@@ -88,38 +88,32 @@ export function Plate({
         <RP_Plate name1={firstName} name2={lastName} />
       </Physics>
       <Environment background blur={0.75}>
-        <color attach="background" args={["black"]} />
         <Lightformer
           intensity={11}
-          color={"rgb(255, 255, 255)"}
           position={[-2, 7, 1]}
           rotation={[(3 * Math.PI) / 9, 0, (6 * Math.PI) / 8]}
           scale={[16, 0.1, 1]}
         />
         <Lightformer
           intensity={21}
-          color={"rgb(255, 255, 255)"}
           position={[0, -1, 5]}
           rotation={[0, 0, Math.PI / 3]}
           scale={[10, 0.1, 1]}
         />
         <Lightformer
           intensity={31}
-          color={"rgb(255, 255, 255)"}
           position={[-1, -1, 1]}
           rotation={[0, 0, -Math.PI / 3]}
           scale={[10, 0.1, 1]}
         />
         <Lightformer
           intensity={11}
-          color={"rgb(255, 255, 255)"}
           position={[1, 1, 1]}
           rotation={[0, 0, Math.PI / 3]}
           scale={[10, 0.1, 1]}
         />
         <Lightformer
           intensity={39}
-          color={"rgb(255, 255, 255)"}
           position={[-1, 0, 5]}
           rotation={[0, Math.PI / 33, Math.PI / 9]}
           scale={[19, 1, 1]}
@@ -322,7 +316,6 @@ export function RP_Plate({
   const physicalMeshProps = useMemo(
     () => ({
       roughness: 0.9,
-      sheenColor: 0.5,
       bumpMap: normalMap,
       bumpScale: 1,
       sheen: 1,
@@ -331,7 +324,6 @@ export function RP_Plate({
       anisotropyRotation: 0.6,
       anisotropy: 1,
       anisotropyMap: colorMap,
-      color: "rgb(76,76,76)",
       map: colorMap,
       roughnessMap: roughnessMap
     }),
@@ -343,12 +335,10 @@ export function RP_Plate({
       anisotropy: 1,
       metalness: 1,
       opacity: opacity,
-      sheenColor: "rgb(33,33,33)",
       sheen: 1,
       anisotropyRotation: 0.66,
       sheenRoughness: 1,
       roughness: 0.4,
-      color: "rgb(44,44,44)"
     }),
     [opacity]
   );
@@ -358,7 +348,6 @@ export function RP_Plate({
       opacity: opacity,
       sheenRoughness: 1,
       sheen: 1,
-      color: "rgb(76,76,76)",
       roughness: 0.5,
       metalness: 1
     }),

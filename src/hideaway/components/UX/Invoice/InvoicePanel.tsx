@@ -299,7 +299,7 @@ function StatusChip({
   // ember-green tint; pending stays neutral; void desaturates.
   const tone =
     status === "paid"
-      ? "border-emerald-500/30 bg-emerald-500/[0.06] text-emerald-500"
+      ? ""
       : status === "pending"
         ? "border-border/40 bg-foreground/[0.04] text-foreground/70"
         : "border-border/30 bg-foreground/[0.02] text-foreground/45";

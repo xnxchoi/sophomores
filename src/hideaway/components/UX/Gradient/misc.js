@@ -496,10 +496,10 @@
 //     uSize = new Uniform(0.2),
 //     uOffset = new Uniform(new Vector2(0.42, 0.6)),
 //     uSpeed = new Uniform(0.02),
-//     uColor1 = new Uniform(new Color('rgb(65,66,73)')),
-//     uColor2 = new Uniform(new Color('rgb(36,39,51)')),
-//     uColor3 = new Uniform(new Color('rgb(49,103,160)')),
-//     uColor4 = new Uniform(new Color('rgb(117,153,245)')),
+//     uColor1 = new Uniform(new Color('(colour removed)')),
+//     uColor2 = new Uniform(new Color('(colour removed)')),
+//     uColor3 = new Uniform(new Color('(colour removed)')),
+//     uColor4 = new Uniform(new Color('(colour removed)')),
 //     noiseTexture = new TextureLoader().load(noiseImageUrl)
 //   noiseTexture.wrapS = noiseTexture.wrapT = RepeatWrapping
 //   const uNoiseTexture = new Uniform(noiseTexture),

@@ -168,7 +168,7 @@ export function LinkUnderlined(
       <Link
         href={href}
         className={cn(
-          "ease no-underline decoration-0 transition-colors duration-200 hover:text-red-500",
+          "ease no-underline decoration-0 transition-colors duration-200",
           className
         )}
         {...rest}

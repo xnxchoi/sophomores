@@ -282,7 +282,7 @@ export function EditableField({
           </div>
           <div className="flex min-h-[1rem] items-center gap-3 text-xs">
             {error ? (
-              <span id={errorId} className="text-rouge-500/85" role="alert">
+              <span id={errorId} role="alert">
                 {error}
               </span>
             ) : null}
@@ -291,7 +291,7 @@ export function EditableField({
                 className={cn(
                   "ml-auto tabular-nums",
                   remaining! < 0
-                    ? "text-rouge-500/85"
+                    ? ""
                     : "text-foreground/55 dark:text-foreground/50"
                 )}
               >

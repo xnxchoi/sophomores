@@ -39,8 +39,8 @@ test("footer presets do not change the original default ring or mutate caller ov
 
 test("blue alcohol footer preset suppresses warm rim, white overlap and rainbow dispersion", () => {
   const footer = resolveFooterConfig();
-  assert.equal(footer.fire.baseColor, "#155BFF");
-  assert.equal(footer.fire.tipColor, "#5CBFFF");
+  assert.equal(footer.fire.baseColor, "#2E7DA6"); // Gulf Cerulean (palette r3)
+  assert.equal(footer.fire.tipColor, "#11B8FF"); // Gulf Cerulean Lighter
   assert.equal(footer.fire.warmth, 1);
   assert.equal(footer.fire.rimStrength, 0);
   assert.equal(footer.visual.brightness, 0.65);
@@ -75,7 +75,7 @@ test("footer blue colors and suppressed material contributions remain independen
     }
   }
   assert.deepEqual(input, before);
-  assert.equal(resolveFooterConfig().fire.baseColor, "#155BFF");
+  assert.equal(resolveFooterConfig().fire.baseColor, "#2E7DA6");
   assert.equal(resolveFooterConfig().prism.amount, 0);
 });
 
@@ -201,8 +201,8 @@ test("footer adds restrained stems, slow blue-green cycling, and viewport igniti
   assert.equal(footer.fire.plumeFrequency, 9);
   assert.equal(footer.motion.loopSeconds, 16);
   assert.equal(footer.fire.colorCycleSeconds, 32);
-  assert.equal(footer.fire.alternateBaseColor, "#086FBA");
-  assert.equal(footer.fire.alternateTipColor, "#48BFA6");
+  assert.equal(footer.fire.alternateBaseColor, "#005477"); // Ultramarine, so the slow cycle still moves
+  assert.equal(footer.fire.alternateTipColor, "#11B8FF");
   assert.equal(footer.ignition.enabled, true);
   assert.equal(footer.ignition.durationSeconds, 1.6);
   assert.equal(footer.visual.brightness, 0.65);

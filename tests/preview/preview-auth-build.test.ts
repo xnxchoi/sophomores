@@ -99,11 +99,11 @@ test("auth controls use achromatic theme colors without green accents", () => {
   for (const role of [
     "surface", "foreground", "input", "border", "secondary", "muted", "accent", "on-accent"
   ]) {
-    const color = css.match(new RegExp(`--color-preview-${role}:\\s*#([\\da-f]{6});`, "i"));
+    // Palette r3 (owner, 26 Nov): each role names one of the palette's neutral greys, never a tinted or coloured entry.
+    const color = css.match(new RegExp(`--color-preview-${role}:\\s*var\\(--([a-z0-9-]+)\\);`));
     assert.ok(color, `Missing preview ${role} color`);
-    const [red, green, blue] = color[1].match(/../g)!;
-    assert.equal(red, green, `Preview ${role} must be achromatic`);
-    assert.equal(green, blue, `Preview ${role} must be achromatic`);
+    assert.ok(["white", "stone", "light-grey", "dark-grey-lighter-2", "black-lighter-2", "dark-grey", "black", "carbon-deep"].includes(color[1]),
+      `Preview ${role} must be a palette neutral`);
   }
   for (const path of ["src/app/(auth)/login/page.tsx", "src/app/(auth)/logout/page.tsx"]) {
     assert.doesNotMatch(source(path), /(?:bg|text|border|accent|outline)-(?:green|lime|emerald|teal|olive)-/);

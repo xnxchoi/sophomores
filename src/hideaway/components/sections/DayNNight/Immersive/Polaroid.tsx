@@ -187,7 +187,7 @@ export function Polaroid(props: PolaroidProps) {
           // Back variant — standalone texture, no caption, no frame chrome.
           // The PNG carries its own border / sticker / handwritten label.
           <div
-            className="relative w-full overflow-hidden rounded-[4px] shadow-[0_8px_24px_oklch(0%_0_0_/_0.22),_0_2px_6px_oklch(0%_0_0_/_0.15)]"
+            className="relative w-full overflow-hidden rounded-[4px]"
             style={{ aspectRatio: POLAROID_ASPECT }}
           >
             <Image
@@ -207,7 +207,7 @@ export function Polaroid(props: PolaroidProps) {
           // fills the inner window region exactly.
           <>
             <div
-              className="relative w-full overflow-hidden rounded-[4px] shadow-[0_8px_24px_oklch(0%_0_0_/_0.22),_0_2px_6px_oklch(0%_0_0_/_0.15)]"
+              className="relative w-full overflow-hidden rounded-[4px]"
               style={{ aspectRatio: POLAROID_ASPECT }}
             >
               <Image
@@ -229,7 +229,7 @@ export function Polaroid(props: PolaroidProps) {
               </div>
             </div>
             {(props as PolaroidStamped).caption ? (
-              <figcaption className="mt-[10px] text-center font-serif text-[12px] leading-[1.3] tracking-[0.01em] text-[oklch(28%_0.02_60)] italic">
+              <figcaption className="mt-[10px] text-center font-serif text-[12px] leading-[1.3] tracking-[0.01em] italic">
                 {(props as PolaroidStamped).caption}
               </figcaption>
             ) : null}
@@ -243,7 +243,7 @@ export function Polaroid(props: PolaroidProps) {
             className="relative rounded-[2px] px-3 pt-3 pb-9"
           >
             <div
-              className="relative overflow-hidden bg-[oklch(70%_0.04_80)] shadow-[0_0_0_1px_oklch(0%_0_0_/_0.08)_inset]"
+              className="relative overflow-hidden"
               style={{ aspectRatio: (props as PolaroidClean).aspect ?? 1 }}
             >
               <Image
@@ -256,7 +256,7 @@ export function Polaroid(props: PolaroidProps) {
               />
             </div>
             {(props as PolaroidClean).caption ? (
-              <figcaption className="mt-[10px] text-center font-serif text-[12px] leading-[1.3] tracking-[0.01em] text-[oklch(28%_0.02_60)] italic">
+              <figcaption className="mt-[10px] text-center font-serif text-[12px] leading-[1.3] tracking-[0.01em] italic">
                 {(props as PolaroidClean).caption}
               </figcaption>
             ) : null}

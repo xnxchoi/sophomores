@@ -23,7 +23,7 @@ export default function SceneLoader(props: SceneProps) {
         position: "absolute",
         inset: 0,
         pointerEvents: "none",
-        backgroundColor: "#030504"
+        backgroundColor: "var(--color-carbon-deep)"
       }}
     >
       <Scene {...props} />

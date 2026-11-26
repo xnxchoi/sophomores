@@ -498,7 +498,7 @@ function ExitWarning({
 
   return (
     <m.div
-      className="bg-faded-foreground/0.7 absolute inset-250 z-10 flex items-center justify-center px-6 backdrop-blur-sm"
+      className="absolute inset-250 z-10 flex items-center justify-center px-6 backdrop-blur-sm"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -541,7 +541,7 @@ function ExitWarning({
             className={cn(
               "text-[13px] font-medium",
               isRequiredSection
-                ? "bg-red-500/10 text-red-500 hover:bg-red-500/15"
+                ? ""
                 : "bg-foreground/5 text-foreground hover:bg-foreground/15"
             )}
           >

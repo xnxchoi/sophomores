@@ -146,11 +146,11 @@ export function SetlistView({
   );
 
   return (
-    <div className="relative isolate min-h-screen overflow-x-clip bg-neutral-950 text-white selection:bg-white selection:text-black">
+    <div className="relative isolate min-h-screen overflow-x-clip bg-carbon-deep text-white selection:bg-white selection:text-black">
       {/* Atmosphere: subtle radial ambient light */}
       <div
         aria-hidden="true"
-        className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_rgba(255,255,255,0.06),_transparent_65%)]"
+        className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_color-mix(in_oklab,var(--color-titanium)_6%,transparent),_transparent_65%)]"
       />
 
       {/* From lg: the header in columns 1-4, everything else in 5-12. Below lg it stacks. */}

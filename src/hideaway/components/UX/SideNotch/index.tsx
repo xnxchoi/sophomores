@@ -160,7 +160,7 @@ const DeskNotch = (props: SideNotchProps) => {
     >
       <m.div
         className={
-          "relative flex h-full w-full items-center justify-center bg-nav-background mask-[url(/assets/notch.png)] mask-size-[100%_100%] px-[5px] py-[15px] min-lg:mask-[url(/assets/notch@2x.png)]"
+          "relative flex h-full w-full items-center justify-center mask-[url(/assets/notch.png)] mask-size-[100%_100%] px-[5px] py-[15px] min-lg:mask-[url(/assets/notch@2x.png)]"
         }
         onMouseEnter={onEnter}
         onMouseLeave={resetCursorTheme}
@@ -175,7 +175,7 @@ const DeskNotch = (props: SideNotchProps) => {
             onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}
             onClick={toggleSideDrawer}
-            className="z-[100] flex items-center justify-center gap-[6px] font-sans text-xs font-bold text-nav-foreground"
+            className="z-[100] flex items-center justify-center gap-[6px] font-sans text-xs font-bold"
           >
             <span className="relative flex h-full w-full items-center justify-start overflow-hidden"></span>
           </m.span>
@@ -290,7 +290,7 @@ const MobileNotch = (props: SideNotchProps) => {
     >
       <m.div
         className={
-          "relative flex h-full w-full items-center justify-center bg-nav-background mask-[url(/assets/notch.png)] mask-size-[100%_100%] px-[15px] py-[5px]"
+          "relative flex h-full w-full items-center justify-center mask-[url(/assets/notch.png)] mask-size-[100%_100%] px-[15px] py-[5px]"
         }
         data-themed="background-color, color"
       >
@@ -303,11 +303,11 @@ const MobileNotch = (props: SideNotchProps) => {
             onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}
             onClick={toggleSideDrawer}
-            className="z-[100] flex flex-col items-center justify-center gap-[2.5px] font-sans text-[12px] font-bold text-nav-foreground"
+            className="z-[100] flex flex-col items-center justify-center gap-[2.5px] font-sans text-[12px] font-bold"
           >
-            <div className="h-[2px] w-[8px] bg-nav-foreground"></div>
-            <div className="h-[2px] w-[8px] bg-nav-foreground"></div>
-            <div className="h-[2px] w-[8px] bg-nav-foreground"></div>
+            <div className="h-[2px] w-[8px]"></div>
+            <div className="h-[2px] w-[8px]"></div>
+            <div className="h-[2px] w-[8px]"></div>
           </m.span>
           {hasRadio && <SoundBar />}
         </m.div>
@@ -327,7 +327,6 @@ const MobileNotch = (props: SideNotchProps) => {
  *         >
  *           <path
  *             d="M34.5 33.61s-.13-2.13-.42-3.16c-.37-1.29-1.03-2.96-2.25-4.42-1.63-1.96-5.28-3.91-8.39-4.76-5.8-1.59-10.59-4.53-13.34-6.6C3.24 9.53.93.95.19 0L0 101.48v.04L.19 203c.74-.95 3.05-9.53 9.91-14.66 2.76-2.06 7.55-5.01 13.34-6.6 3.1-.85 6.76-2.8 8.39-4.76 1.21-1.46 1.88-3.13 2.25-4.42.29-1.03.42-3.16.42-3.16s-.2-34.43-.23-67.89c.03-33.47.23-67.89.23-67.89Z"
- *             fill="oklch(from var(--n-s-bg) l c h/1)"
  *           />
  *         </m.svg>
  * </svg>

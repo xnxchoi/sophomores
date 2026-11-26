@@ -25,8 +25,8 @@ const chipClass = (
     "inline-flex items-center gap-1.5 border px-2 py-0.5 font-sans tracking-widest uppercase transition-colors",
     "text-[9px] text-muted-foreground/70 xl:text-[10px]",
     tone === "soft"
-      ? "border-dashed border-off-background/40 hover:border-off-background/70 hover:text-foreground/80"
-      : "border-off-background/20 text-muted-foreground/50",
+      ? "border-dashed hover:text-foreground/80"
+      : "text-muted-foreground/50",
     className
   );
 

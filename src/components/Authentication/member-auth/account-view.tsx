@@ -657,7 +657,7 @@ function ProviderButton({ provider, compact, disabled, busy, onClick }: {
         aria-busy={busy}
         onClick={onClick}
         className={cn(
-          "relative min-w-0 gap-2 rounded-[12px] border-[#FEE500] bg-[#FEE500] py-0 text-[15px] leading-5 whitespace-nowrap text-black/85 hover:bg-[#FEE500] focus-visible:outline-offset-2 aria-busy:opacity-80",
+          "relative min-w-0 gap-2 rounded-[12px] border-[#FEE500] bg-[#FEE500] py-0 text-[15px] leading-5 whitespace-nowrap text-[#000000]/85 hover:bg-[#FEE500] focus-visible:outline-offset-2 aria-busy:opacity-80",
           compact ? "size-full min-h-0 px-0!" : "h-12 min-h-12 w-full px-4"
         )}
       >

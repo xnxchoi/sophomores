@@ -36,17 +36,10 @@ export function DayNNightFollowupSections({
   const t = useTranslations("Event.DayNNight.main");
 
   return (
-    <main className="relative isolate overflow-hidden bg-[oklch(8%_0.024_270)] text-[var(--dn-fg)]">
+    <main className="relative isolate overflow-hidden">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 z-0 opacity-70"
-        style={{
-          background: [
-            "radial-gradient(circle at 18% 12%, oklch(31% 0.07 255 / 0.42), transparent 34%)",
-            "radial-gradient(circle at 82% 4%, oklch(38% 0.085 45 / 0.32), transparent 36%)",
-            "linear-gradient(180deg, oklch(8% 0.024 270), oklch(6.5% 0.018 255) 48%, oklch(7% 0.022 38))"
-          ].join(", ")
-        }}
       />
       <div
         aria-hidden
@@ -60,13 +53,13 @@ export function DayNNightFollowupSections({
       <SectionFrame id="details" eyebrow={t("details.eyebrow")}>
         <div className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
           <div className="grid content-start gap-6">
-            <h2 className="font-serif text-[clamp(3.4rem,8vw,7.5rem)] leading-[0.88] font-bold tracking-[-0.045em] text-white">
+            <h2 className="font-serif text-[clamp(3.4rem,8vw,7.5rem)] leading-[0.88] font-bold tracking-[-0.045em]">
               {t("details.title")}
             </h2>
-            <p className="max-w-[34ch] text-base leading-relaxed text-white/68">
+            <p className="max-w-[34ch] text-base leading-relaxed">
               {t("details.body")}
             </p>
-            <dl className="grid gap-4 border-t border-white/18 pt-6 font-sans text-sm text-white/72">
+            <dl className="grid gap-4 border-t pt-6 font-sans text-sm">
               <Fact
                 label={t("details.themeLabel")}
                 value={t("details.theme")}
@@ -109,18 +102,18 @@ export function DayNNightFollowupSections({
       <SectionFrame id="music" eyebrow={t("music.eyebrow")}>
         <div className="grid min-h-[72svh] gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
           <div className="grid gap-7">
-            <p className="font-sans text-[10px] tracking-[0.32em] text-white/55 uppercase">
+            <p className="font-sans text-[10px] tracking-[0.32em] uppercase">
               {t("music.kicker")}
             </p>
-            <h2 className="font-serif text-[clamp(4rem,10vw,10rem)] leading-[0.8] font-bold tracking-[-0.055em] text-white">
+            <h2 className="font-serif text-[clamp(4rem,10vw,10rem)] leading-[0.8] font-bold tracking-[-0.055em]">
               YM.FM
             </h2>
-            <p className="max-w-[36ch] text-lg leading-relaxed text-white/72">
+            <p className="max-w-[36ch] text-lg leading-relaxed">
               {t("music.body")}
             </p>
           </div>
-          <div className="grid aspect-[4/5] content-end overflow-hidden border border-white/18 bg-white/[0.045] p-5 shadow-[0_30px_120px_rgba(0,0,0,0.4)]">
-            <p className="font-sans text-[10px] tracking-[0.26em] text-white/45 uppercase">
+          <div className="grid aspect-[4/5] content-end overflow-hidden border p-5">
+            <p className="font-sans text-[10px] tracking-[0.26em] uppercase">
               {t("music.assetNote")}
             </p>
           </div>
@@ -146,17 +139,10 @@ export function DayNNightMainPage({
   const t = useTranslations("Event.DayNNight.main");
 
   return (
-    <main className="relative min-h-svh overflow-hidden bg-[oklch(8%_0.024_270)] text-[var(--dn-fg)]">
+    <main className="relative min-h-svh overflow-hidden">
       <div
         aria-hidden
         className="pointer-events-none fixed inset-0 z-0 opacity-70"
-        style={{
-          background: [
-            "radial-gradient(circle at 18% 12%, oklch(31% 0.07 255 / 0.42), transparent 34%)",
-            "radial-gradient(circle at 82% 4%, oklch(38% 0.085 45 / 0.32), transparent 36%)",
-            "linear-gradient(180deg, oklch(8% 0.024 270), oklch(6.5% 0.018 255) 48%, oklch(7% 0.022 38))"
-          ].join(", ")
-        }}
       />
       <div
         aria-hidden
@@ -173,23 +159,23 @@ export function DayNNightMainPage({
         className="relative z-10 min-h-svh px-6 py-24 xl:px-10"
       >
         <div className="mx-auto grid min-h-[calc(100svh-12rem)] max-w-7xl grid-rows-[auto_1fr_auto]">
-          <div className="flex items-start justify-between gap-4 font-sans text-[10px] tracking-[0.24em] text-white/55 uppercase">
+          <div className="flex items-start justify-between gap-4 font-sans text-[10px] tracking-[0.24em] uppercase">
             <span>{t("intro.date")}</span>
             <span>{t("intro.place")}</span>
           </div>
           <div className="grid content-center gap-7">
-            <p className="font-sans text-[10px] tracking-[0.32em] text-white/60 uppercase">
+            <p className="font-sans text-[10px] tracking-[0.32em] uppercase">
               {t("intro.eyebrow")}
             </p>
-            <h1 className="max-w-[9ch] font-serif text-[clamp(5.2rem,16vw,16rem)] leading-[0.76] font-bold tracking-[-0.055em] text-white">
+            <h1 className="max-w-[9ch] font-serif text-[clamp(5.2rem,16vw,16rem)] leading-[0.76] font-bold tracking-[-0.055em]">
               Day
               <br />n Night
             </h1>
-            <p className="max-w-[34ch] font-serif text-[clamp(1.3rem,2vw,2rem)] leading-[1.3] text-white/72 italic">
+            <p className="max-w-[34ch] font-serif text-[clamp(1.3rem,2vw,2rem)] leading-[1.3] italic">
               {t("intro.lede")}
             </p>
           </div>
-          <div className="grid gap-4 border-t border-white/18 pt-5 font-sans text-[10px] tracking-[0.22em] text-white/58 uppercase sm:grid-cols-3">
+          <div className="grid gap-4 border-t pt-5 font-sans text-[10px] tracking-[0.22em] uppercase sm:grid-cols-3">
             <span>{t("intro.theme")}</span>
             <span>{t("intro.price")}</span>
             <span>{t("intro.hosts")}</span>
@@ -200,13 +186,13 @@ export function DayNNightMainPage({
       <SectionFrame id="details" eyebrow={t("details.eyebrow")}>
         <div className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
           <div className="grid content-start gap-6">
-            <h2 className="font-serif text-[clamp(3.4rem,8vw,7.5rem)] leading-[0.88] font-bold tracking-[-0.045em] text-white">
+            <h2 className="font-serif text-[clamp(3.4rem,8vw,7.5rem)] leading-[0.88] font-bold tracking-[-0.045em]">
               {t("details.title")}
             </h2>
-            <p className="max-w-[34ch] text-base leading-relaxed text-white/68">
+            <p className="max-w-[34ch] text-base leading-relaxed">
               {t("details.body")}
             </p>
-            <dl className="grid gap-4 border-t border-white/18 pt-6 font-sans text-sm text-white/72">
+            <dl className="grid gap-4 border-t pt-6 font-sans text-sm">
               <Fact
                 label={t("details.themeLabel")}
                 value={t("details.theme")}
@@ -249,18 +235,18 @@ export function DayNNightMainPage({
       <SectionFrame id="music" eyebrow={t("music.eyebrow")}>
         <div className="grid min-h-[72svh] gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
           <div className="grid gap-7">
-            <p className="font-sans text-[10px] tracking-[0.32em] text-white/55 uppercase">
+            <p className="font-sans text-[10px] tracking-[0.32em] uppercase">
               {t("music.kicker")}
             </p>
-            <h2 className="font-serif text-[clamp(4rem,10vw,10rem)] leading-[0.8] font-bold tracking-[-0.055em] text-white">
+            <h2 className="font-serif text-[clamp(4rem,10vw,10rem)] leading-[0.8] font-bold tracking-[-0.055em]">
               YM.FM
             </h2>
-            <p className="max-w-[36ch] text-lg leading-relaxed text-white/72">
+            <p className="max-w-[36ch] text-lg leading-relaxed">
               {t("music.body")}
             </p>
           </div>
-          <div className="grid aspect-[4/5] content-end overflow-hidden border border-white/18 bg-white/[0.045] p-5 shadow-[0_30px_120px_rgba(0,0,0,0.4)]">
-            <p className="font-sans text-[10px] tracking-[0.26em] text-white/45 uppercase">
+          <div className="grid aspect-[4/5] content-end overflow-hidden border p-5">
+            <p className="font-sans text-[10px] tracking-[0.26em] uppercase">
               {t("music.assetNote")}
             </p>
           </div>
@@ -283,20 +269,20 @@ function LandingChrome() {
   const lenis = useLenis();
 
   return (
-    <nav className="fixed inset-x-0 top-0 z-50 flex items-center justify-between gap-4 px-4 py-4 text-white sm:px-6 xl:px-10">
+    <nav className="fixed inset-x-0 top-0 z-50 flex items-center justify-between gap-4 px-4 py-4 sm:px-6 xl:px-10">
       <Link
         href="/public"
-        className="rounded-full border border-white/15 bg-black/25 px-3.5 py-2 font-sans text-[10px] tracking-[0.22em] text-white/65 uppercase backdrop-blur-xl transition-colors hover:text-white"
+        className="rounded-full border px-3.5 py-2 font-sans text-[10px] tracking-[0.22em] uppercase backdrop-blur-xl transition-colors"
       >
         ← Hideaway
       </Link>
-      <div className="hidden items-center gap-2 rounded-full border border-white/12 bg-black/20 px-2 py-1.5 backdrop-blur-xl md:flex">
+      <div className="hidden items-center gap-2 rounded-full border px-2 py-1.5 backdrop-blur-xl md:flex">
         {NAV_KEYS.map((key) => (
           <button
             key={key}
             type="button"
             onClick={() => lenis?.scrollTo(`#${key}`)}
-            className="rounded-full px-3 py-1.5 font-sans text-[9px] tracking-[0.2em] text-white/55 uppercase transition-colors hover:bg-white/10 hover:text-white"
+            className="rounded-full px-3 py-1.5 font-sans text-[9px] tracking-[0.2em] uppercase transition-colors"
           >
             {t(`nav.${key}`)}
           </button>
@@ -304,7 +290,7 @@ function LandingChrome() {
       </div>
       <Link
         href="/tickets/day-n-night"
-        className="rounded-full border border-white/35 bg-white px-4 py-2 font-sans text-[10px] tracking-[0.22em] text-black uppercase transition-transform hover:-translate-y-px"
+        className="rounded-full border px-4 py-2 font-sans text-[10px] tracking-[0.22em] uppercase transition-transform hover:-translate-y-px"
       >
         {t("nav.rsvp")}
       </Link>
@@ -326,12 +312,12 @@ function SectionFrame({
   return (
     <section
       id={id}
-      className="relative z-10 min-h-svh scroll-mt-12 border-t border-white/10 px-6 py-24 xl:px-10 xl:py-32"
+      className="relative z-10 min-h-svh scroll-mt-12 border-t px-6 py-24 xl:px-10 xl:py-32"
     >
       <div
         className={cn(fullBleed ? "mx-auto max-w-none" : "mx-auto max-w-7xl")}
       >
-        <p className="mb-10 font-sans text-[10px] tracking-[0.28em] text-white/48 uppercase">
+        <p className="mb-10 font-sans text-[10px] tracking-[0.28em] uppercase">
           {eyebrow}
         </p>
         {children}
@@ -342,22 +328,22 @@ function SectionFrame({
 
 function Fact({ label, value }: { label: string; value: string }) {
   return (
-    <div className="grid grid-cols-[7rem_1fr] gap-4 border-b border-white/10 pb-3">
-      <dt className="font-sans text-[10px] tracking-[0.18em] text-white/42 uppercase">
+    <div className="grid grid-cols-[7rem_1fr] gap-4 border-b pb-3">
+      <dt className="font-sans text-[10px] tracking-[0.18em] uppercase">
         {label}
       </dt>
-      <dd className="m-0 text-white/76">{value}</dd>
+      <dd className="m-0">{value}</dd>
     </div>
   );
 }
 
 function OfferingRow({ label, body }: { label: string; body: string }) {
   return (
-    <article className="grid gap-3 border-t border-white/14 py-5 lg:grid-cols-[10rem_1fr]">
-      <h3 className="m-0 font-serif text-2xl leading-none font-bold tracking-[-0.025em] text-white">
+    <article className="grid gap-3 border-t py-5 lg:grid-cols-[10rem_1fr]">
+      <h3 className="m-0 font-serif text-2xl leading-none font-bold tracking-[-0.025em]">
         {label}
       </h3>
-      <p className="m-0 max-w-[58ch] text-sm leading-relaxed text-white/68 xl:text-base">
+      <p className="m-0 max-w-[58ch] text-sm leading-relaxed xl:text-base">
         {body}
       </p>
     </article>
@@ -397,10 +383,10 @@ function ScrollSyncedFriends() {
   return (
     <div ref={ref} className="relative min-h-[82svh] overflow-hidden">
       <div className="absolute inset-x-0 top-8 z-10 px-6 xl:px-10">
-        <h2 className="max-w-[11ch] font-serif text-[clamp(3.2rem,8vw,8rem)] leading-[0.84] font-bold tracking-[-0.05em] text-white">
+        <h2 className="max-w-[11ch] font-serif text-[clamp(3.2rem,8vw,8rem)] leading-[0.84] font-bold tracking-[-0.05em]">
           {t("friends.title")}
         </h2>
-        <p className="mt-5 font-sans text-[11px] tracking-[0.12em] text-white/62">
+        <p className="mt-5 font-sans text-[11px] tracking-[0.12em]">
           {t("friends.caption")}
         </p>
       </div>
@@ -418,7 +404,7 @@ function ScrollSyncedFriends() {
             width={720}
             height={480}
             sizes="(min-width: 1280px) 26vw, (min-width: 768px) 34vw, 52vw"
-            className="h-[34svh] w-[52vw] shrink-0 object-cover shadow-[0_22px_80px_rgba(0,0,0,0.45)] md:h-[44svh] md:w-[34vw] xl:w-[26vw]"
+            className="h-[34svh] w-[52vw] shrink-0 object-cover md:h-[44svh] md:w-[34vw] xl:w-[26vw]"
             style={{
               transform: `translateY(${(i % 3) * 22}px) rotate(${(i % 2 ? 1 : -1) * 1.5}deg)`
             }}
@@ -496,11 +482,11 @@ function TorrentRsvp({ rsvpState }: { rsvpState: DayNNightRsvpState }) {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-20% 0px" }}
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-          className="font-serif text-[clamp(4.5rem,14vw,13rem)] leading-[0.78] font-bold tracking-[-0.055em] text-white"
+          className="font-serif text-[clamp(4.5rem,14vw,13rem)] leading-[0.78] font-bold tracking-[-0.055em]"
         >
           RSVP
         </m.h2>
-        <p className="mt-5 max-w-[34ch] text-sm leading-relaxed text-white/68">
+        <p className="mt-5 max-w-[34ch] text-sm leading-relaxed">
           {rsvpState === "pending" ? t("rsvp.pendingBody") : t("rsvp.body")}
         </p>
         <ReactiveRsvpButton href={href}>{cta}</ReactiveRsvpButton>
@@ -541,7 +527,7 @@ function CreditsRsvp({
         className="blur-0 absolute inset-0 flex flex-col items-center justify-center gap-6 opacity-80 transition-[filter,opacity] duration-700 data-[blur=true]:opacity-55 data-[blur=true]:blur-[1px]"
         data-blur={overlay ? "true" : "false"}
       >
-        <div className="animate-[dnCreditsRoll_28s_linear_infinite] text-center font-serif text-[clamp(3rem,8vw,7rem)] leading-[0.95] font-bold tracking-[-0.045em] text-white">
+        <div className="animate-[dnCreditsRoll_28s_linear_infinite] text-center font-serif text-[clamp(3rem,8vw,7rem)] leading-[0.95] font-bold tracking-[-0.045em]">
           {[...names, ...names, ...names].map((name, i) => (
             <div key={`${name}-${i}`} className="py-2">
               {name}
@@ -551,10 +537,10 @@ function CreditsRsvp({
       </div>
       {overlay ? (
         <div className="relative z-10 grid justify-items-center text-center">
-          <h2 className="font-serif text-[clamp(4rem,12vw,11rem)] leading-[0.78] font-bold tracking-[-0.055em] text-white">
+          <h2 className="font-serif text-[clamp(4rem,12vw,11rem)] leading-[0.78] font-bold tracking-[-0.055em]">
             RSVP
           </h2>
-          <p className="mt-5 max-w-[34ch] text-sm leading-relaxed text-white/68">
+          <p className="mt-5 max-w-[34ch] text-sm leading-relaxed">
             {rsvpState === "pending" ? t("rsvp.pendingBody") : t("rsvp.body")}
           </p>
           <ReactiveRsvpButton href={href}>{cta}</ReactiveRsvpButton>
@@ -583,10 +569,7 @@ function ReactiveRsvpButton({
           y: ((event.clientY - rect.top) / rect.height) * 100
         });
       }}
-      className="mt-8 inline-flex h-14 min-w-44 items-center justify-center rounded-full border border-white/50 bg-white px-7 font-sans text-[11px] tracking-[0.24em] text-black uppercase shadow-[0_0_45px_oklch(60%_0.12_50/0.45)] transition-transform hover:-translate-y-1"
-      style={{
-        background: `radial-gradient(circle at ${pos.x}% ${pos.y}%, oklch(76% 0.13 48), white 34%, oklch(70% 0.11 255) 120%)`
-      }}
+      className="mt-8 inline-flex h-14 min-w-44 items-center justify-center rounded-full border px-7 font-sans text-[11px] tracking-[0.24em] uppercase transition-transform hover:-translate-y-1"
     >
       {children}
     </Link>
@@ -610,7 +593,7 @@ function ConfirmedRsvp() {
         <span
           key={i}
           aria-hidden
-          className="absolute top-[-12px] h-2.5 w-1.5 animate-[dnConfetti_3.2s_linear_infinite] bg-white/80"
+          className="absolute top-[-12px] h-2.5 w-1.5 animate-[dnConfetti_3.2s_linear_infinite]"
           style={{
             left: bit.left,
             animationDelay: bit.delay,
@@ -618,7 +601,7 @@ function ConfirmedRsvp() {
           }}
         />
       ))}
-      <h2 className="font-serif text-[clamp(4.2rem,13vw,13rem)] leading-[0.78] font-bold tracking-[-0.06em] text-white [text-shadow:0_0_22px_oklch(70%_0.11_255/0.36),0_18px_60px_rgba(0,0,0,0.45)]">
+      <h2 className="font-serif text-[clamp(4.2rem,13vw,13rem)] leading-[0.78] font-bold tracking-[-0.06em]">
         SEE YOU
         <br />
         SOON

@@ -26,7 +26,6 @@ export async function PlansRefundNote() {
         style={{
           fontSize: 14,
           lineHeight: 1.7,
-          color: "var(--pricing-fg-mute)",
           maxWidth: "52ch",
           margin: "0 auto 16px"
         }}
@@ -37,7 +36,6 @@ export async function PlansRefundNote() {
         href="/refund"
         style={{
           fontSize: 13,
-          color: "var(--pricing-fg)",
           textDecoration: "underline",
           textUnderlineOffset: "0.3em"
         }}

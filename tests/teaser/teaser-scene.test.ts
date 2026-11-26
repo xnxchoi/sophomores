@@ -61,7 +61,7 @@ test("footer geometry adapts to desktop, tablet and mobile without changing flam
     );
     assert.ok(layout.side * config.visual.ringRadius * 2 >= width);
     assert.equal(config.fire.plumeHeight, 0.25);
-    assert.equal(config.fire.baseColor, "#155BFF");
+    assert.equal(config.fire.baseColor, "#2E7DA6"); // Gulf Cerulean (palette r3)
     assert.equal(config.ignition.enabled, true);
   }
 });

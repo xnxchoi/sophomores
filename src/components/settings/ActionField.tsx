@@ -31,7 +31,7 @@ export function ActionField({
       icon={icon}
       meta={meta}
       className={cn(
-        tone === "danger" && "border-red-500/20 bg-red-950/20 text-red-200",
+        tone === "danger" && "border-deep-cinnabar/20 bg-arterial-red/20 text-mauve-bone",
         className
       )}
     >
@@ -67,7 +67,7 @@ export function ActionButton({
       className={cn(
         "inline-flex items-center justify-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-medium transition-colors",
         tone === "danger"
-          ? "bg-red-500/20 text-red-200 hover:bg-red-500/30 border border-red-500/30"
+          ? "bg-deep-cinnabar/20 text-mauve-bone hover:bg-deep-cinnabar/30 border border-deep-cinnabar/30"
           : "bg-white/10 text-white hover:bg-white/20 border border-white/10",
         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white",
         "disabled:opacity-40",

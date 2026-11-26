@@ -56,7 +56,7 @@ export function SearchSheet({ posts, returnFocus }: { posts: SearchPost[]; retur
             event.preventDefault();
             trigger.focus({ preventScroll: true });
           }}
-          className="fixed inset-x-0 bottom-0 flex h-[100dvh] w-full flex-col bg-off-bg text-faded-fg outline-none"
+          className="fixed inset-x-0 bottom-0 flex h-[100dvh] w-full flex-col bg-background text-foreground outline-none"
           style={{ zIndex: siteLayer.searchSheet }}
         >
           <Drawer.Title className="sr-only">{t("search")}</Drawer.Title>

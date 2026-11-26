@@ -17,8 +17,7 @@ import {
   RepeatWrapping,
   ShaderMaterial,
   SRGBColorSpace,
-  Vector2,
-  Vector3
+  Vector2
 } from "three";
 import { useShallow } from "zustand/shallow";
 import { TWEEN_EASE } from "@/constants/animations";
@@ -62,27 +61,29 @@ function GradientInner() {
   const noiseTexture = useTexture("/assets/seamless.png", (texture) => {
     texture.wrapS = texture.wrapT = RepeatWrapping;
   });
-  // The Hideaway's 15 two-stop schemes, one per menu link in order, now drawn from our CSS colour tokens
-  // (owner, 21 Nov: "bring in the colors from our CSS"). Each stop is the nearest existing token to The
-  // Hideaway's hex by OKLab distance, or the named brand colour where the nearest was a grey or a rouge tint
-  // for a clearly coloured stop. No new colour values; the source hex is noted for review.
-  const colorSchemes = useMemo<ReadonlyArray<readonly [string, string]>>(
+  // The Hideaway's 15 two-stop schemes, one per menu link in order. The owner asked for the palette's brighter
+  // colours here (26 Nov: "use the brighter colors within the palettwe"), so each stop is the nearest of Saffron Amber,
+  // Saffron Amber Lighter +1, Muted Olive, Signal Orange, Signal Orange Lighter, Gulf Cerulean and Gulf Cerulean
+  // Lighter by OKLab distance to The Hideaway's stop (the second stop takes the next nearest when both would match).
+  // The third is the base the noise starts from (The Hideaway's was black): the bright nearest the midpoint of the two
+  // stops, other than the stops themselves, so the open menu's dark links never sit on a dark patch (Cordy, 26 Nov).
+  const colorSchemes = useMemo<ReadonlyArray<readonly [string, string, string]>>(
     () => [
-      ["--rouge-500", "--bleu-400"], // d40000, 9ecbd9
-      ["--rouge-600", "--blue-gray"], // aa3422, 77a6a6
-      ["--bleu-400", "--creamy-white"], // 9ecbd9, e7d5ba
-      ["--melon", "--faded-white"], // f6b08a, fdf1e8
-      ["--faded-white", "--bleu-400"], // fdf1e8, 9ecbd9
-      ["--rouge-500", "--warm-yellow"], // d40000, ffb400
-      ["--rouge-500", "--piercing-green"], // d40000, 9eff00
-      ["--rouge-200", "--green-white"], // f57b66, c3ead2
-      ["--bleu-800", "--soft-peach"], // 4d8593, f38b2b
-      ["--piercing-green", "--bleu-300"], // aae935, ade9ff
-      ["--creamy-white", "--rouge-300"], // f5c78e, e74b58
-      ["--soft-peach", "--bleu-300"], // c67006, 9ce8e3
-      ["--rouge-200", "--green-white"], // f57b66, c3ead2
-      ["--rouge-500", "--melon"], // d40000, f6b08a
-      ["--rouge-500", "--muted-olive"] // d40000, 9aa989
+      ["--orange", "--gulf-cerulean-lighter", "--yellow"],
+      ["--orange", "--gulf-cerulean-lighter", "--yellow"],
+      ["--gulf-cerulean-lighter", "--yellow-lighter-1", "--olive"],
+      ["--yellow", "--yellow-lighter-1", "--olive"],
+      ["--yellow-lighter-1", "--gulf-cerulean-lighter", "--olive"],
+      ["--orange", "--yellow", "--orange-lighter"],
+      ["--orange", "--yellow-lighter-1", "--yellow"],
+      ["--yellow", "--yellow-lighter-1", "--olive"],
+      ["--gulf-cerulean", "--orange-lighter", "--orange"],
+      ["--yellow-lighter-1", "--gulf-cerulean-lighter", "--olive"],
+      ["--yellow-lighter-1", "--orange", "--yellow"],
+      ["--orange", "--yellow-lighter-1", "--yellow"],
+      ["--yellow", "--yellow-lighter-1", "--olive"],
+      ["--orange", "--yellow", "--orange-lighter"],
+      ["--orange", "--olive", "--yellow"]
     ],
     []
   );
@@ -90,25 +91,23 @@ function GradientInner() {
   // material, so a colour set later (an effect) never reaches the base tones, which nothing animates. This only
   // renders on the client, inside the canvas.
   const colours = useMemo(
-    () => [tokenColor(colorSchemes[0][0], new ThreeColor()), tokenColor(colorSchemes[0][1], new ThreeColor())],
+    () => colorSchemes[0].map((token) => tokenColor(token, new ThreeColor())),
     [colorSchemes]
   );
   const u_offset = useMemo(() => new Vector2(0.42, 0.6), []);
   const u_pixels = useMemo(() => new Vector2(1, 1), []);
   const u_resolution = useMemo(() => new Vector2(1, 1), []);
   const u_additionalOffset = useMemo(() => new Vector2(0), []);
-  // The first scheme, then the two base tones (The Hideaway's 353c45 and 0f0a0a).
+  // The first scheme's two stops and its base. The shaders never read the fourth entry; it repeats the base.
   const u_color = useMemo(
     () => [
       tokenColor(colorSchemes[0][0], new ThreeColor()),
       tokenColor(colorSchemes[0][1], new ThreeColor()),
-      tokenColor("--cold-d-gray", new ThreeColor()),
-      tokenColor("--edge-black", new ThreeColor())
+      tokenColor(colorSchemes[0][2], new ThreeColor()),
+      tokenColor(colorSchemes[0][2], new ThreeColor())
     ],
     [colorSchemes]
   );
-  const colore = useMemo(() => new ThreeColor().setRGB(122, 122, 122), []);
-  const vecc = useMemo(() => new Vector3(0, 0, 0.46), []);
   const uniforms = useMemo(
     () => ({
       u_color: u_color,
@@ -204,6 +203,7 @@ function GradientInner() {
       // Read on every change, so the stops follow the current theme's tokens.
       tokenColor(target[0], colours[0]);
       tokenColor(target[1], colours[1]);
+      tokenColor(target[2], colours[2]);
 
       gradientt.current &&
         animate([
@@ -228,6 +228,21 @@ function GradientInner() {
               r: colours[1].r,
               g: colours[1].g,
               b: colours[1].b
+            },
+            {
+              duration: 1.1,
+              delay: 0.3,
+              ease: TWEEN_EASE.power4.inOut,
+              at: 0,
+              type: "tween"
+            }
+          ],
+          [
+            gradientt.current.uniforms.u_color.value[2],
+            {
+              r: colours[2].r,
+              g: colours[2].g,
+              b: colours[2].b
             },
             {
               duration: 1.1,
@@ -262,12 +277,6 @@ function GradientInner() {
   });
   return (
     <>
-      <ambientLight args={[colore]} intensity={1} />
-      <directionalLight
-        color={colore.setRGB(164, 164, 164)}
-        intensity={1}
-        position={vecc}
-      />
       <mesh raycast={meshBounds} visible={navIsOpen}>
         <planeGeometry args={[10, 10, 192, 192]} />
         {/** @ts-ignore */}
@@ -296,7 +305,7 @@ function tokenColor(token: string, target: ThreeColor) {
   if (!probe || !value) return target;
   // A fresh pixel each time, so a translucent token can't blend over the last one.
   probe.clearRect(0, 0, 1, 1);
-  probe.fillStyle = "#000";
+  probe.fillStyle = "transparent";
   probe.fillStyle = value;
   probe.fillRect(0, 0, 1, 1);
   const [r, g, b] = probe.getImageData(0, 0, 1, 1).data;

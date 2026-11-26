@@ -11,7 +11,7 @@ export const Marquee = ({
   const [state, setState] = useState<"playing" | "paused">("playing");
   return (
 	  <div
-		  className="relative z-200 flex h-[40px] w-full items-center justify-start overflow-hidden bg-transparent-base/100 text-nav-button">
+		  className="relative z-200 flex h-[40px] w-full items-center justify-start overflow-hidden">
       <div
         className={cn(
           "absolute whitespace-nowrap will-change-transform",

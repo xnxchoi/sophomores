@@ -159,9 +159,9 @@ export const EditableText = (props: EditableTextProps) => {
               "font-sans text-[10px] tracking-widest tabular-nums",
               // Floor-compliant: ≥ /60 light, /55 dark for informative.
               remaining < 0
-                ? "text-rouge-500"
+                ? ""
                 : remaining < 10
-                  ? "text-rouge-500/85 dark:text-rouge-300/85"
+                  ? ""
                   : "text-foreground/60 dark:text-foreground/55"
             )}
           >

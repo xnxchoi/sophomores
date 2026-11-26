@@ -54,7 +54,7 @@ export function ProgressSegment({
     return Math.max(0, Math.min(1, value));
   });
   return (
-    <span className="h-1 flex-1 overflow-hidden bg-[#ffffff55] group-data-[story-tone=green]/card:bg-[#0005]">
+    <span className="h-1 flex-1 overflow-hidden bg-titanium/33">
       <motion.i
         className="block size-full origin-left bg-current"
         style={{ scaleX }}
@@ -89,10 +89,10 @@ function StoryCard({
       className={cn(
         "group/card relative flex h-[min(585px,calc(100svh-130px))] w-(--story-width) flex-[0_0_var(--story-width)] flex-col gap-6 overflow-hidden rounded-teaser-card p-6 short:gap-4 short:max-md:p-4.5 md:short:h-[calc(100svh-95px)] md:tall:h-[585px] teaser-wide:tall:h-[min(728px,calc(100svh-100px))]",
         story.tone === "dark"
-          ? "bg-teaser-card"
+          ? "bg-carbon"
           : story.tone === "green"
-            ? "bg-teaser-green text-black [&>:not([data-story-artwork])]:relative [&>:not([data-story-artwork])]:z-1"
-            : "bg-teaser-blue",
+            ? "bg-medici-cypress-tuned text-titanium [&>:not([data-story-artwork])]:relative [&>:not([data-story-artwork])]:z-1"
+            : "bg-ultramarine",
         story.tone === "portrait" ? "[&>:not([data-story-photo])]:relative" : ""
       )}
       data-story-card={index}
@@ -114,12 +114,14 @@ function StoryCard({
         />
       )}
       {story.tone === "green" && <StoryArtwork tone="green" reveal={opacity} />}
-      <div className="relative flex flex-col gap-4">
+      <div
+        className={cn(
+          "relative flex flex-col gap-4",
+          story.tone === "green" && "before:pointer-events-none before:absolute before:-inset-3 before:-z-1 before:bg-medici-cypress-tuned before:blur-md"
+        )}
+      >
         <span
-          className={cn(
-            "text-teaser-label self-start p-2 font-sans uppercase",
-            story.tone === "green" ? "bg-[#0000001a]" : "bg-[#ffffff1a]"
-          )}
+          className="text-teaser-label self-start bg-titanium/10 p-2 font-sans uppercase"
         >
           {storyLabel}
         </span>
@@ -139,11 +141,23 @@ function StoryCard({
           ))}
         </div>
       </div>
-      <h2 className="font-teaser-serif text-teaser-copy teaser-wide:tall:text-teaser-heading short:max-md:text-[26px] short:md:text-[28px]">
+      {/* On the green card the hatching runs full-bleed; a blurred patch of the card colour sits behind each block of
+          copy (above the artwork, below the text), so the lines fade out where they would cross it (Review-B, 26 Nov). */}
+      <h2
+        className={cn(
+          "font-teaser-serif text-teaser-copy teaser-wide:tall:text-teaser-heading short:max-md:text-[26px] short:md:text-[28px]",
+          story.tone === "green" && "before:pointer-events-none before:absolute before:-inset-3 before:-z-1 before:bg-medici-cypress-tuned before:blur-md"
+        )}
+      >
         {story.title}
       </h2>
       {story.tone === "dark" && <StoryArtwork tone="dark" reveal={opacity} />}
-      <p className="text-teaser-body mt-auto font-sans whitespace-pre-line uppercase short:max-md:text-base short:max-md:leading-[1.1]">
+      <p
+        className={cn(
+          "text-teaser-body mt-auto font-sans whitespace-pre-line uppercase short:max-md:text-base short:max-md:leading-[1.1]",
+          story.tone === "green" && "before:pointer-events-none before:absolute before:-inset-3 before:-z-1 before:bg-medici-cypress-tuned before:blur-md"
+        )}
+      >
         {story.body}
       </p>
     </motion.article>
@@ -152,7 +166,7 @@ function StoryCard({
 
 /** Chapter and playback controls share appearance, but never compete for width. */
 export const storyControlVariants = cva(
-  "h-7 bg-teaser-card text-teaser-control text-[12px] aria-pressed:bg-white aria-pressed:text-black md:h-9",
+  "h-7 bg-carbon text-singer-stone text-[12px] aria-pressed:bg-white aria-pressed:text-black md:h-9",
   {
     variants: {
       kind: {

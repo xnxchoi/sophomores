@@ -72,7 +72,7 @@ test("login controls ease visual feedback without animating layout dimensions", 
     assert.match(control, /duration-200 ease-out/);
     assert.doesNotMatch(control, /transition-all|transition-\[[^\]]*(?:height|width|padding|margin)/);
   }
-  assert.match(html, /shadow-\[inset_0_1px_2px_rgb\(0_0_0\/0\.18\)\]/);
+  assert.match(html, /shadow-\[inset_0_1px_2px_color-mix\(in_oklab,var\(--color-shadow\)_18%,transparent\)\]/);
 });
 
 test("logout requires a native POST confirmation and supports normal navigation", async () => {

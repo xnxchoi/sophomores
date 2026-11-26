@@ -98,8 +98,6 @@ const MiniMapItem = ({
       onMouseLeave={onMouseLeave}
       onClick={onClick}
       style={{
-        backgroundColor:
-          "color-mix(in oklch, var(--currentHighlight) 85%, var(--color-faded-white))",
         translateY
       }}
     ></m.div>
@@ -120,7 +118,6 @@ export const MiniMap = ({
       highlights.values().map(({ els }) => els as HTMLElement[])
     );
   }, [highlights]);
-  const currentColor = useHighlighter(useShallow((r) => r.currentColor));
   const mapBackdropRef = useRef<HTMLDivElement>(null!);
   const mapTrackRef = useRef<HTMLDivElement>(null!);
   const highMaps = useRef<HTMLDivElement[]>([]);
@@ -163,7 +160,6 @@ export const MiniMap = ({
           scaleValue={scaleValue}
           contentContainer={contentContainer}
           key={"highMap" + t}
-          color={currentColor}
         />
       ))}
     </m.div>

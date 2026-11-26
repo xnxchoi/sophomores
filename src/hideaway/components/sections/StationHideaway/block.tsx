@@ -83,7 +83,7 @@ export function StationHideawayHero({ className }: StationHideawayHeroProps) {
         {/* z-30: Static call-sign + room label */}
         {/* RP — top-left */}
         <div
-          className="text-fg/[0.07] pointer-events-none absolute top-6 left-[-0.02em] z-[30] font-sans text-[clamp(8rem,18vw,22rem)] leading-none font-black tracking-[-0.04em] uppercase select-none"
+          className="pointer-events-none absolute top-6 left-[-0.02em] z-[30] font-sans text-[clamp(8rem,18vw,22rem)] leading-none font-black tracking-[-0.04em] uppercase select-none"
           aria-hidden="true"
         >
           RP
@@ -91,7 +91,7 @@ export function StationHideawayHero({ className }: StationHideawayHeroProps) {
 
         {/* FM — bottom-right */}
         <div
-          className="text-fg/[0.07] pointer-events-none absolute right-[-0.02em] bottom-4 z-[30] text-right font-sans text-[clamp(8rem,18vw,22rem)] leading-none font-black tracking-[-0.04em] uppercase select-none"
+          className="pointer-events-none absolute right-[-0.02em] bottom-4 z-[30] text-right font-sans text-[clamp(8rem,18vw,22rem)] leading-none font-black tracking-[-0.04em] uppercase select-none"
           aria-hidden="true"
         >
           FM
@@ -102,7 +102,7 @@ export function StationHideawayHero({ className }: StationHideawayHeroProps) {
           className="pointer-events-none absolute top-6 right-6 z-[30] flex flex-col items-end gap-0.5 text-right select-none"
           aria-hidden="true"
         >
-          <span className="text-faded-fg/80 text-md font-sans tracking-[0.2em] uppercase">
+          <span className="text-md font-sans tracking-[0.2em] uppercase">
             · Hideaway FM
           </span>
         </div>

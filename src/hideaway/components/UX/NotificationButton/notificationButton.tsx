@@ -203,7 +203,7 @@ export const NotificationButton = (props: HTMLMotionProps<"button">) => {
       </MotionPopoverTrigger>
       <Popover.Portal>
         <Popover.Positioner sideOffset={20} positionMethod={"fixed"}>
-          <Popover.Popup className="relative max-h-[25rem] min-h-[15rem] min-w-[25rem] origin-[var(--transform-origin)] overflow-hidden rounded-lg bg-faded-background/30 px-4.5 py-6 text-faded-foreground/90 shadow-lg/25 shadow-lg shadow-muted-faded-background/30 outline-1 outline-muted-faded-foreground/20 backdrop-blur-xs transition-[transform,scale,opacity,background-color,color,box-shadow] duration-200 data-[ending-style]:scale-90 data-[ending-style]:opacity-0 data-[starting-style]:scale-90 data-[starting-style]:opacity-0 dark:bg-faded-background/60 dark:shadow-xl/40 dark:shadow-gray-900/30 dark:outline-muted-faded-foreground/40">
+          <Popover.Popup className="relative max-h-[25rem] min-h-[15rem] min-w-[25rem] origin-[var(--transform-origin)] overflow-hidden rounded-lg px-4.5 py-6 shadow-lg/25 shadow-lg outline-1 backdrop-blur-xs transition-[transform,scale,opacity,background-color,color,box-shadow] duration-200 data-[ending-style]:scale-90 data-[ending-style]:opacity-0 data-[starting-style]:scale-90 data-[starting-style]:opacity-0 dark:shadow-xl/40">
             <div
               className={"absolute inset-0 opacity-30 mix-blend-multiply"}
               style={{
@@ -454,7 +454,7 @@ const NotificationItem = (
     <m.div
       key={props.title}
       ref={ref}
-      className="relative h-full overflow-hidden rounded-[8px] bg-transparent text-base outline-1 outline-muted-faded-foreground/0 transition-colors duration-150 ease-out-power2 hover:outline-muted-faded-foreground/30 max-lg:w-[90vw] max-lg:min-w-[20rem] min-lg:min-h-[6rem] min-lg:w-[15vw]"
+      className="relative h-full overflow-hidden rounded-[8px] bg-transparent text-base outline-1 transition-colors duration-150 ease-out-power2 max-lg:w-[90vw] max-lg:min-w-[20rem] min-lg:min-h-[6rem] min-lg:w-[15vw]"
       data-themed="background-color,border-color"
       initial={{
         translateX: "50%"
@@ -476,7 +476,7 @@ const NotificationItem = (
       {...(hovered ? { "data-hovered": true } : {})}
     >
       <div className="relative flex h-full w-full">
-        <div className="bg-transparent-base/15 absolute inset-0 z-[5] rounded-[8px] backdrop-blur-[0.5px]" />
+        <div className="absolute inset-0 z-[5] rounded-[8px] backdrop-blur-[0.5px]" />
         <article
           className="relative z-20 flex h-full w-full items-center justify-center gap-5 p-4 text-base"
           data-type="type"
@@ -508,13 +508,11 @@ const NotificationItem = (
                 data-themed="stroke"
                 d="M2.625 2.625L9.375 9.375"
                 stroke="currentColor"
-                style={{}}
               />
               <path
                 data-themed="stroke"
                 d="M2.625 9.375L9.375 2.625"
                 stroke="currentColor"
-                style={{}}
               />
             </svg>
           </MotionBtn>
@@ -528,7 +526,6 @@ const NotificationItem = (
             <h1
               className="mb-[6px] font-sans text-sm leading-[114%] font-semibold tracking-[-0.01em] min-lg:mb-[12px] min-lg:leading-[120%]"
               data-themed="color"
-              style={{}}
             >
               {(actionLink && actionLink.url && (
                 <ReferencedLink
@@ -633,7 +630,7 @@ function UserNotification({
                       link={actionLink}
                       onClick={onRead}
                       className={
-                        "absolute inset-0 z-[0] bg-faded-foreground/10 opacity-0 transition-opacity duration-200 ease-out-power2 hover:opacity-100"
+                        "absolute inset-0 z-[0] opacity-0 transition-opacity duration-200 ease-out-power2 hover:opacity-100"
                       }
                     />
                   )}

@@ -63,7 +63,7 @@ export const FeaturedHero = async ({
         {category && (
           <RP_BadgeTag
             content={category}
-            className="border-foreground text-faded-foreground"
+            className="border-foreground"
           />
         )}
 

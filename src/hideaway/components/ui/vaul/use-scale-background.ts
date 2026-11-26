@@ -32,7 +32,7 @@ export function useScaleBackground() {
 
 			chain(
 				setBackgroundColorOnScale && !noBodyStyles ? assignStyle(document.body,
-					{background: 'black'}) : noop,
+					{}) : noop,
 				assignStyle(wrapper, {
 					transformOrigin: isVertical(direction) ? 'top' : 'left',
 					transitionProperty: 'transform, border-radius',

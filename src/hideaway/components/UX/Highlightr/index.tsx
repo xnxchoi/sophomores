@@ -104,12 +104,12 @@ const Article = ({
   return (
     <div
       className={
-        "rp_story z-120 mb-[15vh] w-screen bg-faded-white pb-[20px] leading-[1.28] dark:bg-faded-black"
+        "rp_story z-120 mb-[15vh] w-screen pb-[20px] leading-[1.28]"
       }
       data-themed="background-color,color"
     >
       <div
-        className="pointer-events-none absolute top-0 right-[24px] left-[24px] z-0 h-full w-[calc(100%-48px)] border-0 border-x border-solid border-x-muted-faded-foreground/20 bg-faded-white lg:right-[27px] lg:left-[27px] lg:w-[calc(100%-54px)] dark:bg-faded-black"
+        className="pointer-events-none absolute top-0 right-[24px] left-[24px] z-0 h-full w-[calc(100%-48px)] border-0 border-x border-solid lg:right-[27px] lg:left-[27px] lg:w-[calc(100%-54px)]"
         style={{
           borderImage: "initial"
         }}
@@ -117,11 +117,8 @@ const Article = ({
       <ReadInternal post={{ id, slug, author, ...rest }} />
       <div
         className="relative top-0 z-100 mt-0 -mb-[15vh] flex h-[16vh] w-screen items-center justify-center"
-        style={{
-          backgroundImage: `linear-gradient(to bottom, oklch(from var(--faded-bg) l c h/1) 22%, oklch(from var(--faded-bg) l c h/0.75) 40%, oklch(from var(--faded-bg) l c h/0.5) 50%, oklch(from var(--faded-bg) l c h/0.15) 65%, oklch(from var(--faded-bg) l c h/0.05) 72%, oklch(from var(--faded-bg) l c h/0.001) 96%)`
-        }}
       >
-        <div className="absolute top-0 left-0 z-50 h-px w-screen bg-linear-to-r from-muted-faded-foreground/15 from-10% via-muted-faded-foreground/75 via-50% to-muted-faded-foreground/15 to-90%" />
+        <div className="absolute top-0 left-0 z-50 h-px w-screen bg-linear-to-r from-10% via-50% to-90%" />
       </div>
     </div>
   );
@@ -670,7 +667,6 @@ const ReadInternal = ({ post }: { post: SingleArticle }) => {
         [
           targets,
           {
-            backgroundImage: `linear-gradient(to left, oklch(${from}/.01) 0%, okclh(${from}/.1) 40%, oklch(${to}/.01) 50%, oklch(${to}/.85) 100%)`
           },
           {
             type: "tween",
@@ -1017,7 +1013,7 @@ const ReadInternal = ({ post }: { post: SingleArticle }) => {
                           <li key={slug}>
                             <Link
                               className={cn(
-                                `flex appearance-none items-center justify-center overflow-hidden border border-solid border-off-foreground px-[1.4rem] text-sm leading-[2] font-light tracking-[-0.01em] backdrop-blur-[2.4rem] transition-[border-color,background-color,padding] duration-200 outline-none [text-decoration:none] md:px-[1.2rem]`,
+                                `flex appearance-none items-center justify-center overflow-hidden border border-solid px-[1.4rem] text-sm leading-[2] font-light tracking-[-0.01em] backdrop-blur-[2.4rem] transition-[border-color,background-color,padding] duration-200 outline-none [text-decoration:none] md:px-[1.2rem]`,
                                 "rounded-[18px] px-4 py-1 text-[16px] font-medium"
                               )}
                               href={`/tagged/${slug}`}
@@ -1041,7 +1037,6 @@ const ReadInternal = ({ post }: { post: SingleArticle }) => {
             handleChangeHighlightColor={changeCurrentHighlightColor}
             floatingStyles={floatingStyles}
             postDisabled={!enableHighlight}
-            style={{}}
             status={status}
             {...getFloatingProps()}
             mounted={isMounted}
@@ -1118,7 +1113,7 @@ const PrivateIndicator = (
       <div className={"relative"}>
         <Button
           onClick={onClick}
-          className="z-[30] flex aspect-[4/3] h-[var(--text-base)] w-auto items-center justify-center rounded-[5px_5px_5px_0] border-[1px] border-muted bg-background px-[3px] py-[2px] text-center text-[calc(var(--text-base)*0.55)] whitespace-nowrap dark:border-muted-faded-foreground dark:bg-faded-background"
+          className="z-[30] flex aspect-[4/3] h-[var(--text-base)] w-auto items-center justify-center rounded-[5px_5px_5px_0] border-[1px] border-muted bg-background px-[3px] py-[2px] text-center text-[calc(var(--text-base)*0.55)] whitespace-nowrap"
         ></Button>
       </div>
     </div>
@@ -1162,7 +1157,7 @@ export const HighlightMenuButton = ({
   return (
     <Button
       className={cn(
-        "z-[10] flex items-center border-0 border-r-[1px] border-dashed !border-faded-foreground/90 bg-transparent px-[16px] py-0 text-base leading-0 font-light tracking-[0.05rem] text-faded-foreground/90 antialiased transition-colors ease-in-out-2 last-of-type:border-r-0 hover:!text-piercing-orange hover:[&_path]:!fill-piercing-orange [&_svg]:inline-block nth-of-type-[2]:[&_svg]:-left-[0.25px] nth-last-of-type-[2]:[&_svg]:left-[0.5px]",
+        "z-[10] flex items-center border-0 border-r-[1px] border-dashed bg-transparent px-[16px] py-0 text-base leading-0 font-light tracking-[0.05rem] antialiased transition-colors ease-in-out-2 last-of-type:border-r-0 [&_svg]:inline-block nth-of-type-[2]:[&_svg]:-left-[0.25px] nth-last-of-type-[2]:[&_svg]:left-[0.5px]",
         className
       )}
       {...props}
@@ -1190,7 +1185,7 @@ export const MenuButtonCaption = ({
         className,
         icon
           ? "lowercase"
-          : "border-r-px border-dashed border-faded-background/80"
+          : "border-r-px border-dashed"
       )}
       {...props}
     >

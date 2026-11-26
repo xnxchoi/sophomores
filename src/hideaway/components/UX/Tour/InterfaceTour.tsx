@@ -259,7 +259,7 @@ function SpotlightOverlay({
       >
         <defs>
           <mask id="tour-mask">
-            <rect width="100%" height="100%" fill="white" />
+            <rect width="100%" height="100%" />
             {sp && (
               <m.rect
                 key={`${sp.x}-${sp.y}`}
@@ -268,7 +268,6 @@ function SpotlightOverlay({
                 width={sp.w}
                 height={sp.h}
                 rx={10}
-                fill="black"
                 initial={prefersReduced ? {} : { opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ type: "spring", ...SPRING_EASE.power3.out }}
@@ -279,7 +278,6 @@ function SpotlightOverlay({
         <rect
           width="100%"
           height="100%"
-          fill="oklch(0 0 0 / 0.6)"
           mask="url(#tour-mask)"
           className="pointer-events-auto"
           onClick={onClick}

@@ -8,9 +8,9 @@ export function PostArchive({ posts }: { posts: PostCard[] }) {
       <div className="mx-auto px-5 sm:px-6 xl:px-10">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {posts.map((post) => (
-            <article key={post.id} className="port-rule border-[oklch(from_var(--port-shade)_l_c_h_/_0.16)] overflow-hidden rounded-lg border bg-off-bg">
+            <article key={post.id} className="port-rule border-[oklch(from_var(--port-shade)_l_c_h_/_0.16)] overflow-hidden rounded-lg border bg-background">
               <Link href={post.href} className="block rounded-lg focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-current">
-                <div className="port-wash bg-[var(--faded-bg)] bg-[radial-gradient(circle_at_30%_20%,oklch(from_var(--port-shade)_32%_c_h_/_0.85),transparent_55%),linear-gradient(165deg,oklch(from_var(--port-shade)_l_c_h_/_0.22)_0%,oklch(from_var(--port-shade)_l_c_h_/_0.08)_42%,oklch(from_var(--port-shade)_l_c_h_/_0)_100%)] aspect-video" />
+                <div className="port-wash bg-[var(--background)] bg-[radial-gradient(circle_at_30%_20%,oklch(from_var(--port-shade)_32%_c_h_/_0.85),transparent_55%),linear-gradient(165deg,oklch(from_var(--port-shade)_l_c_h_/_0.22)_0%,oklch(from_var(--port-shade)_l_c_h_/_0.08)_42%,oklch(from_var(--port-shade)_l_c_h_/_0)_100%)] aspect-video" />
                 <div className="flex flex-col gap-2 p-3.5 xl:p-4">
                   <h3 className="text-base leading-snug tracking-tight xl:text-lg">{post.title}</h3>
                   {post.dek ? <p className="port-copy text-[oklch(from_var(--port-shade)_l_c_h_/_0.72)] text-base leading-relaxed">{post.dek}</p> : null}

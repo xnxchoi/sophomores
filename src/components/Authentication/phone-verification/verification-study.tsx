@@ -21,7 +21,7 @@ export function VerificationStudy({
   const trigger = useRef<HTMLButtonElement>(null);
 
   return (
-    <div className="min-h-svh bg-[#090909] p-6 text-white" lang={locale}>
+    <div className="min-h-svh bg-carbon-deep p-6 text-white" lang={locale}>
       <header className="h-11">
         <BrandMark data-brand-mark="" className="text-[25px] tracking-[-1.5px]">
           sophomores

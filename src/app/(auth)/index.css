@@ -1,17 +1,21 @@
 @import "tailwindcss" source(none);
+/* The owner's palette, the only colour source here too (owner, 26 Nov). */
+@import "../../styles/sophomores-palette.css";
+@import "../../styles/shadow-theme.css";
 
 /* Paths are relative to this entry, not TypeScript aliases. */
 @source "./**/*.tsx";
 
 @theme {
   --font-sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --color-preview-surface: #151515;
-  --color-preview-foreground: #f5f5f5;
-  --color-preview-input: #242424;
-  --color-preview-border: #757575;
-  --color-preview-secondary: #bdbdbd;
-  --color-preview-muted: #969696;
-  --color-preview-accent: #ededed;
-  --color-preview-on-accent: #181818;
-  --color-preview-error: #ffd1c6;
+  --color-preview-surface: var(--black);
+  --color-preview-foreground: var(--white);
+  --color-preview-input: var(--dark-grey);
+  --color-preview-border: var(--light-grey);
+  --color-preview-secondary: var(--stone);
+  --color-preview-muted: var(--stone);
+  --color-preview-accent: var(--white);
+  --color-preview-on-accent: var(--black);
+  /* Staff error: Deep Cinnabar Tuned (owner, 26 Nov: "deep cinnabar tuned"). */
+  --color-preview-error: var(--red);
 }

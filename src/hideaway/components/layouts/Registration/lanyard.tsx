@@ -24,13 +24,11 @@ export function Lanyard(props: { type: MemberCardsType }) {
       <Registerer type={type} />
       <Loader
         barStyles={{
-          backgroundColor: "oklch(54.74% 0.2224 29.01/.5)",
           borderRadius: "1px"
         }}
         containerStyles={{
           transition: "all 0.5s ease",
           zIndex: 247,
-          backgroundColor: "rgba(0,0,0,.1)",
           backdropFilter: "blur(4px)",
           borderRadius: "10px",
           padding: "10px",

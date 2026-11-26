@@ -6,6 +6,7 @@ import { resolveFooterConfig } from "@/components/gl/flame-backdrop/FlameFooterB
 import { FOOTER_SUBSTANCE_GLSL } from "@/components/gl/flame-backdrop/footer-material";
 import { createFragmentShader } from "@/components/gl/flame-backdrop/shaders";
 import { assertShaderFixture } from "../../flame-backdrop/support/shader-fixture";
+import { historicalFlameConfig, historicalFooterConfig } from "../../flame-backdrop/support/historical-colours";
 
 const smoothstep = (a: number, b: number, value: number) => {
   const t = Math.max(0, Math.min(1, (value - a) / (b - a)));
@@ -58,17 +59,17 @@ test("hybrid reuses original reaction, noise and complete substance material ins
 
 test("legacy variants retain Float32-equivalent source and hybrid is restricted to an emitting footer", () => {
   assertShaderFixture(
-    createFragmentShader(resolveFlameConfig()),
+    createFragmentShader(historicalFlameConfig()),
     "ring",
     "2bba88c4e00f1aa9cf367df36bb9205a58f39b954977534fdd42f316d848e2f5"
   );
   assertShaderFixture(
-    createFragmentShader(resolveFooterConfig()),
+    createFragmentShader(historicalFooterConfig()),
     "footer-light",
     "1f63467aeaa1837b02e0629bdbeed2f1a779a9a0b4a4c701cd6e29d24eb835ac"
   );
   assertShaderFixture(
-    createFragmentShader(resolveFooterConfig(), "substance"),
+    createFragmentShader(historicalFooterConfig(), "substance"),
     "footer-substance",
     "9b510e5a216e61fb43134e63d889eb1383d2cb888b4aa2bf0cc30e6b7c6cd981"
   );

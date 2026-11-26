@@ -184,28 +184,24 @@ export function TicketMesh({
       <Environment resolution={512} background={false}>
         <Lightformer
           intensity={2.6}
-          color="#ffffff"
           position={[0, 5, -6]}
           rotation={[Math.PI / 2, 0, 0]}
           scale={[10, 10, 1]}
         />
         <Lightformer
           intensity={1.8}
-          color="#b8a8ff"
           position={[-5, 1, 1]}
           rotation={[0, Math.PI / 2, 0]}
           scale={[12, 1, 1]}
         />
         <Lightformer
           intensity={1.8}
-          color="#a0e0ff"
           position={[5, -1, 1]}
           rotation={[0, -Math.PI / 2, 0]}
           scale={[12, 1, 1]}
         />
         <Lightformer
           intensity={1.0}
-          color="#ffe0d8"
           position={[0, -5, 2]}
           rotation={[-Math.PI / 2, 0, 0]}
           scale={[8, 8, 1]}
@@ -224,7 +220,6 @@ export function TicketMesh({
         <mesh geometry={bodyGeom}>
           <meshPhysicalMaterial
             roughnessMap={roughnessMap}
-            color="#f4ece0"
             roughness={0.55}
             metalness={0.05}
             clearcoat={0.55}
@@ -244,7 +239,6 @@ export function TicketMesh({
           <meshPhysicalMaterial
             map={frontTexture}
             roughnessMap={roughnessMap}
-            color="#ffffff"
             roughness={0.55}
             metalness={0.05}
             clearcoat={0.55}
@@ -270,7 +264,6 @@ export function TicketMesh({
           <meshPhysicalMaterial
             map={backTexture}
             roughnessMap={roughnessMap}
-            color="#ffffff"
             roughness={0.55}
             metalness={0.05}
             clearcoat={0.55}

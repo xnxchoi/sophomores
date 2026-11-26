@@ -74,10 +74,7 @@ export const SideDrawerPullTab = () => {
             aria-hidden="true"
             className={cn(
               "block h-[6px] w-[44px] rounded-full",
-              "bg-foreground/70",
-              // Faint outer halo so the pill reads against busy backdrops
-              // without committing to a real shadow.
-              "shadow-[0_0_0_1px_rgb(0_0_0/0.04),0_2px_8px_-4px_rgb(0_0_0/0.2)]"
+              "bg-foreground/70"
             )}
           />
         </m.button>

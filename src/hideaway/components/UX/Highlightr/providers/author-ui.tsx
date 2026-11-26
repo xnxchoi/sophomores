@@ -110,7 +110,7 @@ export const SignInCard = (
 
   return (
     <div className={cn("flex flex-col gap-9")}>
-      <Card className="bg-faded-background/50">
+      <Card>
         <CardContent className={cn("grid gap-9")}>
           <div className="grid gap-4">
             <div
@@ -133,7 +133,7 @@ export const SignInCard = (
             <UIBtn
               variant="outline"
               onClick={onClick}
-              className="*:ease text-md ease border-faded-foreground/&.65)] inline-flex h-14 min-h-[35px] w-full items-center justify-center gap-[8px] rounded-md border bg-off-background/30 px-4 py-3 font-medium whitespace-nowrap text-foreground shadow-sm transition-colors duration-300 *:transition-colors *:duration-300 hover:bg-faded-background/65 hover:*:text-off-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-6 [&_svg]:shrink-0"
+              className="*:ease text-md ease inline-flex h-14 min-h-[35px] w-full items-center justify-center gap-[8px] rounded-md border px-4 py-3 font-medium whitespace-nowrap text-foreground shadow-sm transition-colors duration-300 *:transition-colors *:duration-300 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-6 [&_svg]:shrink-0"
               disabled={isSubmitting}
             >
               <span className="">{t("providers")}</span>

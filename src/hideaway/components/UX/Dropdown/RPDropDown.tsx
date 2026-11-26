@@ -101,7 +101,7 @@ export function UserDropdown(props: HTMLMotionProps<"button">) {
               aria-label={`@${name}`}
             >
               <UserAvatar
-                classNames={{ skeleton: "bg-muted-faded-background/10" }}
+                classNames={{ skeleton: "" }}
                 user={{ name, id }}
               />
             </MotionPillButton>
@@ -110,7 +110,7 @@ export function UserDropdown(props: HTMLMotionProps<"button">) {
         <Menu.Portal>
           <Menu.Positioner className={"outline-none"} sideOffset={10}>
             <Menu.Popup
-              className="origin-(--transform-origin) rounded-md bg-faded-background/40 px-[12px] py-[16px] text-faded-foreground shadow-sm/25 outline-1 outline-muted-faded-foreground/20 backdrop-blur-sm transition-[transform,scale,opacity] data-ending-style:scale-90 data-ending-style:opacity-0 data-starting-style:scale-90 data-starting-style:opacity-0 dark:bg-faded-background/80 dark:shadow-md/40 dark:shadow-gray-900/30 dark:-outline-offset-1 dark:outline-muted-faded-foreground/40"
+              className="origin-(--transform-origin) rounded-md px-[12px] py-[16px] shadow-sm/25 outline-1 backdrop-blur-sm transition-[transform,scale,opacity] data-ending-style:scale-90 data-ending-style:opacity-0 data-starting-style:scale-90 data-starting-style:opacity-0 dark:shadow-md/40 dark:-outline-offset-1"
               data-themed="color,border-color,background-color,outline-color,box-shadow"
             >
               <div className="flex flex-col">
@@ -118,7 +118,7 @@ export function UserDropdown(props: HTMLMotionProps<"button">) {
                   render={
                     <Link
                       className={
-                        "flex h-full w-full py-[8px] pr-[32px] pl-[16px] text-sm leading-[16px] text-faded-foreground/90! transition-colors duration-200 ease-out-power2 outline-none select-none before:transition-colors before:duration-200 before:ease-out-power2 hover:text-faded-background data-highlighted:relative data-highlighted:z-0 data-highlighted:text-faded-background! data-highlighted:before:absolute data-highlighted:before:inset-x-[4px] data-highlighted:before:inset-y-0 data-highlighted:before:z-[-1] data-highlighted:before:rounded-sm data-highlighted:before:bg-muted-faded-foreground/30"
+                        "flex h-full w-full py-[8px] pr-[32px] pl-[16px] text-sm leading-[16px] transition-colors duration-200 ease-out-power2 outline-none select-none before:transition-colors before:duration-200 before:ease-out-power2 data-highlighted:relative data-highlighted:z-0 data-highlighted:before:absolute data-highlighted:before:inset-x-[4px] data-highlighted:before:inset-y-0 data-highlighted:before:z-[-1] data-highlighted:before:rounded-sm"
                       }
                       data-themed="color, border-color, background-color, outline-color,box-shadow"
                       href={`/@${slug}`}
@@ -132,7 +132,7 @@ export function UserDropdown(props: HTMLMotionProps<"button">) {
                   render={
                     <Link
                       className={
-                        "flex h-full w-full py-[8px] pr-[32px] pl-[16px] text-sm leading-[16px] text-faded-foreground/90! transition-colors duration-200 ease-out-power2 outline-none select-none before:transition-colors before:duration-200 before:ease-out-power2 hover:text-faded-background data-highlighted:relative data-highlighted:z-0 data-highlighted:text-faded-background! data-highlighted:before:absolute data-highlighted:before:inset-x-[4px] data-highlighted:before:inset-y-0 data-highlighted:before:z-[-1] data-highlighted:before:rounded-sm data-highlighted:before:bg-muted-faded-foreground/30"
+                        "flex h-full w-full py-[8px] pr-[32px] pl-[16px] text-sm leading-[16px] transition-colors duration-200 ease-out-power2 outline-none select-none before:transition-colors before:duration-200 before:ease-out-power2 data-highlighted:relative data-highlighted:z-0 data-highlighted:before:absolute data-highlighted:before:inset-x-[4px] data-highlighted:before:inset-y-0 data-highlighted:before:z-[-1] data-highlighted:before:rounded-sm"
                       }
                       href={`/me/settings`}
                       title={"Settings"}
@@ -145,7 +145,7 @@ export function UserDropdown(props: HTMLMotionProps<"button">) {
                   render={
                     <Link
                       className={
-                        "flex h-full w-full py-[8px] pr-[32px] pl-[16px] text-sm leading-[16px] text-faded-foreground/90! transition-colors duration-200 ease-out-power2 outline-none select-none before:transition-colors before:duration-200 before:ease-out-power2 hover:text-faded-background data-highlighted:relative data-highlighted:z-0 data-highlighted:text-faded-background! data-highlighted:before:absolute data-highlighted:before:inset-x-[4px] data-highlighted:before:inset-y-0 data-highlighted:before:z-[-1] data-highlighted:before:rounded-sm data-highlighted:before:bg-muted-faded-foreground/30"
+                        "flex h-full w-full py-[8px] pr-[32px] pl-[16px] text-sm leading-[16px] transition-colors duration-200 ease-out-power2 outline-none select-none before:transition-colors before:duration-200 before:ease-out-power2 data-highlighted:relative data-highlighted:z-0 data-highlighted:before:absolute data-highlighted:before:inset-x-[4px] data-highlighted:before:inset-y-0 data-highlighted:before:z-[-1] data-highlighted:before:rounded-sm"
                       }
                       href={"/tickets/my"}
                       title="Tickets"
@@ -158,7 +158,7 @@ export function UserDropdown(props: HTMLMotionProps<"button">) {
                   render={
                     <Link
                       className={
-                        "flex h-full w-full py-[8px] pr-[32px] pl-[16px] text-sm leading-[16px] text-faded-foreground/90! transition-colors duration-200 ease-out-power2 outline-none select-none before:transition-colors before:duration-200 before:ease-out-power2 hover:text-faded-background data-highlighted:relative data-highlighted:z-0 data-highlighted:text-faded-background! data-highlighted:before:absolute data-highlighted:before:inset-x-[4px] data-highlighted:before:inset-y-0 data-highlighted:before:z-[-1] data-highlighted:before:rounded-sm data-highlighted:before:bg-muted-faded-foreground/30"
+                        "flex h-full w-full py-[8px] pr-[32px] pl-[16px] text-sm leading-[16px] transition-colors duration-200 ease-out-power2 outline-none select-none before:transition-colors before:duration-200 before:ease-out-power2 data-highlighted:relative data-highlighted:z-0 data-highlighted:before:absolute data-highlighted:before:inset-x-[4px] data-highlighted:before:inset-y-0 data-highlighted:before:z-[-1] data-highlighted:before:rounded-sm"
                       }
                       href={"/me/posts"}
                       title="Your Posts"
@@ -170,8 +170,6 @@ export function UserDropdown(props: HTMLMotionProps<"button">) {
                 <Menu.Separator
                   className="mx-4 my-1.5"
                   style={{
-                    backgroundImage:
-                      "linear-gradient(to right, oklch(from var(--faded-fg) l c h/ 0.1) 0%, oklch(from var(--faded-fg) l c h/ .25) 50%, oklch(from var(--faded-fg) l c h/ 0.1) 100%)",
                     height: "1px"
                   }}
                 />
@@ -180,7 +178,7 @@ export function UserDropdown(props: HTMLMotionProps<"button">) {
                   render={
                     <Button
                       className={
-                        "flex h-full w-full py-[8px] pr-[32px] pl-[16px] text-sm leading-[16px] text-rouge-700/90! transition-colors duration-200 ease-out-power2 outline-none select-none before:transition-colors before:duration-200 before:ease-out-power2 hover:text-faded-background data-highlighted:relative data-highlighted:z-0 data-highlighted:text-rouge-500! data-highlighted:before:absolute data-highlighted:before:inset-x-[4px] data-highlighted:before:inset-y-0 data-highlighted:before:z-[-1] data-highlighted:before:rounded-sm data-highlighted:before:bg-rouge-500/15 dark:data-highlighted:text-rouge-200! dark:data-highlighted:before:bg-rouge-400/20"
+                        "flex h-full w-full py-[8px] pr-[32px] pl-[16px] text-sm leading-[16px] transition-colors duration-200 ease-out-power2 outline-none select-none before:transition-colors before:duration-200 before:ease-out-power2 data-highlighted:relative data-highlighted:z-0 data-highlighted:before:absolute data-highlighted:before:inset-x-[4px] data-highlighted:before:inset-y-0 data-highlighted:before:z-[-1] data-highlighted:before:rounded-sm"
                       }
                       onClick={async (e) => {
                         e.preventDefault();

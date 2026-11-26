@@ -89,7 +89,7 @@ export const SearchSheet = () => {
           aria-describedby={undefined}
           className={cn(
             "fixed inset-x-0 bottom-0 z-[261] flex h-[100dvh] w-full",
-            "flex-col bg-nav-background outline-none",
+            "flex-col outline-none",
             // Vaul transitions handle the slide-up
             "data-[vaul-drawer-direction=bottom]:!translate-y-0"
           )}

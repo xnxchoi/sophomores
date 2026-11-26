@@ -13,6 +13,7 @@ import {
   type SequenceDraft
 } from "../_shared/sequence-editor";
 import NumericField from "./numeric-field";
+import { PALETTE } from "@/utils/palette";
 
 type Props = {
   draft: SequenceDraft;
@@ -134,12 +135,12 @@ export default function ClipInspector({ draft, selected, onChange }: Props) {
             size={105}
             outerAreaSize={12}
             enablePreview={false}
-            innerAreaColor="#171717"
-            outerAreaColor="#101010"
-            rowColor="#252525"
-            curveLineColor="#ffffff"
-            startHandleColor="#cccccc"
-            endHandleColor="#888888"
+            innerAreaColor={PALETTE.carbon.hex}
+            outerAreaColor={PALETTE.carbon.hex}
+            rowColor={PALETTE.gunmetal.hex}
+            curveLineColor={PALETTE.titanium.hex}
+            startHandleColor={PALETTE.singerStone.hex}
+            endHandleColor={PALETTE.pewter.hex}
           />
         </div>
         <fieldset className="grid min-w-24 flex-1 grid-cols-2 gap-2">

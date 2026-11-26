@@ -30,14 +30,14 @@ export const ArticleArchiveItem = (props: OverviewAgnosticItem) => {
   return (
     <div
       className={
-        "relative mb-[40px] grid grid-cols-[1fr_1fr] grid-rows-4 gap-x-[20px] border-b-[1px] pb-[40px] text-foreground after:absolute after:bottom-0 after:col-[6/-1] after:h-px after:w-full after:bg-nav-foreground after:content-[''] lg:mb-25 lg:grid-cols-[repeat(12,1fr)] lg:grid-rows-[repeat(4,auto)_1fr_auto] lg:items-start lg:border-b-0 lg:pb-0"
+        "relative mb-[40px] grid grid-cols-[1fr_1fr] grid-rows-4 gap-x-[20px] border-b-[1px] pb-[40px] text-foreground after:absolute after:bottom-0 after:col-[6/-1] after:h-px after:w-full after:content-[''] lg:mb-25 lg:grid-cols-[repeat(12,1fr)] lg:grid-rows-[repeat(4,auto)_1fr_auto] lg:items-start lg:border-b-0 lg:pb-0"
       }
     >
       <Link className={"absolute inset-0 z-3 h-full w-full"} href={url} />
       <div
         //pt-[75.2747%] md:pt-[75.1131%]
         className={cn(
-          'relative col-[1] row-[1/6] aspect-[3/2] min-h-px min-w-px overflow-hidden rounded-[10px] bg-muted-background after:absolute after:top-[50%] after:left-[50%] after:block after:h-[3.2rem] after:w-[3.2rem] after:origin-[0_0] after:transform-[translate(-50%,-50%)] after:animate-spinner after:bg-foreground after:opacity-0 after:content-[""] after:clip-sun data-[loading=true]:after:opacity-20 lg:col-[3/6] lg:row-[1/7]'
+          'relative col-[1] row-[1/6] aspect-[3/2] min-h-px min-w-px overflow-hidden rounded-[10px] after:absolute after:top-[50%] after:left-[50%] after:block after:h-[3.2rem] after:w-[3.2rem] after:origin-[0_0] after:transform-[translate(-50%,-50%)] after:animate-spinner after:bg-foreground after:opacity-0 after:content-[""] after:clip-sun data-[loading=true]:after:opacity-20 lg:col-[3/6] lg:row-[1/7]'
         )}
         data-loading={isLoading}
       >

@@ -222,7 +222,7 @@ const HeroFeature = ({ post }: { post: PostOverview }) => {
       <RP_Image
         image={post.image}
         className={
-          'z-0 col-[1/-1] row-[1/8] min-h-px self-start overflow-hidden rounded-2xl pt-[177%] after:absolute after:inset-0 after:bg-gradient-to-b after:from-muted-background/10 after:to-muted-background after:to-[80.6%] after:mix-blend-multiply after:content-[""] lg:h-full lg:pt-0'
+          'z-0 col-[1/-1] row-[1/8] min-h-px self-start overflow-hidden rounded-2xl pt-[177%] after:absolute after:inset-0 after:bg-gradient-to-b after:to-[80.6%] after:mix-blend-multiply after:content-[""] lg:h-full lg:pt-0'
         }
       />
       <div

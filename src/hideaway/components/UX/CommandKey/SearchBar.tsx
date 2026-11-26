@@ -265,7 +265,7 @@ export const SearchBar = ({
           <Tooltip.Positioner side="bottom" align="center" sideOffset={25}>
             <Tooltip.Popup
               className={
-                "relative z-300 hidden max-w-[calc(100vw-24px)] origin-(--transform-origin) flex-col items-center overflow-hidden rounded-[6px] bg-muted-faded-background/50 px-3 py-2 text-sm leading-[1.4] whitespace-nowrap text-faded-foreground outline outline-1 outline-muted-faded-foreground/50 transition-[transform,scale,opacity] data-ending-style:scale-90 data-ending-style:opacity-0 data-instant:transition-none data-starting-style:scale-90 data-starting-style:opacity-0 md:flex dark:-outline-offset-1 dark:outline-muted-faded-foreground/90"
+                "relative z-300 hidden max-w-[calc(100vw-24px)] origin-(--transform-origin) flex-col items-center overflow-hidden rounded-[6px] px-3 py-2 text-sm leading-[1.4] whitespace-nowrap outline outline-1 transition-[transform,scale,opacity] data-ending-style:scale-90 data-ending-style:opacity-0 data-instant:transition-none data-starting-style:scale-90 data-starting-style:opacity-0 md:flex dark:-outline-offset-1"
               }
             >
               ⌘ + K
@@ -425,7 +425,7 @@ export const SearchBar = ({
               <CommandSeparator />
               <CommandItem
                 value={`__all__${debouncedValue}`}
-                className="mt-0.5 justify-between text-sm text-faded-foreground/70"
+                className="mt-0.5 justify-between text-sm"
                 onSelect={handleViewAll}
               >
                 <span>
@@ -439,11 +439,11 @@ export const SearchBar = ({
           ) : isEmpty ? (
             /* ── Empty state ── */
             <div className="flex flex-col items-center gap-4 px-4 py-10 text-center">
-              <p className="text-sm text-faded-foreground/60">
+              <p className="text-sm">
                 Nothing found for &ldquo;{debouncedValue}&rdquo;
               </p>
               <RP_Btn
-                className="text-[11px] tracking-widest text-faded-foreground/40 uppercase underline underline-offset-4 transition-colors hover:text-faded-foreground/70"
+                className="text-[11px] tracking-widest uppercase underline underline-offset-4 transition-colors"
                 onClick={handleViewAll}
               >
                 Try the full archive &rarr;
@@ -455,7 +455,7 @@ export const SearchBar = ({
         {/* Footer: actions + theme toggle */}
         <div
           cmdk-raycast-footer=""
-          className="absolute right-0 bottom-0 left-0 z-[56] flex w-full items-center gap-[4px] bg-faded-background/30 p-[8px]"
+          className="absolute right-0 bottom-0 left-0 z-[56] flex w-full items-center gap-[4px] p-[8px]"
         >
           <SubCommand inputRef={inputRef} listRef={listRef} />
           <CommandItem
@@ -602,7 +602,6 @@ function SubCommand({
               <CommandPrimitive.Input
                 cmdk-input=""
                 placeholder="Search for actions…"
-                className="text-off-foreground placeholder:text-faded-foreground"
               />
             </Commands>
           </Popover.Popup>

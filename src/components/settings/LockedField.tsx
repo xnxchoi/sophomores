@@ -30,12 +30,12 @@ const lockReason = reason ?? t("locked");
       className={className}
     >
       <span className="flex items-center gap-2">
-        <span className="text-sm text-neutral-200">{value}</span>
+        <span className="text-sm text-titanium">{value}</span>
         <span className="sr-only">{t("lockedReason", { reason: lockReason })}</span>
         <span
           aria-hidden="true"
           title={lockReason}
-          className="inline-flex size-3.5 shrink-0 items-center justify-center text-neutral-500"
+          className="inline-flex size-3.5 shrink-0 items-center justify-center text-pewter"
         >
           <Lock size={12} strokeWidth={1.5} />
         </span>

@@ -80,7 +80,7 @@ function FallbackImage(
     <Skeleton
       className={cn(
         className,
-        "block h-full w-full rounded-2xl bg-faded-foreground/20 object-cover"
+        "block h-full w-full rounded-2xl object-cover"
       )}
     />
   ) : (
@@ -197,7 +197,7 @@ function QueriedImage(
       <Skeleton
         className={cn(
           imgClassName,
-          "block h-full w-full rounded-2xl bg-faded-foreground/20 object-cover"
+          "block h-full w-full rounded-2xl object-cover"
         )}
       />
     </div>

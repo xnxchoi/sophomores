@@ -35,7 +35,6 @@ export function PricingHero({ eyebrow, title, subtitle }: PricingHeroProps) {
           style={{
             fontSize: 16,
             lineHeight: 1.55,
-            color: "var(--pricing-fg-mute)",
             maxWidth: "52ch",
             margin: "0 auto"
           }}

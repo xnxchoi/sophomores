@@ -123,40 +123,13 @@ export const RP_POLAROID = () => {
 
   // const [osH, setOsH] = useState(0);
   const theme = useTheme((r) => r.theme);
-  const white = "oklch(98.52% 0.006 23.79/1)";
-  const black = "oklch(9.69% 0.0175 23.79/1)";
   // const [frameWidth, setFrameWidth] = useState(720);
-  const [_secBG, set_secBG] = useState(theme === "dark" ? black : white);
-  const [_secFG, set_secFG] = useState(theme === "dark" ? white : black);
-  const themeValue = useMotionValue(theme);
-  useEffect(() => {
-    themeValue.set(theme);
-  }, [theme, themeValue]);
-  const sectionBGL = useTransform(() =>
-      themeValue.get() === "dark" ? 9.69 : 98.52 * 1
-    ),
-    sectionBGC = useTransform(() =>
-      themeValue.get() === "dark" ? 0.0175 : 0.006 * 1
-    );
-  const sectionFGL = useTransform(() =>
-      themeValue.get() === "dark" ? 98.52 : 9.69 * 1
-    ),
-    sectionFGC = useTransform(() =>
-      themeValue.get() === "dark" ? 0.006 : 0.0175 * 1
-    );
-
-  const sectionBG = useMotionTemplate`oklch(${sectionBGL}% ${sectionBGC} 23.79/1)`;
-  const sectionFG = useMotionTemplate`oklch(${sectionFGL}% ${sectionFGC} 23.79/1)`;
   //   backgroundColor: sectionBG,
   //     color: sectionFG
   // },
   // { backgroundColor: sectionFG, color: sectionBG },
   const wW = useRPStore(useShallow((r) => r.viewportWidth));
   const wH = useRPStore(useShallow((r) => r.viewportHeight));
-  useEffect(() => {
-    set_secBG(theme === "dark" ? black : white);
-    set_secFG(theme === "dark" ? white : black);
-  }, [theme]);
 
   const windowResize = useWindowResize({ detectHeightChange: true });
   // const [height, setHeight] = useState(0),
@@ -248,72 +221,12 @@ export const RP_POLAROID = () => {
     return -32 * ogP + pr * picOffsetTop.get();
   });
 
-  const frameBorderColorL = useTransform(() => {
-    const pr = scrubProgress.get();
-    const ogP = 1 - pr;
-    return sectionBGL.get() * ogP + pr * sectionFGL.get();
-  });
-  const frameBorderColorC = useTransform(() => {
-    const pr = scrubProgress.get();
-    const ogP = 1 - pr;
-    return sectionBGC.get() * ogP + pr * sectionFGC.get();
-  });
-  const frameBorderColor = useMotionTemplate`oklch(${frameBorderColorL}% ${frameBorderColorC} 23.79/1)`;
-  /**
-   * Graphics
-   *
-   */
-  const graphicBGC = useTransform(() => {
-      const pr = scrubProgress.get();
-      const ogP = 1 - pr;
-      return sectionBGC.get() * ogP + pr * sectionFGC.get();
-    }),
-    graphicBGL = useTransform(() => {
-      const pr = scrubProgress.get();
-      const ogP = 1 - pr;
-      return sectionBGL.get() * ogP + pr * sectionFGL.get();
-    }),
-    graphicFGC = useTransform(() => {
-      const pr = scrubProgress.get();
-      const ogP = 1 - pr;
-      return sectionFGC.get() * ogP + pr * sectionBGC.get();
-    }),
-    graphicFGL = useTransform(() => {
-      const pr = scrubProgress.get();
-      const ogP = 1 - pr;
-      return sectionFGL.get() * ogP + pr * sectionBGL.get();
-    });
-
-  const graphicBG = useMotionTemplate`oklch(${graphicBGL}% ${graphicBGC} 23.79/1)`,
-    graphicFG = useMotionTemplate`oklch(${graphicFGL}% ${graphicFGC} 23.79/1)`;
   /**
    *  Frame content
    *
    */
   const _frameContentY = useTransform(() => 105 * (1 - scrubProgress.get())),
-    frameContentBGC = useTransform(() => {
-      const pr = scrubProgress.get();
-      const ogP = 1 - pr;
-      return sectionBGC.get() * ogP + pr * sectionFGC.get();
-    }),
-    frameContentBGL = useTransform(() => {
-      const pr = scrubProgress.get();
-      const ogP = 1 - pr;
-      return sectionBGL.get() * ogP + pr * sectionFGL.get();
-    }),
-    frameContentFGL = useTransform(() => {
-      const pr = scrubProgress.get();
-      const ogP = 1 - pr;
-      return sectionFGL.get() * ogP + pr * sectionBGL.get();
-    }),
-    frameContentFGC = useTransform(() => {
-      const pr = scrubProgress.get();
-      const ogP = 1 - pr;
-      return sectionFGC.get() * ogP + pr * sectionBGC.get();
-    }),
     frameContentY = useMotionTemplate`${_frameContentY}%`;
-  const frameContentBG = useMotionTemplate`oklch(${frameContentBGL}% ${frameContentBGC} 23.79/1)`,
-    frameContentFG = useMotionTemplate`oklch(${frameContentFGL}% ${frameContentFGC} 23.79/1)`;
   /**
    *
    *  Image container
@@ -529,15 +442,12 @@ export const RP_POLAROID = () => {
               x: frameContainerX,
               y: frameContainerY,
               borderWidth: frameBorderWidth,
-              borderColor: frameBorderColor
             }}
           >
             <m.div
               ref={frameContent}
               style={{
                 y: frameContentY,
-                backgroundColor: frameContentBG,
-                color: frameContentFG,
                 scale: 1.01
               }}
               className="w-full"
@@ -560,23 +470,16 @@ export const RP_POLAROID = () => {
                 >
                   <address data-themed="color">
                     <m.span
-                      style={{
-                        color: graphicFG
-                      }}
-                      className="font-sans text-base leading-[140%] font-semibold -tracking-[.01em] text-faded-background/75 lg:text-[1.6rem]"
+                      className="font-sans text-base leading-[140%] font-semibold -tracking-[.01em] lg:text-[1.6rem]"
                     >
                       {config.author}
                     </m.span>
-                    <span className="hidden text-faded-background/75 lg:inline-block">
+                    <span className="hidden lg:inline-block">
                       &nbsp;-&nbsp;
                     </span>
-                    <span className="block text-base leading-[140%] -tracking-[.01em] text-faded-background/75 lg:inline-block lg:text-[1.6rem]"></span>
+                    <span className="block text-base leading-[140%] -tracking-[.01em] lg:inline-block lg:text-[1.6rem]"></span>
                   </address>
                   <RP_Logo
-                    style={{
-                      color: graphicFG,
-                      backgroundColor: graphicBG
-                    }}
                   />
                 </div>
               </m.div>
@@ -595,7 +498,7 @@ const RP_Logo = ({
 }: SVGMotionProps<SVGSVGElement>) => (
   <m.svg
     className={cn(
-      "w-[1.8rem] text-faded-background/75 lg:w-[2.4rem]",
+      "w-[1.8rem] lg:w-[2.4rem]",
       className
     )}
     xmlns={xmlns || "http://www.w3.org/2000/svg"}

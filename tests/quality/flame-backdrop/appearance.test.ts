@@ -5,6 +5,7 @@ import test from "node:test";
 import { sampleBodyMaterialLighting } from "@/components/gl/flame-backdrop/field/body-material";
 import { emissionGainAt, referenceConfig } from "@/components/gl/flame-backdrop/field/material";
 import { createGasFlameShader } from "@/components/gl/flame-backdrop/field/gas-shader";
+import { historicalReferenceConfig } from "../../flame-backdrop/support/historical-colours";
 
 const current = JSON.parse(
   readFileSync(
@@ -22,7 +23,7 @@ test("centralization preserves the current generated shader structure, Float32 v
     createHash("sha256").update(before).digest("hex"),
     current.shaderHash
   );
-  const after = createGasFlameShader(referenceConfig(1440, 900));
+  const after = createGasFlameShader(historicalReferenceConfig(1440, 900));
   const token = /(?<![\w.])(?:\d+\.\d*|\.\d+|\d+)(?:[eE][+-]?\d+)?(?![\w.])/g;
   assert.deepEqual(after.split(token), before.split(token));
   const original = [...before.matchAll(token)];

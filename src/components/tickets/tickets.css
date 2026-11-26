@@ -1,7 +1,7 @@
 .ticket-study {
-  --ticket-paper: #eeeae1;
-  --ticket-ink: #25231f;
-  --ticket-rule: #b5b0a6;
+  --ticket-paper: var(--color-titanium);
+  --ticket-ink: var(--color-gunmetal);
+  --ticket-rule: var(--color-singer-stone);
   min-height: 100svh;
   background: var(--ticket-paper);
   color: var(--ticket-ink);

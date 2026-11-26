@@ -255,9 +255,9 @@ function Light({ lit, confirming }: { lit: boolean; confirming: boolean }) {
         <m.div
           className={
             confirming
-              ? "relative h-[3px] overflow-hidden rounded-full transition-[background-color,box-shadow] duration-700 bg-white/70 shadow-[0_0_24px_6px_rgb(255_255_255/0.45),0_0_90px_30px_rgb(255_255_255/0.14)]"
+              ? "relative h-[3px] overflow-hidden rounded-full transition-[background-color,box-shadow] duration-700 bg-white/70 shadow-[0_0_24px_6px_color-mix(in_oklab,var(--color-titanium)_45%,transparent),0_0_90px_30px_color-mix(in_oklab,var(--color-titanium)_14%,transparent)]"
               : lit
-                ? "relative h-[3px] overflow-hidden rounded-full transition-[background-color,box-shadow] duration-700 bg-white shadow-[0_0_24px_6px_rgb(255_255_255/0.55),0_0_90px_30px_rgb(255_255_255/0.12)]"
+                ? "relative h-[3px] overflow-hidden rounded-full transition-[background-color,box-shadow] duration-700 bg-white shadow-[0_0_24px_6px_color-mix(in_oklab,var(--color-titanium)_55%,transparent),0_0_90px_30px_color-mix(in_oklab,var(--color-titanium)_12%,transparent)]"
                 : "relative h-[3px] overflow-hidden rounded-full bg-white transition-[background-color,box-shadow] duration-700"
           }
           animate={
@@ -276,7 +276,7 @@ function Light({ lit, confirming }: { lit: boolean; confirming: boolean }) {
         >
           {confirming ? (
             <m.div
-              className="absolute inset-y-0 w-1/4 bg-[linear-gradient(90deg,transparent,white,transparent)]"
+              className="absolute inset-y-0 w-1/4 bg-[linear-gradient(90deg,transparent,var(--color-titanium),transparent)]"
               initial={{ x: "-100%" }}
               animate={{ x: "400%" }}
               transition={{

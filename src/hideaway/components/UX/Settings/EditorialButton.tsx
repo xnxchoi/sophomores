@@ -22,11 +22,9 @@ const toneClasses: Record<Tone, string> = {
     "dark:bg-card/40 dark:text-foreground/85 dark:hover:bg-card/60"
   ),
   danger: cn(
-    "border border-rouge-700/40 bg-rouge-700/[0.04] text-rouge-700/85",
+    "border",
     "shadow-[inset_0_1px_0_0_oklch(from_var(--foreground)_l_c_h/0.06)]",
-    "hover:border-rouge-700 hover:bg-rouge-700/10 hover:text-rouge-700",
-    "hover:shadow-[inset_0_1px_0_0_oklch(from_var(--foreground)_l_c_h/0.10),_0_4px_18px_-12px_oklch(from_var(--rouge-700)_l_c_h/0.4)]",
-    "dark:text-rouge-300/85 dark:hover:text-rouge-200"
+    "hover:shadow-[inset_0_1px_0_0_oklch(from_var(--foreground)_l_c_h/0.10)]"
   ),
   ghost:
     "border border-transparent bg-transparent text-foreground/65 hover:text-foreground hover:bg-card/30"

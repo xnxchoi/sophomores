@@ -69,16 +69,16 @@ const copy = {
 
 export function AuthenticationCompositionStudies() {
   return (
-    <main className="min-h-svh bg-[#090909] px-4 py-8 font-message text-neutral-100 sm:px-8 sm:py-12">
+    <main className="min-h-svh bg-carbon-deep px-4 py-8 font-message text-titanium sm:px-8 sm:py-12">
       <div className="mx-auto max-w-[640px]">
         <header className="mb-10 flex max-w-xl flex-col gap-3">
-          <p className="text-[11px] tracking-[0.12em] text-neutral-500 uppercase">
+          <p className="text-[11px] tracking-[0.12em] text-pewter uppercase">
             Account entry study
           </p>
           <h1 className="text-[28px] leading-tight font-medium tracking-[-0.035em]">
             Account entry
           </h1>
-          <p className="text-sm leading-relaxed text-neutral-400">
+          <p className="text-sm leading-relaxed text-pewter">
             Vertical composition at actual CSS size. Try either action, then
             Back or Cancel. This is an isolated study—not the working
             authentication flow.
@@ -151,12 +151,12 @@ export function CompositionPreview({
     >
       <header className="flex items-center justify-between gap-5 px-1">
         <div>
-          <h2 className="text-sm font-medium text-neutral-200">
+          <h2 className="text-sm font-medium text-titanium">
             {composition === "stacked"
               ? "Vertical · Selected direction"
               : "B · Compact pairing"}
           </h2>
-          <p className="mt-1 text-xs leading-relaxed text-neutral-500">
+          <p className="mt-1 text-xs leading-relaxed text-pewter">
             {composition === "stacked"
               ? "One filled action. One quiet alternative."
               : "One decision, on a single line."}
@@ -167,7 +167,7 @@ export function CompositionPreview({
       <div
         ref={frame}
         data-composition-frame=""
-        className="relative isolate mt-4 h-[440px] overflow-hidden bg-[#0c0c0c] sm:h-[500px]"
+        className="relative isolate mt-4 h-[440px] overflow-hidden bg-carbon-deep sm:h-[500px]"
         onKeyDown={(event) => {
           if (event.key === "Escape" && open) {
             event.stopPropagation();
@@ -202,7 +202,7 @@ export function CompositionPreview({
               role="group"
               aria-labelledby={focused ? `${headingId}-${phase}` : headingId}
               className={cn(
-                "absolute inset-x-0 mx-auto w-[calc(100%-1.5rem)] max-w-[440px] overflow-hidden rounded-[28px] bg-[#181818] text-neutral-100 shadow-[0_24px_64px_-28px_#000000b3,inset_0_1px_0_#ffffff06] ring-1 ring-white/8 outline-none",
+                "absolute inset-x-0 mx-auto w-[calc(100%-1.5rem)] max-w-[440px] overflow-hidden rounded-[28px] bg-carbon text-titanium shadow-[0_24px_64px_-28px_color-mix(in_oklab,var(--color-carbon-deep)_70%,transparent),inset_0_1px_0_color-mix(in_oklab,var(--color-titanium)_2%,transparent)] ring-1 ring-white/8 outline-none",
                 focused ? "font-[system-ui]" : "font-message"
               )}
               initial={{ opacity: 0, y: motionTokens.distance.md }}
@@ -331,19 +331,19 @@ export function CompositionPreview({
           )}
         </AnimatePresence>
       </div>
-      <p className="mt-3 px-1 text-[11px] leading-relaxed text-neutral-500">
+      <p className="mt-3 px-1 text-[11px] leading-relaxed text-pewter">
         {t.boundary}
       </p>
       {focused && open && (
-        <div className="mt-3 px-1 text-[11px] leading-5 text-neutral-500">
+        <div className="mt-3 px-1 text-[11px] leading-5 text-pewter">
           <p>
             {locale === "ko"
               ? "모의 흐름 · 이메일 코드 "
               : "Simulated flow · Email code "}
-            <code className="font-sans tabular-nums text-neutral-300">{demoEmailCode}</code>
+            <code className="font-sans tabular-nums text-singer-stone">{demoEmailCode}</code>
           </p>
           <details className="mt-2">
-            <summary className="w-fit rounded-md py-2 text-neutral-400 outline-none focus-visible:outline-2 focus-visible:outline-white">
+            <summary className="w-fit rounded-md py-2 text-pewter outline-none focus-visible:outline-2 focus-visible:outline-white">
               {locale === "ko" ? "다른 상태 미리보기" : "Preview another state"}
             </summary>
             <label className="mt-2 flex flex-wrap items-center gap-3">
@@ -357,7 +357,7 @@ export function CompositionPreview({
                     phaseNavigation.current?.preview(next as AccountPhase);
                   }
                 }}
-                className="min-h-11 rounded-lg border border-white/15 bg-neutral-900 px-3 text-xs text-neutral-200 [color-scheme:dark] focus-visible:outline-2 focus-visible:outline-white"
+                className="min-h-11 rounded-lg border border-white/15 bg-carbon px-3 text-xs text-titanium [color-scheme:dark] focus-visible:outline-2 focus-visible:outline-white"
               >
                 {(Object.keys(phaseLabels[locale]) as AccountPhase[]).map(
                   (option) => (
@@ -368,7 +368,7 @@ export function CompositionPreview({
                 )}
               </select>
             </label>
-            <label className="mt-3 block max-w-full text-neutral-400">
+            <label className="mt-3 block max-w-full text-pewter">
               {locale === "ko" ? "실패 상태" : "Failure state"}
               <select
                 aria-label={locale === "ko" ? "실패 상태" : "Failure state"}
@@ -381,7 +381,7 @@ export function CompositionPreview({
                       next as MemberAuthFailureKind
                     );
                 }}
-                className="mt-2 min-h-11 w-full min-w-0 rounded-lg border border-white/15 bg-neutral-900 px-3 text-xs text-neutral-200 [color-scheme:dark] focus-visible:outline-2 focus-visible:outline-white"
+                className="mt-2 min-h-11 w-full min-w-0 rounded-lg border border-white/15 bg-carbon px-3 text-xs text-titanium [color-scheme:dark] focus-visible:outline-2 focus-visible:outline-white"
               >
                 <option value="">{locale === "ko" ? "없음" : "None"}</option>
                 {(
@@ -398,7 +398,7 @@ export function CompositionPreview({
             </label>
           </details>
           {previewNotice && (
-            <p role="status" className="mt-2 text-neutral-300">
+            <p role="status" className="mt-2 text-singer-stone">
               {previewNotice}
             </p>
           )}

@@ -61,25 +61,16 @@ export function useBezelDisplacementTexture(
     // sigma = 0.22 * w. Browser interpolates between stops natively;
     // visual difference vs. per-pixel computation is imperceptible.
     const grad = ctx.createLinearGradient(0, 0, w, 0);
-    grad.addColorStop(0.0, "rgb(255,255,255)"); // edge, lum 1.0
-    grad.addColorStop(0.2, "rgb(245,245,245)"); // ~1.5σ
-    grad.addColorStop(0.32, "rgb(220,220,220)");
-    grad.addColorStop(0.4, "rgb(186,186,186)"); // ~0.5σ
-    grad.addColorStop(0.46, "rgb(150,150,150)");
-    grad.addColorStop(0.5, "rgb(128,128,128)"); // center, lum 0.50
-    grad.addColorStop(0.54, "rgb(150,150,150)");
-    grad.addColorStop(0.6, "rgb(186,186,186)");
-    grad.addColorStop(0.68, "rgb(220,220,220)");
-    grad.addColorStop(0.8, "rgb(245,245,245)");
-    grad.addColorStop(1.0, "rgb(255,255,255)");
-    ctx.fillStyle = grad;
+     // edge, lum 1.0
+     // ~1.5σ
+     // ~0.5σ
+     // center, lum 0.50
     ctx.fillRect(0, 0, w, h);
 
     // ─── Layer 2: sharp center bar ─────────────────────────────────────
     // Pure black, narrow — the bezel's reference indicator.
     const barWidth = Math.max(3, w * 0.025);
     const barX = (w - barWidth) / 2;
-    ctx.fillStyle = "#000000";
     ctx.fillRect(barX, 0, barWidth, h);
 
     const tex = new CanvasTexture(canvas);

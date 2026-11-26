@@ -6,26 +6,8 @@ import { Drawer } from "@/hideaway/components/ui/vaul";
 import { SurvivalKit } from "../SurvivalKit";
 import { PillButton } from "@/hideaway/components/core/Button";
 import { useLenis } from "lenis/react";
-import { useEffect, type CSSProperties } from "react";
+import { useEffect } from "react";
 
-/**
- * The drawer renders through a Vaul portal — mounted at <body>, OUTSIDE
- * `[data-dn-shell]` — so the `--dn-*` tokens it styles against are not
- * inherited down the DOM tree and would resolve to nothing (text falling
- * back to whatever the site theme inherits, borders to currentColor).
- * Pin the immersive palette on the drawer surface itself so its colours
- * are enforced regardless of the site light/dark theme. Mirrors the
- * `[data-dn-shell]` token block in dn.css.
- */
-const DRAWER_DN_THEME: CSSProperties = {
-  ["--dn-bg" as string]: "oklch(8% 0.02 280)",
-  ["--dn-fg" as string]: "oklch(96% 0.005 80)",
-  ["--dn-fg-mute" as string]: "oklch(from var(--dn-fg) l c h / 0.7)",
-  ["--dn-fg-faint" as string]: "oklch(from var(--dn-fg) l c h / 0.5)",
-  ["--dn-line" as string]: "oklch(from var(--dn-fg) l c h / 0.22)",
-  ["--dn-accent-day" as string]: "oklch(56% 0.08 50)",
-  ["--dn-accent-night" as string]: "oklch(46% 0.075 255)"
-};
 /**
  * Details drawer — a right-side Vaul sheet surfacing the event's
  * practical info without forcing the user to scroll through the loop.
@@ -66,26 +48,22 @@ export function DetailsDrawer({
       modal
     >
       <Drawer.Portal>
-        <Drawer.Overlay className="fixed inset-0 z-[80] bg-black/65 backdrop-blur-[3px]" />
+        <Drawer.Overlay className="fixed inset-0 z-[80] backdrop-blur-[3px]" />
         <Drawer.Content
           aria-describedby="day-night-details-description"
-          className="fixed top-0 right-0 z-[81] flex h-full w-full max-w-[480px] flex-col text-[var(--dn-fg)] shadow-[-32px_0_72px_-12px_rgba(0,0,0,0.7)] outline-none"
+          className="fixed top-0 right-0 z-[81] flex h-full w-full max-w-[480px] flex-col outline-none"
           style={{
-            // Pin the immersive palette — the portal renders outside
-            // `[data-dn-shell]`, so `--dn-*` would otherwise be unset.
-            ...DRAWER_DN_THEME,
             // Opaque elevated ink — visually detached from the dark sky
             // background. Slightly LIGHTER than --dn-bg so the sheet
             // reads as floating forward, not melted into the page.
-            backgroundColor: "oklch(11% 0.018 280)",
-            borderLeft: "1px solid oklch(from var(--dn-fg) l c h / 0.18)"
+            borderLeft: "1px solid"
           }}
         >
-          <Drawer.Handle className="absolute top-1/2 left-2 h-16 w-1 -translate-y-1/2 rounded-full bg-[var(--dn-fg)] opacity-30" />
+          <Drawer.Handle className="absolute top-1/2 left-2 h-16 w-1 -translate-y-1/2 rounded-full opacity-30" />
 
-          <header className="flex items-center justify-between border-b border-[var(--dn-line)] px-8 pt-8 pb-6">
+          <header className="flex items-center justify-between border-b px-8 pt-8 pb-6">
             <div className="grid gap-2">
-              <span className="font-sans text-[10px] tracking-[0.32em] text-[var(--dn-fg-faint)] uppercase">
+              <span className="font-sans text-[10px] tracking-[0.32em] uppercase">
                 {t("details.eyebrow")}
               </span>
               <Drawer.Title className="font-serif text-[clamp(1.85rem,2.4vw,2.4rem)] leading-[1.05] font-bold tracking-[-0.015em]">
@@ -100,7 +78,7 @@ export function DetailsDrawer({
             </div>
             <Drawer.Close
               aria-label={t("details.close")}
-              className="ease inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-[var(--dn-line)] text-[var(--dn-fg-mute)] transition-colors hover:border-[var(--dn-fg)] hover:text-[var(--dn-fg)]"
+              className="ease inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border transition-colors"
             >
               <span aria-hidden className="text-base leading-none">
                 ×
@@ -131,12 +109,12 @@ export function DetailsDrawer({
               />
             </dl>
 
-            <div className="mt-9 border-t border-[var(--dn-line)] pt-7">
+            <div className="mt-9 border-t pt-7">
               <SurvivalKit variant="embedded" />
             </div>
           </div>
 
-          <footer className="flex flex-col gap-3 border-t border-[var(--dn-line)] px-8 pt-5 pb-7">
+          <footer className="flex flex-col gap-3 border-t px-8 pt-5 pb-7">
             <PillButton
               className="min-w-fit py-6 text-balance"
               type="button"
@@ -193,7 +171,7 @@ END:VCALENDAR`
             </PillButton>
             <Link
               href={rsvpHref}
-              className="group inline-flex w-full cursor-pointer items-center justify-between rounded-full border border-[var(--dn-fg)] bg-[var(--dn-fg)] px-6 py-4 font-sans text-[12px] tracking-[0.28em] text-[var(--dn-bg)] uppercase no-underline transition-transform duration-300 hover:-translate-y-px"
+              className="group inline-flex w-full cursor-pointer items-center justify-between rounded-full border px-6 py-4 font-sans text-[12px] tracking-[0.28em] uppercase no-underline transition-transform duration-300 hover:-translate-y-px"
             >
               <span>{t("rsvpCta.register")}</span>
               <span
@@ -205,7 +183,7 @@ END:VCALENDAR`
             </Link>
             <Link
               href="/day-n-night/guests"
-              className="group inline-flex w-full cursor-pointer items-center justify-between rounded-full border border-[var(--dn-line)] px-6 py-3.5 font-sans text-[11px] tracking-[0.24em] text-[var(--dn-fg-mute)] uppercase no-underline transition-colors duration-300 hover:border-[var(--dn-fg)] hover:text-[var(--dn-fg)]"
+              className="group inline-flex w-full cursor-pointer items-center justify-between rounded-full border px-6 py-3.5 font-sans text-[11px] tracking-[0.24em] uppercase no-underline transition-colors duration-300"
             >
               <span>{t("guestsTease.cta")}</span>
               <span
@@ -230,16 +208,16 @@ interface DetailsRowProps {
 
 function DetailsRow({ label, value, hint }: DetailsRowProps) {
   return (
-    <div className="grid grid-cols-[110px_1fr] gap-x-5 border-t border-[var(--dn-line)] pt-[14px] first:border-t-0 first:pt-0">
-      <dt className="font-sans text-[10px] tracking-[0.32em] text-[var(--dn-fg-faint)] uppercase">
+    <div className="grid grid-cols-[110px_1fr] gap-x-5 border-t pt-[14px] first:border-t-0 first:pt-0">
+      <dt className="font-sans text-[10px] tracking-[0.32em] uppercase">
         {label}
       </dt>
       <dd className="grid gap-1">
-        <span className="font-serif text-[clamp(1.15rem,1.3vw,1.35rem)] leading-[1.3] tracking-[-0.005em] text-[var(--dn-fg)]">
+        <span className="font-serif text-[clamp(1.15rem,1.3vw,1.35rem)] leading-[1.3] tracking-[-0.005em]">
           {value}
         </span>
         {hint && (
-          <span className="text-[12px] leading-[1.4] text-[var(--dn-fg-mute)]">
+          <span className="text-[12px] leading-[1.4]">
             {hint}
           </span>
         )}

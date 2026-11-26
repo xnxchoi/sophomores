@@ -37,13 +37,13 @@ export const AdminBar: React.FC<{
 		setShow(user?.id)
 	}, [])
 
-	return (<div className={cn(baseClass, 'bg-black py-2 text-white', {
+	return (<div className={cn(baseClass, 'py-2', {
 		block: show, hidden: !show,
 	})}>
 		<div className="container">
 			<PayloadAdminBar
-				{...adminBarProps} className="py-2 text-white" classNames={{
-				controls: 'font-medium text-white', logo: 'text-white', user: 'text-white',
+				{...adminBarProps} className="py-2" classNames={{
+				controls: 'font-medium', logo: '', user: '',
 			}} cmsURL={getClientSideURL()} collectionSlug={collection} collectionLabels={{
 				plural: collectionLabels[collection]?.plural || 'Pages',
 				singular: collectionLabels[collection]?.singular || 'Page',

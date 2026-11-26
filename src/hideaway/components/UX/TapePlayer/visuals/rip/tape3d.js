@@ -128,7 +128,7 @@ function Xb() {
                                 u.magFilter = zt,
                                 u.format = ni,
                                 u.flipY = !1,
-                                o.material.emissive = new qe(9893887),
+                                o.material.emissive = new qe(),
                                 o.material.emissiveIntensity = 200,
                                 o.material.emissiveMap = u,
                                 o.material.needsUpdate = !0;
@@ -152,7 +152,6 @@ function Xb() {
                         if (o.isMesh && o.material && o.material.name === "black_glass") {
                             o.material;
                             const a = new Ai({
-                                color: "#111111",
                                 metalness: 0,
                                 roughness: 0,
                                 transmission: 1,
@@ -170,7 +169,6 @@ function Xb() {
                         if (o.isMesh && o.material && o.material.name === "Black") {
                             o.material;
                             const a = new qa({
-                                color: "#1c1c1c",
                                 metalness: 0,
                                 roughness: 1
                             });
@@ -225,7 +223,6 @@ function Xb() {
                         var a = l;
                         const u = o.material;
                         no = new qa({
-                            color: "#EBEFF4",
                             metalness: .85,
                             roughness: .2,
                             envMap: lr.environment,

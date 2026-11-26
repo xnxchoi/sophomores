@@ -266,13 +266,13 @@ function PaymentResult({
     <main className="mx-auto flex min-h-[60svh] w-full max-w-[960px] items-center px-6 py-20 min-[800px]:px-8">
       <section
         aria-labelledby="payment-heading"
-        className="w-full max-w-lg space-y-5 rounded-2xl border border-neutral-800 bg-neutral-900/50 p-6 min-[800px]:p-8"
+        className="w-full max-w-lg space-y-5 rounded-2xl border border-gunmetal bg-carbon/50 p-6 min-[800px]:p-8"
       >
-        <p className="text-xs tracking-[0.16em] text-neutral-400 uppercase">
+        <p className="text-xs tracking-[0.16em] text-pewter uppercase">
           {t('ticketsPayment')}</p>
         <h1
           id="payment-heading"
-          className="text-2xl font-medium tracking-tight text-neutral-100"
+          className="text-2xl font-medium tracking-tight text-titanium"
         >
           {!valid
             ? t('paymentReferenceNeeded')
@@ -293,7 +293,7 @@ function PaymentResult({
         <div
           role="status"
           aria-live="polite"
-          className="min-h-12 text-sm leading-6 text-neutral-300"
+          className="min-h-12 text-sm leading-6 text-singer-stone"
         >
           {feedback ??
             (!valid
@@ -313,7 +313,7 @@ function PaymentResult({
                           : t('checkingPaymentStatus'))}
         </div>
         {valid && (
-          <p className="text-xs leading-5 break-all text-neutral-400">
+          <p className="text-xs leading-5 break-all text-pewter">
             {t('paymentReference')}{paymentId}
           </p>
         )}
@@ -327,7 +327,7 @@ function PaymentResult({
               setResult({ paymentId, status: "checking" });
               setAttempt((value) => value + 1);
             }}
-            className="min-h-12 w-full rounded-xl bg-neutral-100 px-5 py-3 text-sm font-medium text-neutral-950 transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-100 disabled:bg-neutral-800 disabled:text-neutral-400"
+            className="min-h-12 w-full rounded-xl bg-titanium px-5 py-3 text-sm font-medium text-carbon-deep transition-colors hover:bg-singer-stone focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-titanium disabled:bg-gunmetal disabled:text-pewter"
           >
             {status === "checking" ? t('checking') : t('checkAgain')}
           </button>
@@ -340,16 +340,16 @@ function PaymentResult({
               disabled={resuming || status === "checking"}
               aria-busy={resuming}
               onClick={resume}
-              className="min-h-12 w-full rounded-xl border border-neutral-600 px-5 py-3 text-sm font-medium text-neutral-100 transition-colors hover:bg-neutral-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-100 disabled:text-neutral-400"
+              className="min-h-12 w-full rounded-xl border border-gunmetal-lighter-2 px-5 py-3 text-sm font-medium text-titanium transition-colors hover:bg-gunmetal focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-titanium disabled:text-pewter"
             >
               {resuming ? t('openingPayment') : t('resumePayment')}
             </button>
           )}
         <a
           href="/tickets"
-          className="group/focus inline-flex min-h-12 items-center text-sm text-neutral-300 underline decoration-neutral-600 underline-offset-4 transition-colors hover:text-white"
+          className="group/focus inline-flex min-h-12 items-center text-sm text-singer-stone underline decoration-gunmetal-lighter-2 underline-offset-4 transition-colors hover:text-white"
         >
-          <FocusShape className="outline-offset-4 group-focus-visible/focus:outline-neutral-100">{t('backToTickets')}</FocusShape></a>
+          <FocusShape className="outline-offset-4 group-focus-visible/focus:outline-titanium">{t('backToTickets')}</FocusShape></a>
       </section>
     </main>
   );

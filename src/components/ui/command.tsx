@@ -351,7 +351,7 @@ function HA_CommandEmpty({
   return (
     <CommandPrimitive.Empty
       data-slot="command-empty"
-      className="absolute inset-0 flex items-center justify-center py-6 text-center text-xl text-faded-foreground"
+      className="absolute inset-0 flex items-center justify-center py-6 text-center text-xl"
       {...props}
     />
   );
@@ -365,7 +365,7 @@ function HA_CommandGroup({
     <CommandPrimitive.Group
       data-slot="command-group"
       className={HA_cn(
-        "overflow-hidden rounded-[4px] py-[6px] [&_[cmdk-group-heading]]:text-xl [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-faded-foreground",
+        "overflow-hidden rounded-[4px] py-[6px] [&_[cmdk-group-heading]]:text-xl [&_[cmdk-group-heading]]:font-medium",
         className
       )}
       {...props}
@@ -380,7 +380,7 @@ function HA_CommandSeparator({
   return (
     <CommandPrimitive.Separator
       data-slot="command-separator"
-      className={HA_cn("-mx-1.5 h-px bg-faded-foreground/10", className)}
+      className={HA_cn("-mx-1.5 h-px", className)}
       {...props}
     />
   );
@@ -399,7 +399,7 @@ function HA_CommandItem({
   return (
     <CommandPrimitive.Item
       className={HA_cn(
-        "group relative flex min-h-[2.5rem] items-center gap-3.5 rounded-sm px-3.5 py-2.5 text-base text-faded-foreground outline-hidden transition-colors duration-170 ease-out-power3 select-none data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 data-[selected=true]:bg-off-foreground/50 data-[selected=true]:text-faded-background [&_svg]:pointer-events-none [&_svg]:size-6 [&_svg]:shrink-0",
+        "group relative flex min-h-[2.5rem] items-center gap-3.5 rounded-sm px-3.5 py-2.5 text-base outline-hidden transition-colors duration-170 ease-out-power3 select-none data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-6 [&_svg]:shrink-0",
         className
       )}
       {...props}

@@ -23,7 +23,7 @@ input.code-field:not([type="checkbox"]) {
   letter-spacing: 0.2em;
   text-align: center;
   background: transparent;
-  border: 1px solid oklch(from var(--faded-fg) l c h / 0.35);
+  border: 1px solid var(--light-grey); /* the control rule (Pewter), as --color-control-rule */
   border-radius: 8px;
 }
 
@@ -37,12 +37,12 @@ input.code-field:not([type="checkbox"]) {
     width: 100%;
     font: inherit;
     background: transparent;
-    color: #94918bc2;
+    color: color-mix(in oklab, var(--color-pewter) 76%, transparent);
     border: 0;
     border-radius: 0;
     padding: 12px;
     margin-top: 6px;
-    border-bottom: 1px solid #413416f0;
+    border-bottom: 1px solid color-mix(in oklab, var(--color-carbon-lighter-2) 94%, transparent);
     letter-spacing: 0.25em;
     font-weight: 200;
   }
@@ -55,7 +55,7 @@ input.code-field:not([type="checkbox"]) {
 
 /* One shade. Every stop below is that color at a different lightness or alpha. */
 .port-shade {
-  --port-shade: var(--faded-fg);
+  --port-shade: var(--foreground);
   font-family: var(--font-port-sans), "Helvetica Neue", Helvetica, sans-serif;
 }
 
@@ -69,7 +69,7 @@ input.code-field:not([type="checkbox"]) {
 }
 
 .port-wash {
-  background-color: var(--faded-bg);
+  background-color: var(--background);
   background-image:
     radial-gradient(
       circle at 30% 20%,
@@ -158,12 +158,12 @@ input.code-field:not([type="checkbox"]) {
 }
 
 .port-scrim {
-  background-color: oklch(from var(--off-black) l c h / 0.72);
+  background-color: oklch(from var(--carbon-deep) l c h / 0.72);
 }
 
 .port-panel {
   border: 1px solid oklch(from var(--port-shade) l c h / 0.16);
-  background-color: oklch(from var(--faded-bg) l c h / 0.86);
+  background-color: oklch(from var(--background) l c h / 0.86);
 }
 
 .port-tick {
@@ -417,7 +417,7 @@ input.code-field:not([type="checkbox"]) {
   inset: 0;
   overflow: hidden;
   pointer-events: none;
-  color: var(--faded-fg);
+  color: var(--foreground);
 }
 
 .site-menu.is-open {
@@ -456,7 +456,7 @@ input.code-field:not([type="checkbox"]) {
 .site-menu-frame {
   position: absolute;
   z-index: 1;
-  background: var(--off-bg);
+  background: var(--background);
   opacity: 0;
 }
 
@@ -511,7 +511,7 @@ input.code-field:not([type="checkbox"]) {
   z-index: 2;
   width: 22px;
   height: 22px;
-  color: var(--off-bg);
+  color: var(--background);
   pointer-events: none;
 }
 
@@ -580,7 +580,7 @@ input.code-field:not([type="checkbox"]) {
   border: 1px solid transparent;
   border-radius: 999px;
   background-color: var(--button-background);
-  color: oklch(from var(--faded-fg) l c h / 0.9);
+  color: oklch(from var(--foreground) l c h / 0.9);
   font-size: 12px;
   font-style: normal;
   font-weight: 350;
@@ -596,7 +596,7 @@ input.code-field:not([type="checkbox"]) {
 }
 
 .rp_btn:hover {
-  border-color: oklch(from var(--faded-fg) l c h / 0.8);
+  border-color: oklch(from var(--foreground) l c h / 0.8);
 }
 
 .circ-bt {
@@ -646,7 +646,7 @@ input.code-field:not([type="checkbox"]) {
 .search-dialog-scrim {
   position: absolute;
   inset: 0;
-  background: oklch(from var(--off-bg) l c h / 0.4);
+  background: oklch(from var(--background) l c h / 0.4);
 }
 
 .search-dialog-panel {
@@ -656,7 +656,7 @@ input.code-field:not([type="checkbox"]) {
   margin: 12vh auto 0;
   padding: 8px;
   border-radius: 12px;
-  background: var(--faded-bg);
+  background: var(--background);
 }
 
 .search-dialog-input {
@@ -716,9 +716,9 @@ input.code-field:not([type="checkbox"]) {
   z-index: 45;
   min-width: 16rem;
   border-radius: 8px;
-  background: oklch(from var(--faded-bg) l c h / 0.8);
+  background: oklch(from var(--background) l c h / 0.8);
   padding: 16px 12px;
-  color: var(--faded-fg);
+  color: var(--foreground);
   backdrop-filter: blur(8px);
 }
 
@@ -732,9 +732,9 @@ input.code-field:not([type="checkbox"]) {
   margin: 6px 16px;
   background-image: linear-gradient(
     to right,
-    oklch(from var(--faded-fg) l c h / 0.1),
-    oklch(from var(--faded-fg) l c h / 0.25),
-    oklch(from var(--faded-fg) l c h / 0.1)
+    oklch(from var(--foreground) l c h / 0.1),
+    oklch(from var(--foreground) l c h / 0.25),
+    oklch(from var(--foreground) l c h / 0.1)
   );
 }
 
@@ -759,7 +759,7 @@ input.code-field:not([type="checkbox"]) {
   margin: 0;
   padding: 0 0 13.6px;
   border: 0;
-  border-bottom: 1px solid oklch(from var(--muted-faded-bg) l c h / 0.5);
+  border-bottom: 1px solid var(--light-grey); /* the control rule (Pewter), as --color-control-rule */
   border-radius: 0;
   background: transparent;
   color: inherit;
@@ -773,7 +773,7 @@ input.code-field:not([type="checkbox"]) {
 }
 
 .w-input::placeholder {
-  color: oklch(from var(--faded-fg) l c h / 0.001);
+  color: oklch(from var(--foreground) l c h / 0.001);
 }
 
 .input-label {
@@ -782,7 +782,7 @@ input.code-field:not([type="checkbox"]) {
   left: 0;
   z-index: 1;
   margin: 0;
-  color: oklch(from var(--muted-faded-bg) l c h / 0.75);
+  color: oklch(from var(--muted) l c h / 0.75);
   font-size: 12px;
   font-weight: 500;
   line-height: 1.1;
@@ -796,7 +796,7 @@ input.code-field:not([type="checkbox"]) {
 
 .w-input:not(:placeholder-shown) ~ .input-label,
 .w-input:focus ~ .input-label {
-  color: var(--faded-fg);
+  color: var(--foreground);
   transform: translate3d(0, -50%, 0) scale3d(0.8, 0.8, 1);
 }
 
@@ -811,7 +811,7 @@ input.code-field:not([type="checkbox"]) {
   bottom: 0;
   left: 0;
   height: 1px;
-  background: var(--faded-fg);
+  background: var(--foreground);
   transform: scaleX(0);
   transform-origin: 100%;
   transition: transform 0.8s cubic-bezier(0.16, 1, 0.32, 1);

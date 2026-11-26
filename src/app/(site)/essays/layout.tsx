@@ -22,7 +22,7 @@ export default function ReadingLayout({ children }: { children: ReactNode }) {
   return (
     <div
       className={cn(
-        "port-shade font-[family-name:var(--font-port-sans),Helvetica_Neue,Helvetica,sans-serif] [--port-shade:var(--faded-fg)]",
+        "port-shade font-[family-name:var(--font-port-sans),Helvetica_Neue,Helvetica,sans-serif] [--port-shade:var(--foreground)]",
         suit.variable,
         nectar.variable
       )}

@@ -17,6 +17,8 @@ test("shipped runtime imports stay domain-local except approved libraries and sh
           ["react", "three", "@react-three/fiber", "cn"].includes(match[1]) ||
             // Reuse the existing cross-feature visibility module, not other app aliases.
             match[1] === "@/utils/browser/visibility" ||
+            // The owner's palette (Palette r3): the one colour source for code that needs hex values.
+            match[1] === "@/utils/palette" ||
             match[1].startsWith("./") ||
             match[1].startsWith("../"),
           `${name}: ${match[1]}`

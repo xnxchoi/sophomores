@@ -128,7 +128,7 @@ function SecurityQuick({
           className={cn(
             "flex size-8 shrink-0 items-center justify-center rounded-md",
             twoFactorEnabled
-              ? "bg-[oklch(70%_0.14_160/0.18)] text-[oklch(85%_0.10_160)]"
+              ? ""
               : "bg-foreground/[0.06] text-foreground/70 dark:bg-foreground/[0.08]"
           )}
         >

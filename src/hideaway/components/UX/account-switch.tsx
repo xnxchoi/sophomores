@@ -59,7 +59,7 @@ export default function AccountSwitcher() {
           </Button>
         )}
       />
-      <PopoverContent className="z-[150] w-[250px] rounded-sm border border-border/30 bg-button-background-inverted p-0 text-foreground shadow-md backdrop-blur-[4px]">
+      <PopoverContent className="z-[150] w-[250px] rounded-sm border border-border/30 p-0 text-foreground shadow-md backdrop-blur-[4px]">
         <Command>
           <CommandList>
             <CommandGroup
@@ -89,7 +89,7 @@ export default function AccountSwitcher() {
                 </div>
               </CommandItem>
             </CommandGroup>
-            <CommandSeparator className={"bg-nav-foreground/30!"} />
+            <CommandSeparator className={""} />
             <CommandGroup
               className={"[&_[cmdk-group-heading]]:text-foreground!"}
               heading="Switch Account"
@@ -122,7 +122,7 @@ export default function AccountSwitcher() {
                   ))}
             </CommandGroup>
           </CommandList>
-          <CommandSeparator className={"bg-nav-button-foreground/30!"} />
+          <CommandSeparator className={""} />
           <CommandList>
             <CommandGroup>
               <CommandItem

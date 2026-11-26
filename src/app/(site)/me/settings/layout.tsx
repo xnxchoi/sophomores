@@ -17,11 +17,11 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default function SettingsLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="relative isolate min-h-screen overflow-x-clip bg-neutral-950 text-white">
+    <div className="relative isolate min-h-screen overflow-x-clip bg-carbon-deep text-white">
       {/* Atmosphere: subtle radial gradient on neutral dark canvas */}
       <div
         aria-hidden="true"
-        className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_rgba(255,255,255,0.05),_transparent_60%)]"
+        className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_color-mix(in_oklab,var(--color-titanium)_5%,transparent),_transparent_60%)]"
       />
 
       <SettingsNavProvider>

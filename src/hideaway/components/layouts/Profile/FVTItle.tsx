@@ -162,7 +162,7 @@ export const InkedTitle = (
             ref={inviewRef}
           >
             <svg
-              className="flex aspect-[21/10] items-center justify-center overflow-visible fill-edge-black text-center indent-[-9999px] transition-colors duration-400 ease-in-out-2 dark:hover:fill-faded-white"
+              className="flex aspect-[21/10] items-center justify-center overflow-visible text-center indent-[-9999px] transition-colors duration-400 ease-in-out-2"
               viewBox={`0 0 160 50`}
               style={{
                 height: "100%",

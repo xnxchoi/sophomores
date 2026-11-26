@@ -288,7 +288,7 @@ export default function SequenceEditor({
           id={panelId}
           aria-label={t("sequenceEditor")}
           data-lenis-prevent=""
-          className="pointer-events-auto flex max-h-[45svh] flex-col overflow-hidden rounded-xl border border-white/25 bg-neutral-950 shadow-2xl"
+          className="pointer-events-auto flex max-h-[45svh] flex-col overflow-hidden rounded-xl border border-white/25 bg-carbon-deep shadow-2xl"
           onKeyDown={(event) => {
             if (event.key === "Escape") {
               event.stopPropagation();

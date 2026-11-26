@@ -28,15 +28,15 @@ import {
 } from "@/utils/browser/visibility";
 
 export const messageVariants = {
-  inactive: { backgroundColor: "#161616", color: "#fff" },
-  first: { backgroundColor: "#292929", color: "#fff" },
-  active: { backgroundColor: "#ff4c25", color: "#000" }
+  inactive: { backgroundColor: "var(--color-carbon)", color: "var(--color-titanium)" },
+  first: { backgroundColor: "var(--color-gunmetal)", color: "var(--color-titanium)" },
+  active: { backgroundColor: "var(--color-signal-orange)", color: "var(--color-carbon-deep)" }
 };
 
 export const metaVariants = {
-  inactive: { color: "#bbb" },
-  first: { color: "#aaa" },
-  active: { color: "#552014" }
+  inactive: { color: "var(--color-singer-stone)" },
+  first: { color: "var(--color-singer-stone)" },
+  active: { color: "var(--color-imperial-plum-darker-1)" }
 };
 
 export function TypingDots() {
@@ -86,7 +86,7 @@ function Message({
   const reveal = active && activeViewport;
   return (
     <motion.article
-      className="absolute top-1/2 left-1/2 flex w-[calc(100vw-36px)] max-w-[396px] flex-col gap-6 rounded-teaser-card bg-teaser-card p-6 md:w-[396px] short:max-md:gap-4 short:max-md:p-4.5"
+      className="absolute top-1/2 left-1/2 flex w-[calc(100vw-36px)] max-w-[396px] flex-col gap-6 rounded-teaser-card bg-carbon p-6 md:w-[396px] short:max-md:gap-4 short:max-md:p-4.5"
       initial={false}
       animate={messageVariants[variant]}
       transition={{ duration: 0.45 }}
@@ -98,7 +98,7 @@ function Message({
       }}
     >
       <motion.div
-        className="flex justify-between gap-4 font-sans text-sm leading-[1.1] text-teaser-meta uppercase max-lg:text-xs"
+        className="flex justify-between gap-4 font-sans text-sm leading-[1.1] text-singer-stone uppercase max-lg:text-xs"
         initial={false}
         animate={metaVariants[variant]}
         transition={{ duration: 0.35 }}
@@ -140,7 +140,7 @@ function Message({
       {/* "…is typing" hangs just under this card, so it follows the card's pose instead of a fixed spot on the
           screen, where the taller desktop card ran over it (owner, 21 Nov). */}
       {typingNotice && (
-        <p className="text-teaser-caption absolute top-[calc(100%+32px)] left-0 font-sans leading-[1.1] text-teaser-subtle uppercase">
+        <p className="text-teaser-caption absolute top-[calc(100%+32px)] left-0 font-sans leading-[1.1] text-pewter uppercase">
           {typingNotice} <TypingDots />
         </p>
       )}

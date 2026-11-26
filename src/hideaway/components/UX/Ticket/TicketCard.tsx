@@ -32,8 +32,6 @@ const padNumber = (n: number | null): string => {
 const NOISE_BG =
   'url("data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 320 320%22><filter id=%22n%22><feTurbulence type=%22fractalNoise%22 baseFrequency=%220.5%22 numOctaves=%223%22 stitchTiles=%22stitch%22/><feColorMatrix values=%220 0 0 0 0.18 0 0 0 0 0.13 0 0 0 0 0.09 0 0 0 0.55 0%22/></filter><rect width=%22320%22 height=%22320%22 filter=%22url(%23n)%22 opacity=%220.7%22/></svg>")';
 
-const PAPER_INK = "oklch(0.18 0.012 30)";
-
 // Font stacks. Display serif comes from next/font (variable on the
 // page wrapper); mono is Inconsolata Variable, already loaded globally
 // via src/styles/__rp_plate.scss.
@@ -43,10 +41,10 @@ const FONT_MONO =
   "'Inconsolata Variable', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
 
 const STATUS_TINT: Record<TicketStatus, string> = {
-  pending: "oklch(0.55 0.16 70)",
-  active: PAPER_INK,
-  used: "oklch(0.55 0.01 30)",
-  canceled: "oklch(0.55 0.2 30)"
+  pending: "",
+  active: "",
+  used: "",
+  canceled: ""
 };
 
 function hashSeed(s: string | number | null): number {
@@ -91,11 +89,7 @@ export function TicketCard({
   checkInUrl
 }: TicketCardProps) {
   const num = padNumber(ticketNumber);
-  const seed = hashSeed(ticketNumber);
   const initials = holderInitials(holderName, num);
-
-  const paperHue = 60 + (seed % 40);
-  const paper = `oklch(0.965 0.012 ${paperHue})`;
 
   const date = eventDate ? new Date(eventDate) : null;
   const dateValid = date && !isNaN(date.getTime());
@@ -125,9 +119,7 @@ export function TicketCard({
       aria-label={`Ticket #${num} for ${eventName}`}
       className="relative isolate w-full select-none"
       style={{
-        color: PAPER_INK,
-        maxWidth: "min(52rem, 100%)",
-        ["--ticket-page-bg" as string]: "var(--background, #0a0a0a)"
+        maxWidth: "min(52rem, 100%)"
       }}
     >
       {/* Paper card — landscape, body+stub touch directly. The
@@ -146,9 +138,8 @@ export function TicketCard({
         <div
           className="relative overflow-hidden rounded-l-[3px]"
           style={{
-            background: paper,
             boxShadow:
-              "0 30px 60px -20px rgba(0,0,0,0.55), 0 8px 18px -8px rgba(0,0,0,0.35), 0 0 0 1px rgba(0,0,0,0.06)",
+              "0 30px 60px -20px, 0 8px 18px -8px, 0 0 0 1px",
             // Torn-edge clip on the right side, only when checkedIn —
             // this is the visual "rip" on the body side of the perforation.
             clipPath: checkedIn ? TORN_EDGE_RIGHT : "none"
@@ -184,7 +175,6 @@ export function TicketCard({
                 fontFamily: FONT_SERIF,
                 fontSize: "clamp(8rem, 22cqw, 14rem)",
                 lineHeight: 0.85,
-                color: "rgba(14, 10, 6, 0.06)",
                 letterSpacing: "-0.04em"
               }}
             >
@@ -250,7 +240,7 @@ export function TicketCard({
 
             <div
               className="mt-5"
-              style={{ height: 1, background: "rgba(14,10,6,0.28)" }}
+              style={{ height: 1 }}
             />
 
             {/* Event name */}
@@ -342,10 +332,6 @@ export function TicketCard({
           transition={{ type: "spring", bounce: 0.32, duration: 0.7 }}
           className="relative overflow-hidden rounded-r-[3px]"
           style={{
-            background: paper,
-            boxShadow: checkedIn
-              ? "0 22px 42px -14px rgba(0,0,0,0.6), 0 6px 14px -4px rgba(0,0,0,0.4), 0 0 0 1px rgba(0,0,0,0.06)"
-              : "0 30px 60px -20px rgba(0,0,0,0.55), 0 8px 18px -8px rgba(0,0,0,0.35), 0 0 0 1px rgba(0,0,0,0.06)",
             clipPath: checkedIn ? TORN_EDGE_LEFT : "none",
             transformOrigin: "left center"
           }}
@@ -387,17 +373,14 @@ export function TicketCard({
               <div
                 className="rounded-[2px] p-2"
                 style={{
-                  background: "white",
                   boxShadow:
-                    "inset 0 0 0 1px rgba(0,0,0,0.08), 0 1px 0 rgba(255,255,255,0.6)"
+                    "inset 0 0 0 1px, 0 1px 0"
                 }}
               >
                 <QRCodeSVG
                   value={checkInUrl}
                   size={120}
                   level="M"
-                  bgColor="#ffffff"
-                  fgColor="#1a1410"
                   includeMargin={false}
                 />
               </div>
@@ -475,8 +458,6 @@ function PerforationLine({ torn }: { torn: boolean }) {
       style={{
         width: 2,
         opacity: torn ? 0 : 1,
-        backgroundImage:
-          "radial-gradient(circle, oklch(0.18 0.012 30 / 0.45) 1px, transparent 1.5px)",
         backgroundSize: "2px 8px",
         backgroundRepeat: "repeat-y",
         backgroundPosition: "center",
@@ -520,9 +501,8 @@ function Dimple({
       style={{
         ...horizPos,
         ...vertPos,
-        background: "var(--ticket-page-bg, #0a0a0a)",
         transform: translate,
-        boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.12)",
+        boxShadow: "inset 0 0 0 1px",
         zIndex: 11
       }}
     />
@@ -536,11 +516,7 @@ interface StampProps {
   large?: boolean;
 }
 
-function Stamp({ label, tone, rotate, large }: StampProps) {
-  const color =
-    tone === "green"
-      ? "oklch(0.45 0.16 150 / 0.55)"
-      : "oklch(0.55 0.2 30 / 0.55)";
+function Stamp({ label, rotate, large }: StampProps) {
   return (
     <div
       aria-hidden="true"
@@ -549,7 +525,6 @@ function Stamp({ label, tone, rotate, large }: StampProps) {
     >
       <div
         className="border-[2.5px] px-5 py-1.5"
-        style={{ borderColor: color, color }}
       >
         <span
           className={`uppercase ${large ? "text-3xl" : "text-xl"} font-semibold`}

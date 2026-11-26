@@ -124,7 +124,7 @@ const SecondaryArticleCard = ({
         {category && (
           <RP_BadgeTag
             content={category}
-            className="border-foreground/40 px-1.5 py-1 text-faded-foreground"
+            className="border-foreground/40 px-1.5 py-1"
           />
         )}
 

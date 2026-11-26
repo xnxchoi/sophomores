@@ -283,7 +283,7 @@ export const ScrollIndicator = () => {
         <m.div
           key="scroller"
           className={cn(
-            "scroll-indicator fixed top-2 right-0 bottom-2 z-300 flex w-16 justify-end bg-linear-to-r from-background/0 via-muted-faded-background/10 via-55% to-edge-black/50 transition-colors duration-150 ease-out-power2 not-data-[drag=true]:hover:animate-pulse md:bottom-[10px]"
+            "scroll-indicator fixed top-2 right-0 bottom-2 z-300 flex w-16 justify-end bg-linear-to-r from-background/0 via-55% transition-colors duration-150 ease-out-power2 not-data-[drag=true]:hover:animate-pulse md:bottom-[10px]"
           )}
           data-drag={dragging}
           variants={{
@@ -310,19 +310,17 @@ export const ScrollIndicator = () => {
                 opacity: 1,
                 x: 0,
 
-                borderColor: "oklch(from var(--faded-fg) l c h/0)"
               },
               active: {
                 opacity: 1,
                 x: 0,
 
-                borderColor: "oklch(from var(--faded-fg) l c h/0.2)"
               }
             }}
             transition={{ duration: 0.2, ease: "easeInOut", type: "tween" }}
             key={`scroller-${show}`}
             className={cn(
-              "scroll-indicator relative z-[300] flex h-full w-[10px] justify-center overflow-hidden border-x-[1px] border-y-0 border-solid border-faded-background/0"
+              "scroll-indicator relative z-[300] flex h-full w-[10px] justify-center overflow-hidden border-x-[1px] border-y-0 border-solid"
             )}
             onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}
@@ -342,7 +340,7 @@ export const ScrollIndicator = () => {
               initial={"idle"}
               animate={trackk}
               exit={"idle"}
-              className="outline-groove scroll-indicator absolute z-[251] h-[40px] w-[4px] rounded-[4px] bg-muted-faded-background outline-[1px] outline-muted-faded-foreground/10"
+              className="outline-groove scroll-indicator absolute z-[251] h-[40px] w-[4px] rounded-[4px] outline-[1px]"
             />
           </m.div>
         </m.div>
@@ -360,12 +358,12 @@ export const ScrollIndicator = () => {
         exit={leftNotchVariants['hidden']}
         className="fixed flex h-auto md:h-[calc(100vh-100px)] top-0 md:top-auto left-[-20px] bg-transparent bottom-0 md:bottom-[20px] z-[248]" style={{
           filter: 'url(#goo-effect)'
-        }} >  <span className="fixed w-[4rem] z-[248] bottom-0 md:bottom-[1.35rem] -top-[10px] md:top-[2rem] h-auto md:h-full bg-nav-background -left-px md:left-[-2px]" />
+        }} >  <span className="fixed w-[4rem] z-[248] bottom-0 md:bottom-[1.35rem] -top-[10px] md:top-[2rem] h-auto md:h-full -left-px md:left-[-2px]" />
 
-          <m.div className="flex flex-col fixed gap-2.5 items-center justify-center bg-nav-background px-[10px] py-[25px] bottom-[54px] left-[13.5px] rounded-r-[12px] min-w-fit min-h-fit h-[140px] w-[48px] z-[248] lg:scale-115"
+          <m.div className="flex flex-col fixed gap-2.5 items-center justify-center px-[10px] py-[25px] bottom-[54px] left-[13.5px] rounded-r-[12px] min-w-fit min-h-fit h-[140px] w-[48px] z-[248] lg:scale-115"
 
           >
-            <span onClick={toggleOpen} onMouseEnter={handlers.onMouseEnter} onMouseLeave={handlers.onMouseLeave} style={{ writingMode: 'sideways-rl' }} className="text-nav-foreground text-[10px] font-bold">WORKS</span>
+            <span onClick={toggleOpen} onMouseEnter={handlers.onMouseEnter} onMouseLeave={handlers.onMouseLeave} style={{ writingMode: 'sideways-rl' }} className="text-[10px] font-bold">WORKS</span>
             <AnimatePresence initial={false} mode="sync">
               {hasRadio && <SoundBar />}
             </AnimatePresence>

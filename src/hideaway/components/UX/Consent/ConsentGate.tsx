@@ -167,7 +167,7 @@ export function ConsentGate({ children }: ConsentGateProps) {
   if (passed) {
     return (
       <div className="flex flex-col gap-6">
-        <div className="rounded-xl border border-border/30 bg-faded-background/50 p-4">
+        <div className="rounded-xl border border-border/30 p-4">
           <p className="font-sans text-[10px] tracking-widest text-foreground/50 uppercase">
             {t("consented")}
           </p>
@@ -189,11 +189,11 @@ export function ConsentGate({ children }: ConsentGateProps) {
 
   return (
     <div
-      className="flex flex-col gap-6 rounded-xl border border-border/30 bg-faded-background/50 p-5"
+      className="flex flex-col gap-6 rounded-xl border border-border/30 p-5"
       data-auth-ready={isHydrated ? "true" : "false"}
     >
       <header>
-        <h2 className="font-sans text-2xl font-medium tracking-tight text-off-foreground">
+        <h2 className="font-sans text-2xl font-medium tracking-tight">
           {t("title")}
         </h2>
         <p className="mt-2 text-xs leading-relaxed text-muted-foreground">

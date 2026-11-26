@@ -14,6 +14,7 @@ import {
   warpVertexShader as vertexShader,
   warpFragmentShader as fragmentShader
 } from "./warp-shaders";
+import { PALETTE, paletteRGB } from "@/utils/palette";
 
 // The supplied visual loop runs on the existing R3F scheduler, not a second RAF.
 // Constants adapt it to the cooler, quieter Sophomores ring without changing its flow.
@@ -149,7 +150,7 @@ function Filaments({
       uBloomSpread: { value: 1 },
       uShowPoint: { value: 1 },
       uShowBloom: { value: 1 },
-      uColor: { value: new Vector3(0.16, 0.31, 0.54) },
+      uColor: { value: new Vector3(...paletteRGB("ultramarine")) },
       uHoverPointer: { value: new Vector2(0, 0) },
       uHover: { value: 0 },
       uHeartbeat: { value: 1 }
@@ -265,7 +266,7 @@ function Ring({
     () => {
       const config = resolveFlameConfig({
         pointer: { enabled: false },
-        visual: { backgroundColor: "#000000" }
+        visual: { backgroundColor: PALETTE.carbonDeep.hex }
       });
       return `
 #define main warpRingMain

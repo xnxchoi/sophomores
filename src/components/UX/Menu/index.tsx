@@ -1151,8 +1151,7 @@ const RP_Navigator = (
           // The Hideaway's .lift__button (hideaway.scss), at its size: its rem lengths are on a 10 px root.
           // Uppercase 22 px, 1.2 leading, 24 px side padding, 20 px tall below 769 px (24 px above), and 20 px with
           // 5.5 px vertical padding from 967 px. Our one change: no outline: none, so keyboard focus still shows.
-          // Ink: Carbon Darker -1 in both themes, over the bright menu gradient (Cordy, 26 Nov; lowest bright stop 4.46:1).
-          "relative m-0 inline-block h-5 appearance-none border-0 bg-transparent px-6 text-center text-[22px] leading-[1.2] font-normal not-italic whitespace-nowrap text-carbon-deep uppercase no-underline transition-[color,background,border] duration-300 ease-[ease] min-[769px]:h-6 min-[967px]:py-[5.5px] min-[967px]:text-[20px]"
+          "relative m-0 inline-block h-5 appearance-none border-0 bg-transparent px-6 text-center text-[22px] leading-[1.2] font-normal not-italic whitespace-nowrap text-(--n-s-menu-i) uppercase no-underline transition-[color,background,border] duration-300 ease-[ease] min-[769px]:h-6 min-[967px]:py-[5.5px] min-[967px]:text-[20px]"
         )}
         {...rest}
         {...propsToPass}

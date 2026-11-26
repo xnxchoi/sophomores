@@ -42,6 +42,13 @@ export function CartColumn({ open, shown, back, onBack, onLines, children }: {
         <ArrowLeftIcon aria-hidden="true" className="mr-1.5 size-3.5" />{back}
       </button>
     </div>
+    {/* On a phone the way back sits in the label's slot under the nav (theirs: "Return to shelf" top left over the
+        column), coming in from +10 px 100 ms after it's asked for, as the open book's phone link does. */}
+    <button type="button" tabIndex={shown ? 0 : -1} aria-hidden={!shown} onClick={onBack}
+      className={cn("fixed top-[calc(53px+var(--shop-shift,0px))] left-4 z-[32] -my-3.5 inline-flex min-h-11 min-w-11 items-center text-[11px] uppercase leading-4 tracking-[0.06em] text-muted-foreground transition-[opacity,translate,color] duration-300 ease-[ease] hover:text-foreground min-[900px]:hidden",
+        shown ? "delay-100" : "pointer-events-none translate-x-2.5 opacity-0")}>
+      <ArrowLeftIcon aria-hidden="true" className="mr-1.5 size-3.5" />{back}
+    </button>
     <aside inert={!shown} data-lenis-prevent=""
       className="fixed top-[calc(80px+var(--shop-shift,0px))] right-0 z-30 isolate flex h-[calc(100vh-80px-var(--shop-shift,0px))] w-[40%] flex-col overflow-y-auto overscroll-contain rounded-bl-[8px] bg-background px-6 pt-[39px] pb-6 text-foreground max-[900px]:top-0 max-[900px]:h-dvh max-[900px]:w-full max-[900px]:rounded-none max-[900px]:pt-[110px] max-[900px]:pb-[60vh]"
       style={{ opacity: "var(--cart-panel-enter, 1)" }}>

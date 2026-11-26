@@ -228,8 +228,11 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
 
   // Their shelf catch and the titles' clear line (use-shelf-catch.tsx).
   const titles = useRef<HTMLElement>(null);
-  const catchSource = useRef<ShelfCatchSource>({ seatY: () => null, driving: () => false, stopDriving: () => undefined, titles: () => null, held: () => false });
-  useEffect(() => { catchSource.current = { seatY, driving: () => drive.current.active || gliding.current != null, stopDriving, titles: () => titles.current, held: () => held.current }; });
+  const [seatBottom, setSeatBottom] = useState<number | null>(null);
+  const catchSource = useRef<ShelfCatchSource>({ seatY: () => null, driving: () => false, stopDriving: () => undefined, titles: () => null, held: () => false,
+    seatBottom: () => undefined });
+  useEffect(() => { catchSource.current = { seatY, driving: () => drive.current.active || gliding.current != null, stopDriving, titles: () => titles.current,
+    held: () => held.current, seatBottom: setSeatBottom }; });
   useShelfCatch(hub, catalogue, catchSource);
 
   // Opening a book into its details inside the scene (use-book-detail.tsx), at every width.
@@ -412,11 +415,45 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
   }), [skipIntro, lookProps, lookHome, committed, active, detail.open, landing, sceneIndex]);
 
   // The spine row seats against, and lifts out ahead of, the section after the shelf (their #home-section-films, read
-  // through homeWebsitesSectionElLiveRef); without one the scene treats the row as already gone. As theirs, the content
-  // layer begins ~0.81 of a screen before the stack's scroll ends (729 px at 900 tall), with their transparent books box
-  // (171.1vh − 40px) before the next section.
+  // through homeWebsitesSectionElLiveRef); without one the scene treats the row as already gone. Theirs places that
+  // section by the seat, not by the stack's end (their content top `l_ − lY`, 06w9:11674-11694, 18117): with the seat
+  // locked, at the seat's scroll plus 0.3 of a screen, the seated row's bottom and their 135 px gap; before it locks,
+  // a screen below the seat's 0.15 lift; on a phone, a screen below a fifth of the shelf. So the row has barely seated
+  // when the section comes up and lifts it (measured on stripe.press: their section sits at 4524 px, the formula
+  // gives 4524; ours stood 1,500 px further down, leaving the shelf still for a whole screen and more).
   const next = useRef<HTMLDivElement>(null);
   useEffect(() => { hub.homeWebsitesSectionElLiveRef.current = next.current; return () => { hub.homeWebsitesSectionElLiveRef.current = null; }; }, [hub]);
+  const nextTop = useMemo(() => {
+    const { extents, starts, lvh, mobile, total } = geometry;
+    const at = (progress: number) => { const segment = Math.floor(progress); return (starts[segment] ?? total) + (progress - segment) * (extents[segment] ?? 0); };
+    if (seatBottom != null) return Math.round(at(seats.d(mobile)) + 0.3 * lvh + seatBottom + hub.SPINE_ROW_WEBSITES_GAP_PX);
+    if (!mobile) return Math.round(at(seats.h(0.15, false)) + lvh);
+    return Math.round((starts[K] ?? total) + 0.2 * (extents[K] ?? 0) + lvh);
+  }, [geometry, seatBottom, seats, hub, K]);
+
+  // How far the rising row covers the titles (their header sampler's `rowOverTitles`, 06w9:11870-11895): the rail's
+  // share under the row's top at the lift the next section gives it, in 40ths; −1 while the seat isn't locked. The
+  // rail fades by half of it (their footerFade). Their phone branch reads a mobile seat this page doesn't have.
+  const [rowOver, setRowOver] = useState(-1);
+  useEffect(() => {
+    let frame = 0;
+    const sample = () => {
+      frame = 0;
+      const geom = hub.spineRowSeatGeomLiveRef.current as { valid?: boolean; lock?: boolean } | null;
+      const rail = titles.current, section = next.current;
+      let over = -1;
+      if (geom?.valid && geom.lock && rail && section) {
+        const lift = hub.spineRowLiftForWebsitesTop(section.getBoundingClientRect().top), box = rail.getBoundingClientRect();
+        over = lift <= 0 || box.height < 1 ? 0 : Math.round(40 * Math.max(0, Math.min(1, (box.bottom - hub.spineRowTopPxAtLift(lift)) / box.height))) / 40;
+      }
+      setRowOver(over);
+    };
+    const request = () => { if (!frame) frame = requestAnimationFrame(sample); };
+    sample();
+    window.addEventListener("scroll", request, { passive: true });
+    window.addEventListener("resize", request);
+    return () => { cancelAnimationFrame(frame); window.removeEventListener("scroll", request); window.removeEventListener("resize", request); };
+  }, [hub]);
 
   // On the shelf the rail names the selected spine (their rail follows the spine selection there).
   const [selected, setSelected] = useState<number | null>(null);
@@ -439,10 +476,7 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
   // home's own scroll.
   const readingHeight = reading.layout.total + Math.round(geometry.lvh / 2);
   return <div ref={page} className="relative overflow-x-clip">
-    {readingOpen ? <div style={{ height: readingHeight }} /> : <>
-      <div style={{ height: Math.max(0, geometry.total - Math.round(0.81 * geometry.lvh)) }} />
-      <div aria-hidden="true" className="pointer-events-none h-[calc(171.1lvh-40px)]" />
-    </>}
+    {readingOpen ? <div style={{ height: readingHeight }} /> : <div aria-hidden="true" style={{ height: Math.max(0, nextTop) }} />}
     <div ref={next} aria-hidden="true" className="h-[40lvh]" />
     <Cards items={items} featured={catalogue.t} geometry={geometry} progressRef={cardsRef} listeners={listeners} reading={held} J={J}
       hub={hub} openRef={openIndex} />
@@ -460,7 +494,8 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
       </button>
     </div>
     <TitleRail railRef={titles} label={labels.titles} titles={items.map((entry) => entry.title)} refunds={items.map((entry) => entry.refund)} active={detail.open ?? selected ?? railIndex}
-      fade={detail.open != null ? 0 : Math.max(0, Math.min(1, (committed - K - 0.2) / 0.3))} detail={detail.open != null && !detail.leaving}
+      fade={detail.open != null ? 0 : rowOver >= 0 ? 0.5 * rowOver : Math.max(0, Math.min(1, (committed - K - 0.2) / 0.3))} shelf={committed >= J}
+      detail={detail.open != null && !detail.leaving}
       hidden={phoneDetail}
       onPick={(index) => detail.open != null ? openRef.current(index) : index < catalogue.t ? scrollTo(bookY(index), 1000) : scrollTo(shelfY(), 1833)} />
     {item && <ViewDetails href={item.href} label={labels.viewDetails} hidden={(onShelf || detail.open != null) && !look.home} onOpen={() => openRef.current(active)}
@@ -561,9 +596,11 @@ function Cards({ items, featured, geometry, progressRef, listeners, reading, J, 
  * upright and centred at 47.5 % of the width (500 ms ease-in-out), the rest italic at 0.8; each title's refund rule on a
  * line under it (owner, 25 Nov); the titles fade in 1.2 s after load and fade out as the shelf takes the screen.
  */
-function TitleRail({ railRef, label, titles, refunds, active, fade, detail, hidden, onPick }: { railRef: Ref<HTMLElement>; label: string; titles: string[];
+function TitleRail({ railRef, label, titles, refunds, active, fade, shelf, detail, hidden, onPick }: { railRef: Ref<HTMLElement>; label: string; titles: string[];
   /** Each title's refund rule, a line under it. */
   refunds: ReactNode[]; active: number; fade: number;
+  /** Past the featured books: the rail fades with the rising row over 350 ms (theirs: opacity 350 ms ease on the shelf). */
+  shelf: boolean;
   detail: boolean;
   /** A phone's open book: the rail fades out over 300 ms (theirs `footerFade`, no delay). */
   hidden: boolean; onPick: (index: number) => void }) {
@@ -582,7 +619,8 @@ function TitleRail({ railRef, label, titles, refunds, active, fade, detail, hidd
   }, [active, titles, detail]);
   return <nav ref={railRef} aria-label={label} aria-hidden={hidden || undefined} inert={hidden} style={{ opacity: shown && !hidden ? 1 - 2 * fade : 0 }}
     className={cn("pointer-events-none fixed inset-x-0 top-[70px] z-20 overflow-hidden px-5 pt-5 pb-3 transition-[opacity,clip-path] duration-[1600ms] max-[900px]:top-[63px]",
-      hidden ? "duration-300" : detail ? "[clip-path:inset(0_40%_0_0)] [transition-duration:1600ms,600ms] [transition-timing-function:ease,cubic-bezier(0.16,1,0.3,1)]" : "[clip-path:inset(0_0_0_0)]")}>
+      hidden ? "duration-300" : detail ? "[clip-path:inset(0_40%_0_0)] [transition-duration:1600ms,600ms] [transition-timing-function:ease,cubic-bezier(0.16,1,0.3,1)]" : "[clip-path:inset(0_0_0_0)]",
+      shown && shelf && !detail && !hidden && "duration-[350ms]")}>
     <ul style={{ transform: "translateX(" + shift + "px)" }}
       className="flex w-max gap-x-[72px] transition-transform duration-500 ease-in-out max-[900px]:gap-x-[30px]">
       {/* Three copies, the middle one active, so the active title always has neighbours on both sides (theirs: 21ix). */}

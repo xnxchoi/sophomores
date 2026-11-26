@@ -24,7 +24,11 @@ export type SceneHub = Record<string, Ref<unknown>> & {
   stepSpineSelection: (step: number, count: number, options?: { repeat?: boolean }) => void;
   beginSpineDrag: unknown; moveSpineDrag: unknown; endSpineDrag: unknown;
   spineRowLiftForTopPx: (topPx: number) => number; hintSpineRow: () => void;
+  /** The spine row's lift for the next section's top (px from the viewport top), and the row's top at a lift. */
+  spineRowLiftForWebsitesTop: (topPx: number) => number; spineRowTopPxAtLift: (lift: number) => number;
   SCENE_CARD_BOTTOM_INSET_CSS_PX: number;
+  /** The gap their next section keeps under the seated spine row. */
+  SPINE_ROW_WEBSITES_GAP_PX: number;
 };
 /** Their spine-row seat helpers (module 2449): the shelf progress at which the row seats, for a phone (`d`), for a lift
  * fraction of the row's exit travel (`h`), and the seated progress without a lift (`j`). */

@@ -29,9 +29,11 @@ export const privatePageCacheControl = "private, no-store";
  * Public pages whose response still varies by session (a signed-in member's own setlist or reading slots): sent
  * private, no-store too, so no shared or browser cache serves one member's version to another. They hold no personal
  * data such as an address or phone, so they do not mount the guard (coordinator, 23 Nov). /music renders the featured
- * setlist; the essay pages load the member's reading slots (lib/content/load-reading.ts).
+ * setlist; the essay pages load the member's reading slots (lib/content/load-reading.ts). The shop (Cordy, 26 Nov):
+ * the cart opens in place on /shop and /shop/products/* (a shallow push to /shop/cart), so those pages carry the
+ * member's cart. /shop/cart and the purchase steps under /shop stay private pages, with the guard.
  */
-export const sessionVaryingPagePrefixes = ["/essays", "/music", "/setlists"] as const;
+export const sessionVaryingPagePrefixes = ["/essays", "/music", "/setlists", "/shop"] as const;
 
 /** Every path the proxy sends private, no-store: private pages and session-varying public ones. */
 export function isNoStorePagePath(pathname: string): boolean {

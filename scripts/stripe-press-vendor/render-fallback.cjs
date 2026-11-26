@@ -18,6 +18,15 @@ const SET = productId || "placeholder";
 const COVER = coverArg ? path.resolve(coverArg) : path.join(ROOT, "public/assets/three/book/cover-placeholder.png");
 const OUT = path.join(ROOT, "public/assets/three/book/fallback", SET), URL_BASE = "/assets/three/book/fallback/" + SET + "/";
 const MANIFEST = path.join(ROOT, "src/components/commerce/shop/_shared/fallback-manifest.json");
+// The book's colours come from the palette (One Source, palette r3): src/utils/palette.ts, mapped as stripe-scene.tsx maps
+// them (cover and pages titanium). Read as text, since this script is plain Node and the module is TypeScript.
+const PALETTE_SRC = fs.readFileSync(path.join(ROOT, "src/utils/palette.ts"), "utf8");
+const paletteHex = (name) => {
+  const match = PALETTE_SRC.match(new RegExp("\\b" + name + ": \\{[^}]*hex: \"(#[0-9A-Fa-f]{6})\""));
+  if (!match) throw new Error("palette.ts has no " + name);
+  return match[1];
+};
+const COVER_HEX = paletteHex("titanium"), PAGE_HEX = paletteHex("titanium");
 // Their sizes (24750, Built to Grow): turn frames 580×711, hero 793×1005, spine 109×980, cover 685×1020.
 const TURN = { width: 580, height: 711 }, HERO_SCALE = 1005 / 660, STRAIGHT_HEIGHT = 1020, FRAMES = 36;
 // The hero pose: the front cover towards the camera, turned so the spine edge shows, seen a little from above.
@@ -37,8 +46,8 @@ const key = new THREE.DirectionalLight(0xfdb958, 1.77); key.position.set(-35.8, 
 const sun = new THREE.DirectionalLight(0xd6fffc, 2.33); sun.position.set(-4.5, -4.5, 7.5); scene.add(sun);
 const book = (await new GLTFLoader().loadAsync("/assets/three/book/book-rest.glb")).scene;
 const tex = await new THREE.TextureLoader().loadAsync("/cover"); tex.flipY = false; tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8;
-const cover = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.8 }), page = new THREE.MeshStandardMaterial({ color: 0xf3f2ee, roughness: 0.9 }),
-  board = new THREE.MeshStandardMaterial({ color: 0xe6e5e1, roughness: 0.85 });
+const cover = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.8 }), page = new THREE.MeshStandardMaterial({ color: "${PAGE_HEX}", roughness: 0.9 }),
+  board = new THREE.MeshStandardMaterial({ color: "${COVER_HEX}", roughness: 0.85 });
 book.traverse((o) => { if (!o.isMesh) return; o.frustumCulled = false; o.material = o.name === "cover_1" ? cover : o.name.startsWith("pages") ? page : board; });
 const box = new THREE.Box3().setFromObject(book), size = box.getSize(new THREE.Vector3());
 book.position.sub(box.getCenter(new THREE.Vector3()));

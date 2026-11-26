@@ -93,10 +93,7 @@ export function SlotManager({
               <p className="text-xs text-pewter max-w-xl leading-relaxed">
                 {isUnactivated
                   ? t("slots.activationBody")
-                  : userSlotState.reason === "ineligible_product"
-                  ? t("slots.verificationBody")
-                  : userSlotState.reason ||
-                    t("slots.verificationBody")}
+                  : t("slots.verificationBody")}
               </p>
             </div>
           </div>

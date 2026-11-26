@@ -37,9 +37,12 @@ export async function loadGoogleWalletIssuer(file = googleWalletIssuerFile, uid 
   try { text = await readOwnerOnly(file, uid); } catch { throw new GoogleWalletIssuerError("issuer_file_unreadable"); }
   let account: z.infer<typeof serviceAccount>;
   try { account = serviceAccount.parse(JSON.parse(text)); } catch { throw new GoogleWalletIssuerError("issuer_file_invalid"); }
-  try {
-    return { issuerID, serviceAccount: account.client_email, key: await importPKCS8(account.private_key, "RS256") };
-  } catch { throw new GoogleWalletIssuerError("issuer_key_invalid"); }
+  let key: CryptoKey;
+  try { key = await importPKCS8(account.private_key, "RS256"); } catch { throw new GoogleWalletIssuerError("issuer_key_invalid"); }
+  // RS256 needs at least 2048 bits (jose refuses a smaller key only when signing, after the holder check and Unlock's
+  // fetch); refuse it here, before anything leaves the server.
+  if ((key.algorithm as RsaHashedKeyAlgorithm).modulusLength < 2048) throw new GoogleWalletIssuerError("issuer_key_invalid");
+  return { issuerID, serviceAccount: account.client_email, key };
 }
 
 const digest = (value: string) => createHash("sha256").update(value).digest("hex").slice(0, 32);

@@ -57,7 +57,8 @@ pU8RBWk6z/Kf
 `;
 
 export const APPLE_SIGNER_CODES = ["signer_files_unreadable", "signer_env_invalid", "signer_cert_invalid", "signer_cert_not_ours",
-  "signer_cert_expired", "signer_cert_not_wwdr", "signer_key_invalid", "signer_key_mismatch", "pass_art_missing"] as const;
+  "signer_cert_expired", "signer_cert_not_wwdr", "signer_key_not_encrypted", "signer_key_invalid", "signer_key_mismatch",
+  "pass_art_missing"] as const;
 export class AppleSignerError extends Error {
   override name = "AppleSignerError";
   constructor(readonly code: (typeof APPLE_SIGNER_CODES)[number]) { super(code); }
@@ -67,6 +68,9 @@ export type AppleSigner = { teamIdentifier: string; signerCert: string; signerKe
 
 const subjectField = (subject: string, name: string) =>
   subject.split("\n").filter(line => line.startsWith(name + "=")).map(line => line.slice(name.length + 1));
+// One encrypted PKCS#8 PEM block and nothing else: what the manual's `openssl req -newkey … -keyout` writes. A passphrase
+// alone proves nothing (Node ignores it for a plaintext key), so a key that was ever stored unencrypted is refused.
+const ENCRYPTED_PKCS8 = /^-{5}BEGIN ENCRYPTED PRIVATE KEY-{5}\r?\n[A-Za-z0-9+/=\r\n]+-{5}END ENCRYPTED PRIVATE KEY-{5}\r?\n?$/;
 const ART = ["icon.png", "icon@2x.png", "icon@3x.png", "logo.png", "logo@2x.png", "logo@3x.png"] as const;
 
 /** Everything a pass needs, checked before anything is fetched; each failure is a fixed code with nothing from the files. */
@@ -85,6 +89,7 @@ export async function loadAppleSigner({ files = appleSigningFiles, artDirectory 
   if (passType !== APPLE_PASS_TYPE_ID || teams.length !== 1 || !/^[A-Z0-9]{10}$/.test(teams[0])) throw new AppleSignerError("signer_cert_not_ours");
   if (now < new Date(cert.validFrom) || now >= new Date(cert.validTo)) throw new AppleSignerError("signer_cert_expired");
   if (!cert.checkIssued(issuer) || !cert.verify(issuer.publicKey)) throw new AppleSignerError("signer_cert_not_wwdr");
+  if (!ENCRYPTED_PKCS8.test(keyPem)) throw new AppleSignerError("signer_key_not_encrypted");
   let key: ReturnType<typeof createPrivateKey>;
   try { key = createPrivateKey({ key: keyPem, format: "pem", passphrase }); } catch { throw new AppleSignerError("signer_key_invalid"); }
   if (!cert.checkPrivateKey(key)) throw new AppleSignerError("signer_key_mismatch");
@@ -114,4 +119,3 @@ export async function appleWalletPass(signer: AppleSigner, { serial, event, barc
   pass.setBarcodes({ message: barcode, format: "PKBarcodeFormatQR", messageEncoding: "iso-8859-1" });
   return pass.getAsBuffer();
 }
-

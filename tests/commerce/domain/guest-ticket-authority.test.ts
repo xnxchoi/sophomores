@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
-import { chmod, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { createHash, createPrivateKey, generateKeyPairSync } from "node:crypto";
+import { chmod, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -427,13 +427,14 @@ test("with passes on but the Google switch off, only Apple is offered and the Go
 
 // Our own Google Wallet pass (owner GO, 26 Nov, via Cordy): Unlock's signed QR, harvested from the hosted Android route
 // and proved for this key and Safe, inside a save JWT we sign with jose. Off unless OWN_WALLET_PASSES_ENABLED=1.
-async function ownPass(t: { after: (fn: () => void) => void }, { issuerFails = false, apple = null as null | (() => Promise<AppleSigner>) } = {}) {
+async function ownPass(t: { after: (fn: () => void) => void }, { issuerFails = false, apple = null as null | (() => Promise<AppleSigner>),
+  loadIssuer = null as null | (() => Promise<GoogleWalletIssuer>) } = {}) {
   const google = await generateKeyPair("RS256", { extractable: true });
   const unlockKey = await generateKeyPair("RS256");
   const locksmith = privateKeyToAccount(generatePrivateKey());
   const issuer: GoogleWalletIssuer = { issuerID: "3388000000022222222", serviceAccount: "wallet-issuer@sophomores-test.iam.gserviceaccount.com", key: google.privateKey };
   const m = await memberTicket(t, {
-    googleIssuer: async () => { if (issuerFails) throw new Error("issuer_file_unreadable"); return issuer; },
+    googleIssuer: loadIssuer ?? (async () => { if (issuerFails) throw new Error("issuer_file_unreadable"); return issuer; }),
     qrSigners: [locksmith.address],
     ...(apple ? { appleSigner: apple } : {}),
   });
@@ -569,6 +570,8 @@ test("own passes: an event with no name can't make a pass, so the ticket shows n
   assert.equal(m.calls.length, 0);
 });
 
+const undersizedPem = () => generateKeyPairSync("rsa", { modulusLength: 1024 }).privateKey.export({ type: "pkcs8", format: "pem" }) as string;
+
 test("our Google issuer file: owner-only, well formed, and every failure a fixed code", async t => {
   const dir = await mkdtemp(join(tmpdir(), "gw-issuer-"));
   t.after(() => rm(dir, { recursive: true, force: true }));
@@ -593,10 +596,27 @@ test("our Google issuer file: owner-only, well formed, and every failure a fixed
   assert.equal(await code(), "issuer_file_invalid");
   await write(JSON.stringify({ ...account, private_key: pem.replace(/\n[\s\S]+\n(?=-)/, "\nnotakey\n") }));
   assert.equal(await code(), "issuer_key_invalid");
+  await write(JSON.stringify({ ...account, private_key: undersizedPem() }));
+  assert.equal(await code(), "issuer_key_invalid", "a 1024-bit key is refused at load, not when signing");
   await rm(file);
   assert.equal(await code(), "issuer_file_unreadable");
   const thrown = await loadGoogleWalletIssuer(file).catch((error: Error) => error);
   assert.equal(String(thrown).includes(dir), false, "no path or content in the error");
+});
+
+test("own Google pass: an undersized issuer key stops the real loader before the chain or Unlock", async t => {
+  const dir = await mkdtemp(join(tmpdir(), "gw-issuer-"));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  const previous = process.env.GOOGLE_WALLET_ISSUER_ID;
+  t.after(() => { if (previous === undefined) delete process.env.GOOGLE_WALLET_ISSUER_ID; else process.env.GOOGLE_WALLET_ISSUER_ID = previous; });
+  process.env.GOOGLE_WALLET_ISSUER_ID = "3388000000022222222";
+  const file = join(dir, "google-wallet-issuer.json");
+  await writeFile(file, JSON.stringify({ type: "service_account", client_email: "wallet-issuer@sophomores-test.iam.gserviceaccount.com",
+    private_key: undersizedPem() }), { mode: 0o600 });
+  const m = await ownPass(t, { loadIssuer: () => loadGoogleWalletIssuer(file) });
+  assert.equal((await m.open("android", undefined, "application/json")).status, 503);
+  assert.equal(m.calls.length, 0, "no Unlock fetch");
+  assert.equal(m.held.length, 0, "no chain read");
 });
 
 test("own Apple pass: behind its own switch, the same proved QR in a pass we sign", { skip: !toolsAvailable() && "openssl or unzip is not installed" }, async t => {
@@ -625,6 +645,18 @@ test("own Apple pass: behind its own switch, the same proved QR in a pass we sig
   const bad = await m.hosted(await m.qr({ tokenId: "8" }));
   m.setUpstream(() => bad.clone());
   assert.equal((await m.open("ios")).status, 303, "a QR for another token builds no Apple pass either");
+});
+
+test("own Apple pass: a matching key stored unencrypted is refused before the chain or Unlock", { skip: !toolsAvailable() && "openssl or unzip is not installed" }, async t => {
+  const f = await appleSigningFixture();
+  t.after(f.cleanup);
+  const plainFile = join(f.dir, "plain-key.pem");
+  const key = createPrivateKey({ key: await readFile(f.files.key, "utf8"), passphrase: f.passphrase });
+  await writeFile(plainFile, key.export({ type: "pkcs8", format: "pem" }), { mode: 0o600 });
+  const m = await ownPass(t, { apple: () => loadAppleSigner({ files: { ...f.files, key: plainFile }, artDirectory: f.art, wwdr: f.wwdr }) });
+  assert.equal((await m.open("ios", undefined, "application/json")).status, 503);
+  assert.equal(m.calls.length, 0, "no Unlock fetch");
+  assert.equal(m.held.length, 0, "no chain read");
 });
 
 test("own Apple pass: without our signer or pass art, nothing is fetched, not even the chain", async t => {

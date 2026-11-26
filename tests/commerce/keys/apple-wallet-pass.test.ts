@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import { chmod, rm, writeFile } from "node:fs/promises";
+import { createPrivateKey } from "node:crypto";
+import { chmod, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
 import messages from "../../../messages/en.json";
@@ -49,6 +50,14 @@ test("every way the signing material can be wrong refuses with its own fixed cod
   t.after(other.cleanup);
   assert.equal(await code(loadAppleSigner({ files: other.files, artDirectory: other.art, wwdr: other.wwdr })), "signer_cert_not_ours");
   assert.equal(await load({ files: { ...f.files, key: other.files.key, env: other.files.env } }), "signer_key_mismatch");
+  // The matching key, stored any way but encrypted PKCS#8: a passphrase alone doesn't prove the file is encrypted.
+  const key = createPrivateKey({ key: await readFile(f.files.key, "utf8"), passphrase: f.passphrase });
+  const stored = join(f.dir, "stored-key.pem");
+  for (const pem of [key.export({ type: "pkcs8", format: "pem" }), key.export({ type: "pkcs1", format: "pem" }),
+    key.export({ type: "pkcs1", format: "pem", cipher: "aes-256-cbc", passphrase: f.passphrase })]) {
+    await writeFile(stored, pem, { mode: 0o600 });
+    assert.equal(await load({ files: { ...f.files, key: stored } }), "signer_key_not_encrypted");
+  }
   await writeFile(f.files.env, "APPLE_PASS_KEY_PASSPHRASE=wrong\n");
   assert.equal(await load(), "signer_key_invalid");
   await writeFile(f.files.env, "OTHER=x\n");

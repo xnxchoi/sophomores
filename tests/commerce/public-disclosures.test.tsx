@@ -1,4 +1,3 @@
-import { EnglishMessages } from "../fixtures/english-messages";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -13,7 +12,7 @@ import { PolicyPage } from "@/app/(site)/_commerce/policy-page";
 import { MemberAuthProviders } from "../member-auth/fixtures/providers";
 
 test("unconfigured seller never falls back to legacy seller facts", () => {
-  const html = renderToStaticMarkup(<EnglishMessages><SellerDisclosure /></EnglishMessages>);
+  const html = renderToStaticMarkup(<MemberAuthProviders><SellerDisclosure /></MemberAuthProviders>);
   assert.match(html, /Seller information has not been published yet\./);
   assert.doesNotMatch(html, /리스토어드프로젝트|753-32-01007|4637 9289/);
   for (const path of ["terms", "privacy", "refund"]) assert.ok(html.includes(`href="/${path}"`));
@@ -41,7 +40,7 @@ test("the approved public mobile contact cannot satisfy the checkout publication
 test("approved seller fields render together, including a non-mobile contact and optional mail-order number", () => {
   // Synthetic test data only; never imported into the public configuration.
   const html = renderToStaticMarkup(
-    <EnglishMessages><SellerDisclosure
+    <MemberAuthProviders><SellerDisclosure
       seller={{
         name: "Fixture merchant",
         registrationNumber: "000-00-00000",
@@ -50,7 +49,7 @@ test("approved seller fields render together, including a non-mobile contact and
         phone: "02-000-0000",
         mailOrderRegistrationNumber: "Fixture mail-order registration"
       }}
-    /></EnglishMessages>
+    /></MemberAuthProviders>
   );
   for (const value of [
     "Fixture merchant",
@@ -70,7 +69,7 @@ test("approved seller fields render together, including a non-mobile contact and
 
 test("optional mail-order field is omitted rather than fabricated", () => {
   const html = renderToStaticMarkup(
-    <EnglishMessages><SellerDisclosure
+    <MemberAuthProviders><SellerDisclosure
       seller={{
         name: "Fixture merchant",
         registrationNumber: "000-00-00000",
@@ -78,7 +77,7 @@ test("optional mail-order field is omitted rather than fabricated", () => {
         address: "Fixture office address",
         phone: "02-000-0000"
       }}
-    /></EnglishMessages>
+    /></MemberAuthProviders>
   );
   assert.doesNotMatch(html, /Mail-order business registration number/);
 });

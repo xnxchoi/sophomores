@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
-import { EnglishMessages } from "../fixtures/english-messages";
+import { MemberAuthProviders } from "../member-auth/fixtures/providers";
 import { HelpPillLinks } from "@/app/(site)/_commerce/help-pill-links";
 
 const render = (contactEmail: string | null) => renderToStaticMarkup(
-  <EnglishMessages><HelpPillLinks contactEmail={contactEmail} onClose={() => {}} /></EnglishMessages>,
+  <MemberAuthProviders><HelpPillLinks contactEmail={contactEmail} onClose={() => {}} /></MemberAuthProviders>,
 );
 
 test("the Help pill lists the support pages and Close, with Contact only once the email is published", () => {
@@ -16,12 +16,12 @@ test("the Help pill lists the support pages and Close, with Contact only once th
   assert.match(without, /<button type="button"[^>]*>(?:<span[^>]*>)?Close(?:<\/span>)?<\/button>/);
   assert.equal(render("help@example.test").includes('href="mailto:help@example.test"'), true);
   const custom = renderToStaticMarkup(
-    <EnglishMessages><HelpPillLinks onClose={() => {}} closeLabel="Class dismissed" /></EnglishMessages>,
+    <MemberAuthProviders><HelpPillLinks onClose={() => {}} closeLabel="Class dismissed" /></MemberAuthProviders>,
   );
   assert.match(custom, /<button type="button"[^>]*>(?:<span[^>]*>)?Class dismissed(?:<\/span>)?<\/button>/);
   assert.equal(without.includes("Site guide"), false);
   const guide = renderToStaticMarkup(
-    <EnglishMessages><HelpPillLinks contactEmail="help@example.test" onClose={() => {}} onOpenGuide={() => {}} /></EnglishMessages>,
+    <MemberAuthProviders><HelpPillLinks contactEmail="help@example.test" onClose={() => {}} onOpenGuide={() => {}} /></MemberAuthProviders>,
   );
   assert.match(guide, /<button type="button"[^>]*>(?:<span[^>]*>)?Site guide(?:<\/span>)?<\/button>/);
   assert.equal(guide.indexOf('href="/me/orders"') < guide.indexOf("Site guide") && guide.indexOf("Site guide") < guide.indexOf("mailto:"), true);

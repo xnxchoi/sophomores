@@ -31,6 +31,16 @@ export type ReadingSource = {
 };
 
 const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
+/**
+ * stripe.press runs one book's details on into the next book's (its section, its 3D book, its address). Owner, 26 Nov:
+ * "build and keep the stripe transition as we may use it at some point, and 2) just stop at end for now". So the page
+ * holds the open product's section: the page stops at the bottom of its details (and above its park), and the scene is
+ * capped where the next product would start to rise, so neither the next book nor the address changes. The other
+ * products' panels stay measured (the layout is theirs) but inert. `true` restores their run-on; nothing else changes.
+ */
+export const READING_RUN_ON = false;
+/** Room left under the open product's last line when the page stops (px). */
+const END_CLEARANCE = 48;
 const HEADER_TRIM = 122, PANEL_TOP = 68, SECTION_TAIL = 70, MEASURE_TAIL = 300, ANCHOR_LEAD = 220;
 /** Their phone nav height (`eL.k`), which the phone's detail offset uses instead of the card top (06w9:11619-11621). */
 const MOBILE_NAV = 162, PARK_ABOVE = 44, SECTION_HEAD = 127;
@@ -105,10 +115,30 @@ export function useReadingScroll(hub: SceneHub, scroll: SceneScroll, open: numbe
     : Math.max(0, base() + (L.tops[at] ?? 0) + HEADER_TRIM - scroll.p(scroll.X()));
   /** Where an open lands: desktop the park; a phone the landing, lower, so the book shows above its details (`lp`). */
   const landingY = (at: number, L: ReadingLayout) => L.mobile ? Math.max(0, base() + phone(at, L).landing) : park(at, L);
+  /** Without the run-on: the page's range for book `at` (from its park to the bottom of its details in the DOM, plus a
+   * little clearance) and the scene's cap (the last scroll before the detail lock lets the next book rise; bisection,
+   * as `scroll.m` is theirs). */
+  const holdRange = (at: number, L: ReadingLayout, canvasHeight: number) => {
+    const top = base(), from = top + (L.starts[at] ?? 0), extent = L.extents[at] ?? 0, vh = window.innerHeight || L.lvh;
+    const floor = Math.max(0, Math.min(top + (L.tops[at] ?? 0) - PARK_ABOVE, park(at, L)));
+    let lo = from, hi = from + extent;
+    for (let i = 0; i < 24; i += 1) {
+      const mid = (lo + hi) / 2;
+      if (lockedFor(scroll.m(mid - top, L.extents), L, canvasHeight) <= at + 1e-6) lo = mid; else hi = mid;
+    }
+    const panel = document.querySelector<HTMLElement>('[data-detail-panel-index="' + at + '"]');
+    const bottom = panel ? panel.getBoundingClientRect().bottom + window.scrollY + END_CLEARANCE - vh : lo;
+    return { min: floor, max: Math.max(floor, landingY(at, L), Math.ceil(bottom)), scene: Math.max(floor, Math.floor(lo)) };
+  };
   // The open's blend on a phone (their `lf`): the exits ease in from the park over 450 ms; none for a shelf or address open.
   const blend = useRef<{ index: number; t0: number } | null>(null);
 
   const reading = open != null;
+  // Whether details are open right now: a layout effect, so it is false before the page's own close handler scrolls home
+  // (that runs in a later layout effect and dispatches a scroll this listener must not clamp; G9 trace, close landed at
+  // the page's bottom).
+  const openNow = useRef(reading);
+  useLayoutEffect(() => { openNow.current = reading; });
   useLayoutEffect(() => {
     const offset = base();
     hub.detailSectionTopsLiveRef.current = reading ? layout.tops.map((top) => top + offset) : null;
@@ -123,9 +153,18 @@ export function useReadingScroll(hub: SceneHub, scroll: SceneScroll, open: numbe
     const [praise, card, cardAt, turn, reveal] = arrays;
     let settle = 0, still = 0, rerun = 0;
     const run = () => {
-      const { layout: L, geometry: G, count: n } = live.current, y = window.scrollY, vh = window.innerHeight || 1, top = base();
+      const { layout: L, geometry: G, count: n } = live.current, vh = window.innerHeight || 1, top = base();
+      let y = window.scrollY, sceneY = y;
+      // Stop at the open product's ends (run-on off): the page at its details' bottom, the scene before the next one rises.
+      if (!openNow.current) return;
+      if (!READING_RUN_ON && pending.current == null) {
+        const range = holdRange(index.current.shown, L, G.height);
+        const held = Math.max(range.min, Math.min(range.max, y));
+        if (Math.abs(held - y) > 0.5) { window.scrollTo(0, held); y = held; }
+        sceneY = Math.min(y, range.scene);
+      }
       scrolling.current = true; window.clearTimeout(still); still = window.setTimeout(() => { scrolling.current = false; }, 120);
-      const progress = scroll.m(y - top, L.extents);
+      const progress = scroll.m(sceneY - top, L.extents);
       hub.scrollProgressDirectLiveRef.current = progress;
       hub.spineViewProgressLiveRef.current = hub.spineViewProgressFor(progress);
       const locked = lockedFor(progress, L, G.height), centred = locked - G.offset, at = index.current;

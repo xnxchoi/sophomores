@@ -6,13 +6,16 @@ import { ArrowLeftIcon } from "@phosphor-icons/react/dist/ssr";
 import { Link } from "@/components/core/Link/Link";
 import { PageInset } from "@/components/core/PageInset/PageInset";
 import { cn } from "@/lib/utils";
+import { NoWebglBookLayer } from "./no-webgl-book-layer";
+import { NoWebglSpineRow } from "./no-webgl-spine-row";
 import { lockedProgressFor, scenePageCount, StripeScene, useStripeScene, type SceneBook, type Vendored } from "./stripe-scene";
 import { useLookInside, type LookInsideSource } from "./use-look-inside";
 import { useShelfCatch, type ShelfCatchSource } from "./use-shelf-catch";
 import { useBookDetail, type BookDetailSource } from "./use-book-detail";
-import { useReadingScroll, type ReadingSource } from "./use-reading-scroll";
+import { READING_RUN_ON, useReadingScroll, type ReadingSource } from "./use-reading-scroll";
 import { useBookSounds } from "./use-book-sounds";
 import { LookInsideBar } from "./look-inside-bar";
+import { ShelfPager, ShelfPills, type ShelfHub } from "./shelf-controls";
 
 /**
  * The shop's home, rebuilt from stripe.press's home code (06w9 module 43181; .tmp/stripe-notes/home-layout-inventory.md,
@@ -23,6 +26,9 @@ import { LookInsideBar } from "./look-inside-bar";
  * the scene reads live refs written on every scroll, and React state changes only at thresholds.
  */
 const FEATURED_MAX = 4, CARD_GAP = 16, CARD_INSET_BOTTOM = 8;
+/** Their header bar's bottom (px), which their section header is laid out under; and the height of our refund line
+ * under each rail title (TitleRail: mt-1 + leading-6). */
+const THEIR_HEADER_BOTTOM = 49, REFUND_LINE = 28;
 
 type Item = { id: string; title: string; price: string; href: string; stageArt: { url: string; alt?: string | null } | null;
   /** The book's details column (server-rendered: ProductInfo + ProductExtras), shown when it opens in the scene. */
@@ -33,9 +39,19 @@ type Item = { id: string; title: string; price: string; href: string; stageArt: 
   pageCount?: number;
   /** Its refund rule (RefundTerms), a line under its title wherever the shop lists it. */
   refund?: ReactNode };
+/** The shelf's state the scene can save and restore (their captureSpineView / restoreSpineView, 12s2:1737, 2178). */
+type SpineView = { selection: { to: number; settled: boolean } & Record<string, unknown>; yaws: number[]; offset: number; primed: boolean; dragOffset: number };
 type Labels = { featured: string; shelf: string; viewDetails: string; toShelf: string; openBook: string; closeBook: string;
-  previousPage: string; nextPage: string; titles: string; sceneFailed: string; tryAgain: string };
-type Geometry = { lvh: number; mobile: boolean; top: number; height: number; offset: number; extents: number[];
+  previousPage: string; nextPage: string; titles: string; sceneFailed: string; tryAgain: string;
+  /** "Open {title}" and "Show {title} on the bookshelf": the no-WebGL books' names (theirs, 2548 and 27511). */
+  openTitle: string; showOnShelf: string;
+  /** The phone pager's buttons on the shelf. */
+  previousProduct: string; nextProduct: string };
+type Geometry = { lvh: number; mobile: boolean; top: number;
+  /** How far our header pushes theirs down (px): see `measure`. */
+  shift: number;
+  /** How much lower our card starts than theirs (the shift plus the refund line under the titles), px. */
+  drop: number; height: number; offset: number; extents: number[];
   starts: number[]; lock: number[]; total: number };
 
 export function ShopHome({ items, labels, initialOpen }: { items: Item[]; labels: Labels;
@@ -88,6 +104,41 @@ function ShopFallback({ items, labels, initialOpen }: { items: Item[]; labels: L
 
 function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; items: Item[]; labels: Labels; initialOpen?: string }) {
   const { hub, scroll, catalogue, router, seats, motion: tokens } = vendored;
+  // Without WebGL their page shows the 2D layers (no-webgl-book-layer.tsx, no-webgl-spine-row.tsx), and the 2D row
+  // reports its seat in module 44870 (`rD.f`), which the seat and the title fade read first (06w9:11117, 11874).
+  const noWebgl = useMemo(() => vendored.noWebgl(), [vendored]);
+  // Their page tells the scene which theme is on (06w9:13594, `homeStackDarkThemeActiveLiveRef = !light && !colour`), and
+  // the scene blends to its dark lights (HOME_STACK_LIGHTS_DARK_TUNING) while it is set. Ours never set it, so our dark
+  // page ran their light page's lights. It follows the site's theme attribute.
+  useEffect(() => {
+    const flag = hub.homeStackDarkThemeActiveLiveRef as { current: boolean } | undefined;
+    if (!flag) return;
+    const root = document.documentElement;
+    // Their colour theme (a third, per-book-colour mode) has no counterpart here: off.
+    const colour = hub.homeStackColorThemeActiveLiveRef as { current: boolean } | undefined;
+    if (colour) colour.current = false;
+    const read = () => { flag.current = root.dataset.theme === "dark"; };
+    read();
+    const watch = new MutationObserver(read);
+    watch.observe(root, { attributes: true, attributeFilter: ["data-theme"] });
+    return () => { watch.disconnect(); flag.current = false; };
+  }, [hub]);
+  const flatBooks = useMemo(() => items.map(({ id, title }) => ({ id, title })), [items]);
+  // The book rects the scene (or the 2D row) writes each frame (module 50883 `i`), and the row's slot order: what the
+  // shelf's pills and pager place themselves by.
+  const bookRects = useMemo(() => (vendored.module(50883) as { i: { current: Map<number, { leftPx: number; topPx: number; widthPx: number; heightPx: number }> } }).i, [vendored]);
+  const slotOf = useMemo(() => (index: number) => (hub.spineSlotForIndex as unknown as number[] | undefined)?.[index] ?? index, [hub]);
+  // Their "page is scrolling" flag (module 50883 `R`), which the no-WebGL layers read: true on each scroll, false 120 ms
+  // after the last (06w9:14730-14733).
+  useEffect(() => {
+    if (!noWebgl) return;
+    const flag = (vendored.module(50883) as { R: { current: boolean } }).R;
+    let timer = 0;
+    const scrolling = () => { flag.current = true; window.clearTimeout(timer); timer = window.setTimeout(() => { flag.current = false; }, 120); };
+    window.addEventListener("scroll", scrolling, { passive: true });
+    return () => { window.removeEventListener("scroll", scrolling); window.clearTimeout(timer); };
+  }, [noWebgl, vendored]);
+  const flatRow = () => noWebgl ? (vendored.module(44870) as { f: { current: { visible: boolean; dyPx: number; seatScrollY: number | null } } }).f.current : null;
   const navigate = useTransitionRouter();
   const count = items.length, J = catalogue.J, K = catalogue.K;
 
@@ -95,18 +146,30 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
   // each featured book gets a canvas height plus its 150 px hold (the last one 0.67 canvas more), the shelf 1.67 canvas
   // heights on desktop (2.3–3.8 on a phone), and every later book 1 px.
   const measure = (): Geometry => {
-    const width = scroll.X(), lvh = scroll.C(), mobile = width < 900, top = scroll.p(width), height = scroll.$(lvh, top);
+    // Their section header sits under their 49 px header bar: the label 4 px below it, the title rail 21 px below
+    // (14 on a phone), the card at `p(width)` (162 px; 140 on a phone). The site header here is taller and changes with
+    // the width (58–70 px, measured), so the label, the rail and the card keep those distances from its bottom instead,
+    // and the card also clears the refund line under each title (ours, 28 px: mt-1 + leading-6), which theirs hasn't.
+    const headerBottom = document.querySelector("header")?.getBoundingClientRect().bottom ?? THEIR_HEADER_BOTTOM;
+    const shift = Math.max(0, Math.ceil(headerBottom - THEIR_HEADER_BOTTOM)), refund = items.some((entry) => entry.refund) ? REFUND_LINE : 0;
+    const width = scroll.X(), lvh = scroll.C(), mobile = width < 900, top = scroll.p(width) + shift + refund, height = scroll.$(lvh, top);
     const offset = (top + height / 2 - Math.max(1, lvh) / 2) / Math.max(1, lvh);
     const shelfScreens = mobile ? Math.max(2.3, Math.min(3.8, 2.3 + ((lvh - 650) / 350) * 1.2)) : 1.67;
     const lock = Array.from({ length: catalogue.t }, (_, index) => 150 + (index === J ? Math.round(0.67 * height) : 0));
     const extents = catalogue.F(count, height, lock, shelfScreens), starts = scroll.e(extents);
-    return { lvh, mobile, top, height, offset, extents, starts, lock, total: extents.reduce((sum, value) => sum + value, 0) };
+    return { lvh, mobile, top, shift, drop: shift + refund, height, offset, extents, starts, lock, total: extents.reduce((sum, value) => sum + value, 0) };
   };
   const [geometry, setGeometry] = useState<Geometry>(measure);
   const geo = useRef(geometry);
   useEffect(() => { geo.current = geometry; }, [geometry]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => scroll.d(() => setGeometry(measure())), [scroll]);
+  useEffect(() => {
+    const off = scroll.d(() => setGeometry(measure()));
+    // The site header settles after this page mounts and changes size with the window: re-measure when it does.
+    const header = document.querySelector("header"), observer = header ? new ResizeObserver(() => setGeometry(measure())) : null;
+    if (header) observer?.observe(header);
+    return () => { off(); observer?.disconnect(); };
+  }, [scroll]);
 
   // The scene's own refs (06w9:11578-11587, 13660-13662), written whenever the geometry changes.
   useEffect(() => {
@@ -171,7 +234,11 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
   const drive = useRef({ token: 0, active: false });
   /** The idle advance's glide in flight (its own, so a wheel doesn't cut it short; theirs `n`/`o`). */
   const gliding = useRef<{ at: number } | null>(null);
+  /** A drag on a no-WebGL hero stops the idle advance for good (their onBookDragStart, 06w9:14928-14934). */
+  const idleOff = useRef(false);
   const stopDriving = () => { drive.current.token += 1; drive.current.active = false; };
+  /** Their step to a featured book (`p_`, 06w9:16683-16722): sine in-out over 1000·√(distance / viewport) ms, 400-1800. */
+  const stepMs = (target: number) => Math.min(1800, Math.max(400, 1000 * Math.sqrt(Math.abs(target - window.scrollY) / Math.max(1, window.innerHeight))));
   const scrollTo = (target: number, ms: number) => {
     const from = window.scrollY, start = performance.now(), token = ++drive.current.token;
     drive.current.active = true;
@@ -203,6 +270,8 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
   };
   // The shelf's seat (their `nH`, 06w9:11116-11160): where the spine row sits seated, lifted clear of the titles.
   const seatY = () => {
+    const flat = flatRow()?.seatScrollY;
+    if (flat != null) return flat;
     const { starts, extents } = geo.current, width = window.innerWidth || 0, height = window.innerHeight || 1, mobile = width < 900;
     const at = (progress: number) => {
       const segment = Math.floor(progress), start = starts[segment], extent = extents[segment];
@@ -247,7 +316,9 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
       // Where closing returns to (their origin snapshot `te`): the home scroll the book opened from; none for an address.
       const raw = hub.scrollProgressDirectLiveRef.current as number;
       if (arrived) origin.current = null;
-      else if (!held.current) origin.current = { y: window.scrollY, index, fromShelf: raw >= J + 0.5 && raw < K + 1 };
+      else if (!held.current) origin.current = { y: window.scrollY, index, fromShelf: raw >= J + 0.5 && raw < K + 1,
+        // …and the shelf as it stood (their `tl()` snapshot takes `captureSpineView`, 06w9:10624).
+        spine: (hub.captureSpineView as unknown as () => SpineView)() };
       held.current = true; stopDriving();
       progressRef.current = cardsRef.current = index; hub.scrollProgressDirectLiveRef.current = index;
       hub.spineViewProgressLiveRef.current = hub.spineViewProgressFor(index); setCommitted(index);
@@ -259,12 +330,15 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
     // the shelf returns onto its own card; the book it opened from returns where it was; any other to the shelf.
     unpin: (index) => {
       const from = origin.current;
-      returning.current = { y: index < catalogue.t && !from?.fromShelf ? bookY(index) : from && from.index === index ? from.y : null };
+      const card = index < catalogue.t && !from?.fromShelf;
+      returning.current = { y: card ? bookY(index) : from && from.index === index ? from.y : null, index, spine: card ? undefined : from?.spine ?? null };
     } }; });
   const detail = useBookDetail(hub, catalogue, router, tokens, detailSource);
   const openIndex = useRef<number | null>(null);
   useEffect(() => { openIndex.current = detail.open; }, [detail.open]);
-  const origin = useRef<{ y: number; index: number; fromShelf: boolean } | null>(null), returning = useRef<{ y: number | null } | null>(null);
+  const origin = useRef<{ y: number; index: number; fromShelf: boolean; spine: SpineView } | null>(null);
+  /** `spine`: the shelf to restore (null: the shelf as it is now); undefined when the book returns onto its card. */
+  const returning = useRef<{ y: number | null; index: number; spine?: SpineView | null } | null>(null);
 
   // The reading scroll (use-reading-scroll.tsx): while a book is open the page scrolls every book's details, and that
   // scroll moves the scene (the reading book's exit, the next one's arrival) and the cards; the address follows.
@@ -304,6 +378,14 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
     if (detail.open != null || !back) return;
     returning.current = null;
     window.scrollTo(0, back.y ?? seatY() ?? shelfY());
+    // Back on the shelf, the shelf is as it was, with the closed book the selected one (their `restoreSpineView(aj(…))`,
+    // 06w9:15283, 15291, 15892); without a snapshot the scene settles onto it itself (detailReturnSettleLiveRef).
+    if (back.spine !== undefined) {
+      const view = back.spine ?? (hub.captureSpineView as unknown as () => SpineView)();
+      (hub.restoreSpineView as unknown as (view: SpineView) => void)(view.selection.to === back.index ? view
+        : { ...view, selection: { ...view.selection, to: back.index, settled: true }, yaws: [], offset: 0, primed: false, dragOffset: 0 });
+      hub.detailReturnSettleLiveRef.current = back.spine ? null : back.index;
+    }
     held.current = false;
     hub.backgroundSnapScrollLiveRef.current = 6; hub.bookRowSeedLiveRef.current = 6;
     window.dispatchEvent(new Event("scroll"));
@@ -315,6 +397,27 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
     arrived.current = undefined;
     if (!(index >= 0 && items[index]?.details && detail.openBook(index, true))) { setLanding(null); held.current = false; }
   }, []);   // eslint-disable-line react-hooks/exhaustive-deps
+  // Enter opens the selected book (the shelf's, or the featured one in view), as theirs (06w9 keydown, at 338115 in their
+  // build); from the shelf it holds the selection first, so neither a drag nor an arrow moves it during the carry, and
+  // lets go once the details close (their `iv` effect). A focused control keeps its own Enter.
+  const hold = hub as unknown as { holdSpineSelection: () => void; spineSelectionHoldLiveRef: { current: boolean } };
+  useEffect(() => {
+    if (detail.open != null || look.open) return;
+    const key = (event: KeyboardEvent) => {
+      if (event.key !== "Enter" || event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("a, button, input, textarea, select, [contenteditable], [role=button], [role=option]")) return;
+      const index = onShelf ? (hub.spineSelectionLiveRef.current as { to?: number } | null)?.to : active;
+      if (index == null || index < 0) return;
+      event.preventDefault();
+      if (onShelf) hold.holdSpineSelection();
+      openRef.current(index);
+    };
+    window.addEventListener("keydown", key);
+    return () => window.removeEventListener("keydown", key);
+  }, [detail.open, look.open, onShelf, active, hub, hold]);
+  useEffect(() => { if (detail.open == null) hold.spineSelectionHoldLiveRef.current = false; }, [detail.open, hold]);
+  // A phone's rail fades as an open starts, not when the details arrive (their `dO`: `ah && ds != null`, 06w9:13545).
   useEffect(() => { openRef.current = (index: number) => {
     if (items[index]?.details && detail.openBook(index)) return;
     const item = items[index]; if (item) navigate.push(item.href);
@@ -346,7 +449,7 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
     window.addEventListener("scroll", drift, { passive: true });
     const arm = (delay: number) => {
       timer = window.setTimeout(() => {
-        if (stopped) return;
+        if (stopped || idleOff.current) return;
         if (held.current || lookOpen.current) { arm(3000); return; }
         const index = catalogue.a(Math.round(hub.scrollProgressDirectLiveRef.current as number));
         if (index == null || index >= catalogue.t) return;
@@ -383,7 +486,7 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
         if (lookOpen.current) return true;
         const move = motion.current, current = activeRef.current, next = current + step;
         if (next >= catalogue.t) move.scrollTo(move.shelfY(), 1833);
-        else if (next >= 0) move.scrollTo(move.bookY(next), 1000);
+        else if (next >= 0) move.scrollTo(move.bookY(next), stepMs(move.bookY(next)));
         else return false;
         return true;
       },
@@ -393,7 +496,7 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
       drag: { begin: hub.beginSpineDrag, move: hub.moveSpineDrag, end: hub.endSpineDrag },
       vertical: (step: number) => {
         const move = motion.current;
-        if (step === -1) move.scrollTo(move.bookY(J), 1000); else move.scrollTo(geo.current.total, 1000);
+        if (step === -1) move.scrollTo(move.bookY(J), stepMs(move.bookY(J))); else move.scrollTo(geo.current.total, 1000);
       },
     });
     return () => { featuredScope(); shelfScope(); if (typeof uninstall === "function") uninstall(); };
@@ -422,6 +525,7 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
   // when the section comes up and lifts it (measured on stripe.press: their section sits at 4524 px, the formula
   // gives 4524; ours stood 1,500 px further down, leaving the shelf still for a whole screen and more).
   const next = useRef<HTMLElement>(null);
+  const sectionTop = useMemo(() => () => next.current?.getBoundingClientRect().top ?? null, []);
   useEffect(() => { hub.homeWebsitesSectionElLiveRef.current = next.current; return () => { hub.homeWebsitesSectionElLiveRef.current = null; }; }, [hub]);
   const nextTop = useMemo(() => {
     const { extents, starts, lvh, mobile, total } = geometry;
@@ -433,7 +537,8 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
 
   // How far the rising row covers the titles (their header sampler's `rowOverTitles`, 06w9:11870-11895): the rail's
   // share under the row's top at the lift the next section gives it, in 40ths; −1 while the seat isn't locked. The
-  // rail fades by half of it (their footerFade). Their phone branch reads a mobile seat this page doesn't have.
+  // rail fades by half of it (their footerFade), at every width. Without WebGL it's the 2D row's rise over its seat
+  // instead (`rD.f`, module 44870, written by no-webgl-spine-row.tsx).
   const [rowOver, setRowOver] = useState(-1);
   useEffect(() => {
     let frame = 0;
@@ -442,7 +547,11 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
       const geom = hub.spineRowSeatGeomLiveRef.current as { valid?: boolean; lock?: boolean } | null;
       const rail = titles.current, section = next.current;
       let over = -1;
-      if (geom?.valid && geom.lock && rail && section) {
+      const flat = flatRow();
+      if (flat && flat.seatScrollY != null && rail) {
+        const box = rail.getBoundingClientRect();
+        over = box.height < 1 ? 0 : Math.round(40 * Math.max(0, Math.min(1, -flat.dyPx / box.height))) / 40;
+      } else if (geom?.valid && geom.lock && rail && section) {
         const lift = hub.spineRowLiftForWebsitesTop(section.getBoundingClientRect().top), box = rail.getBoundingClientRect();
         over = lift <= 0 || box.height < 1 ? 0 : Math.round(40 * Math.max(0, Math.min(1, (box.bottom - hub.spineRowTopPxAtLift(lift)) / box.height))) / 40;
       }
@@ -455,14 +564,25 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
     return () => { cancelAnimationFrame(frame); window.removeEventListener("scroll", request); window.removeEventListener("resize", request); };
   }, [hub]);
 
-  // On the shelf the rail names the selected spine (their rail follows the spine selection there).
+  // On the shelf the rail names the selected spine (their rail follows the spine selection there). While the selection
+  // is settled the active title also stands over the face-out book, 2.5vw left of its centre (their `getActiveBookRect`,
+  // 06w9:17748, read once per settle in 21ix's coverflow loop: centerPx + j(width)); at the row's ends, where the row
+  // stops sliding, that is off-centre. Otherwise it is centred as on the stack.
   const [selected, setSelected] = useState<number | null>(null);
+  const [anchor, setAnchor] = useState<number | null>(null);
   useEffect(() => {
-    if (!onShelf) { setSelected(null); return; }
-    let frame = 0;
+    if (!onShelf) { setSelected(null); setAnchor(null); return; }
+    let frame = 0, key = "";
     const follow = () => {
-      const to = (hub.spineSelectionLiveRef.current as { to?: number } | null)?.to;
+      const selection = hub.spineSelectionLiveRef.current as { to?: number; settled?: boolean } | null;
+      const settled = hub.spineSelectedSettledLiveRef.current as { valid: boolean; to: number; nonce: number; centerPx: number };
+      const to = selection?.to;
       if (typeof to === "number") setSelected(to);
+      if (!selection?.settled || !settled.valid || settled.to !== to) { key = ""; setAnchor(null); }
+      else if (key !== to + "|" + settled.nonce) {
+        key = to + "|" + settled.nonce;
+        setAnchor(Math.round(settled.centerPx - 0.025 * window.innerWidth));
+      }
       frame = requestAnimationFrame(follow);
     };
     frame = requestAnimationFrame(follow);
@@ -475,7 +595,7 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
   // While reading, the page is the stack of every book's details (their sections, then half a screen); otherwise the
   // home's own scroll.
   const readingHeight = reading.layout.total + Math.round(geometry.lvh / 2);
-  return <div ref={page} className="relative overflow-x-clip">
+  return <div ref={page} className="relative overflow-x-clip" style={{ "--shop-shift": geometry.shift + "px", "--shop-drop": geometry.drop + "px" } as CSSProperties}>
     <div aria-hidden="true" className="h-(--page-height)" style={{ "--page-height": (readingOpen ? readingHeight : Math.max(0, nextTop)) + "px" } as CSSProperties} />
     {/* The section after the shelf (their Multimedia's place). A placeholder for now (owner, 26 Nov: "a whole new section
         … For now, make it a placeholder: min 100vh, 100vw section"). At least a screen tall, so the page scrolls on
@@ -483,32 +603,54 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
         the section's top is ~100 px from the window's (at 40lvh the page ended at 213 px, row half under the header, G5).
         Its top is the anchor the seat and the lift read: nothing may go above it inside it. */}
     <section ref={next} aria-hidden="true" className="relative min-h-lvh w-screen" />
-    <Cards items={items} featured={catalogue.t} geometry={geometry} progressRef={cardsRef} listeners={listeners} reading={held} J={J}
+    <Cards narrow={readingOpen && !detail.leaving} items={items} featured={catalogue.t} geometry={geometry} progressRef={cardsRef} listeners={listeners} reading={held} J={J}
       hub={hub} openRef={openIndex} />
-    <StripeScene vendored={vendored} props={sceneProps} className="pointer-events-none fixed inset-0 isolate z-10" />
+    {noWebgl ? (
+      // Without WebGL their page draws the books as pre-rendered images (06w9:17921-17935): the hero layer instead of
+      // BookStack, the 2D spine row instead of the 3D shelf. In their own stacking layer, as the scene is.
+      <div className="relative isolate z-10">
+        <NoWebglBookLayer vendored={vendored} books={flatBooks} detailOpen={detail.open != null}
+          detailBookIndex={detail.open != null ? (sceneIndex ?? detail.open) : null} stackDetailOpen={detail.open != null || look.open}
+          hidden={look.open} isMobile={geometry.mobile} raised={false} onBookOpen={(index) => openRef.current(index)}
+          onFirstBookReady={() => undefined} onBookDragStart={() => { idleOff.current = true; }} onBookDragEnd={() => undefined}
+          openLabel={(title) => labels.openTitle.replace("{title}", title)} />
+        <NoWebglSpineRow vendored={vendored} books={flatBooks} hidden={detail.open != null || look.open}
+          onBookOpen={(index) => openRef.current(index)} labels={{ open: labels.openTitle, show: labels.showOnShelf }} />
+      </div>
+    ) : <StripeScene vendored={vendored} props={sceneProps} className="pointer-events-none fixed inset-0 isolate z-10" />}
     {/* On a phone the return link takes the label's place while a book is open (their Nav__FeaturedSlot: the label slides
         −10 px and fades, the link comes in from +10 px 100 ms later, 300 ms each). */}
-    <div className="fixed top-[3.75rem] left-4 z-20 grid text-[11px] uppercase leading-4 tracking-[0.06em] text-muted-foreground">
-      <p className={cn("col-start-1 row-start-1 transition-[opacity,translate] duration-300", phoneDetail ? "-translate-x-2.5 opacity-0" : "delay-100")}>
-        [ {onShelf ? labels.shelf : labels.featured} ]
+    <div className="fixed top-[calc(53px+var(--shop-shift,0px))] left-4 z-20 grid text-[11px] uppercase leading-4 tracking-[0.06em] text-muted-foreground">
+      <p className={cn("pointer-events-none col-start-1 row-start-1 transition-[opacity,translate] duration-300 ease-[ease]", phoneDetail ? "-translate-x-2.5 opacity-0" : "delay-100")}>
+        {/* Theirs reads the label from the first section at the nav (header.sampler, 06w9:11821-11922); with details open
+            no section is there, so it shows the default (traced 26 Nov). */}
+        [ {onShelf && detail.open == null ? labels.shelf : labels.featured} ]
       </p>
       <button type="button" tabIndex={phoneDetail ? 0 : -1} aria-hidden={!phoneDetail} onClick={() => detail.closeBook()}
-        className={cn("col-start-1 row-start-1 -my-3.5 inline-flex min-h-11 min-w-11 items-center self-start text-left uppercase transition-[opacity,translate,color] duration-300 hover:text-foreground",
+        className={cn("col-start-1 row-start-1 -my-3.5 inline-flex min-h-11 min-w-11 items-center self-start text-left uppercase transition-[opacity,translate,color] duration-300 ease-[ease] hover:text-foreground",
           phoneDetail ? "pointer-events-auto delay-100" : "pointer-events-none translate-x-2.5 opacity-0")}>
         <ArrowLeftIcon aria-hidden="true" className="mr-1.5 size-3.5" />{labels.toShelf}
       </button>
     </div>
     <TitleRail railRef={titles} label={labels.titles} titles={items.map((entry) => entry.title)} refunds={items.map((entry) => entry.refund)} active={detail.open ?? selected ?? railIndex}
       fade={detail.open != null ? 0 : rowOver >= 0 ? 0.5 * rowOver : Math.max(0, Math.min(1, (committed - K - 0.2) / 0.3))} shelf={committed >= J}
-      detail={detail.open != null && !detail.leaving}
-      hidden={phoneDetail}
-      onPick={(index) => detail.open != null ? openRef.current(index) : index < catalogue.t ? scrollTo(bookY(index), 1000) : scrollTo(shelfY(), 1833)} />
+      detail={detail.shifted} anchor={detail.open != null ? null : anchor}
+      hidden={phoneDetail || (geometry.mobile && detail.pending != null)}
+      onPick={(index) => detail.open != null ? openRef.current(index) : index < catalogue.t ? scrollTo(bookY(index), stepMs(bookY(index))) : scrollTo(shelfY(), 1833)} />
     {item && <ViewDetails href={item.href} label={labels.viewDetails} hidden={(onShelf || detail.open != null) && !look.home} onOpen={() => openRef.current(active)}
-      book={{ label: look.open && look.home ? labels.closeBook : labels.openBook, open: look.open && look.home,
+      book={noWebgl ? undefined : { label: look.open && look.home ? labels.closeBook : labels.openBook, open: look.open && look.home,
         onToggle: () => (look.open ? look.close() : look.openOnHome(active)) }} />}
-    {/* The peek pill (their "+ Open book +", left 30 %): while the open book in the details is hovered, or the pill is. */}
-    <OpenBookPill label={labels.openBook} shown={detail.open != null && !detail.leaving && !look.open && (look.peek || look.pillHover)}
-      onHover={look.setPillHover} onOpen={() => { look.setPillHover(false); look.openInDetail(); }} />
+    {/* The peek pill (their "+ Open book +", left 30 %): while the open book in the details is hovered, or the pill is.
+      * Without WebGL there is no open book, so theirs leaves out the pill and the corner's "Open book" (06w9:17936, 18224). */}
+    {!noWebgl && <OpenBookPill label={labels.openBook} shown={detail.open != null && !detail.leaving && !look.open && (look.peek || look.pillHover)}
+      onHover={look.setPillHover} onOpen={() => { look.setPillHover(false); look.openInDetail(); }} />}
+    {/* On the shelf, over the face-out book: the pills on desktop, the pager on a phone (their HomeBookCornerButtons and
+        CoverflowPager, 06w9:17969-18042), while nothing is open. */}
+    {!geometry.mobile && <ShelfPills shown={onShelf && detail.open == null && !look.open} hub={hub as unknown as ShelfHub} rects={bookRects}
+      labels={{ details: labels.viewDetails, openBook: labels.openBook }} onDetails={(index) => openRef.current(index)}
+      onOpenBook={noWebgl ? undefined : (index) => look.openOnHome(index)} />}
+    {geometry.mobile && <ShelfPager shown={onShelf && detail.open == null && !look.open} hub={hub as unknown as ShelfHub} rects={bookRects} count={count}
+      slotOf={slotOf} sectionTop={sectionTop} labels={{ group: labels.shelf, previous: labels.previousProduct, next: labels.nextProduct }} />}
     <LookInsideBar shown={look.open} wide={look.home} page={look.page}
       leaves={Math.ceil(scenePageCount(items[lookHome ?? detail.open ?? 0]?.pages, items[lookHome ?? detail.open ?? 0]?.pageCount) / 2)} labels={labels}
       onBack={() => look.turnBy(-1, Math.ceil(scenePageCount(items[lookHome ?? detail.open ?? 0]?.pages, items[lookHome ?? detail.open ?? 0]?.pageCount) / 2))}
@@ -516,6 +658,7 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
       onClose={look.close} />
     <DetailStack shown={readingOpen && !detail.leaving} height={readingOpen ? readingHeight : 0} toShelf={labels.toShelf} onClose={() => detail.closeBook()}>
       {readingOpen && items.map((entry, index) => <DetailSlot key={entry.id} index={index} top={reading.layout.tops[index] ?? 0}
+        active={READING_RUN_ON || index === detail.open}
         onMeasured={reading.measured} anchors={reading.anchors}>{entry.details}</DetailSlot>)}
     </DetailStack>
   </div>;
@@ -526,7 +669,9 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
  * a phone), sliding with the locked progress, so a book's hold is its card's pause; the photo counter-moves 70 % and
  * zooms to ~1.06 one book away; the last card lifts out as the shelf arrives. Written per scroll, outside React.
  */
-function Cards({ items, featured, geometry, progressRef, listeners, reading, J, hub, openRef }: { items: Item[]; featured: number; geometry: Geometry;
+function Cards({ narrow, items, featured, geometry, progressRef, listeners, reading, J, hub, openRef }: {
+  /** Details open: the card narrows to 60 % of its box on desktop (theirs, never on a phone). */
+  narrow: boolean; items: Item[]; featured: number; geometry: Geometry;
   progressRef: { current: number }; listeners: { current: Set<() => void> };
   /** True while reading: the cards follow the reading progress (the last card does not lift away). */
   reading: { current: boolean }; J: number;
@@ -582,10 +727,15 @@ function Cards({ items, featured, geometry, progressRef, listeners, reading, J, 
     if (mobile) frame = requestAnimationFrame(follow);
     return () => { set.delete(write); cancelAnimationFrame(frame); };
   }, [geometry, featured, progressRef, listeners, reading, J, hub, openRef]);
-  // The card's box: 8 px off the bottom on desktop, 25 on a phone (theirs, 1jyk:64-77, without the URL-bar terms).
+  // The card's box: 8 px off the bottom on desktop, 25 on a phone (theirs, 1jyk:64-77, without the URL-bar terms). With
+  // details open on desktop it narrows to 60 % of that box (their CardViewport mask, 1jyk:325-328): in over 480 ms after
+  // 100 ms on their ease-in-quad/ease-out-cubic split (sampled into linear()), back over 640 ms easeInOutCubic.
   return <div aria-hidden="true" style={{ top: geometry.top, height: geometry.height - (geometry.mobile ? 25 : CARD_INSET_BOTTOM) }}
-    className="pointer-events-none fixed inset-x-4 z-0 overflow-hidden rounded-[8px] max-[900px]:z-[2]">
-    {items.slice(0, featured).map((entry, index) => <div key={entry.id} ref={(plate) => { plates.current[index] = plate; }}
+    className={cn("pointer-events-none fixed inset-x-4 z-0 overflow-hidden rounded-[8px] transition-[clip-path] max-[900px]:z-[2] max-[900px]:[clip-path:none]",
+      narrow ? "[clip-path:inset(0_40%_0_0_round_8px)] delay-100 duration-480 ease-[linear(0,0.008,0.031,0.07,0.125,0.195,0.281,0.383,0.5,0.665,0.789,0.878,0.938,0.974,0.992,0.999,1)]"
+        : "[clip-path:inset(0_0_0_0_round_8px)] duration-640 ease-[cubic-bezier(0.65,0,0.35,1)]")}>
+    {/* data-bg-index: the no-WebGL hero layer finds the plates by it and follows their translate (theirs, 0jause). */}
+    {items.slice(0, featured).map((entry, index) => <div key={entry.id} data-bg-index={index} ref={(plate) => { plates.current[index] = plate; }}
       className={cn("absolute inset-0 overflow-hidden rounded-[8px] bg-muted transition-opacity duration-[450ms] will-change-transform",
         shown ? "opacity-100" : "opacity-0", index === 0 ? "delay-[1100ms]" : "delay-[1600ms]")}>
       {entry.stageArt && (
@@ -597,16 +747,20 @@ function Cards({ items, featured, geometry, progressRef, listeners, reading, J, 
 }
 
 /**
+ * Easings here are their CSS keywords written as ease-[keyword]: Tailwind's named ease-* utilities and its default
+ * transition curve are cubic-bezier(0.4,0,0.2,1) variants, not the CSS keywords (the rail measured front-loaded, G9).
  * The title rail (FeaturedTitleList, 21ix): fixed at 70 px (63 on a phone), every title (three times over) in one line, the active one
  * upright and centred at 47.5 % of the width (500 ms ease-in-out), the rest italic at 0.8; each title's refund rule on a
  * line under it (owner, 25 Nov); the titles fade in 1.2 s after load and fade out as the shelf takes the screen.
  */
-function TitleRail({ railRef, label, titles, refunds, active, fade, shelf, detail, hidden, onPick }: { railRef: Ref<HTMLElement>; label: string; titles: string[];
+function TitleRail({ railRef, label, titles, refunds, active, fade, shelf, detail, anchor, hidden, onPick }: { railRef: Ref<HTMLElement>; label: string; titles: string[];
   /** Each title's refund rule, a line under it. */
   refunds: ReactNode[]; active: number; fade: number;
   /** Past the featured books: the rail fades with the rising row over 350 ms (theirs: opacity 350 ms ease on the shelf). */
   shelf: boolean;
   detail: boolean;
+  /** Where the active title's centre stands while the shelf's selection is settled (px), or null for the usual 47.5vw. */
+  anchor: number | null;
   /** A phone's open book: the rail fades out over 300 ms (theirs `footerFade`, no delay). */
   hidden: boolean; onPick: (index: number) => void }) {
   const items = useRef<(HTMLButtonElement | null)[]>([]);
@@ -615,19 +769,21 @@ function TitleRail({ railRef, label, titles, refunds, active, fade, shelf, detai
   useEffect(() => {
     const place = () => {
       const item = items.current[titles.length + active];
-      // Centred at 47.5vw, or 27.5vw over the shifted scene while a book is open (their centerOffsetVw −20).
-      if (item) setShift((detail ? 0.275 : 0.475) * window.innerWidth - 20 - (item.offsetLeft + item.offsetWidth / 2));
+      // Centred at 47.5vw, or 27.5vw over the shifted scene while a book is open (their centerOffsetVw −20), or over the
+      // shelf's face-out book.
+      const centre = anchor != null && !detail ? anchor : (detail ? 0.275 : 0.475) * window.innerWidth;
+      if (item) setShift(centre - 20 - (item.offsetLeft + item.offsetWidth / 2));
     };
     place();
     window.addEventListener("resize", place);
     return () => window.removeEventListener("resize", place);
-  }, [active, titles, detail]);
+  }, [active, titles, detail, anchor]);
   return <nav ref={railRef} aria-label={label} aria-hidden={hidden || undefined} inert={hidden} style={{ opacity: shown && !hidden ? 1 - 2 * fade : 0 }}
-    className={cn("pointer-events-none fixed inset-x-0 top-[70px] z-20 overflow-hidden px-5 pt-5 pb-3 transition-[opacity,clip-path] duration-[1600ms] max-[900px]:top-[63px]",
-      hidden ? "duration-300" : detail ? "[clip-path:inset(0_40%_0_0)] [transition-duration:1600ms,600ms] [transition-timing-function:ease,cubic-bezier(0.16,1,0.3,1)]" : "[clip-path:inset(0_0_0_0)]",
+    className={cn("pointer-events-none fixed inset-x-0 top-[calc(70px+var(--shop-shift,0px))] z-20 overflow-hidden px-5 pt-5 pb-3 transition-[opacity,clip-path] duration-[1600ms] max-[900px]:top-[calc(63px+var(--shop-shift,0px))]",
+      hidden ? "duration-300" : detail ? "[clip-path:inset(0_40%_0_0)] [transition-duration:1600ms,600ms] [transition-timing-function:ease,cubic-bezier(0.16,1,0.3,1)]" : "[clip-path:inset(0_0_0_0)] ease-[ease]",
       shown && shelf && !detail && !hidden && "duration-[350ms]")}>
     <ul style={{ transform: "translateX(" + shift + "px)" }}
-      className="flex w-max gap-x-[72px] transition-transform duration-500 ease-in-out max-[900px]:gap-x-[30px]">
+      className="flex w-max gap-x-[72px] transition-transform duration-500 ease-[ease-in-out] max-[900px]:gap-x-[30px]">
       {/* Three copies, the middle one active, so the active title always has neighbours on both sides (theirs: 21ix). */}
       {[...titles, ...titles, ...titles].map((title, slot) => { const index = slot % titles.length, middle = slot >= titles.length && slot < 2 * titles.length;
         return <li key={slot} aria-hidden={middle ? undefined : true}>
@@ -649,14 +805,16 @@ function TitleRail({ railRef, label, titles, refunds, active, fade, shelf, detai
  * "Close book [-]" while it is open) and "View details [+]".
  */
 function ViewDetails({ href, label, hidden, onOpen, book }: { href: string; label: string; hidden: boolean; onOpen: () => void;
-  book: { label: string; open: boolean; onToggle: () => void } }) {
+  book?: { label: string; open: boolean; onToggle: () => void } }) {
   const [shown, setShown] = useState(false);
   useEffect(() => { const timer = window.setTimeout(() => setShown(true), 2000); return () => window.clearTimeout(timer); }, []);
   return <div className={cn("fixed right-4 -bottom-0.5 z-20 flex h-[30px] items-center gap-3 pointer-coarse:h-11 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] max-[900px]:hidden",
     shown && !hidden ? "translate-y-0" : "translate-y-[calc(100%+24px)]")}>
-    <button type="button" onPointerDown={(event) => event.stopPropagation()} onClick={book.onToggle}
-      className="text-xs uppercase tracking-[-0.02em] transition-opacity hover:opacity-70 pointer-coarse:min-h-11 pointer-coarse:min-w-11">{book.label} {book.open ? "[-]" : "[+]"}</button>
-    <span aria-hidden="true" className="text-xs">·</span>
+    {book && <>
+      <button type="button" onPointerDown={(event) => event.stopPropagation()} onClick={book.onToggle}
+        className="text-xs uppercase tracking-[-0.02em] transition-opacity hover:opacity-70 pointer-coarse:min-h-11 pointer-coarse:min-w-11">{book.label} {book.open ? "[-]" : "[+]"}</button>
+      <span aria-hidden="true" className="text-xs">·</span>
+    </>}
     <Link href={href} onClick={(event) => { if (event.metaKey || event.ctrlKey || event.shiftKey) return; event.preventDefault(); onOpen(); }}
       className="inline-flex items-center text-xs uppercase tracking-[-0.02em] transition-opacity hover:opacity-70 pointer-coarse:min-h-11 pointer-coarse:min-w-11">{label} [+]</Link>
   </div>;
@@ -683,7 +841,7 @@ function DetailStack({ shown, height, toShelf, onClose, children }: { shown: boo
       // A phone (0ckg:125-183): full width, under the card and the book (their slot 10099 < card 10200 < canvas 10300), no slide.
       "max-[900px]:z-[1] max-[900px]:w-full max-[900px]:rounded-none max-[900px]:translate-x-0 max-[900px]:transition-opacity max-[900px]:duration-300",
       shown ? "translate-x-0 transition-transform duration-600 ease-[cubic-bezier(0.16,1,0.3,1)]" : "translate-x-full transition-transform duration-300 ease-[cubic-bezier(0.32,0,0.67,0)] max-[900px]:opacity-0")}>
-    <div className={cn("relative h-full transition-transform duration-[810ms] ease-out max-[900px]:translate-x-0", shown ? "translate-x-0" : "translate-x-[5vw]")}>
+    <div className={cn("relative h-full transition-transform duration-[810ms] ease-[ease-out] max-[900px]:translate-x-0", shown ? "translate-x-0" : "translate-x-[5vw]")}>
       {/* Under the site header (which overlays the top 72 px), where their 46 px under their own nav would be covered. On a
           phone the link sits in the label's slot instead. */}
       <div className="sticky top-[88px] z-10 px-6 max-[900px]:hidden">
@@ -698,11 +856,14 @@ function DetailStack({ shown, height, toShelf, onClose, children }: { shown: boo
 }
 
 /**
- * One book's details in the stack (BookDetailSlot, 06w9:7348-7366): placed at its section top, 118 px down and 260 px
+ * One book's details in the stack (BookDetailSlot, 06w9:7348-7366): placed at its section top, 118 px down (on desktop
+ * plus however much lower our card starts than theirs, so its first rule meets the card's top edge as theirs does) and 260 px
  * of tail; its content measured (height + 300, theirs) for the reading scroll's sections, and its exit anchor
  * registered: the top of its full-width section (praise, details), when it has one.
  */
-function DetailSlot({ index, top, onMeasured, anchors, children }: { index: number; top: number; onMeasured: (index: number, px: number) => void;
+function DetailSlot({ index, top, active, onMeasured, anchors, children }: { index: number; top: number;
+  /** False for the other products' panels while the run-on is off: measured, but out of reach (inert). */
+  active: boolean; onMeasured: (index: number, px: number) => void;
   anchors: { current: Map<number, HTMLElement> }; children: ReactNode }) {
   const content = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -716,7 +877,7 @@ function DetailSlot({ index, top, onMeasured, anchors, children }: { index: numb
     observer.observe(element);
     return () => { observer.disconnect(); anchors.current.delete(index); };
   }, [index, onMeasured, anchors]);
-  return <div className="absolute inset-x-0 top-0 px-6 pt-[118px] pb-[260px] max-[900px]:px-4" style={{ transform: "translateY(" + top + "px)" }}>
+  return <div inert={!active} aria-hidden={!active || undefined} className="absolute inset-x-0 top-0 px-6 pt-[calc(118px+var(--shop-drop,0px))] pb-[260px] max-[900px]:px-4 max-[900px]:pt-[118px]" style={{ transform: "translateY(" + top + "px)" }}>
     {/* A phone: the details start under a window for the book (MobileBookViewGap, calc(94vh − 185px)), inside the
         measured block, which is at least a screen tall (theirs). */}
     <div ref={content} data-detail-panel-index={index} className="max-[900px]:min-h-[100vh]">

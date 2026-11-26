@@ -34,7 +34,8 @@ before(async () => {
   Recovery = (await import("@/components/Authentication/member-auth/account-recovery-view")).AccountRecoveryView;
   Study = (await import("@/components/Authentication/member-auth/account-study")).MemberAccountStudy;
 });
-afterEach(() => ui.cleanup());
+// Isolated state: no test's fetch outlives it, so a late call from one test can never land in the next test's counter.
+afterEach(() => { ui.cleanup(); globalValue("fetch", () => Promise.reject(new Error("fetch outside a test"))); });
 after(async () => {
   await new Promise((done) => setTimeout(done, 250));
   dom.window.close();
@@ -49,9 +50,9 @@ const receipt = { success: true, data: { status: "pending_staff_review" } };
 async function requestForm() {
   await ui.waitFor(() => assert.ok(ui.screen.queryByLabelText(messages.MemberAuth.registeredMobileNumber)));
 }
-function fill() {
+function fill(contactEmail = "contact@example.com") {
   ui.fireEvent.change(ui.screen.getByLabelText(messages.MemberAuth.registeredMobileNumber), { target: { value: "01012345678" } });
-  ui.fireEvent.change(ui.screen.getByLabelText("Contact email"), { target: { value: "contact@example.com" } });
+  ui.fireEvent.change(ui.screen.getByLabelText("Contact email"), { target: { value: contactEmail } });
 }
 function submit() { ui.fireEvent.submit(ui.screen.getByLabelText("Contact email").closest("form")!); }
 
@@ -143,16 +144,25 @@ test("leaving pending intake aborts before returning and ignores a stale receipt
   await ui.act(async () => resolve(Response.json(receipt, { status: 202 })));
 });
 
-for (const [header, expected] of [["2", 2], ["86400", 86400], [null, 60], ["0", 60], ["-1", 60], ["1.5", 60], ["86401", 60], ["NaN", 60]] as const) {
+for (const [index, [header, expected]] of ([["2", 2], ["86400", 86400], [null, 60], ["0", 60], ["-1", 60], ["1.5", 60], ["86401", 60], ["NaN", 60]] as const).entries()) {
   test(`recovery rate limit uses bounded Retry-After ${String(header)} and never resubmits early`, async (t) => {
     let now = Date.now();
     t.mock.method(Date, "now", () => now);
+    // Deterministic: only this test's own intake counts (its own contact email), and the submit is awaited until the
+    // 429 has been read and rendered, so no other request and no scheduling under load can change the count.
+    const contactEmail = `rate-limit-${index}@example.com`;
     let calls = 0;
-    globalValue("fetch", async () => { calls++; return Response.json({}, { status: 429, headers: header === null ? {} : { "Retry-After": header } }); });
-    ui.render(<Recovery {...props} />, { wrapper: MemberAuthProviders }); await requestForm(); fill();
+    let answered!: () => void;
+    const read = new Promise<void>((done) => { answered = done; });
+    globalValue("fetch", async (path: string, init?: RequestInit) => {
+      if (path === "/api/member/recovery" && init?.method === "POST" && JSON.parse(String(init.body)).contactEmail === contactEmail) calls++;
+      queueMicrotask(answered);
+      return Response.json({}, { status: 429, headers: header === null ? {} : { "Retry-After": header } });
+    });
+    ui.render(<Recovery {...props} />, { wrapper: MemberAuthProviders }); await requestForm(); fill(contactEmail);
     t.mock.timers.enable({ apis: ["setTimeout"] });
     try {
-      await ui.act(async () => submit());
+      await ui.act(async () => { submit(); await read; await new Promise((done) => setImmediate(done)); });
       const button = ui.screen.getByRole("button", { name: messages.MemberAuth.requestStaffReview }) as HTMLButtonElement;
       const timer = ui.screen.getByRole("timer");
       const countdown = `${Math.floor(expected / 60)}:${String(expected % 60).padStart(2, "0")}`;
@@ -161,7 +171,7 @@ for (const [header, expected] of [["2", 2], ["86400", 86400], [null, 60], ["0", 
       assert.ok(!ui.screen.queryByRole("alert"));
       assert.equal(ui.screen.getByRole("status").textContent, "Too many requests.");
       assert.ok(button.disabled);
-      assert.equal((ui.screen.getByLabelText("Contact email") as HTMLInputElement).value, "contact@example.com");
+      assert.equal((ui.screen.getByLabelText("Contact email") as HTMLInputElement).value, contactEmail);
       submit(); assert.equal(calls, 1);
       now += expected * 1000;
       ui.act(() => t.mock.timers.tick(1000));

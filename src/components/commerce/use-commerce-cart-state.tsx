@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useCart, useEcommerce } from "@payloadcms/plugin-ecommerce/client/react";
 import { useTranslations } from "next-intl";
 import { listGuestCart, removeGuestCartLine, subscribeGuestCart, type GuestCartLine } from "@/lib/commerce/browser-cart";
@@ -37,8 +37,15 @@ function readGuestLines() {
  * browser cart (src/lib/commerce/browser-cart.ts). Each line is named and priced from `products` (loadCartProducts).
  * Checkout from the cart is the membership offer's, the one line the server cart accepts; an edition line points to its
  * product page. One per account, so there is no quantity control. This hook never submits payment.
+ *
+ * `products` holds what the page loaded up front (the membership offer). A line whose product isn't there is named on
+ * demand through `resolveProducts` (Review-B, 26 Nov: resolve only the edition IDs actually in the cart), asked once per
+ * set of unknown IDs; until it settles the cart is loading, and a failure leaves the line unknown. Without it, unknown.
  */
-export function useCommerceCartState({ signedIn, products }: { signedIn: boolean; products: readonly CartProduct[] }) {
+export function useCommerceCartState({ signedIn, products: loaded, resolveProducts }: {
+  signedIn: boolean; products: readonly CartProduct[];
+  resolveProducts?: (productIDs: string[]) => Promise<readonly CartProduct[]>;
+}) {
   const t = useTranslations("Customer.components_commerce_cart");
   const { cart, isLoading, removeItem, refreshCart } = useCart();
   const { user } = useEcommerce();
@@ -46,18 +53,36 @@ export function useCommerceCartState({ signedIn, products }: { signedIn: boolean
   const guest = !signedIn;
   // A signed-in member's cart arrives after the provider reads the member; until then (or while the cart it named loads) it's loading, not empty.
   const savedCarts = (user as { cart?: { docs?: unknown[] } } | null | undefined)?.cart?.docs?.length ?? 0;
-  const waiting = !guest && !cart && (isLoading || !user || savedCarts > 0);
   const [action, setAction] = useState<CartAction>(null);
   const changing = useRef(false);
   const items: NonNullable<Cart["items"]> = guest
     ? guestLines.map((line) => ({ id: line.productID, product: line.productID, quantity: line.quantity }))
     : cart?.items ?? [];
+  const [named, setNamed] = useState<readonly CartProduct[]>([]);
+  const [settled, setSettled] = useState<ReadonlySet<string>>(() => new Set());
+  const asked = useRef(new Set<string>());
+  const products = named.length ? [...loaded, ...named.filter((r) => !loaded.some((known) => known.productID === r.productID))] : loaded;
+  const lineProductID = (item: (typeof items)[number]) => String((typeof item.product === "object" ? item.product?.id : item.product) ?? "");
+  const unknownIDs = [...new Set(items.map(lineProductID))].filter((id) => id && !products.some((known) => known.productID === id)).sort();
+  const unknownKey = resolveProducts && unknownIDs.length ? JSON.stringify(unknownIDs) : "";
+  useEffect(() => {
+    if (!resolveProducts || !unknownKey || asked.current.has(unknownKey)) return;
+    asked.current.add(unknownKey);
+    const ids = JSON.parse(unknownKey) as string[];
+    resolveProducts(ids)
+      // Only editions for the IDs asked about; a resolver never names the membership product.
+      .then((found) => setNamed((prev) => [...prev, ...found.filter((product) => product.kind === "edition"
+        && ids.includes(product.productID) && !prev.some((known) => known.productID === product.productID))]), () => {})
+      .finally(() => setSettled((prev) => new Set(prev).add(unknownKey)));
+  }, [resolveProducts, unknownKey]);
+  const resolving = !!unknownKey && !settled.has(unknownKey);
   const pending = action?.kind === "removing" || action?.kind === "refreshing";
   const busy = pending || isLoading;
   const purchased = !!cart?.purchasedAt || cart?.status === "purchased";
+  const waiting = (!guest && !cart && (isLoading || !user || savedCarts > 0)) || resolving;
 
   const lines: CartLine[] = items.map((item) => {
-    const productID = String((typeof item.product === "object" ? item.product?.id : item.product) ?? "");
+    const productID = lineProductID(item);
     const product = products.find((known) => known.productID === productID);
     const quantity = item.quantity;
     const validQuantity = Number.isSafeInteger(quantity) && quantity > 0 && quantity <= (product?.maxQuantity ?? 0);

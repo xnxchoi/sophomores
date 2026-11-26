@@ -1,6 +1,7 @@
 import type { Payload } from "payload";
 import { loadCommerceOffer, type CommerceOffer } from "./catalogue";
-import { listCommerceEditionProducts, type CommerceEditionShop } from "./editions";
+import { z } from "zod";
+import { commerceEditionOfferFrom, loadPublishedCommerceEditions, type CommerceEditionShop } from "./editions";
 
 /**
  * What the cart needs to name and price each of its lines (Cordy/Hamlet, 26 Nov: the cart resolves "per product line,
@@ -46,11 +47,33 @@ export function cartProductsFrom(offer: CommerceOffer | null, editions: Commerce
   return products;
 }
 
-/** Each catalogue is read on its own: a failure in one leaves the other's lines named. */
+/**
+ * The membership product only (Review-B, 26 Nov): the server cart holds the legacy offer alone, so rendering a cart never
+ * enumerates the native catalogue. Editions in a browser cart are named on demand by loadCartEditionProducts.
+ */
 export async function loadCartProducts(payload: Payload): Promise<readonly CartProduct[]> {
-  const [offer, editions] = await Promise.all([
-    loadCommerceOffer(payload).catch(() => null),
-    listCommerceEditionProducts(payload).catch(() => null),
-  ]);
-  return cartProductsFrom(offer, editions);
+  try { return cartProductsFrom(await loadCommerceOffer(payload), null); }
+  catch { console.error("Cart membership pricing is unavailable."); return []; }
+}
+
+/** At most as many IDs as a cart can hold lines (browser cart: one; server cart: one), with headroom. */
+export const cartEditionLookupLimit = 4;
+const editionIDs = z.array(z.string().min(1).max(64).refine((id) => id.trim() === id)).max(cartEditionLookupLimit);
+
+/**
+ * Names and prices the edition lines actually in a cart: one validated catalogue read per distinct ID, never the whole
+ * catalogue. Input is untrusted (it comes from the browser cart through a server action): anything malformed or over the
+ * limit reads nothing. One edition failing leaves the others named; each failure logs one fixed diagnostic.
+ */
+export async function loadCartEditionProducts(payload: Payload, ids: unknown): Promise<readonly CartProduct[]> {
+  const parsed = editionIDs.safeParse(ids);
+  if (!parsed.success) return [];
+  const loaded = await Promise.all([...new Set(parsed.data)].map(async (id) => {
+    try {
+      const catalogue = await loadPublishedCommerceEditions(payload, undefined, id);
+      const offer = commerceEditionOfferFrom(catalogue, id);
+      return catalogue.status === "displayable" && offer ? [{ product: catalogue.product, offer }] : [];
+    } catch { console.error("Cart edition pricing is unavailable."); return []; }
+  }));
+  return cartProductsFrom(null, { status: "displayable", purchaseReady: false, products: loaded.flat() });
 }

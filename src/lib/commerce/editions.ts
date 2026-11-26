@@ -109,9 +109,18 @@ export async function loadPublishedCommerceEditions(
 
 /** Public checkout facts for an explicit product ID, not purchase permission or a member's remaining allowance. */
 export async function loadCommerceEditionOffer(payload: Payload, productID: string, req?: PayloadRequest) {
-  if (!productID || productID.length > 128 || productID.trim() !== productID) return null;
-  const catalogue = await loadPublishedCommerceEditions(payload, req, productID);
-  if (catalogue.status !== "displayable" || catalogue.product.productID !== productID ||
+  if (!validEditionProductID(productID)) return null;
+  return commerceEditionOfferFrom(await loadPublishedCommerceEditions(payload, req, productID), productID);
+}
+
+const validEditionProductID = (productID: string) => !!productID && productID.length <= 128 && productID.trim() === productID;
+
+/**
+ * The offer derived from an already loaded catalogue (Review-B, 26 Nov: one validated catalogue read per edition, so the
+ * shop list and the cart never load the same product twice). Null unless the catalogue is exactly that one product.
+ */
+export function commerceEditionOfferFrom(catalogue: CommerceEditionCatalogue, productID: string) {
+  if (!validEditionProductID(productID) || catalogue.status !== "displayable" || catalogue.product.productID !== productID ||
     catalogue.product.title.length > 200 || catalogue.editions.length !== 1) return null;
   const [edition] = catalogue.editions;
   if (!edition || edition.priceKRW === null) return null;
@@ -129,7 +138,7 @@ export async function loadCommerceEditionOffer(payload: Payload, productID: stri
   } as const;
 }
 
-export type CommerceEditionOffer = NonNullable<Awaited<ReturnType<typeof loadCommerceEditionOffer>>>;
+export type CommerceEditionOffer = NonNullable<ReturnType<typeof commerceEditionOfferFrom>>;
 
 /** Upper bound for the shop list; more published native products than this is a configuration error, never a silent cut. */
 const shopProductLimit = 10;
@@ -143,8 +152,8 @@ export type CommerceEditionShop = Readonly<{
 
 /**
  * Every published, approved native product as its own entry: each edition is a separate product, so there is no picker.
- * Each ID goes through the per-product loaders above, so a misconfigured product drops out on its own (fails closed) instead
- * of hiding the others. Display facts only (purchaseReady: false); sorted by price.
+ * Each ID gets one catalogue read (1 + 4 reads per product in all), so a misconfigured product drops out on its own (fails
+ * closed) instead of hiding the others. Display facts only (purchaseReady: false); sorted by price.
  */
 export async function listCommerceEditionProducts(payload: Payload, req?: PayloadRequest): Promise<CommerceEditionShop> {
   if (!nativeSchemaRegistered(payload)) return { status: "unavailable", reason: "native-schema-unregistered", purchaseReady: false };
@@ -158,7 +167,8 @@ export async function listCommerceEditionProducts(payload: Payload, req?: Payloa
   if (!ids.success) return { status: "unavailable", reason: "invalid-configuration", purchaseReady: false };
   if (!ids.data.length) return { status: "unavailable", reason: "product-unpublished", purchaseReady: false };
   const entries = await Promise.all(ids.data.map(async ({ id }) => {
-    const [catalogue, offer] = await Promise.all([loadPublishedCommerceEditions(payload, req, id), loadCommerceEditionOffer(payload, id, req)]);
+    const catalogue = await loadPublishedCommerceEditions(payload, req, id);
+    const offer = commerceEditionOfferFrom(catalogue, id);
     return catalogue.status === "displayable" && offer ? [{ product: catalogue.product, offer }] : [];
   }));
   const products = entries.flat();

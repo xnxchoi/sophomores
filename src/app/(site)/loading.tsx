@@ -9,9 +9,13 @@ export default function SiteLoading() {
   const t = useTranslations("Common");
 
   return (
-    <PageInset as="main" className="flex min-h-[70svh] items-center pt-32 pb-24 text-foreground sm:pt-40">
+    // At least the window's full height while the next page loads, so the page still covers the pinned footer and the
+    // footer never rises into view between two pages (owner, 26 Nov: "the footer jumping up when the page is
+    // transitioned out, and the next page is yet to transition in"). The status fades in only if the wait runs on,
+    // so a quick load reads as one change: the page, then the next page's own fade-in.
+    <PageInset as="main" className="flex min-h-svh items-center pt-32 pb-24 text-foreground sm:pt-40">
       <FXFrameKeep />
-      <div role="status" className="flex max-w-[35rem] items-center gap-3 text-sm text-muted-foreground">
+      <div role="status" className="flex max-w-[35rem] animate-in fade-in fill-mode-backwards items-center gap-3 text-sm text-muted-foreground delay-400 duration-300">
         <Spinner aria-hidden="true" role="presentation" className="size-5 shrink-0" />
         <p>{t("loading")}</p>
       </div>

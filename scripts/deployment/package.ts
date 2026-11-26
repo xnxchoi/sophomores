@@ -51,7 +51,31 @@ type Entry = Readonly<{
   directory: boolean;
 }>;
 
-function assertSafeName(name: string): void {
+// These exact directories are named "keys" because they hold the code for Unlock and wallet keys, not key material.
+// Only these exact paths skip the name rule; every file under them must be TypeScript and is checked for key material
+// (a heuristic: it does not catch base64-encoded raw keys).
+const codeOnlyKeyDirectories = new Set(["src/lib/commerce/keys", "tests/commerce/keys"]);
+const keyMaterial = [
+  /-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----/, // a literal PEM private key (regexes that describe one use -{5}, not five dashes)
+  /\b(?:0x)?[0-9a-fA-F]{64,}\b/, // a raw private key in hex (32 bytes or longer)
+  /\b[xt]prv[1-9A-HJ-NP-Za-km-z]{100,}\b/ // an extended private key (BIP32)
+];
+function posixRelative(relative: string): string {
+  return relative.split(path.sep).join("/");
+}
+function underCodeOnlyKeyDirectory(relative: string): boolean {
+  const posix = posixRelative(relative);
+  return [...codeOnlyKeyDirectories].some((directory) => posix.startsWith(directory + "/"));
+}
+function assertCodeOnly(relative: string, bytes: Buffer): void {
+  if (!underCodeOnlyKeyDirectory(relative)) return;
+  if (!relative.endsWith(".ts")) throw new Error(`Non-code build input in a code-only key directory rejected: ${relative}`);
+  const text = bytes.toString("utf8");
+  if (keyMaterial.some((pattern) => pattern.test(text))) throw new Error(`Key-like material in a code-only key directory rejected: ${relative}`);
+}
+
+function assertSafeName(name: string, relative?: string): void {
+  if (relative !== undefined && codeOnlyKeyDirectories.has(posixRelative(relative))) return;
   if (
     /^(?:\.(?:env|sops|ssh|aws|npmrc|netrc|pypirc)|id_(?:rsa|ed25519|ecdsa)|credentials|secrets?(?:[._-]|$)|keys?$)|\.(?:pem|key|p12|pfx|jks)$/i.test(
       name
@@ -63,12 +87,15 @@ function assertSafeName(name: string): void {
 
 function inspect(root: string, relative: string): Entry[] {
   const absolute = path.join(root, relative);
-  assertSafeName(path.basename(relative));
+  assertSafeName(path.basename(relative), relative);
   const stat = fs.lstatSync(absolute);
   if (stat.isSymbolicLink())
     throw new Error(`Symlink build input rejected: ${relative}`);
   if (fs.realpathSync(absolute) !== absolute)
     throw new Error(`Symlink parent rejected: ${relative}`);
+  // The exact-path exception covers only a real directory; anything else at that path keeps the name rule's refusal.
+  if (codeOnlyKeyDirectories.has(posixRelative(relative)) && !stat.isDirectory())
+    throw new Error(`Sensitive or secret-like build input rejected: ${relative}`);
   if (stat.isDirectory()) {
     return [
       { relative, mode: 0o755, digest: "", directory: true },
@@ -85,9 +112,9 @@ function inspect(root: string, relative: string): Entry[] {
     fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW
   );
   try {
-    const digest = createHash("sha256")
-      .update(fs.readFileSync(handle))
-      .digest("hex");
+    const bytes = fs.readFileSync(handle);
+    assertCodeOnly(relative, bytes);
+    const digest = createHash("sha256").update(bytes).digest("hex");
     return [
       {
         relative,

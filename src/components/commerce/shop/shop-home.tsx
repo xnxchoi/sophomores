@@ -39,7 +39,9 @@ type Item = { id: string; title: string; price: string; href: string; stageArt: 
   /** Its refund rule (RefundTerms), a line under its title wherever the shop lists it. */
   refund?: ReactNode };
 type Labels = { featured: string; shelf: string; viewDetails: string; toShelf: string; openBook: string; closeBook: string;
-  previousPage: string; nextPage: string; titles: string; sceneFailed: string; tryAgain: string };
+  previousPage: string; nextPage: string; titles: string; sceneFailed: string; tryAgain: string;
+  /** "Open {title}" and "Show {title} on the bookshelf": the no-WebGL books' names (theirs, 2548 and 27511). */
+  openTitle: string; showOnShelf: string };
 type Geometry = { lvh: number; mobile: boolean; top: number;
   /** How far our header pushes theirs down (px): see `measure`. */
   shift: number; height: number; offset: number; extents: number[];
@@ -547,9 +549,9 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
           detailBookIndex={detail.open != null ? (sceneIndex ?? detail.open) : null} stackDetailOpen={detail.open != null || look.open}
           hidden={look.open} isMobile={geometry.mobile} raised={false} onBookOpen={(index) => openRef.current(index)}
           onFirstBookReady={() => undefined} onBookDragStart={() => { idleOff.current = true; }} onBookDragEnd={() => undefined}
-          openLabel={(title) => title} />
+          openLabel={(title) => labels.openTitle.replace("{title}", title)} />
         <NoWebglSpineRow vendored={vendored} books={flatBooks} hidden={detail.open != null || look.open}
-          onBookOpen={(index) => openRef.current(index)} labels={{ open: "{title}", show: "{title}" }} />
+          onBookOpen={(index) => openRef.current(index)} labels={{ open: labels.openTitle, show: labels.showOnShelf }} />
       </div>
     ) : <StripeScene vendored={vendored} props={sceneProps} className="pointer-events-none fixed inset-0 isolate z-10" />}
     {/* On a phone the return link takes the label's place while a book is open (their Nav__FeaturedSlot: the label slides

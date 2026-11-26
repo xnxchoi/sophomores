@@ -867,6 +867,8 @@
       "closeBook": "",
       "previousPage": "",
       "nextPage": "",
+      "openTitle": "",
+      "showOnShelf": "",
       "featured": "",
       "viewDetails": "",
       "titles": "",

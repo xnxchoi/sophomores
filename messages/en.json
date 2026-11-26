@@ -867,6 +867,8 @@
       "closeBook": "Close",
       "previousPage": "Previous page",
       "nextPage": "Next page",
+      "openTitle": "Open {title}",
+      "showOnShelf": "Show {title} on the bookshelf",
       "featured": "New and featured",
       "viewDetails": "View details",
       "titles": "Titles",

@@ -39,7 +39,9 @@ export function CommerceShopView({ shop, contents = {}, initialOpen }: { shop: C
     <h1 className="sr-only">{t("book")}</h1>
     <ShopHome initialOpen={initialOpen} labels={{ featured: t("featured"), shelf: t("allProducts"), viewDetails: t("viewDetails"), toShelf: t("allProducts"),
       openBook: t("openBook"), closeBook: t("closeTheBook"), previousPage: t("previousPage"), nextPage: t("nextPage"),
-      titles: t("titles"), sceneFailed: t("sceneFailed"), tryAgain: t("tryAgain") }} items={entries.map(({ product, offer, content, title, price, href }) => ({
+      titles: t("titles"), sceneFailed: t("sceneFailed"), tryAgain: t("tryAgain"),
+      // Templates: each book fills in its own title on the client.
+      openTitle: t("openTitle", { title: "{title}" }), showOnShelf: t("showOnShelf", { title: "{title}" }) }} items={entries.map(({ product, offer, content, title, price, href }) => ({
       id: product.productID, title, price, href, stageArt: content.stageArt ?? firstImage(product), pages: pageTextures(content), pageCount: content.details?.pages ?? undefined,
       // The details for this book, opened in the scene: stripe.press's detail panel on our fields (slice G).
       details: <DetailPanel product={product} offer={offer} content={content} />,

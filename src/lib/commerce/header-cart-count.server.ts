@@ -23,7 +23,10 @@ export async function readHeaderMemberCartLines(headers: Headers): Promise<numbe
   }
 }
 
-const openCart = z.object({ items: z.array(z.unknown()).nullish() });
+// Review-B, 27 Nov: only an explicit empty join ({ docs: [] }) or a populated cart with a valid items array is a count.
+// A missing, malformed or unpopulated join (a bare ID) is no answer.
+const cartJoin = z.object({ docs: z.array(z.unknown()) });
+const openCart = z.object({ id: z.union([z.string(), z.number()]), items: z.array(z.object({ product: z.unknown() })) });
 
 /**
  * SYSTEM read scoped to one verified member: the users.cart join the plugin's client uses (open cart only, newest first,
@@ -32,10 +35,11 @@ const openCart = z.object({ items: z.array(z.unknown()).nullish() });
 export async function countMemberCartLines(payload: Payload, userId: string): Promise<number | null> {
   // The cart join is added by the commerce plugin at config time, so its select/joins keys aren't in the generated types.
   const user = await payload.findByID({ collection: "users", id: userId, overrideAccess: true, disableErrors: true,
-    depth: 1, select: { cart: true } as never, joins: { cart: { limit: 1 } } as never }) as { id?: unknown; cart?: { docs?: unknown[] } } | null;
+    depth: 1, select: { cart: true } as never, joins: { cart: { limit: 1 } } as never }) as { id?: unknown; cart?: unknown } | null;
   if (!user || String(user.id) !== userId) return null;
-  const doc = user.cart?.docs?.[0];
-  if (doc == null) return 0;
-  const cart = openCart.safeParse(doc);
-  return cart.success ? cart.data.items?.length ?? 0 : null;
+  const join = cartJoin.safeParse(user.cart);
+  if (!join.success) return null;
+  if (join.data.docs.length === 0) return 0;
+  const cart = openCart.safeParse(join.data.docs[0]);
+  return cart.success ? cart.data.items.length : null;
 }

@@ -30,11 +30,12 @@ test("counts the open cart's lines through the users.cart join, for that member 
     [{ collection: "users", id: "u1", select: { cart: true }, joins: { cart: { limit: 1 } } }]);
 });
 
-test("no open cart or an empty one counts 0; a missing, mismatched or malformed answer gives no count", async () => {
+test("only an explicit empty join or a valid items array counts; anything else gives no count (Review-B)", async () => {
   assert.equal(await countMemberCartLines(fake({ id: "u1", cart: { docs: [] } }).payload, "u1"), 0);
-  assert.equal(await countMemberCartLines(fake({ id: "u1" }).payload, "u1"), 0);
   assert.equal(await countMemberCartLines(fake({ id: "u1", cart: { docs: [{ id: "c1", items: [] }] } }).payload, "u1"), 0);
-  assert.equal(await countMemberCartLines(fake(null).payload, "u1"), null);
-  assert.equal(await countMemberCartLines(fake({ id: "u2", cart: { docs: [] } }).payload, "u1"), null);
-  assert.equal(await countMemberCartLines(fake({ id: "u1", cart: { docs: [{ id: "c1", items: "x" }] } }).payload, "u1"), null);
+  for (const user of [null, { id: "u2", cart: { docs: [] } }, { id: "u1" }, { id: "u1", cart: null }, { id: "u1", cart: { docs: "x" } },
+    { id: "u1", cart: { docs: ["c1"] } }, { id: "u1", cart: { docs: [{ id: "c1" }] } }, { id: "u1", cart: { docs: [{ id: "c1", items: "x" }] } },
+    { id: "u1", cart: { docs: [{ id: "c1", items: [1] }] } }]) {
+    assert.equal(await countMemberCartLines(fake(user).payload, "u1"), null, JSON.stringify(user));
+  }
 });

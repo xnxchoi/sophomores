@@ -1,5 +1,6 @@
 "use client";
 
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { RichText } from "@payloadcms/richtext-lexical/react";
 import type { SerializedEditorState } from "@payloadcms/richtext-lexical/lexical";
 import { ArrowUpRightIcon, CaretDownIcon } from "@phosphor-icons/react";
@@ -90,7 +91,7 @@ export function DetailPanel({ product, offer, content }: { product: EditionProdu
             <figure>
               <p aria-hidden="true" className="-mb-5 pt-[30px] font-display text-[80px] leading-[0.9] max-[900px]:pt-9">“</p>
               <figcaption className="mt-[17px] mb-[18px] text-[13px] tracking-[0.04em] uppercase underline underline-offset-2">
-                {entry.url ? <a href={entry.url} target="_blank" rel="noreferrer" className="text-inherit">{entry.name}</a> : entry.name}
+                {entry.url ? <a href={entry.url} target="_blank" rel="noreferrer" className="text-inherit outline-offset-2 focus-visible:outline-2 focus-visible:outline-current">{entry.name}</a> : entry.name}
               </figcaption>
               <blockquote className="mb-[21px] pr-5 text-lg leading-[1.45] font-light">{entry.quote}</blockquote>
               {entry.role && <p className="mb-9 text-[13px] tracking-[0.03em] uppercase opacity-60">{entry.role}</p>}
@@ -126,10 +127,12 @@ function Production({ colophon, gallery, anchor, labels }: { colophon: { label: 
               ? <>
                   <span className="max-[900px]:hidden"><Label>{section.label}</Label></span>
                   <button type="button" aria-expanded={!collapsed} onClick={() => setCollapsed((value) => !value)}
-                    className="hidden w-full items-center justify-between pb-1.5 text-left text-[11px] leading-[1.5] uppercase max-[900px]:flex pointer-coarse:min-h-11">
-                    [ {section.label} ]
-                    <span className="inline-flex items-center gap-1">{collapsed ? labels.expand : labels.collapse}
-                      <CaretDownIcon aria-hidden="true" className={cn("size-2.5 transition-transform duration-250 ease-[ease]", !collapsed && "rotate-180")} /></span>
+                    className="group/focus hidden w-full items-center pb-1.5 text-left text-[11px] leading-[1.5] uppercase max-[900px]:flex pointer-coarse:min-h-11">
+                    <FocusShape className="flex w-full items-center justify-between">
+                      [ {section.label} ]
+                      <span className="inline-flex items-center gap-1">{collapsed ? labels.expand : labels.collapse}
+                        <CaretDownIcon aria-hidden="true" className={cn("size-2.5 transition-transform duration-250 ease-[ease]", !collapsed && "rotate-180")} /></span>
+                    </FocusShape>
                   </button>
                 </>
               : <Label>{section.label}</Label>}
@@ -146,7 +149,7 @@ function Production({ colophon, gallery, anchor, labels }: { colophon: { label: 
         <div className="ml-auto w-full min-w-0 max-[900px]:order-4 max-[900px]:mb-6 min-[900px]:col-start-2 min-[900px]:row-start-3">
           <div className="flex w-full flex-wrap gap-1.5">
             {gallery.map((image, at) => <button key={image.url} type="button" data-active={at === index || undefined} onClick={() => setIndex(at)}
-              className="flex min-w-0 shrink-0 grow-0 basis-[calc(20%-4.8px)] flex-col items-start gap-0.5 text-left opacity-55 transition-opacity duration-200 ease-[ease] hover:opacity-100 data-active:opacity-100">
+              className="flex min-w-0 shrink-0 grow-0 basis-[calc(20%-4.8px)] flex-col items-start gap-0.5 text-left opacity-55 transition-opacity duration-200 ease-[ease] hover:opacity-100 focus-visible:opacity-100 data-active:opacity-100 outline-offset-2 focus-visible:outline-2 focus-visible:outline-current">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={image.url} alt="" loading="lazy" className="block aspect-[1075/1433] h-auto w-full rounded-[4px] bg-foreground/10 object-cover" />
               <span className="text-[11px] leading-[1.5] tabular-nums">{String(at + 1).padStart(2, "0")}</span>
@@ -190,7 +193,7 @@ function PriceRow({ label, value, url, disabled }: { label: string; value: strin
   </>;
   return url
     ? <a href={url} target="_blank" rel="noreferrer"
-        className="flex min-h-[41px] items-center justify-between border-t border-dotted border-foreground/45 text-[15px] leading-[1.4] transition-colors duration-200 ease-[ease] first:border-t-0 hover:bg-foreground/8 pointer-coarse:min-h-11">{body}</a>
+        className="flex min-h-[41px] items-center justify-between border-t border-dotted border-foreground/45 text-[15px] leading-[1.4] transition-colors duration-200 ease-[ease] first:border-t-0 hover:bg-foreground/8 pointer-coarse:min-h-11 group/focus"><FocusShape className="flex w-full items-center justify-between">{body}</FocusShape></a>
     : <div aria-disabled={disabled || undefined}
         className={cn("flex min-h-[41px] items-center justify-between border-t border-dotted border-foreground/45 text-[15px] leading-[1.4] first:border-t-0 pointer-coarse:min-h-11", disabled && "opacity-60")}>{body}</div>;
 }

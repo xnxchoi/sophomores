@@ -1,5 +1,6 @@
 "use client";
 
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { ArrowLeftIcon, ArrowRightIcon } from "@phosphor-icons/react/dist/ssr";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
@@ -105,7 +106,7 @@ function ShelfPill({ visible, label, onEnter, onPress }: { visible: boolean; lab
   return <button type="button" tabIndex={visible ? 0 : -1} onMouseEnter={onEnter}
     onPointerDown={(event) => event.currentTarget.setPointerCapture(event.pointerId)}
     onClick={(event) => { event.stopPropagation(); onPress(); }}
-    className={cn("inline-flex items-center rounded-[40px] bg-background px-4 py-[7.2px] text-[15px] leading-[1.4] whitespace-nowrap text-foreground transition-colors duration-150 ease-[ease] hover:bg-foreground hover:text-background",
+    className={cn("inline-flex items-center rounded-[40px] bg-background px-4 py-[7.2px] text-[15px] leading-[1.4] whitespace-nowrap text-foreground transition-colors duration-150 ease-[ease] hover:bg-foreground hover:text-background outline-offset-2 focus-visible:outline-2 focus-visible:outline-current",
       visible ? "pointer-events-auto" : "pointer-events-none")}>+ {label} +</button>;
 }
 
@@ -173,7 +174,7 @@ export function ShelfPager({ shown, hub, rects, count, slotOf, sectionTop, label
 function PagerButton({ visible, label, disabled, onPress, children }: { visible: boolean; label: string; disabled: boolean; onPress: () => void; children: ReactNode }) {
   return <button type="button" tabIndex={visible ? 0 : -1} disabled={disabled} aria-label={label}
     onPointerDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); onPress(); }}
-    className="inline-flex min-h-11 min-w-11 items-center justify-center gap-[1ch] px-[9px] text-[12.3px] leading-4 tracking-[0.02em] whitespace-nowrap transition-opacity duration-150 ease-[ease] disabled:opacity-30">
-    <span aria-hidden="true">[</span>{children}<span aria-hidden="true">]</span>
+    className="group/focus inline-flex min-h-11 min-w-11 items-center justify-center gap-[1ch] px-[9px] text-[12.3px] leading-4 tracking-[0.02em] whitespace-nowrap transition-opacity duration-150 ease-[ease] disabled:opacity-30">
+    <FocusShape className="inline-flex items-center gap-[1ch]"><span aria-hidden="true">[</span>{children}<span aria-hidden="true">]</span></FocusShape>
   </button>;
 }

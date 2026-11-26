@@ -1,5 +1,6 @@
 "use client";
 
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode, type Ref } from "react";
 import { useTransitionRouter } from "next-transition-router";
 import { ArrowLeftIcon } from "@phosphor-icons/react/dist/ssr";
@@ -79,7 +80,7 @@ export function ShopHome({ items, labels, initialOpen, cartPanel }: { items: Ite
         <img src={first.url} alt={first.alt ?? ""} draggable={false} className="absolute inset-0 size-full object-cover" />
       </div>)}
     {/* Every book reachable without the scene (their hidden keyboard listbox of every book). */}
-    <ul className="sr-only">{items.map((entry) => <li key={entry.id}><Link href={entry.href}>{entry.title} {entry.price}</Link> {entry.refund}</li>)}</ul>
+    <ul className="sr-only focus-within:not-sr-only focus-within:fixed focus-within:top-24 focus-within:left-4 focus-within:z-50 focus-within:grid focus-within:gap-1 focus-within:rounded-lg focus-within:bg-background focus-within:p-4 focus-within:text-sm">{items.map((entry) => <li key={entry.id}><Link href={entry.href} className="outline-offset-2 focus-visible:outline-2 focus-visible:outline-current">{entry.title} {entry.price}</Link> {entry.refund}</li>)}</ul>
   </section>;
 }
 
@@ -93,7 +94,7 @@ function ShopFallback({ items, labels, initialOpen, cartPanel }: { items: Item[]
     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
       <p>{labels.sceneFailed}</p>
       <button type="button" onClick={() => window.location.reload()}
-        className="inline-flex min-h-11 items-center text-foreground underline-offset-4 transition-opacity hover:opacity-70">{labels.tryAgain}</button>
+        className="group/focus inline-flex min-h-11 items-center text-foreground underline-offset-4 transition-opacity hover:opacity-70"><FocusShape>{labels.tryAgain}</FocusShape></button>
     </div>
     {cartPanel && <div className="mt-10 max-w-2xl">{cartPanel}</div>}
     {open && <div className="mt-10 max-w-2xl">{open.details}</div>}
@@ -708,9 +709,9 @@ function Home({ vendored, items, labels, initialOpen, cartPanel }: { vendored: V
         [ {onShelf && detail.open == null ? labels.shelf : labels.featured} ]
       </p>
       <button type="button" tabIndex={phoneDetail ? 0 : -1} aria-hidden={!phoneDetail} onClick={() => detail.closeBook()}
-        className={cn("col-start-1 row-start-1 -my-3.5 inline-flex min-h-11 min-w-11 items-center self-start text-left uppercase transition-[opacity,translate,color] duration-300 ease-[ease] hover:text-foreground",
+        className={cn("group/focus col-start-1 row-start-1 -my-3.5 inline-flex min-h-11 min-w-11 items-center self-start text-left uppercase transition-[opacity,translate,color] duration-300 ease-[ease] hover:text-foreground",
           phoneDetail ? "pointer-events-auto delay-100" : "pointer-events-none translate-x-2.5 opacity-0")}>
-        <ArrowLeftIcon aria-hidden="true" className="mr-1.5 size-3.5" />{labels.toShelf}
+        <FocusShape className="inline-flex items-center"><ArrowLeftIcon aria-hidden="true" className="mr-1.5 size-3.5" />{labels.toShelf}</FocusShape>
       </button>
     </div>
     <TitleRail railRef={titles} label={labels.titles} titles={items.map((entry) => entry.title)} refunds={items.map((entry) => entry.refund)} active={detail.open ?? selected ?? railIndex}
@@ -894,11 +895,11 @@ function ViewDetails({ href, label, hidden, onOpen, book }: { href: string; labe
     shown && !hidden ? "translate-y-0" : "translate-y-[calc(100%+24px)]")}>
     {book && <>
       <button type="button" onPointerDown={(event) => event.stopPropagation()} onClick={book.onToggle}
-        className="text-xs uppercase tracking-[-0.02em] transition-opacity hover:opacity-70 pointer-coarse:min-h-11 pointer-coarse:min-w-11">{book.label} {book.open ? "[-]" : "[+]"}</button>
+        className="group/focus text-xs uppercase tracking-[-0.02em] transition-opacity hover:opacity-70 pointer-coarse:min-h-11 pointer-coarse:min-w-11"><FocusShape>{book.label} {book.open ? "[-]" : "[+]"}</FocusShape></button>
       <span aria-hidden="true" className="text-xs">·</span>
     </>}
     <Link href={href} onClick={(event) => { if (event.metaKey || event.ctrlKey || event.shiftKey) return; event.preventDefault(); onOpen(); }}
-      className="inline-flex items-center text-xs uppercase tracking-[-0.02em] transition-opacity hover:opacity-70 pointer-coarse:min-h-11 pointer-coarse:min-w-11">{label} [+]</Link>
+      className="group/focus inline-flex items-center text-xs uppercase tracking-[-0.02em] transition-opacity hover:opacity-70 pointer-coarse:min-h-11 pointer-coarse:min-w-11"><FocusShape>{label} [+]</FocusShape></Link>
   </div>;
 }
 
@@ -906,7 +907,7 @@ function ViewDetails({ href, label, hidden, onOpen, book }: { href: string; labe
 function OpenBookPill({ label, shown, onHover, onOpen }: { label: string; shown: boolean; onHover: (hovered: boolean) => void; onOpen: () => void }) {
   return <button type="button" tabIndex={shown ? 0 : -1} aria-hidden={!shown} onMouseEnter={() => onHover(true)} onMouseLeave={() => onHover(false)}
     onClick={(event) => { event.stopPropagation(); onOpen(); }}
-    className={cn("fixed bottom-[14%] left-[30%] z-30 -translate-x-1/2 rounded-full bg-background px-3 py-1.5 text-xs pointer-coarse:min-h-11 uppercase tracking-[-0.02em] text-foreground transition-opacity duration-300 max-[900px]:hidden",
+    className={cn("fixed bottom-[14%] left-[30%] z-30 -translate-x-1/2 rounded-full bg-background px-3 py-1.5 text-xs pointer-coarse:min-h-11 uppercase tracking-[-0.02em] text-foreground transition-opacity duration-300 max-[900px]:hidden outline-offset-2 focus-visible:outline-2 focus-visible:outline-current",
       shown ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0")}>+ {label} +</button>;
 }
 
@@ -928,8 +929,8 @@ function DetailStack({ shown, height, toShelf, onClose, children }: { shown: boo
           phone the link sits in the label's slot instead. */}
       <div className="sticky top-[88px] z-10 px-6 max-[900px]:hidden">
         <button type="button" onClick={onClose}
-          className="inline-flex min-h-8 items-center bg-background text-[11px] uppercase pointer-coarse:min-h-11 pointer-coarse:min-w-11 tracking-[0.04em] text-muted-foreground transition-colors hover:text-foreground">
-          <ArrowLeftIcon aria-hidden="true" className="mr-1.5 size-3.5" />{toShelf}
+          className="group/focus inline-flex min-h-8 items-center bg-background text-[11px] uppercase pointer-coarse:min-h-11 pointer-coarse:min-w-11 tracking-[0.04em] text-muted-foreground transition-colors hover:text-foreground">
+          <FocusShape className="inline-flex items-center"><ArrowLeftIcon aria-hidden="true" className="mr-1.5 size-3.5" />{toShelf}</FocusShape>
         </button>
       </div>
       {children}

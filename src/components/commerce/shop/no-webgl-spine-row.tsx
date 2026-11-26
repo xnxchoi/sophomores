@@ -1,5 +1,6 @@
 "use client";
 
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Vendored } from "./stripe-scene";
 import { fallbackImagesFor, type FallbackImage } from "./_shared/fallback-images";
@@ -456,7 +457,9 @@ export function NoWebglSpineRow({ vendored, books, hidden, onBookOpen, labels }:
             }}
             onPointerEnter={() => { hub.bookHoverIndexLiveRef.current = index; }}
             onPointerLeave={() => { if (hub.bookHoverIndexLiveRef.current === index) hub.bookHoverIndexLiveRef.current = -1; }}
-            className="pointer-events-auto absolute top-0 left-0 m-0 touch-pan-y border-0 bg-transparent p-0 [-webkit-tap-highlight-color:transparent] pointer-coarse:min-h-11 pointer-coarse:min-w-11" />;
+            className="pointer-events-auto absolute top-0 left-0 m-0 touch-pan-y border-0 bg-transparent p-0 [-webkit-tap-highlight-color:transparent] pointer-coarse:min-h-11 pointer-coarse:min-w-11 group/focus">
+            <FocusShape aria-hidden="true" className="pointer-events-none absolute inset-0 block rounded-[2px]" />
+          </button>;
         })}
       </div>
     </div>

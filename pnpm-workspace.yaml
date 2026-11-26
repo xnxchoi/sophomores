@@ -22,4 +22,5 @@ minimumReleaseAgeExclude:
   - ios-haptics@3.3.0
   - music-metadata@12.3.2
 patchedDependencies:
+  next-transition-router@0.2.11: patches/next-transition-router@0.2.11.patch
   payload: patches/payload.patch

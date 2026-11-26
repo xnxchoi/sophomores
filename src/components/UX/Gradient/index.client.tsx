@@ -65,23 +65,25 @@ function GradientInner() {
   // colours here (26 Nov: "use the brighter colors within the palettwe"), so each stop is the nearest of Saffron Amber,
   // Saffron Amber Lighter +1, Muted Olive, Signal Orange, Signal Orange Lighter, Gulf Cerulean and Gulf Cerulean
   // Lighter by OKLab distance to The Hideaway's stop (the second stop takes the next nearest when both would match).
-  const colorSchemes = useMemo<ReadonlyArray<readonly [string, string]>>(
+  // The third is the base the noise starts from (The Hideaway's was black): the bright nearest the midpoint of the two
+  // stops, other than the stops themselves, so the open menu's dark links never sit on a dark patch (Cordy, 26 Nov).
+  const colorSchemes = useMemo<ReadonlyArray<readonly [string, string, string]>>(
     () => [
-      ["--orange", "--gulf-cerulean-lighter"],
-      ["--orange", "--gulf-cerulean-lighter"],
-      ["--gulf-cerulean-lighter", "--yellow-lighter-1"],
-      ["--yellow", "--yellow-lighter-1"],
-      ["--yellow-lighter-1", "--gulf-cerulean-lighter"],
-      ["--orange", "--yellow"],
-      ["--orange", "--yellow-lighter-1"],
-      ["--yellow", "--yellow-lighter-1"],
-      ["--gulf-cerulean", "--orange-lighter"],
-      ["--yellow-lighter-1", "--gulf-cerulean-lighter"],
-      ["--yellow-lighter-1", "--orange"],
-      ["--orange", "--yellow-lighter-1"],
-      ["--yellow", "--yellow-lighter-1"],
-      ["--orange", "--yellow"],
-      ["--orange", "--olive"]
+      ["--orange", "--gulf-cerulean-lighter", "--yellow"],
+      ["--orange", "--gulf-cerulean-lighter", "--yellow"],
+      ["--gulf-cerulean-lighter", "--yellow-lighter-1", "--olive"],
+      ["--yellow", "--yellow-lighter-1", "--olive"],
+      ["--yellow-lighter-1", "--gulf-cerulean-lighter", "--olive"],
+      ["--orange", "--yellow", "--orange-lighter"],
+      ["--orange", "--yellow-lighter-1", "--yellow"],
+      ["--yellow", "--yellow-lighter-1", "--olive"],
+      ["--gulf-cerulean", "--orange-lighter", "--orange"],
+      ["--yellow-lighter-1", "--gulf-cerulean-lighter", "--olive"],
+      ["--yellow-lighter-1", "--orange", "--yellow"],
+      ["--orange", "--yellow-lighter-1", "--yellow"],
+      ["--yellow", "--yellow-lighter-1", "--olive"],
+      ["--orange", "--yellow", "--orange-lighter"],
+      ["--orange", "--olive", "--yellow"]
     ],
     []
   );
@@ -89,20 +91,20 @@ function GradientInner() {
   // material, so a colour set later (an effect) never reaches the base tones, which nothing animates. This only
   // renders on the client, inside the canvas.
   const colours = useMemo(
-    () => [tokenColor(colorSchemes[0][0], new ThreeColor()), tokenColor(colorSchemes[0][1], new ThreeColor())],
+    () => colorSchemes[0].map((token) => tokenColor(token, new ThreeColor())),
     [colorSchemes]
   );
   const u_offset = useMemo(() => new Vector2(0.42, 0.6), []);
   const u_pixels = useMemo(() => new Vector2(1, 1), []);
   const u_resolution = useMemo(() => new Vector2(1, 1), []);
   const u_additionalOffset = useMemo(() => new Vector2(0), []);
-  // The first scheme, then the two base tones (The Hideaway's 353c45 and 0f0a0a).
+  // The first scheme's two stops and its base. The shaders never read the fourth entry; it repeats the base.
   const u_color = useMemo(
     () => [
       tokenColor(colorSchemes[0][0], new ThreeColor()),
       tokenColor(colorSchemes[0][1], new ThreeColor()),
-      tokenColor("--black-lighter-2", new ThreeColor()),
-      tokenColor("--black", new ThreeColor())
+      tokenColor(colorSchemes[0][2], new ThreeColor()),
+      tokenColor(colorSchemes[0][2], new ThreeColor())
     ],
     [colorSchemes]
   );
@@ -201,6 +203,7 @@ function GradientInner() {
       // Read on every change, so the stops follow the current theme's tokens.
       tokenColor(target[0], colours[0]);
       tokenColor(target[1], colours[1]);
+      tokenColor(target[2], colours[2]);
 
       gradientt.current &&
         animate([
@@ -225,6 +228,21 @@ function GradientInner() {
               r: colours[1].r,
               g: colours[1].g,
               b: colours[1].b
+            },
+            {
+              duration: 1.1,
+              delay: 0.3,
+              ease: TWEEN_EASE.power4.inOut,
+              at: 0,
+              type: "tween"
+            }
+          ],
+          [
+            gradientt.current.uniforms.u_color.value[2],
+            {
+              r: colours[2].r,
+              g: colours[2].g,
+              b: colours[2].b
             },
             {
               duration: 1.1,

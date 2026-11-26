@@ -23,6 +23,9 @@ import { LookInsideBar } from "./look-inside-bar";
  * the scene reads live refs written on every scroll, and React state changes only at thresholds.
  */
 const FEATURED_MAX = 4, CARD_GAP = 16, CARD_INSET_BOTTOM = 8;
+/** Their header bar's bottom (px), which their section header is laid out under; and the height of our refund line
+ * under each rail title (TitleRail: mt-1 + leading-6). */
+const THEIR_HEADER_BOTTOM = 49, REFUND_LINE = 28;
 
 type Item = { id: string; title: string; price: string; href: string; stageArt: { url: string; alt?: string | null } | null;
   /** The book's details column (server-rendered: ProductInfo + ProductExtras), shown when it opens in the scene. */
@@ -35,7 +38,9 @@ type Item = { id: string; title: string; price: string; href: string; stageArt: 
   refund?: ReactNode };
 type Labels = { featured: string; shelf: string; viewDetails: string; toShelf: string; openBook: string; closeBook: string;
   previousPage: string; nextPage: string; titles: string; sceneFailed: string; tryAgain: string };
-type Geometry = { lvh: number; mobile: boolean; top: number; height: number; offset: number; extents: number[];
+type Geometry = { lvh: number; mobile: boolean; top: number;
+  /** How far our header pushes theirs down (px): see `measure`. */
+  shift: number; height: number; offset: number; extents: number[];
   starts: number[]; lock: number[]; total: number };
 
 export function ShopHome({ items, labels, initialOpen }: { items: Item[]; labels: Labels;
@@ -95,18 +100,30 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
   // each featured book gets a canvas height plus its 150 px hold (the last one 0.67 canvas more), the shelf 1.67 canvas
   // heights on desktop (2.3–3.8 on a phone), and every later book 1 px.
   const measure = (): Geometry => {
-    const width = scroll.X(), lvh = scroll.C(), mobile = width < 900, top = scroll.p(width), height = scroll.$(lvh, top);
+    // Their section header sits under their 49 px header bar: the label 4 px below it, the title rail 21 px below
+    // (14 on a phone), the card at `p(width)` (162 px; 140 on a phone). The site header here is taller and changes with
+    // the width (58–70 px, measured), so the label, the rail and the card keep those distances from its bottom instead,
+    // and the card also clears the refund line under each title (ours, 28 px: mt-1 + leading-6), which theirs hasn't.
+    const headerBottom = document.querySelector("header")?.getBoundingClientRect().bottom ?? THEIR_HEADER_BOTTOM;
+    const shift = Math.max(0, Math.ceil(headerBottom - THEIR_HEADER_BOTTOM)), refund = items.some((entry) => entry.refund) ? REFUND_LINE : 0;
+    const width = scroll.X(), lvh = scroll.C(), mobile = width < 900, top = scroll.p(width) + shift + refund, height = scroll.$(lvh, top);
     const offset = (top + height / 2 - Math.max(1, lvh) / 2) / Math.max(1, lvh);
     const shelfScreens = mobile ? Math.max(2.3, Math.min(3.8, 2.3 + ((lvh - 650) / 350) * 1.2)) : 1.67;
     const lock = Array.from({ length: catalogue.t }, (_, index) => 150 + (index === J ? Math.round(0.67 * height) : 0));
     const extents = catalogue.F(count, height, lock, shelfScreens), starts = scroll.e(extents);
-    return { lvh, mobile, top, height, offset, extents, starts, lock, total: extents.reduce((sum, value) => sum + value, 0) };
+    return { lvh, mobile, top, shift, height, offset, extents, starts, lock, total: extents.reduce((sum, value) => sum + value, 0) };
   };
   const [geometry, setGeometry] = useState<Geometry>(measure);
   const geo = useRef(geometry);
   useEffect(() => { geo.current = geometry; }, [geometry]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => scroll.d(() => setGeometry(measure())), [scroll]);
+  useEffect(() => {
+    const off = scroll.d(() => setGeometry(measure()));
+    // The site header settles after this page mounts and changes size with the window: re-measure when it does.
+    const header = document.querySelector("header"), observer = header ? new ResizeObserver(() => setGeometry(measure())) : null;
+    if (header) observer?.observe(header);
+    return () => { off(); observer?.disconnect(); };
+  }, [scroll]);
 
   // The scene's own refs (06w9:11578-11587, 13660-13662), written whenever the geometry changes.
   useEffect(() => {
@@ -475,7 +492,7 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
   // While reading, the page is the stack of every book's details (their sections, then half a screen); otherwise the
   // home's own scroll.
   const readingHeight = reading.layout.total + Math.round(geometry.lvh / 2);
-  return <div ref={page} className="relative overflow-x-clip">
+  return <div ref={page} className="relative overflow-x-clip" style={{ "--shop-shift": geometry.shift + "px" } as CSSProperties}>
     <div aria-hidden="true" className="h-(--page-height)" style={{ "--page-height": (readingOpen ? readingHeight : Math.max(0, nextTop)) + "px" } as CSSProperties} />
     {/* The section after the shelf (their Multimedia's place). A placeholder for now (owner, 26 Nov: "a whole new section
         … For now, make it a placeholder: min 100vh, 100vw section"). At least a screen tall, so the page scrolls on
@@ -488,7 +505,7 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
     <StripeScene vendored={vendored} props={sceneProps} className="pointer-events-none fixed inset-0 isolate z-10" />
     {/* On a phone the return link takes the label's place while a book is open (their Nav__FeaturedSlot: the label slides
         −10 px and fades, the link comes in from +10 px 100 ms later, 300 ms each). */}
-    <div className="fixed top-[3.75rem] left-4 z-20 grid text-[11px] uppercase leading-4 tracking-[0.06em] text-muted-foreground">
+    <div className="fixed top-[calc(53px+var(--shop-shift,0px))] left-4 z-20 grid text-[11px] uppercase leading-4 tracking-[0.06em] text-muted-foreground">
       <p className={cn("col-start-1 row-start-1 transition-[opacity,translate] duration-300", phoneDetail ? "-translate-x-2.5 opacity-0" : "delay-100")}>
         [ {onShelf ? labels.shelf : labels.featured} ]
       </p>
@@ -623,7 +640,7 @@ function TitleRail({ railRef, label, titles, refunds, active, fade, shelf, detai
     return () => window.removeEventListener("resize", place);
   }, [active, titles, detail]);
   return <nav ref={railRef} aria-label={label} aria-hidden={hidden || undefined} inert={hidden} style={{ opacity: shown && !hidden ? 1 - 2 * fade : 0 }}
-    className={cn("pointer-events-none fixed inset-x-0 top-[70px] z-20 overflow-hidden px-5 pt-5 pb-3 transition-[opacity,clip-path] duration-[1600ms] max-[900px]:top-[63px]",
+    className={cn("pointer-events-none fixed inset-x-0 top-[calc(70px+var(--shop-shift,0px))] z-20 overflow-hidden px-5 pt-5 pb-3 transition-[opacity,clip-path] duration-[1600ms] max-[900px]:top-[calc(63px+var(--shop-shift,0px))]",
       hidden ? "duration-300" : detail ? "[clip-path:inset(0_40%_0_0)] [transition-duration:1600ms,600ms] [transition-timing-function:ease,cubic-bezier(0.16,1,0.3,1)]" : "[clip-path:inset(0_0_0_0)]",
       shown && shelf && !detail && !hidden && "duration-[350ms]")}>
     <ul style={{ transform: "translateX(" + shift + "px)" }}

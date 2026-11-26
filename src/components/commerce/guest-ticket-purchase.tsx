@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import Link from "next/link";
+import { Link } from "next-transition-router";
 import { useTranslations } from "next-intl";
 import { useCart, useEcommerce } from "@payloadcms/plugin-ecommerce/client/react";
 import { Button } from "@/components/ui/button";

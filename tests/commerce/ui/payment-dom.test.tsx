@@ -1,4 +1,5 @@
-import { EnglishMessages } from "../../fixtures/english-messages";
+import { EnglishMessages as Messages } from "../../fixtures/english-messages";
+import { AppRouterContext, type AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { createRequire, registerHooks } from "node:module";
 import assert from 'node:assert/strict'
 import { after, afterEach, before, test } from 'node:test'
@@ -10,6 +11,14 @@ import type { MemberStatus } from '@/lib/member-auth/client'
 import { useEffect, type ReactNode } from 'react'
 import { setCheckoutPayload } from '../../fixtures/commerce/checkout-route'
 import { nativeEditionsPayload } from '../../fixtures/commerce/native-editions-payload'
+
+// The payment surfaces render inside the app router; their links go through the site's transition router.
+const router: AppRouterInstance = {
+  back() {}, forward() {}, refresh() {}, push() {}, replace() {}, prefetch() {}, bfcacheId: "payment-fixture"
+};
+function EnglishMessages({ children }: { children: ReactNode }) {
+  return <AppRouterContext.Provider value={router}><Messages>{children}</Messages></AppRouterContext.Provider>;
+}
 
 let dom: JSDOM
 let ui: typeof import('@testing-library/react/pure')

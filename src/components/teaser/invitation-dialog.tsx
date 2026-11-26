@@ -38,7 +38,7 @@ const content = useTeaserContent();
             autoFocus
             aria-label={t("closeInvitation")}
           >
-            <FocusShape className="outline-offset-2 group-focus-visible/focus:outline-ring">{t("closeWithSymbol")}</FocusShape>
+            <FocusShape className="outline-offset-2 group-focus-visible/focus:outline-current">{t("closeWithSymbol")}</FocusShape>
           </button>
         </div>
         <h2
@@ -60,7 +60,7 @@ const content = useTeaserContent();
           className="group/focus self-start bg-transparent p-2 pl-0 text-white uppercase focus-visible:outline-none"
           onClick={() => dialogRef.current?.close()}
         >
-          <FocusShape className="outline-offset-2 group-focus-visible/focus:outline-ring">{content.modalReturnButton}</FocusShape>
+          <FocusShape className="outline-offset-2 group-focus-visible/focus:outline-current">{content.modalReturnButton}</FocusShape>
         </button>
       </div>
     </dialog>

@@ -66,3 +66,33 @@ test("empty: one line and the way back to the shelf closes the cart", () => {
   env.ui.fireEvent.click(env.ui.within(env.dom.window.document.querySelector("aside") as HTMLElement).getByRole("button", { name: "All products" }));
   assert.equal(column.closed >= 1, true);
 });
+
+test("Refresh shows whenever the member's cart exists: with lines, and on an empty saved cart", () => {
+  let refreshed = 0;
+  env.ecommerce.setFakeEcommerce({ user: member, cart: { id: "c1", status: "active", items: [{ id: "i1", product: "p1", quantity: 1 }] }, refreshCart: async () => { refreshed += 1; } });
+  render([membershipCartProduct(offer)]);
+  env.ui.fireEvent.click(screen().getByRole("button", { name: "Refresh cart" }));
+  assert.equal(refreshed, 1);
+  env.ui.cleanup();
+  env.ecommerce.setFakeEcommerce({ user: member, cart: { id: "c1", status: "active", items: [] } });
+  render([membershipCartProduct(offer)]);
+  assert.ok(screen().getByText("Your cart is empty"));
+  assert.ok(screen().getByRole("button", { name: "Refresh cart" }));
+});
+
+test("a removal the cart doesn't confirm says so, and Refresh is there to check", async () => {
+  let refreshed = 0;
+  env.ecommerce.setFakeEcommerce({ user: member, cart: { id: "c1", status: "active", items: [{ id: "i1", product: "p1", quantity: 1 }] },
+    removeItem: async () => {}, refreshCart: async () => { refreshed += 1; } });
+  render([membershipCartProduct(offer)]);
+  await env.ui.act(async () => { env.ui.fireEvent.click(screen().getByRole("button", { name: "Remove Book only" })); });
+  assert.ok(screen().getByText("We couldn't confirm removal. Refresh the cart to check its current contents."));
+  env.ui.fireEvent.click(screen().getByRole("button", { name: "Refresh cart" }));
+  assert.equal(refreshed, 1);
+});
+
+test("focus moves into the cart column when it takes input", () => {
+  env.ecommerce.setFakeEcommerce({ user: member, cart: undefined });
+  render([membershipCartProduct(offer)]);
+  assert.equal(env.dom.window.document.activeElement === env.dom.window.document.querySelector("aside"), true);
+});

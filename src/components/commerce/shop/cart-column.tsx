@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useMemo, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, type ReactNode } from "react";
 import { ArrowLeftIcon } from "@phosphor-icons/react/dist/ssr";
 import { cn } from "@/lib/utils";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
@@ -23,6 +23,11 @@ import { FocusShape } from "@/components/core/FocusShape/FocusShape";
  * report their quantities (the stack's cartQuantitiesByBookId), or null when they leave. */
 type CartColumnValue = { close: () => void; back: string; report: (quantities: Record<string, number> | null) => void };
 const CartColumnContext = createContext<CartColumnValue | null>(null);
+/** Whether the cart owns input now: the shop's global keys and wheel stand down while it does (Review-B, 27 Nov). */
+export function cartOwnsInput() { return document.documentElement.hasAttribute("data-cart-owns"); }
+/** Marks (or clears) the cart owning input, on the root so every shop listener can read it. */
+export function ownInput(owns: boolean) { document.documentElement.toggleAttribute("data-cart-owns", owns); }
+
 /** The cart column around the caller, or null outside one (the cart's own page). */
 export function useCartColumn() { return useContext(CartColumnContext); }
 
@@ -32,6 +37,9 @@ export function CartColumn({ open, shown, back, onBack, onLines, children }: {
   /** The column takes input (theirs: cartPanelOpen). */
   shown: boolean; back: string; onBack: () => void; onLines: CartColumnValue["report"]; children: ReactNode }) {
   const value = useMemo(() => ({ close: onBack, back, report: onLines }), [onBack, back, onLines]);
+  // Focus moves into the cart when it takes input (Review-B, 27 Nov); the column itself, so no control is pressed by it.
+  const column = useRef<HTMLElement>(null);
+  useEffect(() => { if (shown) column.current?.focus({ preventScroll: true }); }, [shown]);
   if (!open) return null;
   return <>
     <div aria-hidden="true" className="pointer-events-none fixed top-0 right-0 z-[31] h-[125px] w-[40%] bg-background [mask-image:linear-gradient(#000_0_62px,transparent_100%)] max-[900px]:w-full"
@@ -50,8 +58,8 @@ export function CartColumn({ open, shown, back, onBack, onLines, children }: {
         shown ? "delay-100" : "pointer-events-none translate-x-2.5 opacity-0")}>
       <FocusShape className="inline-flex items-center outline-offset-4"><ArrowLeftIcon aria-hidden="true" className="mr-1.5 size-3.5" />{back}</FocusShape>
     </button>
-    <aside inert={!shown} data-lenis-prevent=""
-      className="fixed top-[calc(80px+var(--shop-shift,0px))] right-0 z-30 isolate flex h-[calc(100vh-80px-var(--shop-shift,0px))] w-[40%] flex-col overflow-y-auto overscroll-contain rounded-bl-[8px] bg-background px-6 pt-[39px] pb-6 text-foreground max-[900px]:top-0 max-[900px]:h-dvh max-[900px]:w-full max-[900px]:rounded-none max-[900px]:pt-[110px] max-[900px]:pb-[60vh]"
+    <aside ref={column} tabIndex={-1} inert={!shown} data-lenis-prevent=""
+      className="fixed top-[calc(80px+var(--shop-shift,0px))] right-0 z-30 isolate flex outline-none h-[calc(100vh-80px-var(--shop-shift,0px))] w-[40%] flex-col overflow-y-auto overscroll-contain rounded-bl-[8px] bg-background px-6 pt-[39px] pb-6 text-foreground max-[900px]:top-0 max-[900px]:h-dvh max-[900px]:w-full max-[900px]:rounded-none max-[900px]:pt-[110px] max-[900px]:pb-[60vh]"
       style={{ opacity: "var(--cart-panel-enter, 1)" }}>
       <div className="mb-auto"><CartColumnContext value={value}>{children}</CartColumnContext></div>
     </aside>

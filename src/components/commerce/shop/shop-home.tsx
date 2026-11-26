@@ -18,7 +18,7 @@ import { useBookSounds } from "./use-book-sounds";
 import { LookInsideBar } from "./look-inside-bar";
 import { ShelfPager, ShelfPills, type ShelfHub } from "./shelf-controls";
 import { useCartMode, type CartConstants, type CartMotion, type CartTiming } from "./use-cart-mode";
-import { CartBehind, CartColumn } from "./cart-column";
+import { CartBehind, CartColumn, cartOwnsInput, ownInput } from "./cart-column";
 import { NoWebglCartStack } from "./no-webgl-cart-stack";
 import { listGuestCart, subscribeGuestCart } from "@/lib/commerce/browser-cart";
 
@@ -69,18 +69,21 @@ export function ShopHome({ items, labels, initialOpen, cartPanel }: { items: Ite
   // Sounds only while the working scene is up: not while it loads, nor on the plain list it falls back to.
   useBookSounds(vendored != null && !failed);
   const first = items[0]?.stageArt;
+  // While the cart owns input (cart mode), the browse layer under it takes none (Review-B, 27 Nov); a direct load of the
+  // cart's address starts that way.
+  const [cartOwns, setCartOwns] = useState(cartPanel != null);
   if (failed) return <ShopFallback items={items} labels={labels} initialOpen={initialOpen} cartPanel={cartPanel} />;
   // Native wheel scrolling here, as on stripe.press: their scroll mapping, holds and shelf catch read the browser's own
   // scroll, and the site's Lenis smoothing would keep driving the page through the shelf's catch.
   return <section data-lenis-prevent-wheel aria-label={labels.featured} className="relative min-h-svh">
-    {vendored && items.length > 0 ? <Home vendored={vendored} items={items} labels={labels} initialOpen={initialOpen} cartPanel={cartPanel} /> : first && (
+    {vendored && items.length > 0 ? <Home vendored={vendored} items={items} labels={labels} initialOpen={initialOpen} cartPanel={cartPanel} onCartOwns={setCartOwns} /> : first && (
       // The first card where theirs lands (162 px down, 16 px in, 24 px off the bottom) until their code is running.
       <div className="pointer-events-none fixed inset-x-4 top-[162px] bottom-6 z-0 overflow-hidden rounded-[8px] bg-muted max-[900px]:top-[140px]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={first.url} alt={first.alt ?? ""} draggable={false} className="absolute inset-0 size-full object-cover" />
       </div>)}
     {/* Every book reachable without the scene (their hidden keyboard listbox of every book). */}
-    <ul className="sr-only focus-within:not-sr-only focus-within:fixed focus-within:top-24 focus-within:left-4 focus-within:z-50 focus-within:grid focus-within:gap-1 focus-within:rounded-lg focus-within:bg-background focus-within:p-4 focus-within:text-sm">{items.map((entry) => <li key={entry.id}><Link href={entry.href} className="outline-offset-2 focus-visible:outline-2 focus-visible:outline-current">{entry.title} {entry.price}</Link> {entry.refund}</li>)}</ul>
+    <ul inert={cartOwns} className="sr-only focus-within:not-sr-only focus-within:fixed focus-within:top-24 focus-within:left-4 focus-within:z-50 focus-within:grid focus-within:gap-1 focus-within:rounded-lg focus-within:bg-background focus-within:p-4 focus-within:text-sm">{items.map((entry) => <li key={entry.id}><Link href={entry.href} className="outline-offset-2 focus-visible:outline-2 focus-visible:outline-current">{entry.title} {entry.price}</Link> {entry.refund}</li>)}</ul>
   </section>;
 }
 
@@ -110,7 +113,8 @@ function ShopFallback({ items, labels, initialOpen, cartPanel }: { items: Item[]
   </PageInset>;
 }
 
-function Home({ vendored, items, labels, initialOpen, cartPanel }: { vendored: Vendored; items: Item[]; labels: Labels; initialOpen?: string; cartPanel?: ReactNode }) {
+function Home({ vendored, items, labels, initialOpen, cartPanel, onCartOwns }: { vendored: Vendored; items: Item[]; labels: Labels; initialOpen?: string; cartPanel?: ReactNode;
+  onCartOwns: (owns: boolean) => void }) {
   const { hub, scroll, catalogue, router, seats, motion: tokens } = vendored;
   // Without WebGL their page shows the 2D layers (no-webgl-book-layer.tsx, no-webgl-spine-row.tsx), and the 2D row
   // reports its seat in module 44870 (`rD.f`), which the seat and the title fade read first (06w9:11117, 11874).
@@ -389,6 +393,18 @@ function Home({ vendored, items, labels, initialOpen, cartPanel }: { vendored: V
       hub.canvasShiftAnimatingUntilRef.current = performance.now() + 720; hub.sceneShiftAnimRef.current = null;
     } });
   useEffect(() => { cartOn.current = cart.cartMode; }, [cart.cartMode]);
+  // The cart owns input while it is on: the browse layer is inert, the shop's global keys and wheel stand down, the
+  // hidden book list too. When it closes, focus lands on the active title, a visible shelf target (Review-B, 27 Nov).
+  const wasCart = useRef(false);
+  useEffect(() => {
+    ownInput(cart.cartMode); onCartOwns(cart.cartMode);
+    if (wasCart.current && !cart.cartMode) {
+      const target = page.current?.querySelector<HTMLElement>("[data-shelf-return]");
+      if (target && !document.activeElement?.closest("aside")) target.focus({ preventScroll: true });
+    }
+    wasCart.current = cart.cartMode;
+  }, [cart.cartMode, onCartOwns]);
+  useEffect(() => () => ownInput(false), []);
   useEffect(() => () => { const root = document.documentElement.style; for (const name of ["--cart-page-opacity", "--cart-panel-enter", "--cart-backdrop-opacity"]) root.removeProperty(name); }, []);
   // What the stack shows: each product's quantity in the cart (their cartQuantitiesByBookId; our book ids are product
   // ids). Read from Auth's browser cart for now; the member's cart comes with Auth's cart-state hook.
@@ -405,7 +421,7 @@ function Home({ vendored, items, labels, initialOpen, cartPanel }: { vendored: V
   // cartOn is set first: the open frame is written at rest (not active), and the scene only takes the cart's −20vw shift
   // while the cart is on (G14: the stack sat ~180 px right of the card without it).
   const [cartVeil, setCartVeil] = useState(false);
-  useEffect(() => { if (cartPanel) { cartShiftFrom.current = 0; cartOn.current = true; setCartVeil(true); cart.openInstantly(); } }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (cartPanel) { cartShiftFrom.current = 0; cartOn.current = true; ownInput(true); setCartVeil(true); cart.openInstantly(); } }, []); // eslint-disable-line react-hooks/exhaustive-deps
   // How it closes (their c5): with books in the cart and the shelf's book not one of them, the stack leaves first
   // (500 ms) and the page comes back after; on a phone, or without WebGL (no stack to send off), it doesn't.
   const closing = () => ({ exitStackFirst: !geo.current.mobile && !noWebgl && Object.values(cartQuantities).some((count) => count > 0)
@@ -472,7 +488,7 @@ function Home({ vendored, items, labels, initialOpen, cartPanel }: { vendored: V
   useEffect(() => {
     if (detail.open != null || look.open) return;
     const key = (event: KeyboardEvent) => {
-      if (event.key !== "Enter" || event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
+      if (event.key !== "Enter" || event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey || cartOwnsInput()) return;
       const target = event.target as HTMLElement | null;
       if (target?.closest("a, button, input, textarea, select, [contenteditable], [role=button], [role=option]")) return;
       const index = onShelf ? (hub.spineSelectionLiveRef.current as { to?: number } | null)?.to : active;
@@ -678,6 +694,8 @@ function Home({ vendored, items, labels, initialOpen, cartPanel }: { vendored: V
     {/* Without WebGL the cart's books are images (theirs: NoWebglCartStack, desktop only). */}
     {cart.cartMode && noWebgl && !geometry.mobile && <NoWebglCartStack ids={itemIds} quantities={cartQuantities} cardTop={geometry.top} />}
     {cartPanel && <CartColumn open={cart.cartMode} shown={cart.panelOpen} back={labels.toShelf} onBack={backToShelf} onLines={setPanelQuantities}>{cartPanel}</CartColumn>}
+    {/* The browse layer: the scene stays mounted, but takes no input while the cart owns it. */}
+    <div inert={cart.cartMode} className="contents">
     <div aria-hidden="true" className="h-(--page-height)" style={{ "--page-height": (readingOpen ? readingHeight : Math.max(0, nextTop)) + "px" } as CSSProperties} />
     {/* The section after the shelf (their Multimedia's place). A placeholder for now (owner, 26 Nov: "a whole new section
         … For now, make it a placeholder: min 100vh, 100vw section"). At least a screen tall, so the page scrolls on
@@ -743,6 +761,7 @@ function Home({ vendored, items, labels, initialOpen, cartPanel }: { vendored: V
         active={READING_RUN_ON || index === detail.open}
         onMeasured={reading.measured} anchors={reading.anchors}>{entry.details}</DetailSlot>)}
     </DetailStack>
+    </div>
   </div>;
 }
 
@@ -870,6 +889,7 @@ function TitleRail({ railRef, label, titles, refunds, active, fade, shelf, detai
       {[...titles, ...titles, ...titles].map((title, slot) => { const index = slot % titles.length, middle = slot >= titles.length && slot < 2 * titles.length;
         return <li key={slot} aria-hidden={middle ? undefined : true}>
         <button ref={(item) => { items.current[slot] = item; }} type="button" tabIndex={middle ? undefined : -1} onClick={() => onPick(index)}
+          data-shelf-return={middle && index === active ? "" : undefined}
           className="pointer-events-auto relative font-display text-[length:calc(40px+16*(100vw-375px)/1353)] leading-[1.12] font-medium tracking-[-0.1rem] whitespace-nowrap text-foreground outline-offset-4 focus-visible:outline-2 max-[900px]:text-[length:calc(44px+17.6*(100vw-375px)/1353)]">
           {/* Theirs (FeaturedTitle): both faces skew from 0 78 %, over 448 ms into the active title and 400 ms out of it. */}
           <span className={cn("block origin-[0_78%] italic transition-[opacity,transform] ease-[ease]",

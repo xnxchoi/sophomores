@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { cartOwnsInput } from "./cart-column";
 import type { SceneCatalogue, SceneHub, SceneRouter } from "./stripe-scene";
 
 type Transition = { active: boolean; index: number; progress: number; activeProgress: number; activeProgressY: number;
@@ -240,7 +241,7 @@ export function useBookDetail(hub: SceneHub, catalogue: SceneCatalogue, router: 
   useEffect(() => {
     if (open == null) return;
     const scope = router.v("book-detail", { acceptsGesture: false, horizontal: (step: number) => { if (step === -1 && !source.current.pagesOpen()) closeRef.current(); } });
-    const key = (event: KeyboardEvent) => { if (event.key === "Escape") closeRef.current(); };
+    const key = (event: KeyboardEvent) => { if (event.key === "Escape" && !cartOwnsInput()) closeRef.current(); };
     const back = () => { if (window.location.pathname === source.current.home) closeRef.current(true); };
     window.addEventListener("keydown", key);
     window.addEventListener("popstate", back);

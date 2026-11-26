@@ -38,8 +38,16 @@ export function ShopCartLines({ products, signedIn, onSignIn }: { products: read
   useEffect(() => () => report?.(null), [report]);
 
   if (waiting) return <p className="pt-3.5 pl-3.5 text-[11px] uppercase leading-[1.5] text-muted-foreground">{t("loading")}</p>;
+  // Feedback and Refresh whenever the member's cart exists (canRefresh), the empty saved cart included (Review-B, 27 Nov).
+  const status = <>
+    <p role="status" className="mt-3 min-h-[18px] text-[11px] leading-[1.5] text-muted-foreground">{feedback}</p>
+    {canRefresh && <button type="button" disabled={busy} onClick={() => void refresh()}
+      className="group/focus inline-flex min-h-8 items-center text-[11px] uppercase tracking-[0.04em] underline decoration-dotted underline-offset-4 hover:decoration-solid disabled:opacity-40 pointer-coarse:min-h-11">
+      <FocusShape className="outline-offset-4">{refreshing ? t("refreshing") : t("refresh")}</FocusShape></button>}
+  </>;
   if (lines.length === 0) return <div className="pt-3.5 pl-3.5">
     <p className="text-[13px] leading-[1.5]">{t("empty")}</p>
+    {status}
     {column && <button type="button" onClick={column.close}
       className="group/focus mt-6 inline-flex min-h-8 items-center text-[11px] uppercase tracking-[0.04em] pointer-coarse:min-h-11">
       <FocusShape className="inline-flex items-center gap-1.5 outline-offset-4"><ArrowLeftIcon aria-hidden="true" className="size-2.5" />{column.back}</FocusShape>
@@ -86,9 +94,6 @@ export function ShopCartLines({ products, signedIn, onSignIn }: { products: read
       ? <button type="button" onClick={onSignIn} className="mt-[18px] flex w-full items-center justify-center rounded-[40px] px-3 py-2.5 text-[13px] uppercase leading-[1.4] tracking-[0.04em] shadow-[inset_0_0_0_0.8px_currentColor] outline-offset-4 transition-colors hover:bg-foreground hover:text-background focus-visible:outline-2 pointer-coarse:min-h-11">{t("continueToCheckout")}</button>
       : checkoutHref && <Link href={checkoutHref} className="mt-[18px] flex w-full items-center justify-center rounded-[40px] px-3 py-2.5 text-[13px] uppercase leading-[1.4] tracking-[0.04em] shadow-[inset_0_0_0_0.8px_currentColor] outline-offset-4 transition-colors hover:bg-foreground hover:text-background focus-visible:outline-2 pointer-coarse:min-h-11">{t("continueToCheckout")}</Link>)}
     {totalKRW !== null && <p className="mt-3 text-[12px] leading-[1.5] text-muted-foreground">{t("estimateDetail")}</p>}
-    <p role="status" className="mt-3 min-h-[18px] text-[11px] leading-[1.5] text-muted-foreground">{feedback}</p>
-    {canRefresh && feedback !== "" && <button type="button" disabled={busy} onClick={() => void refresh()}
-      className="group/focus inline-flex min-h-8 items-center text-[11px] uppercase tracking-[0.04em] underline decoration-dotted underline-offset-4 hover:decoration-solid disabled:opacity-40 pointer-coarse:min-h-11">
-      <FocusShape className="outline-offset-4">{refreshing ? t("refreshing") : t("refresh")}</FocusShape></button>}
+    {status}
   </section>;
 }

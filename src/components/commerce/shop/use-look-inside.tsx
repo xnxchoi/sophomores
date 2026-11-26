@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { cartOwnsInput } from "./cart-column";
 import type { SceneHub } from "./stripe-scene";
 import { bookSound } from "./use-book-sounds";
 
@@ -188,7 +189,7 @@ export function useLookInside(hub: SceneHub, detailIndex: number | null, source:
     };
     const down = (event: KeyboardEvent) => {
       const tag = (event.target as HTMLElement | null)?.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA") return;
+      if (tag === "INPUT" || tag === "TEXTAREA" || cartOwnsInput()) return;
       if (event.key === "Escape") { event.preventDefault(); event.stopImmediatePropagation(); closeRef.current(); return; }
       if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
       event.preventDefault(); event.stopImmediatePropagation();

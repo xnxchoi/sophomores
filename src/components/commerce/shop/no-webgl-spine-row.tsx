@@ -1,5 +1,6 @@
 "use client";
 
+import { cartOwnsInput } from "./cart-column";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Vendored } from "./stripe-scene";
@@ -378,7 +379,7 @@ export function NoWebglSpineRow({ vendored, books, hidden, onBookOpen, labels }:
     const snap = () => {
       window.clearTimeout(timer);
       if (touching || props.current.hidden || performance.now() - inputAt > 2500 || hub.bookOpenTransitionLiveRef.current.active
-        || hub.spineViewRestoringLiveRef.current || document.documentElement.hasAttribute("data-shelf-scroll-lock")) return;
+        || hub.spineViewRestoringLiveRef.current || document.documentElement.hasAttribute("data-shelf-scroll-lock") || cartOwnsInput()) return;
       const target = seat.current.seatScrollY;
       if (target == null) return;
       const distance = target - window.scrollY;
@@ -387,7 +388,7 @@ export function NoWebglSpineRow({ vendored, books, hidden, onBookOpen, labels }:
     };
     const schedule = (delay = SEAT_DELAY_MS) => { window.clearTimeout(timer); timer = window.setTimeout(snap, delay); };
     const scrolled = () => schedule(), ended = () => schedule(50), input = () => { inputAt = performance.now(); };
-    const key = (event: KeyboardEvent) => { if (["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " ", "j", "k"].includes(event.key)) input(); };
+    const key = (event: KeyboardEvent) => { if (!cartOwnsInput() && ["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " ", "j", "k"].includes(event.key)) input(); };
     const touchStart = () => { touching = true; input(); window.clearTimeout(timer); };
     const touchEnd = () => { touching = false; input(); schedule(); };
     const hasScrollEnd = "onscrollend" in window;

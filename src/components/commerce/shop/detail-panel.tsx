@@ -5,7 +5,8 @@ import { RichText } from "@payloadcms/richtext-lexical/react";
 import type { SerializedEditorState } from "@payloadcms/richtext-lexical/lexical";
 import { ArrowUpRightIcon, CaretDownIcon } from "@phosphor-icons/react";
 import { useLocale, useTranslations } from "next-intl";
-import { useState, type ReactNode } from "react";
+import { useState, useSyncExternalStore, type ReactNode } from "react";
+import { addGuestCartLine, listGuestCart, removeGuestCartLine, subscribeGuestCart } from "@/lib/commerce/browser-cart";
 import type { CommerceEditionOffer } from "@/lib/commerce/editions";
 import { editionRefundTerms } from "@/lib/commerce/refund-policy";
 import { cn } from "@/lib/utils";
@@ -24,8 +25,7 @@ import { DetailGallery } from "./detail-gallery";
  *   lists fold behind a [ Details ] toggle.
  * The full-bleed bands and the screen-tall top block apply inside the scene's detail slots only (in-[[data-detail-panel-
  * index]]), so the same panel sits plainly in the fallback list.
- * Ours, where theirs has no counterpart: the purchase row (purchase isn't open), the refund rule beside it (owner, 25
- * Nov), and our bracket labels' words. Labels are sans, not their mono (owner, 21 Nov: mono only where named); colours
+ * Ours, where theirs has no counterpart: the refund rule beside the add row (owner, 25 Nov), and our bracket labels' words. Labels are sans, not their mono (owner, 21 Nov: mono only where named); colours
  * are the site's (colour hold), with their proportions: rules at 45 %, muted text at 78 %. Detail mode plays no item
  * stagger in theirs (`noScrollFade`), so none here; the panel's slide is the stack's.
  */
@@ -58,7 +58,7 @@ export function DetailPanel({ product, offer, content }: { product: EditionProdu
       {/* Their AddToCartFrame: the formats table, then the pill row (none of ours yet; its 40 px stays). */}
       <section aria-label={t("formats")} className="flex flex-col gap-6">
         <div className="mt-[18px] border-y border-dotted border-foreground/45">
-          <PriceRow disabled label={t("purchaseNotOpen")} value={money.format(offer.priceKRW)} />
+          <AddRow productID={product.productID} title={product.title} price={money.format(offer.priceKRW)} />
           {content.formats.map((format) => <PriceRow key={format.label} label={format.label} value={format.note ?? ""} url={format.url ?? undefined} />)}
         </div>
         <div className="pl-3.5 text-[13px] leading-5 text-foreground/78 text-pretty">
@@ -186,6 +186,29 @@ function Prose({ data }: { data: SerializedEditorState }) {
 }
 
 /** Their PriceRow: at least 41 px, dotted rule between rows, label left and value right (15 px/140 %, 16 px in), tinted on hover. */
+/**
+ * Their add-to-cart row (06w9 hZ): a press adds the book and the row stays, now saying it's in the cart, with the round
+ * × of their cart lines to take it out. One per account, so no quantity. Through Auth's browser cart (its exports only);
+ * a member's cart takes it at sign-in. In the preview it works while the sale isn't open (owner, 27 Nov: "pretend that
+ * the non-live parts are live").
+ */
+function AddRow({ productID, title, price }: { productID: string; title: string; price: string }) {
+  const t = useTranslations("Customer.components_commerce_book_offer");
+  const inCart = useSyncExternalStore(subscribeGuestCart, () => listGuestCart().some((line) => line.productID === productID), () => false);
+  if (inCart) return <div className="flex min-h-[41px] items-center justify-between border-t border-dotted border-foreground/45 text-[15px] leading-[1.4] first:border-t-0 pointer-coarse:min-h-11">
+    <span className="min-w-0 px-4">{t("inCart")}</span>
+    <span className="flex shrink-0 items-center gap-3 px-4 tabular-nums">{price}
+      <button type="button" aria-label={t("removeFromCart", { title })} onClick={() => removeGuestCartLine(productID)}
+        className="group/focus -m-3 inline-flex size-11 items-center justify-center">
+        <FocusShape className="flex size-5 items-center justify-center rounded-full border-[0.8px] border-current pb-0.5 text-[19.5px] leading-none opacity-75 transition-opacity duration-200 group-hover/focus:opacity-100">×</FocusShape>
+      </button></span>
+  </div>;
+  return <button type="button" onClick={() => addGuestCartLine(productID)}
+    className="group/focus flex min-h-[41px] w-full items-center border-t border-dotted border-foreground/45 text-left text-[15px] leading-[1.4] transition-colors duration-200 ease-[ease] first:border-t-0 hover:bg-foreground/8 pointer-coarse:min-h-11">
+    <FocusShape className="flex w-full items-center justify-between"><span className="min-w-0 px-4">{t("addToCart")}</span><span className="shrink-0 px-4 tabular-nums">{price}</span></FocusShape>
+  </button>;
+}
+
 function PriceRow({ label, value, url, disabled }: { label: string; value: string; url?: string; disabled?: boolean }) {
   const body = <>
     <span className="min-w-0 px-4 [overflow-wrap:anywhere]">{label}</span>

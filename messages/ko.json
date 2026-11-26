@@ -836,6 +836,9 @@
   },
   "Customer": {
     "components_commerce_book_offer": {
+      "addToCart": "",
+      "inCart": "",
+      "removeFromCart": "",
       "book": "",
       "unavailableTitle": "",
       "unavailableDetail": "",

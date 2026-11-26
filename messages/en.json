@@ -836,6 +836,9 @@
   },
   "Customer": {
     "components_commerce_book_offer": {
+      "addToCart": "Add to cart",
+      "inCart": "In your cart",
+      "removeFromCart": "Remove {title} from your cart",
       "book": "The book",
       "unavailableTitle": "Book information is unavailable",
       "unavailableDetail": "Book details could not be shown. You can open Help or your order history.",

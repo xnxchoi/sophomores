@@ -633,13 +633,17 @@ function Home({ vendored, items, labels, initialOpen, cartPanel, cartOpen, onCar
     const index = items.findIndex((entry) => entry.id === productID);
     if (index >= 0) setFlight((current) => ({ trigger: current.trigger + 1, index }));
   }, [items]);
-  const stageCount = useRef<{ index: number; count: number } | null>(null);
+  // The baseline is the stage book's count from the same source (the cart column's lines, or the browser's cart) seen
+  // outside the cart. Review-B HOLD on 16920259: opening the cart drops it, so a book removed in the cart doesn't fire on
+  // close, and a switch of source (the column's lines arriving or going) starts a new one instead of reading as a removal.
+  const quantitySource = panelQuantities ? "lines" : "browser";
+  const stageCount = useRef<{ index: number; count: number; source: string } | null>(null);
   useEffect(() => {
-    if (cart.cartMode) return;
+    if (cart.cartMode) { stageCount.current = null; return; }
     const id = items[stageIndex]?.id, count = id ? (cartQuantities[id] ?? 0) : 0, seen = stageCount.current;
-    stageCount.current = { index: stageIndex, count };
-    if (seen && seen.index === stageIndex && count < seen.count && count === 0) setRemoval((current) => ({ trigger: current.trigger + 1, index: stageIndex }));
-  }, [cartQuantities, stageIndex, cart.cartMode, items]);
+    stageCount.current = { index: stageIndex, count, source: quantitySource };
+    if (seen && seen.source === quantitySource && seen.index === stageIndex && seen.count > 0 && count === 0) setRemoval((current) => ({ trigger: current.trigger + 1, index: stageIndex }));
+  }, [cartQuantities, quantitySource, stageIndex, cart.cartMode, items]);
   const sceneProps = useMemo(() => ({ skipIntro, ...lookProps,
     books: (window as unknown as { __SPBOOKS: unknown }).__SPBOOKS, scrollProgress: committed, scrollProgressLiveRef: progressRef,
     activeBookIndex: stageIndex, stackMode: "browse", onBookOpen: (index: number) => openRef.current(index),

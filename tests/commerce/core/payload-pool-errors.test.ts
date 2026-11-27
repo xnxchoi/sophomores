@@ -73,7 +73,7 @@ test("Payload fixture teardown joins a still-running subtest continuation before
   const events: string[] = [];
   let finish!: () => void;
   const continuation = new Promise<void>((resolve) => { finish = resolve; }).then(() => { events.push("count-complete"); });
-  const pool = { _clients: [{ release: () => { events.push("release"); } }], end: async () => { events.push("end"); } };
+  const pool = { end: async () => { events.push("end"); } };
   const payload = { db: { pool, sessions: {} }, destroy: async () => { events.push("destroy"); } } as unknown as Payload;
   const close = capturePayloadTestLifecycle(payload, new Set([continuation]));
   const closed = close();
@@ -82,17 +82,17 @@ test("Payload fixture teardown joins a still-running subtest continuation before
   finish();
   await closed;
   assert.equal(endedEarly, false);
-  assert.deepEqual(events, ["count-complete", "destroy", "release", "end"]);
+  assert.deepEqual(events, ["count-complete", "destroy", "end"]);
 });
 
 test("Payload fixture teardown reports rejected continuations after cleaning up", async () => {
   const events: string[] = [];
   const failure = new Error("continuation failed");
   const continuation = Promise.reject(failure);
-  const pool = { _clients: [{ release: () => { events.push("release"); } }], end: async () => { events.push("end"); } };
+  const pool = { end: async () => { events.push("end"); } };
   const payload = { db: { pool, sessions: {} }, destroy: async () => { events.push("destroy"); } } as unknown as Payload;
   await assert.rejects(capturePayloadTestLifecycle(payload, new Set([continuation]))(), (error: AggregateError) => {
-    assert.deepEqual(events, ["destroy", "release", "end"]);
+    assert.deepEqual(events, ["destroy", "end"]);
     assert.deepEqual(error.errors, [failure]);
     return true;
   });
@@ -100,19 +100,19 @@ test("Payload fixture teardown reports rejected continuations after cleaning up"
 
 test("Payload fixture teardown bounds its join and still cleans up after timeout", { timeout: 500 }, async () => {
   const events: string[] = [];
-  const pool = { _clients: [{ release: () => { events.push("release"); } }], end: async () => { events.push("end"); } };
+  const pool = { end: async () => { events.push("end"); } };
   const payload = { db: { pool, sessions: {} }, destroy: async () => { events.push("destroy"); } } as unknown as Payload;
   const never = new Promise<void>(() => {});
   await assert.rejects(capturePayloadTestLifecycle(payload, new Set([never]), 20)(), (error: AggregateError) => {
-    assert.deepEqual(events, ["destroy", "release", "end"]);
+    assert.deepEqual(events, ["destroy", "end"]);
     assert.match(error.errors[0].message, /continuation join timed out after 20 ms/);
     return true;
   });
 });
 
 test("Payload fixture teardown preserves continuation and cleanup failures together", async () => {
-  const failures = [new Error("continuation"), new Error("rollback"), new Error("destroy"), new Error("release"), new Error("end")];
-  const pool = { _clients: [{ release: () => { throw failures[3]; } }], end: async () => { throw failures[4]; } };
+  const failures = [new Error("continuation"), new Error("rollback"), new Error("destroy"), new Error("end")];
+  const pool = { end: async () => { throw failures[3]; } };
   const payload = { db: { pool, sessions: { owned: {} }, rollbackTransaction: async () => { throw failures[1]; } },
     destroy: async () => { throw failures[2]; } } as unknown as Payload;
   await assert.rejects(capturePayloadTestLifecycle(payload, new Set([Promise.reject(failures[0])]))(),
@@ -121,7 +121,7 @@ test("Payload fixture teardown preserves continuation and cleanup failures toget
 
 test("Payload fixture teardown retains observed rejections even when another continuation times out", { timeout: 500 }, async () => {
   const failure = new Error("observed rejection");
-  const pool = { _clients: [{ release: () => {} }], end: async () => {} };
+  const pool = { end: async () => {} };
   const payload = { db: { pool, sessions: {} }, destroy: async () => {} } as unknown as Payload;
   const continuations = new Set([Promise.reject(failure), new Promise<void>(() => {})]);
   await assert.rejects(capturePayloadTestLifecycle(payload, continuations, 20)(), (error: AggregateError) => {

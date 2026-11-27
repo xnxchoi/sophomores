@@ -7,6 +7,7 @@ import { motionValue, type MotionValue } from "motion/react";
 import ts from "typescript";
 import { runInNewContext } from "node:vm";
 import { Story } from "@/components/teaser/story";
+import { Button } from "@/components/core/Button";
 import { createTimeline, scrollChapters } from "@/lib/teaser/choreography";
 import { stories as defaultStories } from "@/lib/teaser/content";
 import { createTranslator } from "next-intl";
@@ -127,7 +128,7 @@ function storyNavigation({
       }>(element)
     )
       return;
-    if (element.type === "button")
+    if (element.type === Button)
       buttons.push({
         label: element.props["aria-label"],
         click: element.props.onClick

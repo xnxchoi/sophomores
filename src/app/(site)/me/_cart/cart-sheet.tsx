@@ -1,8 +1,7 @@
 "use client";
-import { Button } from "@/components/core/Button";
 
+import { Button } from "@/components/core/Button";
 import { useId, useLayoutEffect, useRef, useState, type ComponentProps } from "react";
-import { Link } from "@/components/core/Link/Link";
 import { Link } from "@/components/core/Link/Link";
 import { useTranslations } from "next-intl";
 import { animate, resize, type AnimationPlaybackControls } from "motion";

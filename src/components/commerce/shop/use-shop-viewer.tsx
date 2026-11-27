@@ -27,13 +27,16 @@ function set(next: Viewer) {
   for (const listener of listeners) listener();
 }
 
-/** A fresh read. It resolves to the answer only if no later read or conceal superseded it; otherwise undefined. */
-async function read(): Promise<Viewer> {
+/**
+ * A fresh read. It resolves to the answer and the generation that read it, only if no later read or conceal superseded
+ * it; otherwise undefined. The generation is this read's own (Auth-editions HOLD on 84156a131), never one taken later.
+ */
+async function read(): Promise<{ viewer: string | null; generation: number } | undefined> {
   const mine = ++epoch;
   const next = await readSignedInMemberID();
   if (mine !== epoch) return undefined;
   set(next);
-  return next;
+  return next === undefined ? undefined : { viewer: next, generation: mine };
 }
 
 function subscribe(listener: () => void) {
@@ -67,8 +70,8 @@ export function useShopViewer(): Viewer {
  * read, conceal or lifecycle recheck), so a recheck that lands on the same member still retires a queued action.
  */
 export async function verifyShopViewer(): Promise<{ viewer: string | null; isCurrent: () => boolean } | undefined> {
-  const confirmed = await read();
-  if (confirmed === undefined) return undefined;
-  const generation = epoch;
+  const checked = await read();
+  if (!checked) return undefined;
+  const { viewer: confirmed, generation } = checked;
   return { viewer: confirmed, isCurrent: () => epoch === generation && viewer === confirmed };
 }

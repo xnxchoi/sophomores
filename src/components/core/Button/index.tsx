@@ -8,104 +8,13 @@ import {
   type ComponentPropsWithRef,
   MouseEventHandler,
   type RefAttributes,
-  useCallback,
-  useState
+  useCallback
 } from "react";
-import { FocusShape } from "@/components/core/FocusShape/FocusShape";
-import { Button as ArcButton } from "@/components/arc/button/button";
 import { CopyButton as ArcCopyButton } from "@/components/arc/copy-button/copy-button";
 import {ActionButton as ArcActionButton} from "@/components/arc/action-button/action-button";
 type MotionBtnProps = HTMLMotionProps<"button">;
 
-export const RP_Btn = ({
-  variant = "primary",
-  ...props
-}: ComponentProps<typeof ArcButton>  ) => {
-  const {
-    onClick,
-    disabled,
-    onMouseLeave: doML,
-    onMouseEnter: doME,
-    children,
-    ref,
-    className,
-    ...rest
-  } = props;
-  const { onMouseEnter, onMouseLeave } = useDomCursor<HTMLButtonElement>({
-    onEnter: doME,
-    enterCondition: () => (disabled ? null : "FOCUS"),
-    onLeave: doML
-  });
-
-  return (
-    <ArcButton
-      disabled={disabled}
-      onClick={onClick}
-      ref={ref as RefAttributes<HTMLButtonElement>["ref"]}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-      {...rest}
-      variant={variant}
-
-      className={cn(
-        variant === "ghost"
-          ? "group/focus"
-          : "focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-foreground",
-        className
-      )}
-    >
-      {variant === "ghost" ? (
-        <FocusShape className="inline-flex items-center gap-[inherit] group-focus-visible/focus:outline-current">
-          {children}
-        </FocusShape>
-      ) : (
-        children
-      )}
-    </ArcButton>
-  );
-};
-export const MotionButton = (props: MotionBtnProps) => {
-  const {
-    onClick,
-    disabled,
-    onMouseLeave: doML,
-    onMouseEnter: doME,
-    ref,
-    initial,
-    animate,
-    ...rest
-  } = props;
-  const { onMouseEnter, onMouseLeave } = useDomCursor<HTMLButtonElement>({
-    onEnter: doME,
-    enterCondition: () => (disabled ? null : "FOCUS"),
-    onLeave: doML
-  });
-
-  return (
-    <m.button
-      disabled={disabled}
-      onClick={onClick}
-      ref={ref}
-      initial={
-        initial || {
-          opacity: 0
-        }
-      }
-      animate={
-        animate || {
-          opacity: 1
-        }
-      }
-      {...rest}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-    />
-  );
-};
-
-export function Button(props: ComponentProps<typeof ArcButton>) {
-  return RP_Btn(props);
-}
+export { Button, MotionButton } from "./base";
 
 export const MotionPillButton = ({
   size = "sm",
@@ -206,9 +115,7 @@ export const MotionPill = ({
   );
   return (
     <m.div
-      className={cn(
-
-      )}
+      className={cn(className)}
       data-disabled={disabled}
       data-hover={hover}
       onClick={onClick}
@@ -227,7 +134,6 @@ export const PillButton = ({
   size?: "sm" | "md" | "lg";
   inverted?: boolean;
 } & ComponentPropsWithRef<"button">) => {
-  const [isHovered, setHovered] = useState(false);
   const {
     onClick,
     disabled,
@@ -280,12 +186,8 @@ export function CopyButton({
       variant={variant}
       {...props}
 
-      className={cn(
-        variant === "plain"
-          ? "focus-visible:bg-muted focus-visible:text-foreground"
-          : "focus-visible:outline-foreground",
-        className
-      )}
+      // The same keyboard ring as Button's filled variants: 2 px, 2 px out, the text colour of the page.
+      className={cn("focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground", className)}
     />
   );
 }

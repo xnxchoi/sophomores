@@ -7,7 +7,7 @@ import type { TargetAndTransition, Variants } from "motion/react";
 import { ArrowRight } from "lucide-react";
 import { motionTokens } from "../_shared/motion-tokens";
 import styles from "./action-button.module.css";
-import { MotionButton } from "@/components/core/Button";
+import { MotionButton } from "@/components/core/Button/base";
 
 export interface ActionButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "onClick" | "onDrag" | "onDragEnd" | "onDragStart" | "onAnimationStart"> {
   label: string;

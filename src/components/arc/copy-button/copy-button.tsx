@@ -6,7 +6,7 @@ import { CircleAlert, Copy } from "lucide-react";
 import { motionTokens } from "../_shared/motion-tokens";
 import { useCopyFeedback } from "./use-copy-feedback";
 import styles from "./copy-button.module.css";
-import { Button } from "@/components/core/Button";
+import { Button } from "@/components/core/Button/base";
 
 export interface CopyButtonProps {
   value: string;

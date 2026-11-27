@@ -10,7 +10,7 @@ export function SubmitButton({ children, className }: { readonly children: React
   return (
     <button
       className={cn(
-        "flex min-h-11 w-full cursor-pointer items-center justify-center rounded-md border border-preview-accent bg-preview-accent px-4 text-sm leading-6 font-medium text-preview-on-accent transition-[border-color,box-shadow,background-color,outline-color] duration-200 ease-out hover:bg-preview-accent/90 active:bg-preview-accent/85 focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-preview-accent",
+        "flex min-h-11 w-full items-center justify-center rounded-md border border-preview-accent bg-preview-accent px-4 text-sm leading-6 font-medium text-preview-on-accent transition-[border-color,box-shadow,background-color,outline-color] duration-200 ease-out hover:bg-preview-accent/90 active:bg-preview-accent/85 focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-preview-accent",
         className
       )}
       type="submit"

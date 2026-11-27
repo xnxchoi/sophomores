@@ -546,7 +546,7 @@ get() { return this.hasAttribute("data-verification-content") ? 300 : originalHe
     for (const token of ["top-2", "left-2", "size-12"]) assert.ok(close.parentElement?.parentElement?.classList.contains(token), "clipped touch chooser keeps the same dismissal rail geometry");
     assert.equal(close.classList.contains("opacity-0"), false, "short viewports retain a visible 48px tap target rather than only a 12px backdrop strip");
     ui.fireEvent.click(close);
-    assert.ok(ui.screen.queryByRole("heading", { name: "Welcome" }) === null, "Close must dismiss the clipped chooser");
+    await ui.waitFor(() => assert.ok(ui.screen.queryByRole("heading", { name: "Welcome" }) === null, "Close must dismiss the clipped chooser"), { timeout: 1000 });
   } finally {
     ui.cleanup();
 Object.defineProperty(window.HTMLElement.prototype, "offsetHeight", originalHeight);

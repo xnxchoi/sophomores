@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/core/Button";
 import { BrandMark } from "@/components/core/BrandMark";
 
 import { attachHaptics } from "../../../lib/haptics";
@@ -147,22 +148,22 @@ export function VerificationLanguageSwitcher() {
       role="group"
       aria-label={t("language")}
     >
-      <button
+      <Button variant="bare"
         type="button"
         className="group/focus min-h-11 shrink-0 rounded-md px-2 text-[11px] whitespace-nowrap text-muted-foreground transition-colors duration-200 ease-out hover:bg-muted aria-pressed:text-foreground aria-pressed:underline aria-pressed:decoration-current aria-pressed:underline-offset-4"
         aria-pressed={locale === "en"}
         onClick={toEn}
       >
         <FocusShape className="group-focus-visible/focus:outline-foreground">{t("english")}</FocusShape>
-      </button>
-      <button
+      </Button>
+      <Button variant="bare"
         type="button"
         className="group/focus min-h-11 shrink-0 rounded-md px-2 text-[11px] whitespace-nowrap text-muted-foreground transition-colors duration-200 ease-out hover:bg-muted aria-pressed:text-foreground aria-pressed:underline aria-pressed:decoration-current aria-pressed:underline-offset-4"
         aria-pressed={locale === "ko"}
         onClick={toKo}
       >
         <FocusShape className="group-focus-visible/focus:outline-foreground">{t("korean")}</FocusShape>
-      </button>
+      </Button>
     </div>
   );
 }
@@ -319,9 +320,9 @@ export function VerificationFlow({
                 <>
                   <div className="mb-4 flex items-center justify-between gap-3 text-sm text-muted-foreground [&>button]:min-h-11 [&>button]:px-2 [&>button]:text-xs [&>button]:underline">
                     <span>{displayPhone(challenge.phone)}</span>
-                    <button type="button" className="group/focus" onClick={editNumber}>
+                    <Button variant="bare" type="button" className="group/focus" onClick={editNumber}>
                       <FocusShape className="group-focus-visible/focus:outline-current">{t("editNumber")}</FocusShape>
-                    </button>
+                    </Button>
                   </div>
                   {screen === "message" && (
                     <>
@@ -429,7 +430,7 @@ export function VerificationFlow({
                             ["expired", "testExpired"]
                           ] as const
                         ).map(([state, label]) => (
-                          <button
+                          <Button variant="bare"
                             type="button"
                             className="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
                             key={state}
@@ -445,7 +446,7 @@ export function VerificationFlow({
                             }}
                           >
                             {t(label)}
-                          </button>
+                          </Button>
                         ))}
                       </div>
                     </div>

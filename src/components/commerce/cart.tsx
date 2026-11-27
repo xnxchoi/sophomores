@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/core/Button";
 import NumberFlow, { NumberFlowGroup } from "@number-flow/react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/components/core/Link/Link";
@@ -44,9 +45,9 @@ export function CommerceCart({ products, wide = false, signedIn = true, onSignIn
                 <p className="mt-2 text-xs text-muted-foreground">{Number.isSafeInteger(line.quantity) && line.quantity > 0 ? t("quantity", { count: line.quantity }) : t("quantityUnavailable")}</p>
                 {line.unitPriceKRW !== null ? <p className="mt-1 text-xs tabular-nums">{t("unitPrice", { amount: line.unitPriceKRW.toLocaleString("ko-KR") })}</p>
                   : <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{t("itemDetailsUnavailable")}</p>}
-                <button type="button" aria-label={t("removeNamed", { title })} disabled={busy || !line.id || purchased}
+                <Button variant="bare" type="button" aria-label={t("removeNamed", { title })} disabled={busy || !line.id || purchased}
                   onClick={() => line.id && void remove(line.id)} className={cn("group/focus -ml-3 mt-1 inline-flex size-11 items-center justify-center rounded-full transition-opacity hover:opacity-70 disabled:opacity-40", removingLineID !== null && removingLineID === line.id && "animate-pulse")}>
-                  <FocusShape className="flex rounded-full"><XCircleIcon aria-hidden="true" className="size-5" /></FocusShape></button>
+                  <FocusShape className="flex rounded-full"><XCircleIcon aria-hidden="true" className="size-5" /></FocusShape></Button>
               </div>
             </li>;
           })}
@@ -57,7 +58,7 @@ export function CommerceCart({ products, wide = false, signedIn = true, onSignIn
         <p role="status" aria-atomic="true" className="sr-only">
           {totalKRW !== null ? t("estimatedTotalAnnouncement", { amount: totalKRW.toLocaleString("ko-KR") }) : ""}
         </p>
-        {canRefresh && <button type="button" disabled={busy} onClick={() => void refresh()} className="group/focus inline-flex min-h-11 items-center text-xs uppercase tracking-[0.04em] underline decoration-dotted underline-offset-4 hover:decoration-solid disabled:opacity-40"><FocusShape className="outline-offset-4">{refreshing ? t("refreshing") : t("refresh")}</FocusShape></button>}
+        {canRefresh && <Button variant="bare" type="button" disabled={busy} onClick={() => void refresh()} className="group/focus inline-flex min-h-11 items-center text-xs uppercase tracking-[0.04em] underline decoration-dotted underline-offset-4 hover:decoration-solid disabled:opacity-40"><FocusShape className="outline-offset-4">{refreshing ? t("refreshing") : t("refresh")}</FocusShape></Button>}
       </div>
     </div>
     <div className="min-w-0 space-y-6">
@@ -78,7 +79,7 @@ export function CommerceCart({ products, wide = false, signedIn = true, onSignIn
       <nav aria-label={t("nextSteps")} className="flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-border pt-6">
         {checkoutAvailable && onSignIn
           // Signed out: Checkout first asks for sign-in (the page swaps to the account step, then comes back here).
-          ? <button type="button" onClick={onSignIn} className="inline-flex h-10 w-full items-center justify-center rounded-full border border-foreground bg-transparent px-3 text-[13px] uppercase tracking-[0.04em] text-foreground outline-offset-4 transition-colors hover:bg-foreground hover:text-background focus-visible:outline-2 pointer-coarse:h-11">{t("continueToCheckout")}</button>
+          ? <Button variant="bare" type="button" onClick={onSignIn} className="inline-flex h-10 w-full items-center justify-center rounded-full border border-foreground bg-transparent px-3 text-[13px] uppercase tracking-[0.04em] text-foreground outline-offset-4 transition-colors hover:bg-foreground hover:text-background focus-visible:outline-2 pointer-coarse:h-11">{t("continueToCheckout")}</Button>
           : <Link href={checkoutAvailable ? "/shop/checkout" : "/shop"} className="inline-flex h-10 w-full items-center justify-center rounded-full border border-foreground bg-transparent px-3 text-[13px] uppercase tracking-[0.04em] text-foreground outline-offset-4 transition-colors hover:bg-foreground hover:text-background focus-visible:outline-2 pointer-coarse:h-11">{checkoutAvailable ? t("continueToCheckout") : lines.length ? t("continueToShop") : t("visitShop")}</Link>}
         <Link href="/help/shipping" className="group/focus inline-flex min-h-11 items-center text-xs uppercase tracking-[0.04em] underline decoration-current/40 underline-offset-4 hover:decoration-current"><FocusShape className="outline-offset-4">{t("shippingAndReturns")}</FocusShape></Link>
       </nav>

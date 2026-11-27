@@ -1,4 +1,5 @@
 "use client";
+import { Button } from "@/components/core/Button";
 import { useTranslations } from "next-intl";
 
 
@@ -929,13 +930,13 @@ export function TicketSelection({
                     }
                     unavailableFallback={
                       !checkoutCatalogue ? (
-                        <button
+                        <Button variant="bare"
                           type="button"
                           disabled
                           className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-carbon-lighter-2 bg-transparent px-4 py-3 text-[14px] font-medium text-pewter"
                         >
                           <LockKeyhole aria-hidden="true" className="size-4" />{" "}
-                          {t('checkoutUnavailable')}</button>
+                          {t('checkoutUnavailable')}</Button>
                       ) : undefined
                     }
                     recoveryDisabled={
@@ -961,13 +962,13 @@ export function TicketSelection({
                     requestPayment={checkoutRequestPayment}
                   />
                 ) : (
-                  <button
+                  <Button variant="bare"
                     type="button"
                     disabled
                     className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-carbon-lighter-2 bg-transparent px-4 py-3 text-[14px] font-medium text-pewter"
                   >
                     <LockKeyhole aria-hidden="true" className="size-4" />{" "}
-                    {t('checkoutUnavailable')}</button>
+                    {t('checkoutUnavailable')}</Button>
                 )}
               </div>
               <p className="mt-4 mb-0 text-[12px] leading-5 text-pewter">
@@ -1000,7 +1001,7 @@ function TicketAction({
   ...props
 }: React.ComponentProps<"button"> & { busy?: boolean }) {
   return (
-    <button
+    <Button variant="bare"
       {...props}
       type="button"
       aria-busy={busy}
@@ -1013,6 +1014,6 @@ function TicketAction({
           className="absolute right-4 size-4 animate-spin"
         />
       )}
-    </button>
+    </Button>
   );
 }

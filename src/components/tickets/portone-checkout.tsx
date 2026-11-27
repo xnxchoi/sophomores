@@ -1,4 +1,5 @@
 "use client";
+import { Button } from "@/components/core/Button";
 import { useTranslations } from "next-intl";
 
 
@@ -198,11 +199,11 @@ export function PortOneCheckoutButton({ quantity, disabled = true, recoveryDisab
   if (!intent && unavailableFallback) return unavailableFallback;
 
   return <div className="space-y-3">
-    <button ref={button} type="button" disabled={busy || (preparedOrder ? recoveryDisabled : (intent ? recoveryDisabled : disabled) || !storageReady || storageBlocked || (!intent && (!Number.isSafeInteger(quantity) || quantity < 1 || quantity > 6)))}
+    <Button variant="bare" ref={button} type="button" disabled={busy || (preparedOrder ? recoveryDisabled : (intent ? recoveryDisabled : disabled) || !storageReady || storageBlocked || (!intent && (!Number.isSafeInteger(quantity) || quantity < 1 || quantity > 6)))}
       aria-busy={busy} onClick={checkout}
       className="min-h-12 w-full rounded-xl bg-titanium px-5 py-3 text-sm font-medium text-carbon-deep transition-colors hover:bg-singer-stone focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-titanium disabled:bg-gunmetal disabled:text-pewter">
       {busy ? phase === "recovering" ? t('recoveringCheckout') : t('openingPayment') : preparedOrder ? t('checkPaymentStatus') : storageBlocked || (!intent && disabled) ? t('checkoutUnavailable') : intent ? t('recoverCheckout') : t('payByCard')}
-    </button>
+    </Button>
     {preparedOrder && <p className="text-sm leading-6 tabular-nums text-singer-stone">{preparedOrder.quantity} {preparedOrder.quantity === 1 ? t('ticket') : t('tickets')} · {new Intl.NumberFormat("en-US", { style: "currency", currency: preparedOrder.currency }).format(preparedOrder.currency === "KRW" ? preparedOrder.totalAmount : preparedOrder.totalAmount / 100)}</p>}
     {feedback && <p role="alert" className="text-sm leading-6 text-singer-stone">{feedback}</p>}
   </div>;

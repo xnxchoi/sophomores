@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/core/Button";
 import { useTranslations } from "next-intl";
 
 import { useEffect, useId, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode, type Ref, type RefObject } from "react";
@@ -281,12 +282,12 @@ export function MemberAccountPage({
           <>
             {/* Back to the chooser, on the left (the sheet's Cancel); signed in, there is nothing to go back to. */}
             {!signedIn && (
-              <button type="button" onClick={() => flow.current?.requestCancel()} className="group/focus -ml-1 mb-4 inline-flex min-h-11 items-center gap-1 px-1 text-[14px] leading-5 text-muted-foreground transition-colors duration-150 hover:text-foreground">
+              <Button variant="bare" type="button" onClick={() => flow.current?.requestCancel()} className="group/focus -ml-1 mb-4 inline-flex min-h-11 items-center gap-1 px-1 text-[14px] leading-5 text-muted-foreground transition-colors duration-150 hover:text-foreground">
                 <FocusShape className="inline-flex items-center gap-1 group-focus-visible/focus:outline-current">
                   <ChevronLeft aria-hidden="true" className="size-4" strokeWidth={1.5} />
                   {t("cancel")}
                 </FocusShape>
-              </button>
+              </Button>
             )}
           <MemberAccountFlow
             key={step}

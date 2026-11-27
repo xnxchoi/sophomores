@@ -192,8 +192,8 @@ function CoveredPage({ children }: { children: ReactNode }) {
   }, [isPresent, setPageEnd]);
   return (
     // Rounded bottom corners (owner, 21 Nov: "And rounded corners it is"; 26 Nov: "It needs to be rounded wider so that it
-    // doesn't look awkward"). The page edge now meets the frame's window, so the radius is chosen by eye (--page-radius,
-    // 22 px), not by the old radius-plus-inset formula. The page runs under the side rails, so the arc enters from behind
+    // doesn't look awkward"). --page-radius (32 px) holds the value until the owner picks
+    // one now that the page edge meets the frame's window. The page runs under the side rails, so the arc enters from behind
     // the frame. A clip at the rails would also cut the shop's fixed scene and controls. Below md the footer isn't pinned,
     // so the page keeps square corners. overflow-clip keeps a page's own full-width background (such as /shop's) inside
     // the rounding; unlike overflow-hidden it isn't a scroll container, so sticky children still work.

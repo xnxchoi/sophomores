@@ -289,9 +289,10 @@
   /* The page's side inset over the frame, the same as the closed frame's 10 px sides (RP_Pro), on every page; 0 while
      the frame is fullscreen. The footer's column (PageInset) sits inside it too, so both texts share one left edge. */
   --page-inset: 10px;
-  /* The page's bottom corners, where its edge meets the frame's window (the frame corner is 22 px, RP_Menu). The pinned
-     footer tucks this far under the page, so its colour fills the corners. */
-  --page-radius: 22px;
+  /* The page's bottom corners; the pinned footer tucks this far under the page, so its colour fills the corners. 32 px,
+     the value before 27 Nov (owner, 26 Nov: "rounded wider"), until the owner picks one now that the page edge meets the
+     frame's window (Cordy, 27 Nov). */
+  --page-radius: 32px;
   /* The viewport frame's bottom side (RP_Pro reads it): 30 px, as it was (owner, 22 Nov: "The desktop bottom frame,
      what it was before"). On touch phones the bottom bar is that side, at 36 px plus the safe area (below). */
   --frame-bottom: 30px;

@@ -4,7 +4,7 @@ import { useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { useInView, useIsPresent } from "motion/react";
 import { create } from "zustand";
-import { useRPStore } from "@/providers/RP_Pro";
+import { useMenu, useRPStore } from "@/providers/RP_Pro";
 
 /**
  * Where the site footer shows, ported from The Hideaway's footer visibility (its
@@ -117,9 +117,9 @@ export function FXFrameOff() {
 export function FooterGate({ children }: { children: ReactNode }) {
   const pathname = usePathname() ?? "";
   if (pathHidesFooter(pathname)) return null;
-  // From md up it tucks 32px (the page's corner radius, below) under the page's end, so the footer itself shows behind
+  // From md up it tucks the page's corner radius (--page-radius) under the page's end, so the footer itself shows behind
   // the page's rounded bottom corners and no other colour shows in them. Its own top padding (md:pt-20) keeps the links clear.
-  return <div className="md:sticky md:bottom-0 md:z-0 md:-mt-[32px]">{children}</div>;
+  return <div className="md:sticky md:bottom-0 md:z-0 md:mt-[calc(var(--page-radius)*-1)]">{children}</div>;
 }
 
 /**
@@ -135,6 +135,11 @@ export function FooterGate({ children }: { children: ReactNode }) {
  */
 export function PageCover({ children }: { children: ReactNode }) {
   const pathname = usePathname() ?? "";
+  // The page's inset (globals.css --page-inset) follows the frame: 0 while the frame is fullscreen.
+  const fullscreen = useMenu((state) => state.fullscreen);
+  useEffect(() => {
+    document.documentElement.toggleAttribute("data-frame-fullscreen", fullscreen);
+  }, [fullscreen]);
   if (pathHidesFooter(pathname)) return <FooterlessPage>{children}</FooterlessPage>;
   return <CoveredPage>{children}</CoveredPage>;
 }
@@ -151,7 +156,8 @@ function FooterlessPage({ children }: { children: ReactNode }) {
     setRevealed(false);
     setPageEnd(Number.POSITIVE_INFINITY);
   }, [isPresent, setFXFrameVisibility, setRevealed, setPageEnd]);
-  return children;
+  // The same side inset as a covered page, so content width doesn't jump between pages with and without the footer.
+  return <div className="mx-page-inset">{children}</div>;
 }
 
 function CoveredPage({ children }: { children: ReactNode }) {
@@ -185,15 +191,13 @@ function CoveredPage({ children }: { children: ReactNode }) {
     return () => observer.disconnect();
   }, [isPresent, setPageEnd]);
   return (
-    // Rounded bottom corners (owner, 21 Nov: "And rounded corners it is"), wider than the frame's so the two read as nested
-    // (owner, 26 Nov: "It needs to be rounded wider so that it doesn't look awkward"). The page is the outer layer and the
-    // frame's window the inner one, so outer radius = inner radius + inset: the frame corner's 22 px (RP_Menu, off
-    // phones) plus the closed frame's 10 px inset (RP_Pro top/left/right) = 32 px. The page runs under the side rails, so
-    // the arc enters from behind the frame. A clip at the rails would also cut the shop's fixed scene and controls.
-    // Below md the footer isn't pinned, so the page keeps square corners. overflow-clip keeps a page's own full-width
-    // background (such as /shop's) inside the rounding; unlike overflow-hidden it isn't a scroll container, so sticky
-    // children still work.
-    <div ref={cover} data-themed="background-color" className="relative mx-2.5 shadow-2xl shadow-carbon/25 z-1 bg-background md:overflow-clip md:rounded-b-4xl">
+    // Rounded bottom corners (owner, 21 Nov: "And rounded corners it is"; 26 Nov: "It needs to be rounded wider so that it
+    // doesn't look awkward"). The page edge now meets the frame's window, so the radius is chosen by eye (--page-radius,
+    // 22 px), not by the old radius-plus-inset formula. The page runs under the side rails, so the arc enters from behind
+    // the frame. A clip at the rails would also cut the shop's fixed scene and controls. Below md the footer isn't pinned,
+    // so the page keeps square corners. overflow-clip keeps a page's own full-width background (such as /shop's) inside
+    // the rounding; unlike overflow-hidden it isn't a scroll container, so sticky children still work.
+    <div ref={cover} data-themed="background-color" className="relative z-1 mx-page-inset bg-background shadow-2xl shadow-carbon/25 md:overflow-clip md:rounded-b-page">
       {children}
       <div ref={end} aria-hidden="true" />
     </div>

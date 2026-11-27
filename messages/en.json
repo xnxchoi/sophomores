@@ -1575,6 +1575,7 @@
       "estimatedTotal": "Estimated total",
       "estimateDetail": "Based on current published prices. Availability and the final amount are checked again before payment.",
       "priceUnavailable": "We can't quote this cart from the current release. Visit the shop to review your selection and pricing before payment.",
+      "shippingAtCheckout": "Shipping is added at checkout.",
       "nextSteps": "Cart navigation",
       "continueToShop": "Review and purchase in the shop",
       "signInToSave": "Sign in to save your cart",

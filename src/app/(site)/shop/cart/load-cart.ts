@@ -8,6 +8,7 @@ import { loadCartProducts, type CartProduct } from "@/lib/commerce/cart-products
 import { loadPublicMemberCapabilities } from "@/lib/member-auth/public-capabilities.server";
 import { readHeaderMemberState } from "@/lib/member-auth/header-state.server";
 import type { CartProps } from "./cart-view";
+import { resolveCartEditions } from "./resolve-cart-editions";
 
 /**
  * What the cart's steps need (CartContents), read as /shop/cart has always read it: the cart's products (Auth's loadCartProducts), whether the
@@ -22,5 +23,7 @@ export async function loadCartProps(): Promise<CartProps> {
   catch { console.error("Published cart pricing is unavailable."); }
   const member = await readHeaderMemberState(await headers());
   return { products, signedIn: member.state === "signed-in" && member.member, initialCapabilities: await loadPublicMemberCapabilities(),
-    signInOffInReview: isReviewCopyRequest(), copy: { title: t("title"), signInTitle: t("signInTitle"), backToCart: t("backToCart") } };
+    signInOffInReview: isReviewCopyRequest(), copy: { title: t("title"), signInTitle: t("signInTitle"), backToCart: t("backToCart") },
+    // Edition lines are named and priced on demand from the published catalogue (owner launch gap, 28 Nov).
+    resolveProducts: resolveCartEditions };
 }

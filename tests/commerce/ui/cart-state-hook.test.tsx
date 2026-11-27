@@ -40,15 +40,34 @@ test("a legacy line can be quoted without allowing checkout", () => {
   assert.equal(result.current.canRefresh, true);
 });
 
-test("an edition line resolves its name, image and price, and points to its product page instead of checkout", () => {
+test("one saved edition line is named and priced, shows its subtotal without a guessed total, and links to /shop/checkout", () => {
   env.ecommerce.setFakeEcommerce({ user: member, cart: cart([{ id: "i2", product: "e1", quantity: 1 }]) });
   const { result } = state([membership, edition]);
   assert.deepEqual(result.current.lines, [{ id: "i2", productID: "e1", kind: "edition", title: "Signed edition",
     image: { url: "/e1.jpg", alt: "Signed edition" }, unitPriceKRW: 120000, quantity: 1, maxQuantity: 1,
     available: false, quoted: true, productHref: "/shop/products/e1" }]);
-  assert.deepEqual([result.current.subtotalKRW, result.current.shippingKRW, result.current.totalKRW], [null, null, null]);
-  assert.deepEqual([result.current.checkoutAvailable, result.current.checkoutReason, result.current.checkoutHref],
-    [false, "edition-on-product-page", null]);
+  // Owner launch gap, 28 Nov / Auth-editions: the account cart is authoritative; shipping is set at checkout.
+  assert.deepEqual([result.current.subtotalKRW, result.current.shippingKRW, result.current.totalKRW], [120000, null, null]);
+  assert.deepEqual([result.current.checkoutAvailable, result.current.checkoutHref], [true, "/shop/checkout"]);
+});
+
+test("the edition checkout link is refused for a browser-only cart, a line kept only on this browser, or an unknown line", () => {
+  // Signed out: priced, but the browser cart never links to checkout.
+  seedCart(env.dom.window.localStorage, [{ productID: "e1", quantity: 1 }]);
+  let hook = state([membership, edition], false);
+  assert.equal(hook.result.current.subtotalKRW, 120000);
+  assert.deepEqual([hook.result.current.checkoutAvailable, hook.result.current.checkoutHref], [false, null]);
+  hook.unmount();
+  // Signed in with the saved edition, while another line is still only on this browser: checkout stays closed.
+  env.ecommerce.setFakeEcommerce({ user: member, cart: cart([{ id: "i2", product: "e1", quantity: 1 }]) });
+  hook = state([membership, edition]);
+  assert.deepEqual([hook.result.current.checkoutAvailable, hook.result.current.checkoutHref], [false, null]);
+  hook.unmount();
+  env.dom.window.localStorage.clear();
+  // A saved line the catalogue doesn't name: no price, no subtotal, no link.
+  env.ecommerce.setFakeEcommerce({ user: member, cart: cart([{ id: "i3", product: "gone", quantity: 1 }]) });
+  hook = state([membership, edition]);
+  assert.deepEqual([hook.result.current.subtotalKRW, hook.result.current.checkoutAvailable, hook.result.current.checkoutHref], [null, false, null]);
 });
 
 test("a signed-out browser line resolves the same way, its ID being the product ID", () => {
@@ -57,6 +76,7 @@ test("a signed-out browser line resolves the same way, its ID being the product 
   assert.equal(result.current.lines[0]?.id, "e1");
   assert.equal(result.current.lines[0]?.title, "Signed edition");
   assert.equal(result.current.checkoutReason, "edition-on-product-page");
+  assert.equal(result.current.checkoutHref, null, "a browser cart never links to checkout");
   assert.equal(result.current.canRefresh, false, "a browser cart has nothing to refresh");
 });
 

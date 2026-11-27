@@ -15,14 +15,16 @@ import { useCommerceCartState, type CartLine } from "./use-commerce-cart-state";
  * Auth's browser cart (src/lib/commerce/browser-cart.ts), written through to the member's cart after sign-in. Its state
  * is useCommerceCartState; this view only renders it. It never submits payment. With `onSignIn`, a signed-out shopper can sign in to save selections, not start payment.
  */
-export function CommerceCart({ products, wide = false, signedIn = true, onSignIn, localPendingFor }: {
+export function CommerceCart({ products, wide = false, signedIn = true, onSignIn, localPendingFor, resolveProducts }: {
   products: readonly CartProduct[]; wide?: boolean; signedIn?: boolean; onSignIn?: () => void;
+  /** Names and prices the cart's edition lines (the shop's resolveCartEditions); see useCommerceCartState. */
+  resolveProducts?: (productIDs: string[]) => Promise<readonly CartProduct[]>;
   /** The browser's lines are being added to the account now (CartView's transfer after sign-in). */
   localPendingFor?: string;
 }) {
   const t = useTranslations("Customer.components_commerce_cart");
-  const { lines, waiting, busy, feedback, purchased, subtotalKRW, shippingKRW, totalKRW,
-    removingLineID, refreshing, canRefresh, remove, refresh, localLines, removeLocal, memberID } = useCommerceCartState({ signedIn, products });
+  const { lines, waiting, busy, feedback, purchased, subtotalKRW, shippingKRW, totalKRW, checkoutAvailable, checkoutHref,
+    removingLineID, refreshing, canRefresh, remove, refresh, localLines, removeLocal, memberID } = useCommerceCartState({ signedIn, products, resolveProducts });
   const localPending = memberID !== undefined && memberID === localPendingFor;
 
   return <section aria-label={t("contents")} aria-busy={busy} className={cn("grid min-w-0 gap-8",
@@ -69,12 +71,19 @@ export function CommerceCart({ products, wide = false, signedIn = true, onSignIn
             </dl>
           </NumberFlowGroup>
           <p className="mt-3 text-xs leading-5 text-muted-foreground">{t("estimateDetail")}</p>
+        </> : subtotalKRW !== null ? <>
+          {/* An edition: its price is known, its shipping is set at checkout, so no total is guessed here. */}
+          <dl className="mt-3 border-y border-foreground/50 py-3 pl-3.5 text-xs uppercase leading-[1.6] tracking-[0.04em]">
+            <div className="grid gap-1 sm:grid-cols-[minmax(0,1fr)_minmax(16ch,max-content)] sm:gap-4"><dt className="text-muted-foreground">{t("subtotal")}</dt><dd className="min-w-0 tabular-nums sm:text-right">{subtotalKRW.toLocaleString("ko-KR")} KRW</dd></div>
+          </dl>
+          <p className="mt-3 text-xs leading-5 text-muted-foreground">{t("shippingAtCheckout")}</p>
         </> : <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{t("priceUnavailable")}</p>}
       </section>}
       <nav aria-label={t("nextSteps")} className="flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-border pt-6">
         {!signedIn && lines.length > 0 && onSignIn
           ? <Button variant="bare" type="button" onClick={onSignIn} className="inline-flex h-10 w-full items-center justify-center rounded-full border border-foreground bg-transparent px-3 text-[13px] uppercase tracking-[0.04em] text-foreground outline-offset-4 transition-colors hover:bg-foreground hover:text-background focus-visible:outline-2 pointer-coarse:h-11">{t("signInToSave")}</Button>
-          : <Link href="/shop" className="inline-flex h-10 w-full items-center justify-center rounded-full border border-foreground bg-transparent px-3 text-[13px] uppercase tracking-[0.04em] text-foreground outline-offset-4 transition-colors hover:bg-foreground hover:text-background focus-visible:outline-2 pointer-coarse:h-11">{lines.length ? t("continueToShop") : t("visitShop")}</Link>}
+          : checkoutAvailable && checkoutHref ? <Link href={checkoutHref} className="inline-flex h-10 w-full items-center justify-center rounded-full border border-foreground bg-transparent px-3 text-[13px] uppercase tracking-[0.04em] text-foreground outline-offset-4 transition-colors hover:bg-foreground hover:text-background focus-visible:outline-2 pointer-coarse:h-11">{t("continueToCheckout")}</Link>
+            : <Link href="/shop" className="inline-flex h-10 w-full items-center justify-center rounded-full border border-foreground bg-transparent px-3 text-[13px] uppercase tracking-[0.04em] text-foreground outline-offset-4 transition-colors hover:bg-foreground hover:text-background focus-visible:outline-2 pointer-coarse:h-11">{lines.length ? t("continueToShop") : t("visitShop")}</Link>}
         <Link href="/help/shipping" className="group/focus inline-flex min-h-11 items-center text-xs uppercase tracking-[0.04em] underline decoration-current/40 underline-offset-4 hover:decoration-current"><FocusShape className="outline-offset-4">{t("shippingAndReturns")}</FocusShape></Link>
       </nav>
     </div>

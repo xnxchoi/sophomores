@@ -1575,6 +1575,7 @@
       "estimatedTotal": "",
       "estimateDetail": "",
       "priceUnavailable": "",
+      "shippingAtCheckout": "배송비는 결제 단계에서 더해져요.",
       "nextSteps": "",
       "continueToShop": "",
       "signInToSave": "",

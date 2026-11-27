@@ -23,15 +23,17 @@ import { Button } from "@/components/core/Button";
  * Their mono becomes our sans. The state is Auth's useCommerceCartState; Checkout is exactly CommerceCart's (signed out,
  * it asks for sign-in first). There is no quantity control: one per account, and the hook has no setter.
  */
-export function ShopCartLines({ products, signedIn, onSignIn, localPendingFor }: {
+export function ShopCartLines({ products, signedIn, onSignIn, localPendingFor, resolveProducts }: {
   products: readonly CartProduct[]; signedIn: boolean; onSignIn?: () => void;
   /** The browser's lines are being added to the account now (CartContents' transfer after sign-in). */
   localPendingFor?: string;
+  /** Names and prices edition lines (resolveCartEditions, from loadCartProps); without it they stay unnamed. */
+  resolveProducts?: (productIDs: string[]) => Promise<readonly CartProduct[]>;
 }) {
   const t = useTranslations("Customer.components_commerce_cart");
   const column = useCartColumn();
   const { lines, waiting, busy, feedback, purchased, subtotalKRW, shippingKRW, totalKRW, checkoutAvailable, checkoutHref,
-    checkoutReason, removingLineID, refreshing, canRefresh, remove, refresh, localLines, removeLocal, memberID } = useCommerceCartState({ signedIn, products });
+    checkoutReason, removingLineID, refreshing, canRefresh, remove, refresh, localLines, removeLocal, memberID } = useCommerceCartState({ signedIn, products, resolveProducts });
   // The stack shows what's in this cart (their cartQuantitiesByBookId): the member's cart once signed in, not only the browser's.
   const report = column?.report, conceal = column?.conceal;
   const counts = lines.filter((line) => line.quantity > 0).map((line) => line.productID + ":" + line.quantity).join(",");
@@ -118,6 +120,12 @@ export function ShopCartLines({ products, signedIn, onSignIn, localPendingFor }:
         </dl>
       </NumberFlowGroup>
       <p role="status" aria-atomic="true" className="sr-only">{t("estimatedTotalAnnouncement", { amount: totalKRW.toLocaleString("ko-KR") })}</p>
+    </> : subtotalKRW !== null ? <>
+      {/* An edition: its price is known, its shipping is set at checkout, so no total is guessed here. */}
+      <dl className="mt-3 border-y border-border py-3 pl-3.5 text-[11px] uppercase leading-[1.6]">
+        <div className="flex justify-between gap-3"><dt>{t("subtotal")}</dt><dd className="tabular-nums">{subtotalKRW.toLocaleString("ko-KR")} KRW</dd></div>
+      </dl>
+      <p className="mt-3 pl-3.5 text-[12px] leading-[1.5] text-muted-foreground">{t("shippingAtCheckout")}</p>
     </> : checkoutReason === "not-quoted" && <p className="mt-3 border-t border-border pt-3 pl-3.5 text-[12px] leading-[1.5] text-muted-foreground">{t("priceUnavailable")}</p>}
     {/* As CommerceCart: signed out with lines, the one action is signing in to save them; it never starts checkout
         (Auth-editions HOLD, 28 Nov). Checkout shows only when the cart state allows it. */}

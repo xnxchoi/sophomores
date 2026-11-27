@@ -43,8 +43,13 @@ function readGuestLines(memberID?: string) {
  * demand through `resolveProducts` (Review-B, 26 Nov: resolve only the edition IDs actually in the cart), asked once per
  * set of unknown IDs. Until it settles those lines are unknown and `resolvingDetails` is true, but the cart is not
  * loading: known rows and Remove stay usable (Review-B LOW); only checkout waits ("loading"). A failure leaves them
- * unknown. Nothing passes a resolver yet: editions in the cart wait on the owner (Cordy, 27 Nov), and the server-side
- * loader (loadCartEditionProducts) is not exposed to the browser.
+ * unknown. The shop's cart views pass resolveCartEditions (shop/cart/resolve-cart-editions.ts, the bounded server-side
+ * loadCartEditionProducts), so edition lines are named and priced from the published catalogue (owner launch gap, 28 Nov).
+ *
+ * An edition line shows its price and a subtotal, never a guessed total: its shipping is set at checkout. One saved
+ * native edition, one unit, named and priced, with nothing kept only on this browser, links to /shop/checkout
+ * (Auth-editions, 28 Nov: the account cart is authoritative, no product query or browser totals; the link is not payment
+ * permission, the checkout decides). Anything else keeps checkout closed.
  */
 export function useCommerceCartState({ signedIn, products: loaded, resolveProducts }: {
   signedIn: boolean; products: readonly CartProduct[];
@@ -113,6 +118,9 @@ export function useCommerceCartState({ signedIn, products: loaded, resolveProduc
   const quoted = !!membership && Number.isSafeInteger(quantity) && quantity > 0 && quantity <= membership.maxQuantity
     && Number.isSafeInteger(subtotal) && Number.isSafeInteger(total) && !purchased;
   const variant = !!line && "variant" in line && line.variant != null;
+  const edition = resolved?.kind === "edition" && resolved.quoted && resolved.unitPriceKRW !== null ? resolved : undefined;
+  const editionCheckout = !!edition && !guest && !waiting && !resolving && !busy && !purchased && !variant
+    && quantity === 1 && localItems.length === 0;
   const checkoutReason: CheckoutReason = waiting ? "loading"
     : items.length === 0 ? "empty"
     : purchased ? "purchased"
@@ -169,8 +177,9 @@ export function useCommerceCartState({ signedIn, products: loaded, resolveProduc
 
   return {
     lines, waiting, resolvingDetails: resolving, busy, feedback, purchased,
-    subtotalKRW: quoted ? subtotal : null, shippingKRW: quoted ? membership.shippingKRW : null, totalKRW: quoted ? total : null,
-    checkoutAvailable: false, checkoutReason, checkoutHref: null,
+    subtotalKRW: quoted ? subtotal : edition ? (edition.unitPriceKRW ?? 0) * edition.quantity : null,
+    shippingKRW: quoted ? membership.shippingKRW : null, totalKRW: quoted ? total : null,
+    checkoutAvailable: editionCheckout, checkoutReason, checkoutHref: editionCheckout ? "/shop/checkout" : null,
     removingLineID: action?.kind === "removing" ? action.itemID : null, refreshing: action?.kind === "refreshing",
     canRefresh: !!cart, remove, refresh, localLines, removeLocal, memberID,
   };

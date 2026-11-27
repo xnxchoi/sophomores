@@ -134,6 +134,20 @@ test("focus moves into the cart column when it takes input", () => {
   assert.equal(env.dom.window.document.activeElement === env.dom.window.document.querySelector("aside"), true);
 });
 
+test("a saved edition the page didn't load is named and priced on demand, with its subtotal, and links to checkout", async () => {
+  // Owner launch gap, 28 Nov: the cart said "Saved item 1". The resolver (resolveCartEditions, via loadCartProps) names it.
+  env.ecommerce.setFakeEcommerce({ user: member, cart: { id: "c1", status: "active", items: [{ id: "i1", product: "e1", quantity: 1 }] } });
+  const asked: string[][] = [];
+  env.ui.render(<MemberAuthProviders><CartColumn open shown back="All products" onBack={() => undefined} onLines={() => undefined} onConceal={() => undefined}>
+    <ShopCartLines products={[]} signedIn resolveProducts={async (ids) => { asked.push(ids); return [edition]; }} />
+  </CartColumn></MemberAuthProviders>);
+  assert.ok(await screen().findByText("Edition one"));
+  assert.deepEqual(asked, [["e1"]]);
+  assert.ok(screen().getByText("Shipping is added at checkout."));
+  assert.equal(screen().getByRole("link", { name: /checkout/i }).getAttribute("href"), "/shop/checkout");
+  assert.equal(screen().queryByText("We can't quote this cart from the current release. Visit the shop to review your selection and pricing before payment.") === null, true);
+});
+
 test("guarded: leaving the page hides the panel and the stack in the same task, and the same member gets both back", async () => {
   const { column, reloads, panel } = renderGuarded(async () => "u1");
   assert.equal(JSON.stringify(column.reported.at(-1)), JSON.stringify({ p1: 1 }));

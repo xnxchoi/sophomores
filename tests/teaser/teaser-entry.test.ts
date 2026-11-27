@@ -80,7 +80,8 @@ test("native sequence samples match every former independent channel through the
       for (const reference of references) reference.time = milliseconds / 1000;
       frameSteps.update.process({ delta: 0, timestamp: performance.now(), isProcessing: false });
       for (const [key, value] of Object.entries(entry.values())) {
-        if (Math.abs(value.get() - referenceValues[key].get()) >= 1e-8) {
+        const delta = Math.abs(value.get() - referenceValues[key].get());
+        if (!(delta < 1e-8)) {
           differences.push(`${key} at ${milliseconds}ms: ${value.get()} vs ${referenceValues[key].get()}`);
         }
       }

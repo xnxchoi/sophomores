@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { ArrowLeftIcon } from "@phosphor-icons/react/dist/ssr";
 import { Link } from "@/components/core/Link/Link";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
-import { useCommerceCartState } from "@/components/commerce/use-commerce-cart-state";
+import { useCommerceCartState, type CartLine } from "@/components/commerce/use-commerce-cart-state";
 import { useCartColumn } from "@/components/commerce/shop/cart-column";
 import type { CartProduct } from "@/lib/commerce/cart-products";
 import { cn } from "@/lib/utils";
@@ -23,12 +23,15 @@ import { Button } from "@/components/core/Button";
  * Their mono becomes our sans. The state is Auth's useCommerceCartState; Checkout is exactly CommerceCart's (signed out,
  * it asks for sign-in first). There is no quantity control: one per account, and the hook has no setter.
  */
-export function ShopCartLines({ products, signedIn, onSignIn }: { products: readonly CartProduct[]; signedIn: boolean; onSignIn?: () => void }) {
+export function ShopCartLines({ products, signedIn, onSignIn, localPendingFor }: {
+  products: readonly CartProduct[]; signedIn: boolean; onSignIn?: () => void;
+  /** The browser's lines are being added to the account now (CartContents' transfer after sign-in). */
+  localPendingFor?: string;
+}) {
   const t = useTranslations("Customer.components_commerce_cart");
-  const page = useTranslations("Customer.app_site_shop_cart_page");
   const column = useCartColumn();
   const { lines, waiting, busy, feedback, purchased, subtotalKRW, shippingKRW, totalKRW, checkoutAvailable, checkoutHref,
-    checkoutReason, removingLineID, refreshing, canRefresh, remove, refresh } = useCommerceCartState({ signedIn, products });
+    checkoutReason, removingLineID, refreshing, canRefresh, remove, refresh, localLines, removeLocal, memberID } = useCommerceCartState({ signedIn, products });
   // The stack shows what's in this cart (their cartQuantitiesByBookId): the member's cart once signed in, not only the browser's.
   const report = column?.report, conceal = column?.conceal;
   const counts = lines.filter((line) => line.quantity > 0).map((line) => line.productID + ":" + line.quantity).join(",");
@@ -72,8 +75,20 @@ export function ShopCartLines({ products, signedIn, onSignIn }: { products: read
       className="group/focus inline-flex min-h-8 items-center text-[11px] uppercase tracking-[0.04em] underline decoration-dotted underline-offset-4 hover:decoration-solid disabled:opacity-40 pointer-coarse:min-h-11">
       <FocusShape className="outline-offset-4">{refreshing ? t("refreshing") : t("refresh")}</FocusShape></Button>}
   </>;
+  // Signed in, lines the account refused or hasn't taken yet stay on this browser: their own heading and × (Auth-editions,
+  // 28 Nov), as CommerceCart shows them. The transfer itself and its same-member retry stay in CartContents.
+  const local = localLines.length > 0 && <section aria-labelledby="shop-cart-local-heading" className="mt-6">
+    <h2 id="shop-cart-local-heading" className="pl-3.5 text-[11px] uppercase leading-[1.5]">{t("localTitle")}</h2>
+    <p className="mt-1 pl-3.5 text-[12px] leading-[1.5] text-muted-foreground">
+      {memberID !== undefined && memberID === localPendingFor ? t("localAdding") : t("localNote")}</p>
+    <ul className="mt-1.5">
+      {localLines.map((line, index) => <ShopCartRow key={line.productID} line={line} number={lines.length + index + 1}
+        disabled={false} removing={false} onRemove={() => void removeLocal(line.productID)} />)}
+    </ul>
+  </section>;
   if (lines.length === 0) return <div ref={(node) => { root.current = node; }} className="pt-3.5 pl-3.5">
     <p className="text-[13px] leading-[1.5]">{t("empty")}</p>
+    {local && <div className="-ml-3.5">{local}</div>}
     {status}
     {column && <Button variant="bare" type="button" onClick={column.close}
       className="group/focus mt-6 inline-flex min-h-8 items-center text-[11px] uppercase tracking-[0.04em] pointer-coarse:min-h-11">
@@ -83,30 +98,11 @@ export function ShopCartLines({ products, signedIn, onSignIn }: { products: read
 
   return <section ref={(node) => { root.current = node; }} aria-label={t("contents")} aria-busy={busy}>
     <ul>
-      {lines.map((line, index) => {
-        const title = line.title ?? t("savedItem", { number: index + 1 });
-        return <li key={line.id || index} className="border-t border-dotted border-border pt-3.5 pb-1.5 pl-3.5 first:border-t-0">
-          <div className="flex items-baseline justify-between gap-3 text-[13px] leading-[1.5]">
-            {line.productHref ? <Link href={line.productHref} className="group/focus min-w-0 [overflow-wrap:anywhere]"><FocusShape className="outline-offset-2">{title}</FocusShape></Link>
-              : <span className="min-w-0 [overflow-wrap:anywhere]">{title}</span>}
-            {line.unitPriceKRW !== null && <span className="shrink-0 tabular-nums">{line.unitPriceKRW.toLocaleString("ko-KR")} KRW</span>}
-          </div>
-          <div className="mt-2 flex items-start justify-between text-[11px] uppercase leading-[1.5]">
-            <Button variant="bare" type="button" aria-label={t("removeNamed", { title })} disabled={busy || !line.id || purchased}
-              onClick={() => line.id && void remove(line.id)}
-              className="group/focus -m-3 inline-flex size-11 items-center justify-center disabled:opacity-40">
-              <FocusShape className={cn("flex size-5 items-center justify-center rounded-full border-[0.8px] border-current pb-0.5 text-[19.5px] leading-none opacity-75 transition-opacity duration-200 group-hover/focus:opacity-100",
-                removingLineID !== null && removingLineID === line.id && "animate-pulse")}>×</FocusShape>
-            </Button>
-            {line.quantity > 1 && line.unitPriceKRW !== null && <span className="tabular-nums">({line.quantity}) {(line.quantity * line.unitPriceKRW).toLocaleString("ko-KR")} KRW</span>}
-          </div>
-          {line.unitPriceKRW === null && <p className="mt-1 text-[12px] leading-[1.5] text-muted-foreground">{t("itemDetailsUnavailable")}</p>}
-          {line.kind === "edition" && line.productHref && <Link href={line.productHref}
-            className="group/focus mt-1 inline-flex min-h-8 items-center text-[11px] uppercase tracking-[0.04em] underline decoration-current/40 underline-offset-2 hover:decoration-current pointer-coarse:min-h-11">
-            <FocusShape className="outline-offset-2">{page("buyOnItsPage")}</FocusShape></Link>}
-        </li>;
-      })}
+      {lines.map((line, index) => <ShopCartRow key={line.id || index} line={line} number={index + 1}
+        disabled={busy || !line.id || purchased} removing={removingLineID !== null && removingLineID === line.id}
+        onRemove={() => line.id && void remove(line.id)} />)}
     </ul>
+    {local}
     {subtotalKRW !== null && shippingKRW !== null && totalKRW !== null ? <>
       <NumberFlowGroup>
         <dl className="mt-3 border-y border-border py-3 pl-3.5 text-[11px] uppercase leading-[1.6]">
@@ -123,4 +119,33 @@ export function ShopCartLines({ products, signedIn, onSignIn }: { products: read
     {totalKRW !== null && <p className="mt-3 text-[12px] leading-[1.5] text-muted-foreground">{t("estimateDetail")}</p>}
     {status}
   </section>;
+}
+
+/** One cart line in the column: the account's lines and the ones only on this browser look the same. */
+function ShopCartRow({ line, number, disabled, removing, onRemove }: {
+  line: CartLine; number: number; disabled: boolean; removing: boolean; onRemove: () => void;
+}) {
+  const t = useTranslations("Customer.components_commerce_cart");
+  const page = useTranslations("Customer.app_site_shop_cart_page");
+  const title = line.title ?? t("savedItem", { number });
+  return <li className="border-t border-dotted border-border pt-3.5 pb-1.5 pl-3.5 first:border-t-0">
+          <div className="flex items-baseline justify-between gap-3 text-[13px] leading-[1.5]">
+            {line.productHref ? <Link href={line.productHref} className="group/focus min-w-0 [overflow-wrap:anywhere]"><FocusShape className="outline-offset-2">{title}</FocusShape></Link>
+              : <span className="min-w-0 [overflow-wrap:anywhere]">{title}</span>}
+            {line.unitPriceKRW !== null && <span className="shrink-0 tabular-nums">{line.unitPriceKRW.toLocaleString("ko-KR")} KRW</span>}
+          </div>
+          <div className="mt-2 flex items-start justify-between text-[11px] uppercase leading-[1.5]">
+            <Button variant="bare" type="button" aria-label={t("removeNamed", { title })} disabled={disabled}
+              onClick={onRemove}
+              className="group/focus -m-3 inline-flex size-11 items-center justify-center disabled:opacity-40">
+              <FocusShape className={cn("flex size-5 items-center justify-center rounded-full border-[0.8px] border-current pb-0.5 text-[19.5px] leading-none opacity-75 transition-opacity duration-200 group-hover/focus:opacity-100",
+                removing && "animate-pulse")}>×</FocusShape>
+            </Button>
+            {line.quantity > 1 && line.unitPriceKRW !== null && <span className="tabular-nums">({line.quantity}) {(line.quantity * line.unitPriceKRW).toLocaleString("ko-KR")} KRW</span>}
+          </div>
+          {line.unitPriceKRW === null && <p className="mt-1 text-[12px] leading-[1.5] text-muted-foreground">{t("itemDetailsUnavailable")}</p>}
+          {line.kind === "edition" && line.productHref && <Link href={line.productHref}
+            className="group/focus mt-1 inline-flex min-h-8 items-center text-[11px] uppercase tracking-[0.04em] underline decoration-current/40 underline-offset-2 hover:decoration-current pointer-coarse:min-h-11">
+            <FocusShape className="outline-offset-2">{page("buyOnItsPage")}</FocusShape></Link>}
+        </li>;
 }

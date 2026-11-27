@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { animate, motionValue } from "motion/react";
+import { animate, frameSteps, motionValue } from "motion/react";
 import { mountEntry } from "../fixtures/teaser/entry-hook";
 import { entryTokens } from "@/lib/teaser/entry-tokens";
 
@@ -65,29 +65,30 @@ test("native sequence samples match every former independent channel through the
       autoplay: false
     })
   );
-  // Node has no browser frame driver: sample Motion's actual JS engine, not a recreated easing function.
-  type NativeSamples = {
-    animations: { animation: { sample(milliseconds: number): unknown } }[];
-  };
-  const sample = (control: unknown, milliseconds: number) => {
-    for (const child of (control as NativeSamples).animations)
-      child.animation.sample(milliseconds);
-  };
+  // Seek the paused native controls in seconds and read the actual Motion values.
   try {
+    sequence.pause();
+    for (const reference of references) reference.pause();
+    assert.equal(sequence.state, "paused");
     assert.equal(sequence.duration, 5);
+    const differences: string[] = [];
     for (const milliseconds of [
       0, 100, 299, 300, 450, 525, 750, 999, 1000, 1250, 1499, 1500, 1750, 1999,
       2000, 2250, 2750, 3000, 3250, 3500, 4000, 4500, 4999, 5000, 6000
     ]) {
-      sample(sequence, milliseconds);
-      for (const reference of references) sample(reference, milliseconds);
+      sequence.time = milliseconds / 1000;
+      for (const reference of references) reference.time = milliseconds / 1000;
+      frameSteps.update.process({ delta: 0, timestamp: performance.now(), isProcessing: false });
       for (const [key, value] of Object.entries(entry.values())) {
-        assert.ok(
-          Math.abs(value.get() - referenceValues[key].get()) < 1e-8,
-          `${key} differs at ${milliseconds}ms: ${value.get()} vs ${referenceValues[key].get()}`
-        );
+        if (Math.abs(value.get() - referenceValues[key].get()) >= 1e-8) {
+          differences.push(`${key} at ${milliseconds}ms: ${value.get()} vs ${referenceValues[key].get()}`);
+        }
       }
     }
+    for (const [key, expected] of Object.entries(entryTokens.complete)) {
+      assert.equal(entry.values()[key].get(), expected, `${key} reaches its final value`);
+    }
+    assert.deepEqual(differences, []);
   } finally {
     entry.unmount();
     for (const reference of references) reference.stop();

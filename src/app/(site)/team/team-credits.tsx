@@ -1,5 +1,5 @@
 "use client";
-import { Button } from "@/components/core/Button";
+import { Button } from "@/components/core/Button/base";
 
 import { Link } from "@/components/core/Link/Link";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";

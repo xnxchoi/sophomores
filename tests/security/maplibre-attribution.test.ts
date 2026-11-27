@@ -17,6 +17,7 @@ test("installed AttributionControl sanitizes adjacent remote-source attributes w
     window: dom.window,
     document: dom.window.document,
     DOMParser: dom.window.DOMParser,
+    Element: dom.window.Element,
   };
   const descriptors = new Map(
     Object.keys(globals).map((key) => [key, Object.getOwnPropertyDescriptor(globalThis, key)]),

@@ -39,9 +39,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           maxLength={1024}
           required
         />
-        <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm text-preview-secondary">
+        <label className="flex min-h-11 items-center gap-3 text-sm text-preview-secondary">
           <input
-            className="size-4 shrink-0 cursor-pointer accent-preview-accent transition-[border-color,box-shadow,background-color,outline-color] duration-200 ease-out focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-preview-accent"
+            className="size-4 shrink-0 accent-preview-accent transition-[border-color,box-shadow,background-color,outline-color] duration-200 ease-out focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-preview-accent"
             type="checkbox"
             name="remember"
             value="yes"

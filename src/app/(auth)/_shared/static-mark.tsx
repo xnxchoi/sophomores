@@ -1,7 +1,7 @@
 /**
- * The Sophomores wordmark for the staff wall, server-rendered. It is BrandMark's own drawing (src/components/core/BrandMark,
- * same viewBox and path, in the page's ink), without BrandMark's client Link: /login and /logout load no script, and
- * public files such as /wordmark-w.svg sit behind the gate, so the mark is inline. Keep the path in step with BrandMark.
+ * The Sophomores wordmark for the staff wall, server-rendered: BrandMark's own drawing (src/components/core/BrandMark,
+ * same viewBox and path) in the wall's own ink token. The wall compiles its own Tailwind entry ((auth)/index.css, which
+ * scans only this route group), so it carries the path rather than BrandMark's site classes. Keep the path in step.
  */
 export function StaticMark() {
   return (

@@ -1,5 +1,6 @@
 import { memberSocialProviders, memberTrustedOrigins, readySocialProviders } from "@/lib/auth/social-providers";
-import { memberEmailEntry } from "@/lib/member-auth/email-entry";
+import { MEMBER_EMAIL_CODE_SEND_PATH, memberEmailCodeRateLimit, memberEmailEntry } from "@/lib/member-auth/email-entry";
+import { sendTrackedEmailCode } from "@/lib/member-auth/email-code-delivery.server";
 import { generateRandomString } from "better-auth/crypto";
 import { APIError } from "better-auth/api";
 import { passkey } from "@better-auth/passkey";
@@ -93,14 +94,14 @@ export function createBetterAuthPlugins(
       disableSignUp: !isReviewEditorProfile(origin),
       rateLimit: { window: 60, max: 3 },
       changeEmail: { enabled: false },
-      async sendVerificationOTP({ email, otp, type }) {
+      sendVerificationOTP: ({ email, otp, type }) => sendTrackedEmailCode(async () => {
         if (isReviewEditorProfile(origin)) assertReviewEditorRecipient(origin, email);
         if (type !== "sign-in")
           throw new Error("This verification flow is unavailable.");
         const mailer = "mailer" in delivery ? delivery.mailer : getAuthMailer();
         if (!mailer) throw new Error("Email delivery is unavailable.");
         await mailer({ type: "email-otp", email, otp });
-      }
+      })
     }),
     // 4. Passkey biometric authentication
     passkey({
@@ -139,7 +140,7 @@ export const betterAuthOptions = {
     storage: "database",
     window: 60,
     max: 60,
-    customRules: { "/sign-in/email-otp": { window: 60, max: 5 } }
+    customRules: { "/sign-in/email-otp": { window: 60, max: 5 }, [MEMBER_EMAIL_CODE_SEND_PATH]: memberEmailCodeRateLimit }
   },
   telemetry: { enabled: false },
   user: {

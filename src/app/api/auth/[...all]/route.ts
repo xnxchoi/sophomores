@@ -1,7 +1,8 @@
 import { betterAuthOptions } from "@/lib/auth/options";
-import { normalizeMemberEmailEntryRequest } from "@/lib/member-auth/email-entry";
+import { limitNormalizedEmailCodeSend, MEMBER_EMAIL_CODE_SEND_PATH, normalizeMemberEmailEntryRequest } from "@/lib/member-auth/email-entry";
 import { authHandlerFailed, authUnavailable, memberJson, memberSafeAuthRedirect } from "@/lib/member-auth/http";
 import { getPayload } from "@/payload";
+import { withEmailCodeDelivery } from "@/lib/member-auth/email-code-delivery.server";
 import { clearAppleProfile, restoreAppleProfile, stashAppleProfile } from "@/lib/member-auth/apple-profile.server";
 
 export const runtime = "nodejs";
@@ -38,4 +39,11 @@ async function answer(normalized: Request, discovery: boolean, request: Request)
 }
 
 export const GET = handle;
-export const POST = handle;
+export async function POST(request: Request) {
+  // The send result now reflects account/transport state. Use the same bounded
+  // origin and non-spoofable SDK rate-limit ingress as account discovery.
+  const send = await normalizeMemberEmailEntryRequest(request, 5000, betterAuthOptions.baseURL, MEMBER_EMAIL_CODE_SEND_PATH);
+  if (send instanceof Response) return send;
+  if (send === request) return handle(request);
+  return limitNormalizedEmailCodeSend(send) ?? withEmailCodeDelivery(() => handle(send));
+}

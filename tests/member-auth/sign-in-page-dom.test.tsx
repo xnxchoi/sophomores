@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { after, afterEach, before, test } from "node:test";
 import { JSDOM } from "jsdom";
 import { untilAsserted } from "../support/dom-state";
-import type { MemberClient, MemberStatus } from "@/lib/member-auth/client";
+import { MemberAuthActionError, type MemberClient, type MemberStatus } from "@/lib/member-auth/client";
 
 // The /sign-in page as composed (Review-B, 26 Nov): every way in at once with no chooser, the page h1 as the one
 // heading, the new-visitor note from the providers actually on, the email looked up before a code is offered, an
@@ -132,6 +132,39 @@ test("Continue looks the email up; the code goes only on a separate Send press",
   ui.fireEvent.click(ui.screen.getByRole("button", { name: messages.AuthPhase.changeEmail }));
   await untilAsserted(ui, () => assert.equal(ui.screen.getByRole("heading", { level: 1 }).textContent, messages.MemberAuth.logIn));
   assert.ok(ui.screen.getByText(/New here\?/), "back on the entry step the note returns");
+});
+
+test("an unregistered email settles on social sign-up, without a Send or code step", async () => {
+  const c = client();
+  const lookups: string[] = [];
+  c.value.lookupEmail = async (address) => {
+    lookups.push(address);
+    return { account: "new" };
+  };
+  render(c);
+  await ready();
+  ui.fireEvent.change(email(), { target: { value: "unregistered@example.net" } });
+  ui.act(() => email().form!.requestSubmit());
+  await untilAsserted(ui, () => ui.screen.getByText(/There.s no account for this email/));
+  assert.ok(ui.screen.getByRole("button", { name: /apple/i }));
+  assert.ok(ui.screen.getByRole("button", { name: /google/i }));
+  assert.deepEqual(lookups, ["unregistered@example.net"]);
+  assert.equal(ui.screen.queryByRole("button", { name: messages.MemberAuth.sendSignInCode }), null);
+  assert.equal(ui.screen.queryByLabelText(messages.AuthPhase.code), null);
+  assert.deepEqual(c.named("code"), []);
+});
+
+test("a delivery refusal leaves standalone sign-in on the email step with an error", async () => {
+  const c = client();
+  c.value.sendEmailCode = async () => { throw new MemberAuthActionError("delivery-failed"); };
+  render(c);
+  await ready();
+  ui.fireEvent.change(email(), { target: { value: "member@example.net" } });
+  ui.act(() => email().form!.requestSubmit());
+  ui.fireEvent.click(await untilAsserted(ui, () => ui.screen.getByRole("button", { name: messages.MemberAuth.sendSignInCode })));
+  await untilAsserted(ui, () => ui.screen.getByText(/couldn.t send|could not send/i));
+  assert.equal(ui.screen.queryByLabelText(messages.AuthPhase.code), null);
+  assert.equal(ui.screen.getByRole("heading", { level: 1 }).textContent, messages.MemberAuth.logIn);
 });
 
 test("an account in setup finishes it on the page: no visitor note, no redirect", async () => {

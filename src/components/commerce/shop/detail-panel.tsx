@@ -15,6 +15,7 @@ import type { ProductPageContent } from "../product-page/_shared/content";
 import { physicalDetails, type EditionProduct } from "../product-page/product-page";
 import { DetailGallery } from "./detail-gallery";
 import { useCartFly } from "./cart-fly";
+import { Button } from "@/components/core/Button";
 
 /**
  * One book's details inside stripe.press's scene: their detail panel content (`ie`, 06w:6066-6943; notes
@@ -127,14 +128,14 @@ function Production({ colophon, gallery, anchor, labels }: { colophon: { label: 
             {at === 0
               ? <>
                   <span className="max-[900px]:hidden"><Label>{section.label}</Label></span>
-                  <button type="button" aria-expanded={!collapsed} onClick={() => setCollapsed((value) => !value)}
+                  <Button variant="bare" type="button" aria-expanded={!collapsed} onClick={() => setCollapsed((value) => !value)}
                     className="group/focus hidden w-full items-center pb-1.5 text-left text-[11px] leading-[1.5] uppercase max-[900px]:flex pointer-coarse:min-h-11">
                     <FocusShape className="flex w-full items-center justify-between">
                       [ {section.label} ]
                       <span className="inline-flex items-center gap-1">{collapsed ? labels.expand : labels.collapse}
                         <CaretDownIcon aria-hidden="true" className={cn("size-2.5 transition-transform duration-250 ease-[ease]", !collapsed && "rotate-180")} /></span>
                     </FocusShape>
-                  </button>
+                  </Button>
                 </>
               : <Label>{section.label}</Label>}
             <ul className={cn("pl-3.5 text-base leading-[1.65]", at === 0 && "max-[900px]:group-data-collapsed/colophon:hidden")}>
@@ -149,12 +150,12 @@ function Production({ colophon, gallery, anchor, labels }: { colophon: { label: 
         </div>
         <div className="ml-auto w-full min-w-0 max-[900px]:order-4 max-[900px]:mb-6 min-[900px]:col-start-2 min-[900px]:row-start-3">
           <div className="flex w-full flex-wrap gap-1.5">
-            {gallery.map((image, at) => <button key={image.url} type="button" data-active={at === index || undefined} onClick={() => setIndex(at)}
+            {gallery.map((image, at) => <Button variant="bare" key={image.url} type="button" data-active={at === index || undefined} onClick={() => setIndex(at)}
               className="flex min-w-0 shrink-0 grow-0 basis-[calc(20%-4.8px)] flex-col items-start gap-0.5 text-left opacity-55 transition-opacity duration-200 ease-[ease] hover:opacity-100 focus-visible:opacity-100 data-active:opacity-100 outline-offset-2 focus-visible:outline-2 focus-visible:outline-current">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={image.url} alt="" loading="lazy" className="block aspect-[1075/1433] h-auto w-full rounded-[4px] bg-foreground/10 object-cover" />
               <span className="text-[11px] leading-[1.5] tabular-nums">{String(at + 1).padStart(2, "0")}</span>
-            </button>)}
+            </Button>)}
           </div>
         </div>
       </>}
@@ -200,15 +201,15 @@ function AddRow({ productID, title, price }: { productID: string; title: string;
   if (inCart) return <div className="flex min-h-[41px] items-center justify-between border-t border-dotted border-foreground/45 text-[15px] leading-[1.4] first:border-t-0 pointer-coarse:min-h-11">
     <span className="min-w-0 px-4">{t("inCart")}</span>
     <span className="flex shrink-0 items-center gap-3 px-4 tabular-nums">{price}
-      <button type="button" aria-label={t("removeFromCart", { title })} onClick={() => removeGuestCartLine(productID)}
+      <Button variant="bare" type="button" aria-label={t("removeFromCart", { title })} onClick={() => removeGuestCartLine(productID)}
         className="group/focus -m-3 inline-flex size-11 items-center justify-center">
         <FocusShape className="flex size-5 items-center justify-center rounded-full border-[0.8px] border-current pb-0.5 text-[19.5px] leading-none opacity-75 transition-opacity duration-200 group-hover/focus:opacity-100">×</FocusShape>
-      </button></span>
+      </Button></span>
   </div>;
-  return <button type="button" onClick={() => { fly?.(productID); addGuestCartLine(productID); }}
+  return <Button variant="bare" type="button" onClick={() => { fly?.(productID); addGuestCartLine(productID); }}
     className="group/focus flex min-h-[41px] w-full items-center border-t border-dotted border-foreground/45 text-left text-[15px] leading-[1.4] transition-colors duration-200 ease-[ease] first:border-t-0 hover:bg-foreground/8 pointer-coarse:min-h-11">
     <FocusShape className="flex w-full items-center justify-between"><span className="min-w-0 px-4">{t("addToCart")}</span><span className="shrink-0 px-4 tabular-nums">{price}</span></FocusShape>
-  </button>;
+  </Button>;
 }
 
 function PriceRow({ label, value, url, disabled }: { label: string; value: string; url?: string; disabled?: boolean }) {

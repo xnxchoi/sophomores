@@ -22,6 +22,7 @@ import { CartFlyContext } from "./cart-fly";
 import { CartBehind, CartColumn, cartOwnsInput, ownInput } from "./cart-column";
 import { NoWebglCartStack } from "./no-webgl-cart-stack";
 import { listGuestCart, subscribeGuestCart } from "@/lib/commerce/browser-cart";
+import { Button } from "@/components/core/Button";
 
 /**
  * The shop's home, rebuilt from stripe.press's home code (06w9 module 43181; .tmp/stripe-notes/home-layout-inventory.md,
@@ -784,11 +785,11 @@ function Home({ vendored, items, labels, initialOpen, cartPanel, cartOpen, onCar
             no section is there, so it shows the default (traced 26 Nov). */}
         [ {onShelf && detail.open == null ? labels.shelf : labels.featured} ]
       </p>
-      <button type="button" tabIndex={phoneDetail ? 0 : -1} aria-hidden={!phoneDetail} onClick={() => detail.closeBook()}
+      <Button variant="bare" type="button" tabIndex={phoneDetail ? 0 : -1} aria-hidden={!phoneDetail} onClick={() => detail.closeBook()}
         className={cn("group/focus col-start-1 row-start-1 -my-3.5 inline-flex min-h-11 min-w-11 items-center self-start text-left uppercase transition-[opacity,translate,color] duration-300 ease-[ease] hover:text-foreground",
           phoneDetail ? "pointer-events-auto delay-100" : "pointer-events-none translate-x-2.5 opacity-0")}>
         <FocusShape className="inline-flex items-center"><ArrowLeftIcon aria-hidden="true" className="mr-1.5 size-3.5" />{labels.toShelf}</FocusShape>
-      </button>
+      </Button>
     </div>
     <TitleRail railRef={titles} label={labels.titles} titles={items.map((entry) => entry.title)} refunds={items.map((entry) => entry.refund)} active={detail.open ?? selected ?? railIndex}
       fade={detail.open != null ? 0 : rowOver >= 0 ? 0.5 * rowOver : Math.max(0, Math.min(1, (committed - K - 0.2) / 0.3))} shelf={committed >= J}
@@ -946,7 +947,7 @@ function TitleRail({ railRef, label, titles, refunds, active, fade, shelf, detai
       {/* Three copies, the middle one active, so the active title always has neighbours on both sides (theirs: 21ix). */}
       {[...titles, ...titles, ...titles].map((title, slot) => { const index = slot % titles.length, middle = slot >= titles.length && slot < 2 * titles.length;
         return <li key={slot} aria-hidden={middle ? undefined : true}>
-        <button ref={(item) => { items.current[slot] = item; }} type="button" tabIndex={middle ? undefined : -1} onClick={() => onPick(index)}
+        <Button variant="bare" ref={(item) => { items.current[slot] = item; }} type="button" tabIndex={middle ? undefined : -1} onClick={() => onPick(index)}
           data-shelf-return={middle && index === active ? "" : undefined}
           className="pointer-events-auto relative font-display text-[length:calc(40px+16*(100vw-375px)/1353)] leading-[1.12] font-medium tracking-[-0.1rem] whitespace-nowrap text-foreground outline-offset-4 focus-visible:outline-2 max-[900px]:text-[length:calc(44px+17.6*(100vw-375px)/1353)]">
           {/* Theirs (FeaturedTitle): both faces skew from 0 78 %, over 448 ms into the active title and 400 ms out of it. The
@@ -956,7 +957,7 @@ function TitleRail({ railRef, label, titles, refunds, active, fade, shelf, detai
           <span className={cn("absolute inset-0 origin-[0_78%] not-italic transition-[opacity,transform] ease-[ease]",
             middle && index === active ? "opacity-100 duration-[448ms]" : "opacity-0 duration-[400ms] [transform:skewX(-5deg)]")}>{title}</span>
           {refunds[index] && <span className="mt-1 block font-sans text-sm leading-6 font-normal tracking-normal not-italic">{refunds[index]}</span>}
-        </button>
+        </Button>
       </li>; })}
     </ul>
     {/* Their TitleBandAbyss pair (21ix:230-280), desktop only: page-coloured plates over the strip, opaque on the outer 8 %
@@ -978,8 +979,8 @@ function ViewDetails({ href, label, hidden, onOpen, book }: { href: string; labe
   return <div className={cn("fixed right-4 -bottom-0.5 z-20 flex h-[30px] items-center gap-3 pointer-coarse:h-11 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] max-[900px]:hidden",
     shown && !hidden ? "translate-y-0" : "translate-y-[calc(100%+24px)]")}>
     {book && <>
-      <button type="button" onPointerDown={(event) => event.stopPropagation()} onClick={book.onToggle}
-        className="group/focus text-xs uppercase tracking-[-0.02em] transition-opacity hover:opacity-70 pointer-coarse:min-h-11 pointer-coarse:min-w-11"><FocusShape>{book.label} {book.open ? "[-]" : "[+]"}</FocusShape></button>
+      <Button variant="bare" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={book.onToggle}
+        className="group/focus text-xs uppercase tracking-[-0.02em] transition-opacity hover:opacity-70 pointer-coarse:min-h-11 pointer-coarse:min-w-11"><FocusShape>{book.label} {book.open ? "[-]" : "[+]"}</FocusShape></Button>
       <span aria-hidden="true" className="text-xs">·</span>
     </>}
     <Link href={href} onClick={(event) => { if (event.metaKey || event.ctrlKey || event.shiftKey) return; event.preventDefault(); onOpen(); }}
@@ -989,10 +990,10 @@ function ViewDetails({ href, label, hidden, onOpen, book }: { href: string; labe
 
 /** Their peek pill ("+ Open book +", 06w9:17934-17957): over the open book in the details, at 30 % of the width. */
 function OpenBookPill({ label, shown, onHover, onOpen }: { label: string; shown: boolean; onHover: (hovered: boolean) => void; onOpen: () => void }) {
-  return <button type="button" tabIndex={shown ? 0 : -1} aria-hidden={!shown} onMouseEnter={() => onHover(true)} onMouseLeave={() => onHover(false)}
+  return <Button variant="bare" type="button" tabIndex={shown ? 0 : -1} aria-hidden={!shown} onMouseEnter={() => onHover(true)} onMouseLeave={() => onHover(false)}
     onClick={(event) => { event.stopPropagation(); onOpen(); }}
     className={cn("fixed bottom-[14%] left-[30%] z-30 -translate-x-1/2 rounded-full bg-background px-3 py-1.5 text-xs pointer-coarse:min-h-11 uppercase tracking-[-0.02em] text-foreground transition-opacity duration-300 max-[900px]:hidden outline-offset-2 focus-visible:outline-2 focus-visible:outline-current",
-      shown ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0")}>+ {label} +</button>;
+      shown ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0")}>+ {label} +</Button>;
 }
 
 /**
@@ -1012,10 +1013,10 @@ function DetailStack({ shown, height, toShelf, onClose, children }: { shown: boo
       {/* Under the site header (which overlays the top 72 px), where their 46 px under their own nav would be covered. On a
           phone the link sits in the label's slot instead. */}
       <div className="sticky top-[88px] z-10 px-6 max-[900px]:hidden">
-        <button type="button" onClick={onClose}
+        <Button variant="bare" type="button" onClick={onClose}
           className="group/focus inline-flex min-h-8 items-center bg-background text-[11px] uppercase pointer-coarse:min-h-11 pointer-coarse:min-w-11 tracking-[0.04em] text-muted-foreground transition-colors hover:text-foreground">
           <FocusShape className="inline-flex items-center"><ArrowLeftIcon aria-hidden="true" className="mr-1.5 size-3.5" />{toShelf}</FocusShape>
-        </button>
+        </Button>
       </div>
       {children}
     </div>

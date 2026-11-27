@@ -5,6 +5,7 @@ import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Vendored } from "./stripe-scene";
 import { fallbackImagesFor, type FallbackImage } from "./_shared/fallback-images";
+import { Button } from "@/components/core/Button";
 
 /**
  * stripe.press's no-WebGL spine row (`NoWebglSpineRow`, module 27511, 2k0q1kp4qmm_6.js:20-695), ported as written: when
@@ -448,7 +449,7 @@ export function NoWebglSpineRow({ vendored, books, hidden, onBookOpen, labels }:
       <div ref={buttons} className="absolute top-0 left-1/2 h-full w-0">
         {hub.spineDisplayOrder.map((index) => {
           const title = books[index]?.title ?? catalogue.I[index].title, isShown = index === shown.to;
-          return <button key={books[index]?.id ?? index} ref={(element) => { buttonEls.current[index] = element; }} type="button"
+          return <Button variant="bare" key={books[index]?.id ?? index} ref={(element) => { buttonEls.current[index] = element; }} type="button"
             aria-label={fill(isShown && shown.out ? labels.open : labels.show, title)} tabIndex={isShown ? 0 : -1}
             onClick={(event) => {
               if (event.timeStamp - dragEndedAt.current < 350) return;
@@ -460,7 +461,7 @@ export function NoWebglSpineRow({ vendored, books, hidden, onBookOpen, labels }:
             onPointerLeave={() => { if (hub.bookHoverIndexLiveRef.current === index) hub.bookHoverIndexLiveRef.current = -1; }}
             className="pointer-events-auto absolute top-0 left-0 m-0 touch-pan-y border-0 bg-transparent p-0 [-webkit-tap-highlight-color:transparent] pointer-coarse:min-h-11 pointer-coarse:min-w-11 group/focus">
             <FocusShape aria-hidden="true" className="pointer-events-none absolute inset-0 block rounded-[2px]" />
-          </button>;
+          </Button>;
         })}
       </div>
     </div>

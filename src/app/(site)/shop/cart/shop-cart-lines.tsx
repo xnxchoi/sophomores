@@ -10,6 +10,7 @@ import { useCommerceCartState } from "@/components/commerce/use-commerce-cart-st
 import { useCartColumn } from "@/components/commerce/shop/cart-column";
 import type { CartProduct } from "@/lib/commerce/cart-products";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/core/Button";
 
 /**
  * The cart's lines in the shop's cart column, laid out as stripe.press's cart panel (06w9 page chunk, CartPanelStyles):
@@ -67,17 +68,17 @@ export function ShopCartLines({ products, signedIn, onSignIn }: { products: read
   // Feedback and Refresh whenever the member's cart exists (canRefresh), the empty saved cart included (Review-B, 27 Nov).
   const status = <>
     <p role="status" className="mt-3 min-h-[18px] text-[11px] leading-[1.5] text-muted-foreground">{feedback}</p>
-    {canRefresh && <button type="button" disabled={busy} onClick={() => void refresh()}
+    {canRefresh && <Button variant="bare" type="button" disabled={busy} onClick={() => void refresh()}
       className="group/focus inline-flex min-h-8 items-center text-[11px] uppercase tracking-[0.04em] underline decoration-dotted underline-offset-4 hover:decoration-solid disabled:opacity-40 pointer-coarse:min-h-11">
-      <FocusShape className="outline-offset-4">{refreshing ? t("refreshing") : t("refresh")}</FocusShape></button>}
+      <FocusShape className="outline-offset-4">{refreshing ? t("refreshing") : t("refresh")}</FocusShape></Button>}
   </>;
   if (lines.length === 0) return <div ref={(node) => { root.current = node; }} className="pt-3.5 pl-3.5">
     <p className="text-[13px] leading-[1.5]">{t("empty")}</p>
     {status}
-    {column && <button type="button" onClick={column.close}
+    {column && <Button variant="bare" type="button" onClick={column.close}
       className="group/focus mt-6 inline-flex min-h-8 items-center text-[11px] uppercase tracking-[0.04em] pointer-coarse:min-h-11">
       <FocusShape className="inline-flex items-center gap-1.5 outline-offset-4"><ArrowLeftIcon aria-hidden="true" className="size-2.5" />{column.back}</FocusShape>
-    </button>}
+    </Button>}
   </div>;
 
   return <section ref={(node) => { root.current = node; }} aria-label={t("contents")} aria-busy={busy}>
@@ -91,12 +92,12 @@ export function ShopCartLines({ products, signedIn, onSignIn }: { products: read
             {line.unitPriceKRW !== null && <span className="shrink-0 tabular-nums">{line.unitPriceKRW.toLocaleString("ko-KR")} KRW</span>}
           </div>
           <div className="mt-2 flex items-start justify-between text-[11px] uppercase leading-[1.5]">
-            <button type="button" aria-label={t("removeNamed", { title })} disabled={busy || !line.id || purchased}
+            <Button variant="bare" type="button" aria-label={t("removeNamed", { title })} disabled={busy || !line.id || purchased}
               onClick={() => line.id && void remove(line.id)}
               className="group/focus -m-3 inline-flex size-11 items-center justify-center disabled:opacity-40">
               <FocusShape className={cn("flex size-5 items-center justify-center rounded-full border-[0.8px] border-current pb-0.5 text-[19.5px] leading-none opacity-75 transition-opacity duration-200 group-hover/focus:opacity-100",
                 removingLineID !== null && removingLineID === line.id && "animate-pulse")}>×</FocusShape>
-            </button>
+            </Button>
             {line.quantity > 1 && line.unitPriceKRW !== null && <span className="tabular-nums">({line.quantity}) {(line.quantity * line.unitPriceKRW).toLocaleString("ko-KR")} KRW</span>}
           </div>
           {line.unitPriceKRW === null && <p className="mt-1 text-[12px] leading-[1.5] text-muted-foreground">{t("itemDetailsUnavailable")}</p>}
@@ -117,7 +118,7 @@ export function ShopCartLines({ products, signedIn, onSignIn }: { products: read
       <p role="status" aria-atomic="true" className="sr-only">{t("estimatedTotalAnnouncement", { amount: totalKRW.toLocaleString("ko-KR") })}</p>
     </> : checkoutReason === "not-quoted" && <p className="mt-3 border-t border-border pt-3 pl-3.5 text-[12px] leading-[1.5] text-muted-foreground">{t("priceUnavailable")}</p>}
     {checkoutAvailable && (onSignIn
-      ? <button type="button" onClick={onSignIn} className="mt-[18px] flex w-full items-center justify-center rounded-[40px] px-3 py-2.5 text-[13px] uppercase leading-[1.4] tracking-[0.04em] shadow-[inset_0_0_0_0.8px_currentColor] outline-offset-4 transition-colors hover:bg-foreground hover:text-background focus-visible:outline-2 pointer-coarse:min-h-11">{t("continueToCheckout")}</button>
+      ? <Button variant="bare" type="button" onClick={onSignIn} className="mt-[18px] flex w-full items-center justify-center rounded-[40px] px-3 py-2.5 text-[13px] uppercase leading-[1.4] tracking-[0.04em] shadow-[inset_0_0_0_0.8px_currentColor] outline-offset-4 transition-colors hover:bg-foreground hover:text-background focus-visible:outline-2 pointer-coarse:min-h-11">{t("continueToCheckout")}</Button>
       : checkoutHref && <Link href={checkoutHref} className="mt-[18px] flex w-full items-center justify-center rounded-[40px] px-3 py-2.5 text-[13px] uppercase leading-[1.4] tracking-[0.04em] shadow-[inset_0_0_0_0.8px_currentColor] outline-offset-4 transition-colors hover:bg-foreground hover:text-background focus-visible:outline-2 pointer-coarse:min-h-11">{t("continueToCheckout")}</Link>)}
     {totalKRW !== null && <p className="mt-3 text-[12px] leading-[1.5] text-muted-foreground">{t("estimateDetail")}</p>}
     {status}

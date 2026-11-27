@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils";
 
 import { BrandMark } from "@/components/core/BrandMark";
+import { Link } from "@/components/core/Link/Link";
 
 import { useRef, useState } from "react";
 import { PrimaryButton } from "./verification-ui";
@@ -23,9 +24,9 @@ export function VerificationStudy({
   return (
     <div className="min-h-svh bg-carbon-deep p-6 text-white" lang={locale}>
       <header className="h-11">
-        <BrandMark data-brand-mark="" className="text-[25px] tracking-[-1.5px]">
-          sophomores
-        </BrandMark>
+        <Link href="/" aria-label="Sophomores" className="inline-flex min-h-11 items-center text-[25px] focus-visible:outline-2 focus-visible:outline-offset-4">
+          <BrandMark />
+        </Link>
       </header>
       <main className={cn("mx-auto mt-32 max-w-xs", open ? "invisible" : "")}>
         <PrimaryButton

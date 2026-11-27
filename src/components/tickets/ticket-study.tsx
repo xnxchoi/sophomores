@@ -34,15 +34,13 @@ export function TicketStudy() {
   return (
     <main className="ticket-study">
       <header className="ticket-study__header">
-        <BrandMark asChild>
-          <a
-            className="ticket-study__wordmark"
-            href="/studies/warp"
-            aria-label="Sophomores"
-          >
-            sophomores
-          </a>
-        </BrandMark>
+        <a
+          className="ticket-study__wordmark"
+          href="/studies/warp"
+          aria-label="Sophomores"
+        >
+          <BrandMark />
+        </a>
         <a className="ticket-study__back" href="/studies/warp">
           Back to the story <span aria-hidden="true">↗</span>
         </a>

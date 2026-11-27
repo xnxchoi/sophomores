@@ -73,12 +73,9 @@ export function MemberAccountStudy({
   const providerReturnFlow = useProviderReturnFlow();
   return (
     <main className="min-h-screen bg-transparent px-6 py-8 text-foreground">
-      <BrandMark asChild>
-        {/* Plain anchor: this study renders in node tests, where next/link touches `self`. */}
-        <Link href="/" className="text-[23px] tracking-[-1.4px] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-foreground">
-          sophomores
-        </Link>
-      </BrandMark>
+      <Link href="/" aria-label="Sophomores" className="inline-flex min-h-11 items-center text-[23px] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-foreground">
+        <BrandMark />
+      </Link>
       <SecondaryButton ref={trigger} type="button" className="mt-8 max-w-xs" onClick={() => setOpen(true)}>
         {t("openAccountOptions")}
       </SecondaryButton>

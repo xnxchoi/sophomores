@@ -71,7 +71,7 @@ test("real ticket number retains its native directional transition", () => {
     "../invitation/film-study": { FilmStudy: () => null },
     "@/lib/invitation/reference-media": { referenceFilm: undefined },
     "@/lib/motion-tokens": { motionTokens },
-    "@/lib/brand": { BrandMark: () => null },
+    "@/components/core/BrandMark": { BrandMark: () => null },
     "@/lib/tickets/tickets": tickets
   };
   const source = readFileSync(
@@ -100,7 +100,11 @@ test("real ticket number retains its native directional transition", () => {
           : []
       )
   ];
-  const number = descendants(exports.TicketStudy()).find(
+  const elements = descendants(exports.TicketStudy());
+  const logoLink = elements.find((element) => element.type === "a" && element.props["aria-label"] === "Sophomores");
+  assert.equal(logoLink?.props.href, "/studies/warp");
+  assert.equal((logoLink?.props.children as Element | undefined)?.type, (modules["@/components/core/BrandMark"] as { BrandMark: unknown }).BrandMark);
+  const number = elements.find(
     (element) => element.type === motion.span && element.props.children === "01"
   );
   assert.ok(number);

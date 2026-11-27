@@ -12,7 +12,6 @@ import { domAnimation, LazyMotion, stagger } from "motion/react";
 import * as m from "motion/react-m";
 import { useTranslations } from "next-intl";
 import { PageInset } from "@/components/core/PageInset/PageInset";
-import { Button } from "@/components/core/Button";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { useAccountSheetSubmit } from "@/components/auth/use-account-sheet";
 
@@ -129,28 +128,25 @@ export function TapConfirm({ view }: { view: NfcTapView }) {
               {live ? (
                 <form method="post" action={`/nfc/${live.formRef}`} onSubmit={submit}>
                   <input type="hidden" name="confirmation" value={live.confirmation} />
-                  <Button
+                  {/* Sanctioned native submit: the NFC form must work without client providers or JavaScript. */}
+                  <button
                     type="submit"
-                    variant="primary"
-                    size="lg"
                     aria-disabled={confirming || undefined}
                     aria-busy={confirming || undefined}
-                    className="w-full"
+                    className="min-h-12 w-full rounded-full bg-foreground px-6 text-sm font-medium text-background focus-visible:outline-2 focus-visible:outline-offset-4 aria-disabled:opacity-60"
                   >
                     {confirming ? t("confirming") : t("confirm")}
-                  </Button>
+                  </button>
                 </form>
               ) : state === "signed-out" && !signedIn ? (
                 // Sign-in starts fresh: the tap link is never carried through it (NFC lane contract); the member taps again.
                 <form method="get" action="/sign-in" onSubmit={openSignIn}>
-                  <Button
+                  <button
                     type="submit"
-                    variant="primary"
-                    size="lg"
-                    className="w-full"
+                    className="min-h-12 w-full rounded-full bg-foreground px-6 text-sm font-medium text-background focus-visible:outline-2 focus-visible:outline-offset-4"
                   >
                     {t("signIn")}
-                  </Button>
+                  </button>
                 </form>
               ) : (
                 <div className="flex justify-center gap-6">

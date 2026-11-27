@@ -1,6 +1,6 @@
 import type { Payload, PayloadRequest } from "payload";
 import { isConfiguredStaffEmail, isReviewEditorProfile, staffAuthOrigin } from "./review-editor-policy";
-import { isStaffEmail } from "./staff-email";
+import { isStaffEmail, parseStaffExtraEmails } from "./staff-email";
 import { logAuthFailure } from "./failure-log";
 import { bootstrapSuperAdminEmail, ensureFirstSuperAdmin } from "@/payload/seed/super-admin";
 
@@ -8,15 +8,16 @@ export { isStaffEmail };
 
 /**
  * The one staff-address rule, used by sign-in and the CMS magic link alike: the configured staff
- * address(es) for this profile, plus the configured first super admin's own address (owner, 22 Nov).
- * That address is admitted exactly, never as a domain, and never on the restricted review copy;
- * no other public-domain address is ever staff.
+ * address(es) for this profile, plus the first super admin and deploy-configured extra addresses.
+ * The extra addresses are exact matches and never apply on the restricted review copy.
  */
 export function isStaffAddress(email: string | null | undefined, origin = staffAuthOrigin(),
   env: Record<string, string | undefined> = process.env): boolean {
   if (isConfiguredStaffEmail(origin, email, env)) return true;
-  const bootstrap = bootstrapSuperAdminEmail(env);
-  return bootstrap !== null && !isReviewEditorProfile(origin, env) && typeof email === "string" && email.trim().toLowerCase() === bootstrap;
+  if (isReviewEditorProfile(origin, env) || typeof email !== "string") return false;
+  const address = email.trim().toLowerCase();
+  return address === bootstrapSuperAdminEmail(env) ||
+    (parseStaffExtraEmails(env.STAFF_EXTRA_EMAILS)?.includes(address) ?? false);
 }
 
 export function isVerifiedStaff(user: { email?: string | null; emailVerified?: boolean | null }, origin = staffAuthOrigin(),

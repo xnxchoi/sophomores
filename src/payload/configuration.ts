@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { parseStaffExtraEmails } from "@/lib/auth/staff-email";
 import { isReviewEditorProfile, reviewEditorOrigin, staffAuthOrigin } from "@/lib/auth/review-editor-policy";
 import { isPinnedSandboxChannel, loadPaymentMode, loadPortOneConfig } from "@/lib/tickets/portone/config";
 
@@ -10,6 +11,9 @@ export const payloadEnvironmentSchema = z.looseObject({
   PAYLOAD_SECRET: z.string().min(32),
   BETTER_AUTH_SECRET: z.string().min(32).optional(),
 }).superRefine((environment, context) => {
+  if (!parseStaffExtraEmails(environment.STAFF_EXTRA_EMAILS)) {
+    context.addIssue({ code: "custom", path: ["STAFF_EXTRA_EMAILS"], message: "Staff email list must contain only exact email addresses." });
+  }
   // Live payments fail fast at boot when any PortOne key is missing or invalid.
   const env = environment as Record<string, string | undefined>;
   const origin = staffAuthOrigin(env);

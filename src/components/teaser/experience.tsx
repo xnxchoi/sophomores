@@ -261,7 +261,6 @@ export default function TeaserExperience() {
           sectionRef={hero.ref}
           sectionStyle={hero.sectionStyle}
           position={hero.position}
-          entry={entry}
           onActive={setCurrent}
         />
         <Story suspended={dialogOpen || menuOpen} onActive={setCurrent} />

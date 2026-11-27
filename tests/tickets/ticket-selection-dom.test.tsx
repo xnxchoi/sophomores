@@ -215,13 +215,25 @@ test("email lookup can retry after failure without sending or assuming an accoun
   await ui.act(async () => retry.resolve({ account: "existing" }));
   await ui.screen.findByRole("button", { name: "Send sign-in code" });
   // Account found: the heading greets, and the field becomes the account row with what was typed.
-  await ui.screen.findByRole("heading", { name: new RegExp(`^(?:${Object.values(messages.MemberAuth.accountGreeting).join("|")})$`) });
-  assert.equal(ui.screen.queryByRole("textbox", { name: "Email address" }) === null, true);
+  const entry = email.closest<HTMLElement>("[data-account-email-entry]");
+  assert.ok(entry);
+  const greetings: readonly string[] = Object.values(messages.MemberAuth.accountGreeting);
+  await ui.waitFor(() => {
+    const heading = ui.within(entry).getByRole("heading");
+    // Motion may leave outgoing elements mounted in JSDOM. Assert the new
+    // row and greeting, not that the animation has removed the old nodes.
+    assert.equal(Boolean(ui.within(heading).queryByText((value) => greetings.includes(value))), true);
+    assert.equal(Boolean(entry.querySelector("[data-account-row]")), true);
+  });
   assert.ok(ui.screen.getByText("existing@example.com"));
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Not you?" }));
-  const nextEmail = await ui.screen.findByRole("textbox", { name: "Email address" }) as HTMLInputElement;
+  const nextEmail = await ui.waitFor(() => {
+    const field = ui.screen.getAllByRole<HTMLInputElement>("textbox", { name: "Email address" }).find((input) => input.value === "");
+    assert.ok(field);
+    return field;
+  });
   assert.equal(nextEmail.value, "", "'Not you?' clears the address");
-  await ui.screen.findByRole("heading", { name: "Sign in" });
+  assert.ok(ui.within(ui.within(entry).getByRole("heading")).getByText("Sign in"));
   ui.fireEvent.change(nextEmail, { target: { value: "new@example.com" } });
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Continue" }));
   await ui.waitFor(() => assert.equal(lookups, 3));

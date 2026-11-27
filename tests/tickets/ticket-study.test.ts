@@ -100,7 +100,11 @@ test("real ticket number retains its native directional transition", () => {
           : []
       )
   ];
-  const number = descendants(exports.TicketStudy()).find(
+  const elements = descendants(exports.TicketStudy());
+  const logoLink = elements.find((element) => element.type === "a" && element.props["aria-label"] === "Sophomores");
+  assert.equal(logoLink?.props.href, "/studies/warp");
+  assert.equal((logoLink?.props.children as Element | undefined)?.type, (modules["@/components/core/BrandMark"] as { BrandMark: unknown }).BrandMark);
+  const number = elements.find(
     (element) => element.type === motion.span && element.props.children === "01"
   );
   assert.ok(number);

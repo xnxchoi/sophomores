@@ -1897,6 +1897,7 @@
         "nominateTrack": "Nominate a track",
         "searchCatalog": "Search catalog",
         "nominationsClosed": "Nominations closed",
+        "unavailable": "Nominations aren’t available.",
         "entry": "Entry 0{position}",
         "replaceTrack": "Replace track",
         "removeTrack": "Remove track",

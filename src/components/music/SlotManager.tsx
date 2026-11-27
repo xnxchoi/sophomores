@@ -76,9 +76,28 @@ export function SlotManager({
     );
   }
 
-  // 2. Authenticated but Ineligible state
+  // 2. Authenticated but Ineligible state. Only the two real gates offer a next step: no admission for this event
+  // (ineligible_product: get a ticket) and an unactivated account (activate). A closed setlist (deadline_passed,
+  // setlist_locked) shows the closed copy with no action, and any other reason a neutral line with no action, so a
+  // closed or unknown state never sends anyone to buy or activate (Review-B, 28 Nov).
   if (userSlotState && !userSlotState.eligible) {
-    const isUnactivated = userSlotState.reason === "account_unactivated";
+    const reason = userSlotState.reason;
+    if (reason !== "ineligible_product" && reason !== "account_unactivated") {
+      const closed = reason === "deadline_passed" || reason === "setlist_locked";
+      return (
+        <section className="relative w-full overflow-hidden rounded-2xl border border-white/10 bg-carbon/50 p-6 backdrop-blur-md md:p-8">
+          <div className="flex items-start gap-4">
+            <div className="flex size-12 shrink-0 items-center justify-center text-singer-stone">
+              <LockKeyIcon className="size-6" />
+            </div>
+            <div className="flex flex-col gap-1">
+              <h2 className="text-base text-white">{closed ? t("slots.nominationsClosed") : t("slots.unavailable")}</h2>
+            </div>
+          </div>
+        </section>
+      );
+    }
+    const isUnactivated = reason === "account_unactivated";
     return (
       <section className="relative w-full overflow-hidden rounded-2xl border border-white/10 bg-carbon/50 p-6 backdrop-blur-md md:p-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

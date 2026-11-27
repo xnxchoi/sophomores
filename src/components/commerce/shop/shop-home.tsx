@@ -23,6 +23,7 @@ import { CartBehind, CartColumn, cartOwnsInput, ownInput } from "./cart-column";
 import { NoWebglCartStack } from "./no-webgl-cart-stack";
 import { listGuestCart, subscribeGuestCart } from "@/lib/commerce/browser-cart";
 import { useShopViewer } from "./use-shop-viewer";
+import { useStackRemoval } from "./use-stack-removal";
 import { Button } from "@/components/core/Button";
 
 /**
@@ -637,22 +638,15 @@ function Home({ vendored, items, labels, initialOpen, cartPanel, cartOpen, onCar
   // into the stack before it adds; outside the cart, the stage's book leaving the cart (its count falling to 0 while it
   // stays the stage's book) sends it off. Both are counters the scene watches, with the book they apply to.
   const [flight, setFlight] = useState({ trigger: 0, index: 0 });
-  const [removal, setRemoval] = useState({ trigger: 0, index: 0 });
   const flyFor = useCallback((productID: string) => {
     const index = items.findIndex((entry) => entry.id === productID);
     if (index >= 0) setFlight((current) => ({ trigger: current.trigger + 1, index }));
   }, [items]);
-  // The baseline is the stage book's count from the same source (the cart column's lines, or the browser's cart) seen
-  // outside the cart. Review-B HOLD on 16920259: opening the cart drops it, so a book removed in the cart doesn't fire on
-  // close, and a switch of source (the column's lines arriving or going) starts a new one instead of reading as a removal.
-  const quantitySource = panelQuantities ? "lines" : "browser";
-  const stageCount = useRef<{ id: string | undefined; count: number; source: string } | null>(null);
-  useEffect(() => {
-    if (cart.cartMode) { stageCount.current = null; return; }
-    const id = items[stageIndex]?.id, count = id ? (cartQuantities[id] ?? 0) : 0, seen = stageCount.current;
-    stageCount.current = { id, count, source: quantitySource };
-    if (id && seen && seen.source === quantitySource && seen.id === id && seen.count > 0 && count === 0) setRemoval((current) => ({ trigger: current.trigger + 1, index: stageIndex }));
-  }, [cartQuantities, quantitySource, stageIndex, cart.cartMode, items]);
+  // The stage book's removal (use-stack-removal.tsx). Its source is the column's lines, or the browser's cart for the
+  // shop's viewer; while that viewer is unknown there is no source, so a recheck never reads as a removal.
+  const quantitySource = panelQuantities ? "lines" : viewer === undefined ? null : "browser:" + (viewer ?? "signed-out");
+  const removal = useStackRemoval({ cartMode: cart.cartMode, stageIndex, stageID: items[stageIndex]?.id,
+    count: items[stageIndex]?.id ? (cartQuantities[items[stageIndex].id] ?? 0) : 0, source: quantitySource });
   const sceneProps = useMemo(() => ({ skipIntro, ...lookProps,
     books: (window as unknown as { __SPBOOKS: unknown }).__SPBOOKS, scrollProgress: committed, scrollProgressLiveRef: progressRef,
     activeBookIndex: stageIndex, stackMode: "browse", onBookOpen: (index: number) => openRef.current(index),

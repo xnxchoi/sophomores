@@ -237,7 +237,9 @@ test("a narrow desktop keeps a 40px left Close while touch uses a 48px left Clos
   await ui.waitFor(() => assert.equal(Math.round(parseFloat(sheet.style.bottom)), 12));
   close.focus();
   ui.fireEvent.click(close);
-  assert.equal(ui.screen.queryByRole("heading", { name: "Welcome" }), null);
+  await ui.waitFor(() => {
+    assert.ok(ui.screen.queryAllByRole("heading", { name: "Welcome" }).length === 0, "Close must dismiss the chooser");
+  }, { timeout: 1000, onTimeout: (error) => error });
 });
 
 for (const [width, pointer, target] of [
@@ -364,7 +366,7 @@ test("resizing between tray and modal preserves the chosen flow and entered emai
       finePointer = pointer;
       for (const listener of pointerListeners) listener();
     });
-    assert.equal(ui.screen.getByLabelText("Email address"), input);
+    assert.ok(ui.screen.getByLabelText("Email address") === input, "Resizing must preserve the same email input");
     assert.equal(input.value, "member@example.com");
     assert.ok(ui.screen.getByRole("heading", { name: messages.AuthPhase.login }));
     const sheet = input.closest<HTMLElement>("[data-verification-sheet]");
@@ -423,8 +425,8 @@ test("focused touch auth keeps its dismiss handle above a changing visual viewpo
     const chrome = sheet.querySelector("[data-authentication-chrome]");
     assert.equal(chrome?.classList.contains("h-0"), false, "the 40px native handle hit area needs real chrome space");
     ui.fireEvent.click(ui.screen.getByRole("button", { name: "Cancel" }));
-    assert.equal(ui.screen.queryByRole("heading", { name: "Welcome" }), null, "mobile X dismisses to the caller rather than a chooser");
-    assert.equal(ui.screen.queryByRole("heading", { name: messages.AuthPhase.login }), null);
+    assert.ok(ui.screen.queryByRole("heading", { name: "Welcome" }) === null, "mobile X dismisses to the caller rather than a chooser");
+    assert.ok(ui.screen.queryByRole("heading", { name: messages.AuthPhase.login }) === null, "mobile X dismisses the login heading");
   } finally {
     ui.cleanup();
     if (originalViewport) Object.defineProperty(window, "visualViewport", originalViewport);
@@ -460,7 +462,7 @@ for (const width of [393, 496, 639]) {
     const phase = sheet.querySelector<HTMLElement>("[data-account-phase-body]")!;
     assert.ok(!phase.style.transform || phase.style.transform === "none", "mobile phase transition has no vertical translation");
     ui.fireEvent.click(ui.screen.getByRole("button", { name: "Cancel" }));
-    assert.equal(ui.screen.queryByRole("heading", { name: "Welcome" }), null);
+    assert.ok(ui.screen.queryByRole("heading", { name: "Welcome" }) === null, "Cancel must dismiss the chooser");
   });
 }
 
@@ -537,7 +539,7 @@ get() { return this.hasAttribute("data-verification-content") ? 300 : originalHe
     for (const token of ["top-2", "left-2", "size-12"]) assert.ok(close.parentElement?.parentElement?.classList.contains(token), "clipped touch chooser keeps the same dismissal rail geometry");
     assert.equal(close.classList.contains("opacity-0"), false, "short viewports retain a visible 48px tap target rather than only a 12px backdrop strip");
     ui.fireEvent.click(close);
-    assert.equal(ui.screen.queryByRole("heading", { name: "Welcome" }), null);
+    assert.ok(ui.screen.queryByRole("heading", { name: "Welcome" }) === null, "Close must dismiss the clipped chooser");
   } finally {
     ui.cleanup();
 Object.defineProperty(window.HTMLElement.prototype, "offsetHeight", originalHeight);
@@ -573,7 +575,8 @@ test("active focused chrome collapses while Cancel preserves the chooser and its
   assert.ok(ui.screen.getByRole("heading", { name: messages.AuthPhase.login }));
   ui.fireEvent.click(cancel);
   const restored = await ui.screen.findByRole("button", { name: "Sign in" });
-  await ui.waitFor(() => assert.equal(document.activeElement, restored));
+  await ui.waitFor(() => assert.ok(document.activeElement === restored, "Cancel must restore focus to Sign in"),
+    { onTimeout: (error) => error });
 });
 
 
@@ -626,7 +629,7 @@ test("pending registration gives one concise phone-verification instruction", as
   };
   ui.render(<Customer client={pendingClient} initialFlow="login" />, { wrapper: MemberAuthProviders });
   assert.ok(await ui.screen.findByText("Verify your phone to finish."));
-  assert.equal(ui.screen.queryByText(/You’re signed in, but registration isn’t finished/), null);
+  assert.ok(ui.screen.queryByText(/You’re signed in, but registration isn’t finished/) === null, "The old registration message must be absent");
   assert.ok(ui.screen.getByRole("button", { name: "Continue registration" }));
 });
 afterEach(() => {
@@ -679,10 +682,7 @@ test("chooser leads with primary Sign up, separates Or, and makes Sign in second
     separator.compareDocumentPosition(choices[1]) &
       Node.DOCUMENT_POSITION_FOLLOWING
   );
-  assert.equal(
-    ui.within(panel).queryByText("Sign in or create an account."),
-    null
-  );
+  assert.ok(ui.within(panel).queryByText("Sign in or create an account.") === null, "The old chooser introduction must be absent");
 });
 
 test("language is a compact native footer select, not a pair of competing actions", async () => {
@@ -713,7 +713,7 @@ test("chooser uses plain matching action labels and a text-only alternative divi
   const heading = await ui.screen.findByRole("heading", { name: "Welcome" });
   const sheet = heading.closest("[data-verification-sheet]");
   assert.ok(sheet);
-  assert.equal(sheet.querySelector("[data-brand-mark]"), null);
+  assert.ok(sheet.querySelector("[data-brand-mark]") === null, "The chooser must not render a brand mark");
   assert.doesNotMatch(sheet.textContent ?? "", /sophomores/i);
   for (const [choice, label] of [
     ["signup", "Sign up"],
@@ -775,10 +775,11 @@ for (const [choice, heading] of [
       : await ui.screen.findByRole("heading", { name: heading });
     const sheet = focusedHeading.closest("[data-verification-sheet]");
     assert.ok(sheet);
-    assert.equal(sheet.querySelector("[data-brand-mark]"), null);
+    assert.ok(sheet.querySelector("[data-brand-mark]") === null, "The focused flow must not render a brand mark");
     assert.doesNotMatch(sheet.textContent ?? "", /sophomores/i);
     ui.fireEvent.click(ui.screen.getByRole("button", { name: "Cancel" }));
     const restored = await ui.screen.findByRole("button", { name: choice });
-    await ui.waitFor(() => assert.equal(document.activeElement, restored));
+    await ui.waitFor(() => assert.ok(document.activeElement === restored, "Cancel must restore focus to the selected action"),
+      { onTimeout: (error) => error });
   });
 }

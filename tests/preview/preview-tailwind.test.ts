@@ -26,7 +26,8 @@ test("auth Tailwind emits real layout and focus utilities without site content",
   ]) assert.ok(css.includes(selector), `Missing compiled auth utility ${selector}`);
   assert.match(css, /--color-preview-surface:\s*var\(--black\)/);
   assert.match(css, /Helvetica Neue/);
-  assert.doesNotMatch(css, /teaser|wordmark|Nib|Manrope|@font-face|url\(/);
+  // Faces are the installed Helvetica Neue by local() name only (Sophomores Sans); nothing is fetched.
+  assert.doesNotMatch(css, /teaser|wordmark|Nib|Manrope|url\(/);
 });
 
 test("site Tailwind does not emit auth-only utilities", async () => {

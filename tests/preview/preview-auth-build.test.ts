@@ -86,9 +86,9 @@ test("auth documents import their own Tailwind root without client UI dependenci
   const login = source("src/app/(auth)/login/page.tsx");
   assert.match(layout, /import\s+["']\.\/index\.css["']/);
   assert.doesNotMatch(layout, /<style>|const styles|next\/font|["']use client["']/);
-  assert.match(layout, /<html lang=\{locale\}>/);
+  assert.match(layout, /<html lang=\{locale\}[^>]*>/);
   assert.match(layout, /await getLocale\(\)/, "document language follows the real request locale");
-  assert.match(layout, /<main className="[^"]*max-w-100[^"]*">/);
+  assert.match(layout, /<main className="[^"]*">\s*<div className="[^"]*max-w-100[^"]*">/);
   assert.match(layout, /t\("staffOnly"\)/, "staff footer uses canonical server-translated copy");
   assert.doesNotMatch(login, /components\/ui\/|@base-ui|["']use client["']/);
   assert.match(login, /type="checkbox"/);
@@ -97,7 +97,8 @@ test("auth documents import their own Tailwind root without client UI dependenci
 test("auth controls use achromatic theme colors without green accents", () => {
   const css = source("src/app/(auth)/index.css");
   for (const role of [
-    "surface", "foreground", "input", "border", "secondary", "muted", "accent", "on-accent"
+    // No input fill since the fields became the site's underlined fields (owner, 27 Nov).
+    "surface", "foreground", "border", "secondary", "muted", "accent", "on-accent"
   ]) {
     // Palette r3 (owner, 26 Nov): each role names one of the palette's neutral greys, never a tinted or coloured entry.
     const color = css.match(new RegExp(`--color-preview-${role}:\\s*var\\(--([a-z0-9-]+)\\);`));
@@ -118,7 +119,8 @@ test("Tailwind entries explicitly isolate auth routes from site source discovery
     assert.doesNotMatch(css, /@source\s+(?:not\s+)?["']@\//);
   }
   assert.match(auth, /@source ["']\.\/\*\*\/\*\.tsx["']/);
-  assert.doesNotMatch(auth, /teaser|shadcn|tw-animate|@font-face|url\(/);
+  // Faces are local() Helvetica Neue only (Sophomores Sans); nothing is fetched.
+  assert.doesNotMatch(auth, /teaser|shadcn|tw-animate|url\(/);
   assert.match(site, /@source not ["']\.\.\/app\/\(auth\)["']/);
   for (const path of ["../app/(site)", "../components", "../lib"]) {
     assert.ok(site.includes(`@source "${path}";`));

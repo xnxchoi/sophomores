@@ -4,9 +4,10 @@ import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import { InvitationForm } from "@/components/invitation/invitation-form";
+import { EnglishMessages } from "../fixtures/english-messages";
 
 test("first render is an honest, fully visible no-network preview", () => {
-  const html = renderToStaticMarkup(<InvitationForm onExit={() => {}} still />);
+  const html = renderToStaticMarkup(<EnglishMessages><InvitationForm onExit={() => {}} still /></EnglishMessages>);
   assert.match(html, /The first invitation\./);
   assert.match(html, /Local study — nothing is sent or saved\./);
   assert.match(html, /Leave an email for news of the first night\./);
@@ -18,10 +19,10 @@ test("first render is an honest, fully visible no-network preview", () => {
 
 test("SSR markup is stable with no browser globals needed", () => {
   const first = renderToStaticMarkup(
-    <InvitationForm onExit={() => {}} still={false} />
+    <EnglishMessages><InvitationForm onExit={() => {}} still={false} /></EnglishMessages>
   );
   const second = renderToStaticMarkup(
-    <InvitationForm onExit={() => {}} still={false} />
+    <EnglishMessages><InvitationForm onExit={() => {}} still={false} /></EnglishMessages>
   );
   assert.equal(first, second);
   assert.match(first, /opacity:1/);

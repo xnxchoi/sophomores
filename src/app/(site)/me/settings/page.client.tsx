@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import Link from "next/link";
+import { Link } from "@/components/core/Link/Link";
 import { Link as TransitionLink } from "@/components/core/Link/Link";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { AddressBookIcon, ArrowLeftIcon, BellIcon, CaretRightIcon, IdentificationCardIcon, ShieldCheckIcon, SlidersHorizontalIcon, UserCircleIcon } from "@phosphor-icons/react";

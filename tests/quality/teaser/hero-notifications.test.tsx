@@ -7,62 +7,17 @@ import { test } from "node:test";
 import { Hero } from "@/components/teaser/hero";
 import { entryTokens } from "@/lib/teaser/entry-tokens";
 
-function render(position: number, pose = { dock: 1, layout: 1 }) {
+function render(position: number) {
   return renderToStaticMarkup(
     <Hero
       sectionRef={createRef<HTMLElement>()}
       sectionStyle={{ height: "200svh" }}
       position={motionValue(position)}
-      entry={{
-        dock: motionValue(pose.dock),
-        backdrop: motionValue(1),
-        layout: motionValue(pose.layout),
-        scale: motionValue(1),
-        glyph: motionValue(1)
-      }}
       onActive={() => {}}
     />
   );
 }
 
-function glyphs(html: string) {
-  return [...html.matchAll(/(<span aria-hidden="true"[^>]*>)(<span class="inline-block[^>]*>)/g)]
-    .map(([, outer, inner]) => ({ outer, inner }));
-}
-
-test("wordmark glyphs shrink continuously with docking without resizing or retiming their slots", () => {
-  assert.deepEqual(Reflect.get(entryTokens, "wordmark"), { initialScale: 0.8, dockedScale: 0.64 });
-  const initial = render(0, { dock: 0, layout: 0.6 });
-  const slots = glyphs(initial).map(({ outer }) => outer);
-  for (const [dock, expectedScale] of [[0, 0.8], [0.5, 0.72], [1, 0.64]]) {
-    const html = render(0, { dock, layout: 0.6 });
-    const letters = glyphs(html);
-    assert.equal(letters.length, 10);
-    assert.deepEqual(letters.map(({ outer }) => outer), slots, "Docking must not alter outer per-letter x positioning");
-    for (const { inner } of letters) {
-      const actual = Number(inner.match(/--wordmark-scale:([^;"]+)/)?.[1]);
-      assert.ok(Math.abs(actual - expectedScale) < 1e-12, `dock ${dock}: expected scale ${expectedScale}, got ${actual}`);
-      assert.doesNotMatch(inner, /(?:font-size|width|height):/);
-    }
-    assert.equal(element(html, "wordmark").match(/class="([^"]*)"/)?.[1], element(initial, "wordmark").match(/class="([^"]*)"/)?.[1]);
-    assert.doesNotMatch(style(html, "wordmark").transform, /scale\(/, "Do not shrink the heading layout or position transform");
-  }
-  assert.ok(Math.abs(0.64 / 0.8 - 0.8) < 1e-12, "Docked glyphs are another twenty percent smaller");
-  const undockedSlots = glyphs(render(0, { dock: 0.5, layout: 0 }));
-  const dockedSlots = glyphs(render(0, { dock: 0.5, layout: 1 }));
-  assert.notDeepEqual(undockedSlots.map(({ outer }) => outer), dockedSlots.map(({ outer }) => outer),
-    "Layout progress must still move the outer letter slots independently");
-  assert.deepEqual(undockedSlots.map(({ inner }) => inner), dockedSlots.map(({ inner }) => inner),
-    "Layout progress must not drive the glyph shrink");
-});
-
-
-test("shared docked size is applied on wordmark tokens", () => {
-  const html = render(0, { dock: 0, layout: 0 });
-  assert.equal(Number(style(html, "wordmark")["--wordmark-docked-scale"]), 0.64);
-  assert.equal(Number(style(html, "wordmark-glyph")["--wordmark-scale"]), 0.8,
-    "Normal entry must still start at its initial size");
-});
 function element(html: string, className: string) {
   if (className === "wordmark") {
     const tag = html.match(/<h1[^>]*>/)?.[0];
@@ -143,7 +98,7 @@ test("top return hides both notifications until scrolling resumes", () => {
   assert.equal(style(render(0), "notification notification-second").opacity, "0");
 });
 
-test("neither notification has an independent timed trigger or retimes the wordmark layout", () => {
+test("neither notification has an independent timed trigger", () => {
   assert.equal("notification" in entryTokens, false);
   assert.equal("notification" in entryTokens.initial, false);
   assert.deepEqual(entryTokens.layout, { delay: 3, duration: 0.5 });

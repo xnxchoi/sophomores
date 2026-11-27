@@ -1,4 +1,10 @@
 /* Press scale is driven by Motion (whileTap) alone, so transform never gets a CSS transition here. */
+/* Layered (Sophomores, 27 Nov): unlayered, these rules beat every Tailwind utility a caller passes, so core Button's
+   callers couldn't size or colour it. In @layer components, Tailwind's utilities layer wins, as Tailwind intends.
+   The order statement repeats Tailwind's own (as built: properties, theme, base, components, utilities), so the layers
+   keep that order even if this file loads before the global stylesheet (Cordy, 27 Nov). */
+@layer properties, theme, base, components, utilities;
+@layer components {
 .button { position: relative; display: inline-flex; min-height: var(--control-height-md, 2.75rem); align-items: center; justify-content: center; gap: var(--space-2); border: 1px solid transparent; border-radius: var(--radius-control); padding: 0 var(--space-4); font: inherit; font-size: var(--text-sm); font-weight: 500; line-height: var(--leading-body, 1.5); white-space: nowrap; cursor: pointer; touch-action: manipulation; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; transition: color var(--duration-fast) var(--ease-standard), background var(--duration-fast) var(--ease-standard), border-color var(--duration-fast) var(--ease-standard), opacity var(--duration-fast) var(--ease-standard), box-shadow var(--duration-fast) var(--ease-standard); }
 .button:disabled { cursor: not-allowed; opacity: .52; }
 .button[aria-busy="true"] { cursor: progress; }
@@ -38,3 +44,4 @@
 .spinner { border: 1.5px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .7s linear infinite; } /* motion: continuous spinner loop */
 .loadingLabel { opacity: 0; }
 @keyframes spin { to { transform: rotate(360deg); } }
+}

@@ -1,4 +1,5 @@
 "use client";
+import { Button } from "@/components/core/Button";
 import { useTranslations } from "next-intl";
 
 
@@ -113,7 +114,7 @@ export function NotificationPanel({
                 ) : (
                   <div className="block pr-8">{copy}</div>
                 )}
-                <button
+                <Button variant="bare"
                   type="button"
                   className="group/focus absolute top-0 right-0 flex size-11 items-center justify-center text-xs"
                   aria-label={t('closeNotification')}
@@ -125,7 +126,7 @@ export function NotificationPanel({
                   }}
                 >
                   <FocusShape className="group-focus-visible/focus:outline-current">×</FocusShape>
-                </button>
+                </Button>
               </m.article>
               );
             })
@@ -168,8 +169,8 @@ export function AccountPanel({ onClose }: { onClose: () => void }) {
         <PanelRow key={link.title} href={link.href} title={rowT(link.title)} onClose={onClose} />
       ))}
       <div className="menu-separator h-px my-1.5 mx-4 bg-gradient-to-r from-[oklch(from_var(--foreground)_l_c_h_/_0.1)] via-[oklch(from_var(--foreground)_l_c_h_/_0.25)] to-[oklch(from_var(--foreground)_l_c_h_/_0.1)]" />
-      <button type="button" className="flex w-full py-2 pr-8 pl-4 text-sm leading-4 text-foreground/90 outline-none focus-visible:underline focus-visible:underline-offset-4" role="menuitem" onClick={onClose}>
-        {t('signOut')}</button>
+      <Button variant="bare" type="button" className="flex w-full py-2 pr-8 pl-4 text-sm leading-4 text-foreground/90 outline-none focus-visible:underline focus-visible:underline-offset-4" role="menuitem" onClick={onClose}>
+        {t('signOut')}</Button>
     </m.div>
   );
 }
@@ -240,7 +241,7 @@ export function SearchPanel({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
-      <button type="button" className="search-dialog-scrim absolute inset-0 bg-[oklch(from_var(--background)_l_c_h_/_0.4)] focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-current" aria-label={t('closeSearch')} onClick={onClose} />
+      <Button variant="bare" type="button" className="search-dialog-scrim absolute inset-0 bg-[oklch(from_var(--background)_l_c_h_/_0.4)] focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-current" aria-label={t('closeSearch')} onClick={onClose} />
       <m.div className="search-dialog-panel relative z-1 w-[min(640px,calc(100%-32px))] mx-auto mt-[12vh] p-2 rounded-xl bg-[var(--background)]" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ duration: 0.2, ease: "easeOut" }}>
         <input ref={field} className="w-full h-11 border-0 bg-transparent text-inherit text-base tracking-normal outline-none" value={query} placeholder={t('searchForAnything')} autoComplete="off" autoCorrect="off" spellCheck={false} onChange={(event) => setQuery(event.target.value)} />
         <div className="mt-2 max-h-[50vh] overflow-auto">
@@ -255,7 +256,7 @@ export function SearchPanel({
               </div>
               {!locked && <div className="mt-2">
                 <p className="px-3 py-1 text-xs tracking-[0.08em] uppercase opacity-60">{t('quickActions')}</p>
-                <button
+                <Button variant="bare"
                   type="button"
                   className="flex min-h-11 w-full items-center rounded-md py-2 pr-8 pl-4 text-sm leading-4 text-foreground/90 outline-none transition-colors duration-150 hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground focus-visible:underline focus-visible:underline-offset-4"
                   onClick={() => {
@@ -263,7 +264,7 @@ export function SearchPanel({
                     onClose();
                   }}
                 >
-                  {theme === 'light' ? t('switchToDarkMode') : t('switchToLightMode')}</button>
+                  {theme === 'light' ? t('switchToDarkMode') : t('switchToLightMode')}</Button>
               </div>}
             </>
           ) : resultRows.length > 0 ? (

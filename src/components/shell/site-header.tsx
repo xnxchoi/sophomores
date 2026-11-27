@@ -583,9 +583,10 @@ export function SiteHeader({ member: memberProp }: { member?: Promise<HeaderMemb
             hugs the mark (FocusShape). */}
         <m.div id="c-side" className="absolute top-1/2 left-1/2 z-20" style={{ opacity: internalOpacity, transform: sectionCY }}>
           <Link href="/" aria-label="Sophomores" onClick={closeMenu} className="site-header-logo group/focus relative flex items-center rounded-full before:absolute before:inset-x-0 before:top-1/2 before:h-11 before:-translate-y-1/2 before:content-['']">
-            {/* On phones a fixed 22px (owner, 2026-11-19). */}
+            {/* On phones a fixed 22px (owner, 2026-11-19). The logo stands at the old wordmark's cap height (0.72em), so it
+                keeps that size: at 1em it ran 203px wide at 390px and met the menu button. */}
             <FocusShape className="flex group-focus-visible/focus:outline-current">
-              <BrandMark className="site-header-mark text-[length:var(--header-logo,28px)] leading-none max-md:text-[22px]">Sophomores</BrandMark>
+              <BrandMark className="site-header-mark h-[0.72em] text-[length:var(--header-logo,28px)] max-md:text-[22px]" />
             </FocusShape>
           </Link>
         </m.div>

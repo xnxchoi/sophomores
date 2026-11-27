@@ -38,7 +38,6 @@ import { TeaserContinuation } from "@/components/teaser/continuation";
 import { ChapterNav } from "@/components/teaser/chapter-nav";
 import { Hero } from "@/components/teaser/hero";
 import { useTeaserContent } from "@/components/teaser/content-provider";
-import { entryTokens } from "@/lib/teaser/entry-tokens";
 import { navigateHome } from "@/lib/teaser/home-navigation";
 import { scrollSmoothing } from "@/lib/motion-tokens";
 import {
@@ -330,13 +329,6 @@ export const Warp = () => {
     hero.timeline.travelVh,
     chapterExitHoldVh.hero
   );
-  const entry = {
-    dock: useMotionValue<number>(entryTokens.complete.dock),
-    backdrop: useMotionValue<number>(entryTokens.complete.backdrop),
-    layout: useMotionValue<number>(entryTokens.complete.layout),
-    scale: useMotionValue<number>(entryTokens.complete.scale),
-    glyph: useMotionValue<number>(entryTokens.complete.glyph)
-  };
   // Renderer-ready load clock; it must progress even when the page never scrolls.
   const ready = useMotionValue(0);
   const opening = useMotionValue(0);
@@ -1080,9 +1072,7 @@ export const Warp = () => {
           sectionRef={hero.ref}
           sectionStyle={hero.sectionStyle}
           position={hero.position}
-          entry={entry}
           onActive={setCurrent}
-          hideWordmark
         />
         <Story
           suspended={current !== "origin" || !heroComplete || playing}

@@ -4,7 +4,6 @@ import { useDomCursor } from "@/components/core/cursorWrapper";
 import type { LinkProps as NextLinkProps } from "next/link";
 import { cn } from "@/lib/utils";
 import { isInternalLink } from "@/utilities/isInternalLink";
-import { useLenis } from "lenis/react";
 import * as m from "motion/react-m";
 import { Link as NextLink } from "next-transition-router";
 import { usePathname } from "next/navigation";
@@ -16,8 +15,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
-  useRef,
-  useState
+  useRef
 } from "react";
 import { useTransitionSetter } from "@/components/UX/Transition/useTransitionSetter";
 
@@ -57,7 +55,20 @@ export const isLostInSeoulPathNavigation = ({
   );
 };
 
-const RP_Link = (props: RPLinkPropsWithRef) => {
+/** Same-page hash targets: "#id" or this path plus "#id". */
+const isAnchorHref = (href: string, currentPath: string | null) =>
+  href.startsWith("#") || (currentPath !== null && href.startsWith(`${currentPath}#`));
+
+/** Web links off this site open in a new tab; mailto:, tel: and other schemes hand off in place. */
+const isExternalWebHref = (href: string) => !isInternalLink(href) && /^(https?:)?\/\//i.test(href);
+
+/**
+ * The site's link: the custom cursor and the page transition for in-site navigation. A click the browser should
+ * handle itself (a modifier key or middle button, target="_blank", download, a link off the site, mailto: or tel:) gets
+ * no transition. A same-page hash link is a plain anchor: the browser moves to the target, records the hash in history
+ * and moves focus, and inside (site) Lenis (SiteScroll, anchors) smooths the scroll (Review-B, 27 Nov).
+ */
+export function Link(props: RPLinkPropsWithRef) {
   const {
     href,
     onClick,
@@ -68,9 +79,10 @@ const RP_Link = (props: RPLinkPropsWithRef) => {
     ...rest
   } = props;
 
-  const lenis = useLenis();
   const currentPath = usePathname();
   const { isActivePath } = useLinkPaths({ href });
+  const isAnchor = Boolean(href) && isAnchorHref(href, currentPath);
+  const external = Boolean(href) && isExternalWebHref(href);
   const isActivePathRef = useRef(isActivePath);
   const disabledRef = useRef(disabled);
   useEffect(() => {
@@ -80,14 +92,6 @@ const RP_Link = (props: RPLinkPropsWithRef) => {
     disabledRef.current = disabled;
   }, [disabled]);
 
-  const propsToPass = useMemo(() => {
-    const toPass: Partial<RPLinkProps> = {};
-    if (!isInternalLink(href)) {
-      toPass.target = "_blank";
-      toPass.rel = "noreferrer";
-    }
-    return toPass;
-  }, [href]);
   const { onMouseEnter, onMouseLeave } = useDomCursor({
     onEnter: doME,
     onLeave: doML,
@@ -95,56 +99,56 @@ const RP_Link = (props: RPLinkPropsWithRef) => {
       disabledRef.current ? null : isActivePathRef.current ? "#here" : "FOCUS"
   });
 
-  const [isAnchor, setIsAnchor] = useState(false);
-  useEffect(() => {
-    setIsAnchor(href.startsWith("#") || href.startsWith(`${currentPath}#`));
-  }, [href, currentPath]);
   const { goToPage, setGenericPageTransition } = useTransitionSetter();
-  const isLostInternalNavigation = useMemo(
-    () => isLostInSeoulPathNavigation({ currentPath, href, isAnchor }),
-    [currentPath, href, isAnchor]
-  );
+  const isLostInternalNavigation = Boolean(href) && isLostInSeoulPathNavigation({ currentPath, href, isAnchor });
 
   const handleClick: MouseEventHandler<HTMLAnchorElement> = useCallback(
     (e) => {
       onClick?.(e);
       if (e.defaultPrevented) return;
-      if (isAnchor) {
-        e.preventDefault();
-        lenis && lenis.scrollTo(href);
-      } else if (isLostInternalNavigation) {
+      const link = e.currentTarget;
+      const browserHandles =
+        e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0 ||
+        (link.target !== "" && link.target !== "_self") || link.hasAttribute("download") || !isInternalLink(href);
+      if (browserHandles) return;
+      if (isLostInternalNavigation) {
         e.preventDefault();
         goToPage(href);
       } else {
         setGenericPageTransition(href);
       }
     },
-    [
-      onClick,
-      isAnchor,
-      lenis,
-      href,
-      isLostInternalNavigation,
-      goToPage,
-      setGenericPageTransition
-    ]
+    [onClick, href, isLostInternalNavigation, goToPage, setGenericPageTransition]
   );
   if (!href || typeof href !== "string") {
     return <div className={className}>{props.children}</div>;
   }
 
+  if (isAnchor) {
+    // next/link's own props mean nothing on a plain anchor.
+    const { prefetch: _prefetch, replace: _replace, scroll: _scroll, shallow: _shallow, passHref: _passHref, legacyBehavior: _legacy, locale: _locale, onNavigate: _onNavigate, as: _as, ...anchor } = rest;
+    return (
+      <a
+        className={className}
+        {...anchor}
+        href={href}
+        aria-disabled={disabled || anchor["aria-disabled"] || undefined}
+        tabIndex={disabled ? -1 : anchor.tabIndex}
+        onClick={disabled ? (e) => e.preventDefault() : onClick}
+        onMouseEnter={disabled ? void 0 : onMouseEnter}
+        onMouseLeave={disabled ? void 0 : onMouseLeave}
+      />
+    );
+  }
+
   return (
     <NextLink
-      className={cn(
-        {
-          link_hashLink: isAnchor
-        },
-
-        className
-      )}
-      {...propsToPass}
+      className={className}
+      {...(external ? { target: "_blank", rel: "noreferrer" } : {})}
       {...rest}
       href={href}
+      aria-disabled={disabled || rest["aria-disabled"] || undefined}
+      tabIndex={disabled ? -1 : rest.tabIndex}
       onClick={
         disabled
           ? (e) => {
@@ -156,15 +160,11 @@ const RP_Link = (props: RPLinkPropsWithRef) => {
       onMouseLeave={disabled ? void 0 : onMouseLeave}
     />
   );
-};
-export const NextMotion = m.create(RP_Link);
+}
+export const NextMotion = m.create(Link);
 
 export function MotionLink(props: ComponentProps<typeof NextMotion>) {
   return <NextMotion {...props} />;
-}
-
-export function Link(props: RPLinkPropsWithRef) {
-  return RP_Link(props);
 }
 
 export function LinkUnderlined(
@@ -191,23 +191,12 @@ export function LinkUnderlined(
   );
 }
 
+/** The link's path and whether it is the current page ("/" and "/home" count as one). Computed in render. */
 export const useLinkPaths = ({ href }: { href: string }) => {
-  const path = useMemo(() => {
-    if (!href) {
-      return "";
-    }
-    const url = new URL(href, "http://localhost");
-    return url.pathname;
-  }, [href]);
+  const path = useMemo(() => (href ? new URL(href, "http://localhost").pathname : ""), [href]);
   const currentPath = usePathname();
-  const [isActivePath, setIsActivePath] = useState(currentPath === path);
-  useEffect(() => {
-    if (path === "/" || path === "/home") {
-      setIsActivePath(["/", "/home"].some((p) => p === currentPath));
-    } else {
-      setIsActivePath(path === currentPath);
-    }
-  }, [path, currentPath]);
+  const isActivePath =
+    path === "/" || path === "/home" ? currentPath === "/" || currentPath === "/home" : path === currentPath;
   return {
     path,
     isActivePath

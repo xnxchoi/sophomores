@@ -1,4 +1,5 @@
 "use client";
+import { Button } from "@/components/core/Button";
 
 import {
   cloneElement,
@@ -8,7 +9,7 @@ import {
   type MouseEvent,
   type ReactElement
 } from "react";
-import Link from "next/link";
+import { Link } from "@/components/core/Link/Link";
 import { useTranslations } from "next-intl";
 import { AnimatePresence, motion, useIsPresent } from "motion/react";
 import { ChevronUp } from "lucide-react";
@@ -155,7 +156,7 @@ export function ChapterNav({
               >
                 {chapters.map((chapter) => (
                   <MobileChapterControl key={chapter.id}>
-                    <a
+                    <Link
                       className="aria-[current]:bg-titanium/13"
                       href={`#${chapter.id}`}
                       aria-current={
@@ -168,14 +169,14 @@ export function ChapterNav({
                       }}
                     >
                       {chapter.label}
-                    </a>
+                    </Link>
                   </MobileChapterControl>
                 ))}
               </motion.div>
             )}
           </AnimatePresence>
           <MobileChapterControl>
-            <button
+            <Button variant="bare"
               ref={menuButton}
               className="bg-white text-black"
               aria-controls={menuOpen ? "mobile-chapter-list" : undefined}
@@ -188,7 +189,7 @@ export function ChapterNav({
                   ? t("chapterMenu")
                   : chapters[currentIndex].label}
               <span aria-hidden="true">{menuOpen ? "−" : "="}</span>
-            </button>
+            </Button>
           </MobileChapterControl>
         </div>
         )}
@@ -209,7 +210,7 @@ export function ChapterNav({
                 >
                   {chapters.map((chapter, index) => (
                     <li key={chapter.id} className="flex">
-                      <a
+                      <Link
                         href={`#${chapter.id}`}
                         aria-current={current === chapter.id ? "location" : undefined}
                         onClick={(event) => {
@@ -225,13 +226,13 @@ export function ChapterNav({
                             {numeral(index)}
                           </sup>
                         </span>
-                      </a>
+                      </Link>
                     </li>
                   ))}
                 </motion.ul>
               )}
             </AnimatePresence>
-            <button
+            <Button variant="bare"
               ref={menuButton}
               type="button"
               aria-controls={menuOpen ? "mobile-chapter-list" : undefined}
@@ -257,7 +258,7 @@ export function ChapterNav({
                 </span>
                 <ChevronUp aria-hidden="true" className={cn("size-3 shrink-0 transition-transform", menuOpen && "rotate-180")} strokeWidth={1.5} />
               </FocusShape>
-            </button>
+            </Button>
           </div>
         </ControlbarCentre>
       )}

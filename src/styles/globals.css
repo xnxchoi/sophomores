@@ -40,6 +40,8 @@
   --text-small: 10px;
   --text-small--line-height: 1.333;
   --spacing-gutter: var(--gutter);
+  --spacing-page-inset: var(--page-inset);
+  --radius-page: var(--page-radius);
   --color-ring: var(--ring);
   --color-input: var(--input);
   /* A form control's resting rule: Pewter, 3.5:1 or more on every page ground in both themes. Dividers keep --border. */
@@ -284,6 +286,12 @@
   --danger: currentColor;
   --radius: 8px;
   --gutter: 20px;
+  /* The page's side inset over the frame, the same as the closed frame's 10 px sides (RP_Pro), on every page; 0 while
+     the frame is fullscreen. The footer's column (PageInset) sits inside it too, so both texts share one left edge. */
+  --page-inset: 10px;
+  /* The page's bottom corners; the pinned footer tucks this far under the page, so its colour fills the corners.
+     Owner, 27 Nov: "28px". */
+  --page-radius: 28px;
   /* The viewport frame's bottom side (RP_Pro reads it): 30 px, as it was (owner, 22 Nov: "The desktop bottom frame,
      what it was before"). On touch phones the bottom bar is that side, at 36 px plus the safe area (below). */
   --frame-bottom: 30px;
@@ -348,6 +356,10 @@
   :root {
     --gutter: 16px;
   }
+}
+/* The frame goes fullscreen (RP_Pro, PageCover sets the attribute): its sides go, so the page's inset does too. */
+:root[data-frame-fullscreen] {
+  --page-inset: 0px;
 }
 
 /* Arc small controls are at least 44px tall on touch (F12 targets). */

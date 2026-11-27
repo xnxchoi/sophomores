@@ -1,3 +1,4 @@
+import { Button } from "@/components/core/Button";
 import { useTranslations } from "next-intl";
 import { Link } from "@/components/core/Link/Link";
 import { cn } from "@/lib/utils";
@@ -26,9 +27,9 @@ export function HelpPillLinks({ contactEmail = null, onClose, onOpenGuide, close
         <li><Link href="/help" onClick={onClose} className="group/focus flex min-h-11 items-center transition-opacity hover:opacity-60"><FocusShape>{t("help")}</FocusShape></Link></li>
         <li><Link href="/help/shipping" onClick={onClose} className="group/focus flex min-h-11 items-center transition-opacity hover:opacity-60"><FocusShape>{t("shipping")}</FocusShape></Link></li>
         <li><Link href="/me/orders" onClick={onClose} className="group/focus flex min-h-11 items-center transition-opacity hover:opacity-60"><FocusShape>{t("orders")}</FocusShape></Link></li>
-        {onOpenGuide ? <li><button type="button" onClick={() => { onOpenGuide(); onClose(); }} className="group/focus flex min-h-11 w-full items-center transition-opacity hover:opacity-60"><FocusShape>{tour("siteGuide")}</FocusShape></button></li> : null}
+        {onOpenGuide ? <li><Button variant="bare" type="button" onClick={() => { onOpenGuide(); onClose(); }} className="group/focus flex min-h-11 w-full items-center transition-opacity hover:opacity-60"><FocusShape>{tour("siteGuide")}</FocusShape></Button></li> : null}
         {contactEmail ? <li><a href={"mailto:" + contactEmail} onClick={onClose} className="group/focus flex min-h-11 items-center transition-opacity hover:opacity-60"><FocusShape>{t("contact")}</FocusShape></a></li> : null}
-        <li><button type="button" onClick={onClose} className="group/focus flex min-h-11 w-full items-center transition-opacity hover:opacity-60"><FocusShape>{closeLabel ?? t("close")}</FocusShape></button></li>
+        <li><Button variant="bare" type="button" onClick={onClose} className="group/focus flex min-h-11 w-full items-center transition-opacity hover:opacity-60"><FocusShape>{closeLabel ?? t("close")}</FocusShape></Button></li>
       </ul>
     </nav>
   );

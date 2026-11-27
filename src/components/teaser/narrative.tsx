@@ -1,4 +1,5 @@
 "use client";
+import { Link } from "@/components/core/Link/Link";
 import { type ReactNode, useRef } from "react";
 import { motion, useScroll, useMotionValueEvent } from "motion/react";
 import { chapters } from "@/lib/teaser/content";
@@ -106,13 +107,13 @@ export function Invitation({
       </div>
       <footer className="flex flex-wrap justify-between gap-5 font-sans text-teaser-fine text-singer-stone uppercase md:flex-nowrap md:text-teaser-caption">
         <span>{content.footerCopyright}</span>
-        <a
+        <Link
           className="order-3 basis-full md:order-none md:basis-auto"
           href={`#${chapters[0].id}`}
           onClick={navigateHome}
         >
           Back to the beginning ↑
-        </a>
+        </Link>
         <span>{content.footerDomain}</span>
       </footer>
     </motion.section>

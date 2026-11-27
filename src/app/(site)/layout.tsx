@@ -9,7 +9,7 @@ import { ClientLayout } from "./client-layout";
 import { AccountSheetProvider } from "@/components/auth/account-sheet";
 import { VerificationMessages } from "@/components/Authentication/phone-verification/verification-messages";
 import { verificationCatalogues } from "@/lib/phone-verification/messages.server";
-import { Footer } from "../../components/shell/Footer/footer";
+import { Footer } from "@/components/shell/Footer/footer";
 import { FooterGate, PageCover } from "@/components/shell/Footer/footer-visibility";
 import { loadBusinessInformation } from "@/payload/globals/business-info";
 import { Providers } from "@/providers";

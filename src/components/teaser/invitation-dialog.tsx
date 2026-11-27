@@ -1,4 +1,5 @@
 "use client";
+import { Button } from "@/components/core/Button";
 import { useTranslations } from "next-intl";
 
 import type { RefObject } from "react";
@@ -30,16 +31,19 @@ const content = useTeaserContent();
       <div className="flex flex-col gap-7 p-7">
         <div className="flex items-center justify-between gap-4 font-sans text-teaser-caption leading-[1.1] text-titanium uppercase">
           <span>
-            From: <BrandMark>{content.brandWordmark}</BrandMark>
+            From:{" "}
+            {/* The logo at the caption's cap height; the editorial wordmark stays its name. */}
+            <BrandMark className="h-[0.72em] align-baseline" />
+            <span className="sr-only">{content.brandWordmark}</span>
           </span>
-          <button
+          <Button variant="bare"
             className="group/focus bg-transparent p-2 text-white focus-visible:outline-none"
             onClick={() => dialogRef.current?.close()}
             autoFocus
             aria-label={t("closeInvitation")}
           >
             <FocusShape className="outline-offset-2 group-focus-visible/focus:outline-current">{t("closeWithSymbol")}</FocusShape>
-          </button>
+          </Button>
         </div>
         <h2
           id="invitation-dialog-heading"
@@ -56,12 +60,12 @@ const content = useTeaserContent();
         <p className="font-sans text-teaser-label leading-[1.5] text-titanium uppercase">
           {content.modalDisclaimer2}
         </p>
-        <button
+        <Button variant="bare"
           className="group/focus self-start bg-transparent p-2 pl-0 text-white uppercase focus-visible:outline-none"
           onClick={() => dialogRef.current?.close()}
         >
           <FocusShape className="outline-offset-2 group-focus-visible/focus:outline-current">{content.modalReturnButton}</FocusShape>
-        </button>
+        </Button>
       </div>
     </dialog>
   );

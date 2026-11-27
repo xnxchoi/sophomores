@@ -1,80 +1,29 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { createRef } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { motionValue } from "motion/react";
-import { Hero } from "@/components/teaser/hero";
-import { TicketStudy } from "@/components/tickets/ticket-study";
-import Link from "next/link";
 import { BrandMark } from "@/components/core/BrandMark";
-import { entryTokens } from "@/lib/teaser/entry-tokens";
 
-test("the shared brandmark component preserves semantics and prioritizes Helvetica", () => {
-  assert.match(
-    renderToStaticMarkup(<BrandMark>sophomores</BrandMark>),
-    /<span class="!font-\[Helvetica,Arial,sans-serif\]">sophomores<\/span>/
-  );
-  const mark = renderToStaticMarkup(
-    <BrandMark asChild>
-      <Link href="/" aria-label="Home" className="text-xl">
-        sophomores
-      </Link>
-    </BrandMark>
-  );
-  assert.match(mark, /^<a[^>]+>sophomores<\/a>$/);
-  assert.match(mark, /href="\/"/);
-  assert.match(mark, /aria-label="Home"/);
-  assert.match(mark, /class="!font-\[Helvetica,Arial,sans-serif\] text-xl"/);
+// Owner, 27 Nov: the brand mark is the logo. It is the SVG alone; callers wrap it in their own link or heading.
+test("the brand mark is the logo alone: one hidden SVG in the text colour, sized by the font", () => {
+  const mark = renderToStaticMarkup(<BrandMark className="text-xl" />);
+  assert.match(mark, /^<svg[^>]*>[\s\S]*<\/svg>$/);
+  assert.equal(/<a[\s>]/.test(mark), false, "no link of its own");
+  assert.match(mark, /aria-hidden="true"/);
+  assert.match(mark, /fill="currentColor"/);
+  assert.match(mark, /viewBox="0 0 908.3 98.51"/);
+  assert.match(mark, /class="inline-block h-\[1em\] w-auto shrink-0 text-xl"/);
+  assert.equal(/<svg[^>]* (width|height)=/.test(mark), false, "no fixed size");
 });
 
-test("all non-phone visual brandmarks reuse the component rather than class strings", () => {
-  for (const path of [
-    "teaser/hero.tsx",
-    "invitation/experience.tsx",
-    "tickets/ticket-study.tsx"
-  ]) {
-    const source = readFileSync(
-      new URL(`../../src/components/${path}`, import.meta.url),
-      "utf8"
-    );
-    assert.match(
-      source,
-      /import \{ BrandMark \} from ["'][^"']*lib\/brand["']/
-    );
-    assert.match(source, /<BrandMark(?: asChild)?>/);
-    assert.doesNotMatch(source, /brandMarkFont/);
-  }
+test("children and the old asChild prop are ignored, so no caller's text shows beside the logo", () => {
+  const mark = renderToStaticMarkup(<BrandMark asChild>sophomores</BrandMark>);
+  assert.equal(mark.includes("sophomores"), false);
+  assert.equal(mark.includes("asChild"), false);
 });
 
-test("rendered hero and study marks share Helvetica without replacing editorial type", () => {
-  const hero = renderToStaticMarkup(
-    <Hero
-      sectionRef={createRef<HTMLElement>()}
-      sectionStyle={{ height: "200svh" }}
-      position={motionValue(0)}
-      entry={{
-        dock: motionValue<number>(entryTokens.complete.dock),
-        backdrop: motionValue<number>(entryTokens.complete.backdrop),
-        layout: motionValue<number>(entryTokens.complete.layout),
-        scale: motionValue<number>(entryTokens.complete.scale),
-        glyph: motionValue<number>(entryTokens.complete.glyph)
-      }}
-      onActive={() => {}}
-    />
-  );
-  const marks = [
-    hero.match(/<h1[^>]*>/)?.[0],
-    renderToStaticMarkup(<TicketStudy />).match(
-      /<a[^>]*aria-label="Sophomores"[^>]*>/
-    )?.[0]
-  ];
-  for (const mark of marks) {
-    assert.ok(mark, "expected the rendered visual brandmark");
-    assert.ok(
-      mark.includes("!font-[Helvetica,Arial,sans-serif]"),
-      "brandmark must use the canonical Helvetica utility"
-    );
-  }
-  assert.match(hero, /hero-statement[^>]*font-teaser-serif/);
+test("the site header's home link wraps the mark once, with no link inside a link", () => {
+  const source = readFileSync("src/components/shell/site-header.tsx", "utf8");
+  assert.match(source, /<Link href="\/" aria-label="Sophomores"[^>]*>[\s\S]{0,600}?<BrandMark [^>]*\/>/);
+  assert.equal(readFileSync("src/components/core/BrandMark/index.tsx", "utf8").includes("Link"), false);
 });

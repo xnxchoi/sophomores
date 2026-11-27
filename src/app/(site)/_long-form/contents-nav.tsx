@@ -1,4 +1,5 @@
 "use client";
+import { Link } from "@/components/core/Link/Link";
 
 import { cn } from "@/lib/utils";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
@@ -104,7 +105,7 @@ export function DocsContentsNav({ entries, label }: { entries: ReadonlyArray<Con
       <ol className="relative mt-[15px] flex flex-col items-start gap-0.5 border-l border-border">
         {entries.map((entry, index) => (
           <li key={entry.id} className="w-full">
-            <a
+            <Link
               href={`#${entry.id}`}
               aria-current={current === entry.id ? "location" : undefined}
               className={cn(
@@ -118,7 +119,7 @@ export function DocsContentsNav({ entries, label }: { entries: ReadonlyArray<Con
                 <span aria-hidden="true" className="relative z-10 shrink-0 text-[10px] leading-[1.5] tracking-[0.1em] text-foreground/55 tabular-nums transition-colors group-aria-[current=location]:text-foreground/85">{rows[index].number}</span>
                 <span className="relative z-10 text-[11px] leading-[1.5] tracking-[0.18em] text-foreground/60 uppercase transition-colors group-hover:text-foreground/85 group-aria-[current=location]:text-foreground xl:text-[10px] xl:leading-[1.333]">{entry.label}</span>
               </FocusShape>
-            </a>
+            </Link>
           </li>
         ))}
       </ol>
@@ -132,7 +133,7 @@ function ContentsLinks({ entries, current, rail = false }: { entries: ReadonlyAr
     <ol>
       {entries.map((entry, index) => (
         <li key={entry.id}>
-          <a
+          <Link
             href={`#${entry.id}`}
             aria-current={current === entry.id ? "location" : undefined}
             className={cn(
@@ -147,7 +148,7 @@ function ContentsLinks({ entries, current, rail = false }: { entries: ReadonlyAr
               <span aria-hidden="true" className={cn("shrink-0 font-sans tabular-nums text-xs leading-6", !rows[index].nested && "w-5")}>{rows[index].number}</span>
               <span>{entry.label}</span>
             </FocusShape>
-          </a>
+          </Link>
         </li>
       ))}
     </ol>

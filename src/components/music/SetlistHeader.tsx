@@ -1,4 +1,5 @@
 "use client";
+import { Button } from "@/components/core/Button";
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { useTranslations } from "next-intl";
@@ -85,7 +86,9 @@ export function SetlistHeader({ setlist, contributedCount, archiveOnly = false }
 
           <div className="flex flex-col gap-1">
             <h1 tabIndex={-1} className="text-2xl md:text-3xl tracking-tight text-white">
-              <BrandMark className="mr-2">Sophomores</BrandMark>
+              {/* The logo at the title's cap height, named for the heading's text. */}
+              <BrandMark className="mr-2 h-[0.72em] align-baseline" />
+              <span className="sr-only">Sophomores</span>
               {/* JSX leaves no space between the mark and the title; this lets a narrow header wrap there. */}
               <wbr />
               <span>{setlist.title}</span>
@@ -160,7 +163,7 @@ export function SetlistHeader({ setlist, contributedCount, archiveOnly = false }
             </a>}
 
             {shareUrl ? (
-              <button
+              <Button variant="bare"
                 type="button"
                 onClick={async () => setShowManualCopy(!(await copy(shareUrl)))}
                 aria-label={t("copySetlistLink")}
@@ -182,7 +185,7 @@ export function SetlistHeader({ setlist, contributedCount, archiveOnly = false }
                     <span>{t("copySetlistLink")}</span>
                   </>
                 )}
-              </button>
+              </Button>
             ) : null}
           </div>
           <p role="status" className="sr-only">

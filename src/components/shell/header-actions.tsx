@@ -239,7 +239,7 @@ export function SearchButton({ posts = [] }: { posts?: SearchPost[] }) {
 
   return (
     <HitArea>
-      <button
+      <Button variant="bare"
         ref={trigger}
         type="button"
         className={cn("rp_btn relative flex h-6 m-0 px-4 items-center justify-center border border-transparent rounded-full bg-[var(--button-background)] text-[oklch(from_var(--foreground)_l_c_h_/_0.9)] text-xs font-[350] leading-none tracking-[-0.01em] text-center no-underline overflow-hidden backdrop-blur-[var(--header-button-blur,24px)] outline-none transition-[border-color] duration-200 hover:border-[oklch(from_var(--foreground)_l_c_h_/_0.8)] gap-x-1", open && "border-current")}
@@ -254,7 +254,7 @@ export function SearchButton({ posts = [] }: { posts?: SearchPost[] }) {
           />
         </svg>
         <span className="sr-only">{t('search')}</span>
-      </button>
+      </Button>
       <BodyLayer>
         <AnimatePresence>
           {dialog ? (
@@ -350,9 +350,9 @@ export function AccountButton() {
   useEscapeToClose(menu, () => setMenu(false), trigger, open);
   return (
     <span className="relative">
-      <span className="flex rounded-full has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-current"><button ref={trigger} type="button" className={cn("rp_btn circ-bt relative flex size-6 p-0 items-center justify-center border border-transparent rounded-full bg-[var(--button-background)] text-[oklch(from_var(--foreground)_l_c_h_/_0.9)] text-xs font-[350] leading-none tracking-[-0.01em] text-center no-underline overflow-hidden backdrop-blur-[var(--header-button-blur,24px)] outline-none transition-[border-color] duration-200 hover:border-[oklch(from_var(--foreground)_l_c_h_/_0.8)]", open && "border-current")} aria-label={t('account')} aria-expanded={menu} onClick={() => setMenu((current) => !current)}>
+      <span className="flex rounded-full has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-current"><Button variant="bare" ref={trigger} type="button" className={cn("rp_btn circ-bt relative flex size-6 p-0 items-center justify-center border border-transparent rounded-full bg-[var(--button-background)] text-[oklch(from_var(--foreground)_l_c_h_/_0.9)] text-xs font-[350] leading-none tracking-[-0.01em] text-center no-underline overflow-hidden backdrop-blur-[var(--header-button-blur,24px)] outline-none transition-[border-color] duration-200 hover:border-[oklch(from_var(--foreground)_l_c_h_/_0.8)]", open && "border-current")} aria-label={t('account')} aria-expanded={menu} onClick={() => setMenu((current) => !current)}>
         <span className="account-mark size-3 rounded-full border border-current" aria-hidden="true" />
-      </button></span>
+      </Button></span>
       <AnimatePresence>{menu ? <AccountPanel onClose={() => setMenu(false)} /> : null}</AnimatePresence>
     </span>
   );

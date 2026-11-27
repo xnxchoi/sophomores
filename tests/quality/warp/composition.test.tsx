@@ -143,7 +143,8 @@ test("source contract: retained renderer receives original Hero scene progress a
     /settlement\s*=\s*useTransform\(studyFrame,\s*\(?\w+\)?\s*=>\s*\w+\.settlement\)/
   );
   assert.match(studySource, /settlement=\{settlement\}/);
-  assert.match(studySource, /<Hero[\s\S]*?hideWordmark/);
+  // Owner, 27 Nov: no logo in the hero, so Warp has nothing to hide.
+  assert.doesNotMatch(studySource, /hideWordmark/);
   assert.doesNotMatch(studySource, /useEntry\(/);
   assert.doesNotMatch(
     studySource,
@@ -159,7 +160,8 @@ test("source contract: Hero and Story retain original scroll ownership and playb
     studySource,
     /<Story\s+suspended=\{[^}]*current[^}]*"origin"[^}]*heroComplete/
   );
-  assert.match(studySource, /entryTokens\.complete/);
+  // The hero no longer takes an entry pose (owner, 27 Nov: no logo in the hero), so Warp builds none.
+  assert.doesNotMatch(studySource, /entryTokens/);
   assert.match(studySource, /preludeInView\s*\|\|\s*coronaInView/);
 });
 

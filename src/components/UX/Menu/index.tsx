@@ -49,8 +49,7 @@ import {
   useEffect,
   useEffectEvent,
   useMemo,
-  useRef,
-  useState
+  useRef
 } from "react";
 import { useShallow } from "zustand/shallow";
 
@@ -1093,10 +1092,6 @@ const RP_Navigator = (
       disabledRef.current || isActivePage.get() ? null : "FOCUS"
   });
 
-  const [isAnchor, setIsAnchor] = useState(false);
-  useEffect(() => {
-    setIsAnchor(href.startsWith("#") || href.startsWith(`${currentPath}#`));
-  }, [href, currentPath]);
   const { setGenericPageTransition } = useTransitionSetter();
   const menuToPageCallback = useCallback(() => {
     (setNavItemSelected(theKey),
@@ -1143,10 +1138,6 @@ const RP_Navigator = (
         onMouseLeave={onMouseLeave}
         onClick={handleClick}
         className={cn(
-          {
-            link_hashLink: isAnchor
-          },
-
           "button__scroll lift__button",
           // The Hideaway's .lift__button (hideaway.scss), at its size: its rem lengths are on a 10 px root.
           // Uppercase 22 px, 1.2 leading, 24 px side padding, 20 px tall below 769 px (24 px above), and 20 px with

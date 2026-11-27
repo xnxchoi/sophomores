@@ -1,4 +1,5 @@
 "use client";
+import { Button } from "@/components/core/Button";
 
 import { useTranslations } from "next-intl";
 import type { Variants } from "motion/react";
@@ -137,14 +138,14 @@ export function NotificationsView({ notifications }: { notifications: Notificati
               {/* The site inbox marks one at a time (as the header's list does); The Hideaway's Mark all has
                   no counterpart there. */}
               {inbox.connected && !item.read && (
-                <button
+                <Button variant="bare"
                   type="button"
                   aria-label={list("markRead")}
                   onClick={() => inbox.markRead(item.id)}
                   className="group/focus inline-flex size-12 flex-none items-center justify-center rounded-full text-foreground/70 touch-manipulation transition-colors active:bg-foreground/[0.06]"
                 >
                   <FocusShape className="flex group-focus-visible/focus:outline-current"><Check aria-hidden="true" className="size-4" strokeWidth={1.5} /></FocusShape>
-                </button>
+                </Button>
               )}
             </m.li>
             );

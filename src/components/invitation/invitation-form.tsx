@@ -1,4 +1,5 @@
 "use client";
+import { Button } from "@/components/core/Button";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useForm } from "@tanstack/react-form";
@@ -69,9 +70,9 @@ export function InvitationForm({
       data-still={quiet}
     >
       <div className="invitation-form-topline">
-        <button className="invitation-form-exit" type="button" onClick={onExit}>
+        <Button variant="bare" className="invitation-form-exit" type="button" onClick={onExit}>
           <span aria-hidden="true">←</span> Back to study
-        </button>
+        </Button>
         <p className="invitation-form-notice">
           Local study — nothing is sent or saved.
         </p>
@@ -130,7 +131,7 @@ export function InvitationForm({
                 aria-label="Preview steps"
               >
                 {questions.map((question, index) => (
-                  <button
+                  <Button variant="bare"
                     key={question}
                     type="button"
                     disabled={index > currentIndex}
@@ -139,7 +140,7 @@ export function InvitationForm({
                     onClick={() => goTo(question)}
                   >
                     {index + 1}
-                  </button>
+                  </Button>
                 ))}
               </nav>
             )}
@@ -163,13 +164,13 @@ export function InvitationForm({
                   A preview of the invitation experience. No reservation. No
                   registration.
                 </p>
-                <button
+                <Button variant="bare"
                   className="invitation-form-primary"
                   type="button"
                   onClick={() => goTo("email")}
                 >
                   Start <span aria-hidden="true">↗</span>
-                </button>
+                </Button>
               </div>
             )}
 
@@ -267,18 +268,18 @@ export function InvitationForm({
                           <div>
                             <dt>Email</dt>
                             <dd>{values.email.trim()}</dd>
-                            <button type="button" onClick={() => goTo("email")}>
+                            <Button variant="bare" type="button" onClick={() => goTo("email")}>
                               Edit email
-                            </button>
+                            </Button>
                           </div>
                           <div>
                             <dt>Name</dt>
                             <dd>
                               {values.preferredName.trim() || "Not provided"}
                             </dd>
-                            <button type="button" onClick={() => goTo("name")}>
+                            <Button variant="bare" type="button" onClick={() => goTo("name")}>
                               Edit name
-                            </button>
+                            </Button>
                           </div>
                         </dl>
                       )}
@@ -329,7 +330,7 @@ export function InvitationForm({
                   {error}
                 </p>
                 <div className="invitation-form-actions">
-                  <button
+                  <Button variant="bare"
                     type="button"
                     className="invitation-form-back"
                     onClick={() =>
@@ -343,13 +344,13 @@ export function InvitationForm({
                     }
                   >
                     Back
-                  </button>
-                  <button type="submit" className="invitation-form-primary">
+                  </Button>
+                  <Button variant="bare" type="submit" className="invitation-form-primary">
                     {step === "review" ? "Finish preview" : "Next"}
                     <span aria-hidden="true">↗</span>
-                  </button>
+                  </Button>
                   {step === "name" && (
-                    <button
+                    <Button variant="bare"
                       type="button"
                       className="invitation-form-back"
                       onClick={() => {
@@ -359,7 +360,7 @@ export function InvitationForm({
                       }}
                     >
                       Skip
-                    </button>
+                    </Button>
                   )}
                 </div>
               </form>
@@ -371,13 +372,13 @@ export function InvitationForm({
                 <p className="invitation-form-support">
                   Your preview entries have been cleared.
                 </p>
-                <button
+                <Button variant="bare"
                   className="invitation-form-primary"
                   type="button"
                   onClick={onExit}
                 >
                   Back to study <span aria-hidden="true">↗</span>
-                </button>
+                </Button>
               </div>
             )}
           </motion.div>

@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { LayoutGroup } from "motion/react";
 import * as m from "motion/react-m";
-import Link from "next/link";
+import { Link } from "@/components/core/Link/Link";
 
 import { cn } from "@/lib/utils";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";

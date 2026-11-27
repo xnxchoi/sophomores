@@ -58,6 +58,35 @@ class ResourceGuardTests(unittest.TestCase):
             for path in logs + list(pathlib.Path(directory).glob('*.metrics.json')):
                 self.assertEqual(path.stat().st_mode & 0o777, 0o600)
 
+    def test_reservation_keeps_same_lock_between_monitored_phases(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            lock = root / 'lock'
+            with self.guard.checkout_reservation(root / 'preview', lock) as run:
+                for phase in ('typecheck', 'build'):
+                    receipts = []
+                    self.assertEqual(run(
+                        [sys.executable, '-c', 'pass'], root / phase, 96 * 1024**2, 0, 3,
+                        1024**2, self.guard.process_snapshot, self.guard.available_memory,
+                        node_old_space_mib=1536, receipts=receipts), 0)
+                    self.assertEqual(len(receipts), 1)
+                    self.assertEqual(json.loads(receipts[0].read_text())['exit_code'], 0)
+                    self.assertEqual(self.guard.supervise(
+                        [sys.executable, '-c', 'raise Exception("must not launch")'],
+                        root / 'competing', min_headroom=0, lock_path=lock), 75)
+            self.assertFalse(lock.with_suffix('.inflight.json').exists())
+            with self.assertRaisesRegex(self.guard.CheckoutUnavailable, 'inactive'):
+                run()
+
+    def test_reservation_rejects_launcher_change_before_next_phase(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            parent = self.guard.os.getppid()
+            with self.guard.checkout_reservation(root / 'preview', root / 'lock') as run:
+                with mock.patch.object(self.guard.os, 'getppid', return_value=parent + 1):
+                    with self.assertRaisesRegex(self.guard.CheckoutUnavailable, 'launcher exited'):
+                        run()
+
     def test_probe_failure_after_launch_still_kills_group(self):
         calls = 0
         def broken_snapshot():

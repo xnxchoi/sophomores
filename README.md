@@ -35,6 +35,21 @@ supersedes older setup/test-discovery assumptions retained below.
   build/typecheck/test entrypoints remain for the separately constrained
   deployment container.
 
+For a provider-free local production preview, run `rtk pnpm build:preview:guarded`
+in a dedicated, clean checkout with frozen dependencies installed, no `.next`
+directory or generated `next-env.d.ts`, and no local Next environment files. The command uses its own
+synthetic build profile and holds one checkout lock across route type generation,
+standalone typechecking, and Next's experimental compile/generate stages. It
+checks again if the generated output types differ. Use the output only after
+exit zero, with `.next/preview-build-receipt.json` present and no
+`.deployment/preview-build-pending` marker. The receipt names the passing
+typecheck SHA and its guarded evidence. Do not use plain `pnpm start` or the
+standalone entry point to bypass this check on partial output. Use a fresh
+dedicated checkout after failure. Any smoke server must use the same synthetic,
+provider-disabled runtime profile and bind only to loopback. This command neither starts a server
+nor replaces the ordinary production and deploy-image builds, which still run
+Next's integrated typecheck.
+
 ### Available package scripts
 
 | Command | Source-backed purpose |

@@ -23,6 +23,7 @@ test("two instances with different bootstrap addresses promote exactly one first
   const { capturePayloadTestLifecycle } = await import("../support/payload-lifecycle");
   const { ensureFirstSuperAdmin } = await import("../../src/payload/seed/super-admin");
   const { Users } = await import("../../src/payload/collections/users");
+  const { authenticateStaffSession } = await import("../../src/lib/auth/staff-strategy");
   // Widen the window between "no super admin yet" and the promotion, so an unserialised decision would double-promote.
   const widen = async () => { await delay(150); };
   const config = (push: boolean) => buildConfig({
@@ -39,6 +40,59 @@ test("two instances with different bootstrap addresses promote exactly one first
   const second = await getPayload({ config: await config(false), key: randomUUID() });
   const closeSecond = capturePayloadTestLifecycle(second);
   t.after(async () => { await closeSecond(); await closeFirst(); });
+
+  await t.test("an extra address signs in as staff, while a non-listed member signs in without CMS access", async (proof) => {
+    const extra = "extra.staff@example.net";
+    const other = "ordinary.member@example.net";
+    const origin = "http://localhost:3000";
+    proof.mock.method(console, "error", () => {});
+    const settings = { STAFF_EXTRA_EMAILS: " EXTRA.STAFF@Example.NET ", NEXT_PUBLIC_SERVER_URL: origin,
+      REVIEW_OWNER_EMAIL: undefined, PAYLOAD_BOOTSTRAP_SUPERADMIN_EMAIL: undefined, PREVIEW_RUNTIME: undefined };
+    const prior = Object.fromEntries(Object.keys(settings).map((key) => [key, process.env[key]]));
+    const apply = (env: Record<string, string | undefined>) => {
+      for (const [key, value] of Object.entries(env)) {
+        if (value === undefined) delete process.env[key]; else process.env[key] = value;
+      }
+    };
+    apply(settings);
+    try {
+      const { betterAuth } = await import("better-auth");
+      const { memoryAdapter } = await import("better-auth/adapters/memory");
+      const { createBetterAuthPlugins } = await import("../../src/lib/auth/options");
+      const { createPayloadAuthBefore } = await import("../../src/lib/member-auth/payload-policy");
+      const codes = new Map<string, string>();
+      const auth = betterAuth({
+        baseURL: origin, secret: randomUUID(), telemetry: { enabled: false }, logger: { disabled: true },
+        rateLimit: { enabled: false }, database: memoryAdapter({ user: [], account: [], session: [], verification: [] }),
+        hooks: { before: createPayloadAuthBefore(origin) },
+        plugins: createBetterAuthPlugins({ appURL: origin, mailer: async (note) => {
+          if (note.type === "email-otp") codes.set(note.email, note.otp);
+        } }).filter(({ id }) => id === "email-otp"),
+      });
+      const post = (path: string, json: Record<string, string>) => auth.handler(new Request(origin + "/api/auth" + path, {
+        method: "POST", headers: { origin, "Content-Type": "application/json" }, body: JSON.stringify(json),
+      }));
+      const staffPayload = Object.create(first, { betterAuth: { value: auth } });
+      const ctx = await auth.$context;
+      for (const [email, expectedRole] of [[extra, "staff"], [other, null]] as const) {
+        await ctx.internalAdapter.createUser({ email, emailVerified: true, name: "Fixture" }, { method: "email-otp" });
+        assert.equal((await post("/email-otp/send-verification-otp", { email, type: "sign-in" })).ok, true);
+        const otp = codes.get(email);
+        assert.ok(otp);
+        const signedIn = await post("/sign-in/email-otp", { email, otp });
+        assert.equal(signedIn.ok, true, "ordinary member sign-in stays open");
+        const cookie = signedIn.headers.getSetCookie().map((value) => value.split(";", 1)[0]).join("; ");
+        const headers = new Headers({ cookie });
+        assert.equal(Boolean(await auth.api.getSession({ headers })), true);
+        const staff = await authenticateStaffSession({ headers, payload: staffPayload });
+        assert.equal(staff.user?.role ?? null, expectedRole);
+        const rows = await second.find({ collection: "admins", overrideAccess: true, where: { email: { equals: email } } });
+        assert.deepEqual(rows.docs.map(({ role }) => role), expectedRole ? [expectedRole] : []);
+      }
+    } finally {
+      apply(prior);
+    }
+  });
 
   await t.test("the users afterChange provisions staff inside its owning transaction", async () => {
     const afterChange = Users.hooks?.afterChange?.[0];

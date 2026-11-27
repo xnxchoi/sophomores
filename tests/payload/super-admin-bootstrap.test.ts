@@ -135,6 +135,24 @@ test("a sign-in with an existing staff row retries the bootstrap", async () => {
   });
 });
 
+test("extra staff eligibility is exact, verified, and ignored on restricted review profiles", () => {
+  const origin = "http://localhost:3000";
+  const env = { STAFF_EXTRA_EMAILS: " Ops@Example.net , backup+cms@example.org ", PAYLOAD_BOOTSTRAP_SUPERADMIN_EMAIL: personal };
+  for (const email of [" ops@EXAMPLE.net ", "backup+cms@example.org", "member@sophomores.co", personal]) {
+    assert.equal(isVerifiedStaff({ email, emailVerified: true }, origin, env), true);
+  }
+  for (const email of ["another@example.net", "ops@sub.example.net", "member@sub.sophomores.co", "backup@example.org"]) {
+    assert.equal(isStaffAddress(email, origin, env), false);
+  }
+  assert.equal(isVerifiedStaff({ email: "ops@example.net", emailVerified: false }, origin, env), false);
+  assert.equal(isStaffAddress("ops@example.net", origin, { STAFF_EXTRA_EMAILS: "ops@example.net, *" }), false);
+  const reviewEnv = { ...env, REVIEW_OWNER_EMAIL: "reviewer@sophomores.co" };
+  for (const email of ["ops@example.net", personal, "member@sophomores.co"]) {
+    assert.equal(isStaffAddress(email, "https://preview.sophomores.co", reviewEnv), false);
+  }
+  assert.equal(isStaffAddress("reviewer@sophomores.co", "https://preview.sophomores.co", reviewEnv), true);
+});
+
 test("the first verified sign-in of the bootstrap address creates its staff row, then promotes it", async () => {
   await withEnv({ PAYLOAD_BOOTSTRAP_SUPERADMIN_EMAIL: personal }, async () => {
     const f = fakePayload([]);

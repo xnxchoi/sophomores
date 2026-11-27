@@ -19,6 +19,19 @@ test("Payload accepts PostgreSQL URI variants without rewriting the target", () 
   assert.equal(payloadEnvironmentSchema.parse({ ...environment, DATABASE_URI: uri }).DATABASE_URI, uri);
 });
 
+test("extra staff addresses accept only an optional list of complete mailboxes and redact invalid values", () => {
+  for (const value of [undefined, "", "  ", " First@Example.net , second+ops@example.org "]) {
+    assert.equal(payloadEnvironmentSchema.safeParse({ ...environment, STAFF_EXTRA_EMAILS: value }).success, true);
+  }
+  for (const value of ["example.net", "@example.net", "*@example.net", "first@example.net,", "first@example.net,,second@example.net", "Name <first@example.net>", "first@example.net\r\nBcc: second@example.net"]) {
+    const result = payloadEnvironmentSchema.safeParse({ ...environment, STAFF_EXTRA_EMAILS: value });
+    assert.equal(result.success, false);
+    if (!result.success) assert.deepEqual(result.error.issues, [{
+      code: "custom", path: ["STAFF_EXTRA_EMAILS"], message: "Staff email list must contain only exact email addresses.",
+    }]);
+  }
+});
+
 
 test("review build needs exact HTTPS authority and cannot enable customer providers", () => {
   const review = { ...environment, NEXT_PUBLIC_SERVER_URL: "https://preview.sophomores.co" };

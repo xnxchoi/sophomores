@@ -1,3 +1,5 @@
+import { isMemberMailAddress } from "../member-auth/mail-config";
+
 /** A Payload user name is required. Email sign-in does not collect one, so derive it. */
 export function accountDisplayName(
   email?: string | null,
@@ -18,4 +20,12 @@ export function isStaffEmail(email?: string | null): boolean {
   return (
     typeof email === "string" && /^[^\s@]+@sophomores\.co$/i.test(email.trim())
   );
+}
+/** Null means a malformed list; never accept a partial list. */
+export function parseStaffExtraEmails(value: unknown): readonly string[] | null {
+  if (value === undefined) return [];
+  if (typeof value !== "string") return null;
+  if (!value.trim()) return [];
+  const addresses = value.split(",").map((entry) => entry.trim().toLowerCase());
+  return addresses.every((address) => !address.includes("*") && isMemberMailAddress(address)) ? addresses : null;
 }

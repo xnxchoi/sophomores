@@ -1,5 +1,5 @@
 import type { Payload } from "payload";
-import type { Pool, PoolClient } from "pg";
+import type { Pool } from "pg";
 
 /** Capture immediately after getPayload(), before issuing test queries. */
 export function capturePayloadTestLifecycle(
@@ -8,15 +8,6 @@ export function capturePayloadTestLifecycle(
   joinTimeoutMs = 10_000
 ): () => Promise<void> {
   const pool = payload.db.pool as Pool;
-  // Installed @payloadcms/db-postgres/dist/connect.js:4-38 retains its first
-  // pool.connect() client for its reconnect listener, and drizzle/dist/destroy.js
-  // does not close it. pg exposes no public enumeration of borrowed clients.
-  // Capture exactly that startup client in this test-owned instance, never all
-  // clients or process handles. Revisit when the installed adapter fixes this.
-  const retainedStartupClient = (pool as unknown as { _clients: PoolClient[] })
-    ._clients[0];
-  if (!retainedStartupClient)
-    throw new Error("Payload test adapter startup client is unavailable.");
   return async () => {
     // Runner abort can start outer after hooks before an inner body settles.
     // Report joined failures only after cleanup, including a bounded abort join.
@@ -40,8 +31,8 @@ export function capturePayloadTestLifecycle(
     }
     try { await payload.destroy(); }
     catch (error) { failures.push(error); }
-    try { retainedStartupClient.release(); }
-    catch (error) { failures.push(error); }
+    // Since @payloadcms/db-postgres 3.94.2 releases its own startup client,
+    // the test only owns draining the pool, not releasing that client.
     try { await pool.end(); }
     catch (error) { failures.push(error); }
     if (failures.length) throw new AggregateError(failures, "Payload test teardown failed after cleanup");

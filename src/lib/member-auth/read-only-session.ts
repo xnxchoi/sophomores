@@ -1,5 +1,5 @@
 import "server-only";
-import type { AuthContext } from "@better-auth/core";
+import type { getNfcPayload } from "@/payload";
 import { createAuthEndpoint } from "better-auth/api";
 import { z } from "zod";
 
@@ -15,6 +15,9 @@ const read = createAuthEndpoint.serverOnly({ method: "GET", requireHeaders: true
 });
 
 /** Server-only lookup; deliberately bypasses getSession's refresh and expiry cleanup. */
-export async function readOnlyMemberSession(headers: Headers, context: AuthContext) {
+export async function readOnlyMemberSession(
+  headers: Headers,
+  context: Awaited<Awaited<ReturnType<typeof getNfcPayload>>["auth"]["$context"]>,
+) {
   return read({ headers, context });
 }

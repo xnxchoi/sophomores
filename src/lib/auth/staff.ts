@@ -1,4 +1,4 @@
-import type { Payload } from "payload";
+import type { Payload, PayloadRequest } from "payload";
 import { isConfiguredStaffEmail, isReviewEditorProfile, staffAuthOrigin } from "./review-editor-policy";
 import { isStaffEmail } from "./staff-email";
 import { logAuthFailure } from "./failure-log";
@@ -48,15 +48,17 @@ export async function ensureStaffAdminProvisioned(
     name?: string | null;
     id?: string | null;
   },
-  payloadInstance?: Payload
+  payloadInstance?: Payload,
+  req?: PayloadRequest,
 ): Promise<void> {
   if (!isVerifiedStaff(params)) return;
   const email = params.email.trim().toLowerCase();
   const payload =
-    payloadInstance ?? (await (await import("@/payload")).getPayload());
+    req?.payload ?? payloadInstance ?? (await (await import("@/payload")).getPayload());
   // This narrow internal bypass follows verified canonical identity, not caller input.
   const existing = await payload.find({
     collection: "admins",
+    req,
     where: { email: { equals: email } },
     limit: 1,
     depth: 0,
@@ -65,12 +67,13 @@ export async function ensureStaffAdminProvisioned(
   if (existing.docs[0]) {
     // Never overwrite legitimate staff/editor/admin roles. A sign-in of the configured first
     // super admin still retries the bootstrap, in case startup ran before this row existed.
-    if (email === bootstrapSuperAdminEmail()) await ensureFirstSuperAdmin(payload);
+    if (!req && email === bootstrapSuperAdminEmail()) await ensureFirstSuperAdmin(payload);
     return;
   }
   try {
     await payload.create({
       collection: "admins",
+      req,
       overrideAccess: true,
       data: {
         name: params.name || email.split("@")[0] || "Staff Member",
@@ -78,13 +81,16 @@ export async function ensureStaffAdminProvisioned(
         role: "staff"
       }
     });
-    // The configured first super admin need not wait for the next start.
-    if (email === bootstrapSuperAdminEmail()) await ensureFirstSuperAdmin(payload);
+    // Bootstrap owns its own transaction. Sign-in/startup can promote once this row is committed.
+    if (!req && email === bootstrapSuperAdminEmail()) await ensureFirstSuperAdmin(payload);
   } catch (error) {
+    // A failed nested Payload create can roll back its owning request. Do not query or recover on that request.
+    if (req) throw error;
     // Concurrent verified requests may provision the same unique email. Only that
     // successful race is recoverable; persistence failures must remain visible.
     const raced = await payload.find({
       collection: "admins",
+      req,
       where: { email: { equals: email } },
       limit: 1,
       depth: 0,

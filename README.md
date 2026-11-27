@@ -35,6 +35,39 @@ supersedes older setup/test-discovery assumptions retained below.
   build/typecheck/test entrypoints remain for the separately constrained
   deployment container.
 
+For a provider-free local production preview, run `rtk pnpm build:preview:guarded`
+in a dedicated, clean checkout with frozen dependencies installed, no `.next`
+directory or generated `next-env.d.ts`, and no local Next environment files.
+The command holds one checkout lock across route type generation, standalone
+typechecking, and Next's experimental compile/generate stages. It checks again
+if the generated output types differ.
+
+The build receipt is **not** a ready-to-serve standalone handoff. After exit
+zero, verify that `.next/preview-build-receipt.json` names the checkout's SHA
+as both the build and typecheck SHA, and that
+`.deployment/preview-build-pending` is absent. Do not start partial output;
+use a fresh dedicated checkout after failure. The wrapper does not start a
+server or stage static assets. To stage assets for an approved loopback smoke,
+run these commands from the successful build's checkout root:
+
+```sh
+rtk proxy mkdir -p .next/standalone/public .next/standalone/.next/static
+rtk proxy rsync -a public/ .next/standalone/public/
+rtk proxy rsync -a .next/static/ .next/standalone/.next/static/
+```
+
+With an approved, unused port (the smoke uses `3217`, not `3000`), start
+`.next/standalone/server.js` under `scripts/resource-guard.py` at 4 GiB. Use
+the clean environment returned by `preview_environment()` in
+`scripts/preview-build.py`, not the caller's provider or database settings.
+Set `HOSTNAME=127.0.0.1`, `PORT=3217`, and
+`NEXT_PUBLIC_SERVER_URL=http://127.0.0.1:3217` in that environment. This keeps
+`PREVIEW_AUTH_MODE=public`, member auth, phone verification, and PortOne
+disabled, and PostgreSQL pointed at the intentionally disconnected
+`127.0.0.1:1` endpoint. A smoke can check a static asset and an HTML 404; it
+does not establish database-backed page or provider behavior. The ordinary
+production and deploy-image builds still run Next's integrated typecheck.
+
 ### Available package scripts
 
 | Command | Source-backed purpose |

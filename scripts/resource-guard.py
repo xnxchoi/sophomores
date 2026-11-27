@@ -254,44 +254,69 @@ def cleanup(owned, group, snapshot):
     return sorted(remaining), uncertain
 
 
+class CheckoutUnavailable(RuntimeError):
+    pass
+
+
+@contextlib.contextmanager
+def checkout_reservation(log, lock_path=None):
+    """Hold the normal checkout lock across a sequence of independently monitored children."""
+    lock_path = lock_path or default_lock_path()
+    with checkout_lock(lock_path):
+        launcher_pid = os.getppid()
+        quarantine = Path(str(lock_path) + '.quarantine.json')
+        inflight = Path(str(lock_path) + '.inflight.json')
+        if any(path.exists() or path.is_symlink() for path in (quarantine, inflight)):
+            raise CheckoutUnavailable('checkout quarantined or interrupted; manual process/identity review required: ' + str(lock_path))
+        probes = ProbeSamples()
+        supervisor_start = process_snapshot(lambda label, command: probes.run('checkout', label, command))[os.getpid()][4]
+        marker_fd = os.open(inflight, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        with os.fdopen(marker_fd, 'w') as handle:
+            json.dump({'supervisor_pid': os.getpid(), 'created_ns': time.time_ns(),
+                       'supervisor_start_identity': supervisor_start,
+                       'log_prefix': str(log), 'manual_review_if_interrupted': True}, handle)
+            handle.flush()
+            os.fsync(handle.fileno())
+        confirmed_clean = []
+        active = True
+
+        def run(*args, **kwargs):
+            if not active or os.getppid() != launcher_pid:
+                raise CheckoutUnavailable('checkout reservation is inactive or its launcher exited')
+            if confirmed_clean and confirmed_clean != [True]:
+                raise CheckoutUnavailable('previous phase cleanup was not confirmed')
+            confirmed_clean[:] = [False]
+            return monitor(*args, quarantine=quarantine, confirmed_clean=confirmed_clean,
+                           probes=probes, **kwargs)
+        try:
+            yield run
+        finally:
+            active = False
+            if not confirmed_clean or confirmed_clean == [True]:
+                inflight.unlink()
+
+
 def supervise(command, log, *, lock_path=None, max_bytes=4*GIB, node_old_space_mib=1536,
               min_headroom=10*GIB, timeout=120, log_limit=20*1024**2,
               snapshot=process_snapshot, headroom=available_memory,
               memory_limit=None, deadline_seconds=None, output_limit=None):
     """Internal thresholds support small bounded tests; CLI enforces public floors."""
-    lock_path = lock_path or default_lock_path()
     try:
-        with checkout_lock(lock_path):
-            quarantine = Path(str(lock_path) + '.quarantine.json')
-            inflight = Path(str(lock_path) + '.inflight.json')
-            if any(path.exists() or path.is_symlink() for path in (quarantine, inflight)):
-                print('resource-guard: checkout quarantined or interrupted; manual process/identity review required: ' + str(lock_path), file=sys.stderr)
-                return 75
-            # Establish durable fail-closed state BEFORE launching anything. A killed
-            # supervisor or failed quarantine write must not silently unlock work.
-            probes = ProbeSamples()
-            supervisor_start = process_snapshot(lambda label, command: probes.run('checkout', label, command))[os.getpid()][4]
-            marker_fd = os.open(inflight, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-            with os.fdopen(marker_fd, 'w') as handle:
-                json.dump({'supervisor_pid': os.getpid(), 'created_ns': time.time_ns(),
-                           'supervisor_start_identity': supervisor_start,
-                           'log_prefix': str(log), 'manual_review_if_interrupted': True}, handle)
-                handle.flush()
-                os.fsync(handle.fileno())
-            confirmed_clean = []
-            result = monitor(command, Path(log), max_bytes if memory_limit is None else memory_limit,
-                           min_headroom, timeout if deadline_seconds is None else deadline_seconds,
-                           log_limit if output_limit is None else output_limit, snapshot, headroom, quarantine,
-                           confirmed_clean, node_old_space_mib, probes)
-            if confirmed_clean == [True]:
-                inflight.unlink()
-            return result
+        with checkout_reservation(log, lock_path) as run:
+            return run(command, Path(log), max_bytes if memory_limit is None else memory_limit,
+                       min_headroom, timeout if deadline_seconds is None else deadline_seconds,
+                       log_limit if output_limit is None else output_limit, snapshot, headroom,
+                       node_old_space_mib=node_old_space_mib)
     except BlockingIOError:
         print('resource-guard: another guarded job owns this checkout', file=sys.stderr)
         return 75
+    except CheckoutUnavailable as error:
+        print('resource-guard: ' + str(error), file=sys.stderr)
+        return 75
 
 
-def monitor(command, log, limit, floor, timeout, output_limit, snapshot, headroom, quarantine, confirmed_clean, node_old_space_mib, probes):
+def monitor(command, log, limit, floor, timeout, output_limit, snapshot, headroom,
+            quarantine, confirmed_clean, node_old_space_mib, probes, *, child_env=None, receipts=None):
     reason, code, child, owned, peak, peak_count = 'accounting failure', 137, None, {}, 0, 0
     remaining, received, handlers = [], [], {}
     uncertain = False
@@ -330,7 +355,8 @@ def monitor(command, log, limit, floor, timeout, output_limit, snapshot, headroo
         if read_headroom('preflight') < floor:
             reason = 'insufficient system headroom'
             return code
-        env = {**os.environ, 'NODE_OPTIONS': node_options(os.environ.get('NODE_OPTIONS', ''), cap=node_old_space_mib)}
+        inherited = os.environ if child_env is None else child_env
+        env = {**inherited, 'NODE_OPTIONS': node_options(inherited.get('NODE_OPTIONS', ''), cap=node_old_space_mib)}
         for sig in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP):
             handlers[sig] = signal.signal(sig, lambda number, frame: received.append(number))
         with os.fdopen(fd, 'wb', buffering=0) as output:
@@ -458,11 +484,13 @@ def monitor(command, log, limit, floor, timeout, output_limit, snapshot, headroo
             receipt_fd = os.open(receipt_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
             with os.fdopen(receipt_fd, 'w') as handle:
                 handle.write(json.dumps(receipt) + '\n')
+            if receipts is not None:
+                receipts.append(receipt_path)
         except OSError:
             print('resource-guard: could not write metrics receipt', file=sys.stderr)
         print('resource-guard: ' + reason + '; exit=' + str(code) + '; peak=' + str(peak) + ' bytes; remaining=' + str(remaining), file=sys.stderr)
         print('resource-guard: log=' + str(log) + '; receipt=' + str(log.with_suffix(log.suffix + '.metrics.json')), file=sys.stderr)
-        confirmed_clean.append(not remaining and not uncertain)
+        confirmed_clean[:] = [not remaining and not uncertain]
     return code
 
 

@@ -28,6 +28,7 @@
     "phone-verification:preview": "node --import tsx scripts/phone-verification-preview.ts",
     "test:preview-runtime": "node --import tsx --test tests/runtime/preview-auth.test.ts",
     "build:guarded": "python3 scripts/resource-guard.py --max-gib 8 --node-old-space-mib 3072 --timeout 900 --log /tmp/sphmrs-build.log -- node --no-deprecation node_modules/next/dist/bin/next build",
+    "build:preview:guarded": "python3 scripts/preview-build.py",
     "typecheck:guarded": "python3 scripts/resource-guard.py --max-gib 4 --node-old-space-mib 3072 --timeout 180 --log /tmp/sphmrs-typecheck.log -- tsc --noEmit",
     "test:guarded": "python3 scripts/resource-guard.py --max-gib 4 --timeout 600 --log /tmp/sphmrs-tests.log -- node tests/run-unit.mjs",
     "test:quality": "node tests/run-unit.mjs --quality",

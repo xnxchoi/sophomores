@@ -1,4 +1,5 @@
 "use client";
+import { Button } from "@/components/core/Button";
 
 import type { ReactNode } from "react";
 import { motion } from "motion/react";
@@ -60,7 +61,7 @@ export function ActionButton({
   className?: string;
 }) {
   return (
-    <button
+    <Button variant="bare"
       type="button"
       onClick={onClick}
       disabled={disabled || loading}
@@ -80,6 +81,6 @@ export function ActionButton({
         icon
       ) : null}
       {children}
-    </button>
+    </Button>
   );
 }

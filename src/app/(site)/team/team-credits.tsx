@@ -1,4 +1,5 @@
 "use client";
+import { Button } from "@/components/core/Button";
 
 import { Link } from "@/components/core/Link/Link";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
@@ -426,7 +427,7 @@ function CreditsRoll({ groups, still, held, hidden, onShow, onFocusName, onLeave
                   style={{ marginBottom: gap }}
                   className="relative px-0 py-[clamp(5px,.34vw,7px)] before:absolute before:top-1/2 before:right-[calc(100%+7.5px)] before:h-[.48vw] before:w-[.48vw] before:translate-x-1/2 before:-translate-y-1/2 before:rounded-full before:bg-current before:opacity-0 before:transition-opacity before:duration-200 before:ease-in-out before:content-none hover:before:opacity-100 md:before:content-[''] has-focus-visible:before:opacity-100"
                 >
-                  <button
+                  <Button variant="bare"
                     type="button"
                     tabIndex={pass === 1 ? -1 : undefined}
                     data-credit-id={pass === 1 ? undefined : person.id}
@@ -447,7 +448,7 @@ function CreditsRoll({ groups, still, held, hidden, onShow, onFocusName, onLeave
                     className="group/focus relative text-left leading-none after:absolute after:inset-x-0 after:-inset-y-3 pointer-coarse:after:content-['']"
                   >
                     <FocusShape className="outline-offset-4">{person.name}{person.patronage && <span aria-hidden="true"> 🎂</span>}</FocusShape>
-                  </button>
+                  </Button>
                 </li>
               ))}
             </ul>
@@ -525,7 +526,7 @@ function MobileProfiles({ people, start, onShow, onClose }: {
           </li>
         ))}
       </ul>
-      <button
+      <Button variant="bare"
         ref={close}
         type="button"
         aria-label={t("closeProfiles")}
@@ -538,7 +539,7 @@ function MobileProfiles({ people, start, onShow, onClose }: {
             <path d="m23.5328 23.269-21.80249-21.80241" />
           </g>
         </svg>
-      </button>
+      </Button>
     </div>
     </FloatingFocusManager>
   );

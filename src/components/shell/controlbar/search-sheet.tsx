@@ -1,4 +1,5 @@
 "use client";
+import { Button } from "@/components/core/Button";
 
 import { useTranslations } from "next-intl";
 import * as m from "motion/react-m";
@@ -93,14 +94,14 @@ function SheetBody({ posts, onClose }: { posts: SearchPost[]; onClose: () => voi
     <>
       {/* Close on the left (Sophomores' interaction default); The Hideaway has it on the right. */}
       <div className="flex items-center gap-1 border-b border-border/20 pt-[calc(env(safe-area-inset-top)+8px)] pr-4 pb-2 pl-1">
-        <button
+        <Button variant="bare"
           type="button"
           onClick={onClose}
           aria-label={t("closeSearch")}
           className="group/focus inline-flex size-12 flex-none items-center justify-center rounded-full text-foreground/70 touch-manipulation transition-colors active:bg-foreground/[0.06]"
         >
           <FocusShape className="flex group-focus-visible/focus:outline-current"><X aria-hidden="true" className="size-5" strokeWidth={1.5} /></FocusShape>
-        </button>
+        </Button>
         <SearchIcon aria-hidden="true" className="size-[18px] flex-none text-foreground/55" strokeWidth={1.5} />
         <input
           ref={inputRef}

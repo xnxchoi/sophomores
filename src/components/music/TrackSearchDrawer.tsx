@@ -116,14 +116,14 @@ export function TrackSearchDrawer({
                 Search Apple Music catalog by title, artist, or album.
               </p>
             </div>
-            <button
+            <Button variant="bare"
               type="button"
               onClick={handleClose}
               className="flex size-9 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-pewter transition-colors hover:bg-white/[0.08] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
             >
               <XIcon className="size-4" />
               <span className="sr-only">Close</span>
-            </button>
+            </Button>
           </div>
 
           {/* Search input field */}
@@ -141,7 +141,7 @@ export function TrackSearchDrawer({
               autoFocus
             />
             {query && (
-              <button
+              <Button variant="bare"
                 type="button"
                 onClick={() => {
                   setQuery("");
@@ -151,7 +151,7 @@ export function TrackSearchDrawer({
               >
                 <XIcon className="size-4" />
                 <span className="sr-only">Clear search</span>
-              </button>
+              </Button>
             )}
           </div>
         </DialogHeader>
@@ -240,7 +240,7 @@ export function TrackSearchDrawer({
                         {formatDuration(track.duration)}
                       </span>
 
-                      <button
+                      <Button variant="bare"
                         type="button"
                         disabled={isSubmitting || isSelected}
                         onClick={() => handleSelect(track)}
@@ -259,7 +259,7 @@ export function TrackSearchDrawer({
                         ) : (
                           "Nominate"
                         )}
-                      </button>
+                      </Button>
                     </div>
                   </li>
                 );

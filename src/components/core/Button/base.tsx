@@ -19,12 +19,25 @@ function isInert({ disabled, loading, ariaDisabled }: { disabled?: boolean; load
   return Boolean(disabled || loading || ariaDisabled === true || ariaDisabled === "true");
 }
 
+type ArcButtonProps = ComponentProps<typeof ArcButton>;
+export type ButtonProps = Omit<ArcButtonProps, "variant"> & {
+  /** Arc's variants, or "bare": a native button with no Arc styling or motion, for controls that draw themselves. */
+  variant?: ArcButtonProps["variant"] | "bare";
+};
+
 /**
- * Arc's button with the cursor. A plain button by default (type="button"), so it never submits a form by accident;
- * a submit passes type="submit". Keyboard focus: ghost buttons draw the ring tight on their label (FocusShape), the
- * others on the button itself, with the same 2 px width and offset.
+ * The site's button with the cursor. A plain button by default (type="button"), so it never submits a form by accident;
+ * a submit passes type="submit". Arc's button for the Arc variants; "bare" is a native button the caller styles.
  */
-export function Button({ variant = "primary", type = "button", onMouseEnter: doME, onMouseLeave: doML, className, children, ...rest }: ComponentProps<typeof ArcButton>) {
+export function Button({ variant = "primary", ...props }: ButtonProps) {
+  return variant === "bare" ? <BareButton {...props} /> : <ArcBackedButton variant={variant} {...props} />;
+}
+
+/**
+ * Keyboard focus: ghost buttons draw the ring tight on their label (FocusShape), the others on the button itself, with
+ * the same 2 px width and offset.
+ */
+function ArcBackedButton({ variant, type = "button", onMouseEnter: doME, onMouseLeave: doML, className, children, ...rest }: ArcButtonProps) {
   const inert = isInert({ disabled: rest.disabled, loading: rest.loading, ariaDisabled: rest["aria-disabled"] });
   const { onMouseEnter, onMouseLeave } = useDomCursor<HTMLButtonElement>({
     onEnter: doME,
@@ -49,6 +62,31 @@ export function Button({ variant = "primary", type = "button", onMouseEnter: doM
         children
       )}
     </ArcButton>
+  );
+}
+
+/**
+ * A native button with the cursor and nothing else: no Arc CSS, no press motion, so a raw button moves onto it without
+ * changing how it looks. The keyboard ring is the filled buttons' (2 px, 2 px out, current colour) unless the caller
+ * draws its own on its content (group/focus with a FocusShape inside).
+ */
+function BareButton({ type = "button", loading, size: _size, onMouseEnter: doME, onMouseLeave: doML, className, ...rest }: Omit<ButtonProps, "variant">) {
+  const inert = isInert({ disabled: rest.disabled, loading, ariaDisabled: rest["aria-disabled"] });
+  const { onMouseEnter, onMouseLeave } = useDomCursor<HTMLButtonElement>({
+    onEnter: doME,
+    enterCondition: () => (inert ? null : "FOCUS"),
+    onLeave: doML
+  });
+  const ownRing = className?.includes("group/focus");
+  return (
+    <button
+      {...rest}
+      type={type}
+      aria-busy={loading || undefined}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      className={cn(!ownRing && "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current", className)}
+    />
   );
 }
 

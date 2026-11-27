@@ -1,4 +1,5 @@
 "use client";
+import { Button } from "@/components/core/Button";
 
 import { useState } from "react";
 import { Link } from "@/components/core/Link/Link";
@@ -203,14 +204,14 @@ export function SlotManager({
                   </div>
 
                   {!isPastDeadline ? (
-                    <button
+                    <Button variant="bare"
                       type="button"
                       onClick={() => onOpenSearch(slot.position)}
                       className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white px-5 text-xs font-medium text-black transition-colors hover:bg-singer-stone focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                     >
                       <PlusIcon className="size-4" />
                       <span>Search catalog</span>
-                    </button>
+                    </Button>
                   ) : (
                     <span className="text-xs text-pewter">
                       Nominations closed
@@ -246,7 +247,7 @@ export function SlotManager({
                       )}
 
                       {slot.track?.previewUrl && (
-                        <button
+                        <Button variant="bare"
                           type="button"
                           onClick={() =>
                             audioPreview.toggle(
@@ -263,7 +264,7 @@ export function SlotManager({
                           ) : (
                             <PlayIcon aria-hidden="true" className="size-6" weight="fill" />
                           )}
-                        </button>
+                        </Button>
                       )}
                     </div>
 
@@ -292,7 +293,7 @@ export function SlotManager({
                   {/* Slot Actions */}
                   {!isPastDeadline && (
                     <div className="flex items-center gap-1 shrink-0">
-                      <button
+                      <Button variant="bare"
                         type="button"
                         onClick={() => onOpenSearch(slot.position)}
                         title="Replace track"
@@ -300,8 +301,8 @@ export function SlotManager({
                       >
                         <ArrowsClockwiseIcon className="size-4" />
                         <span className="sr-only">Replace</span>
-                      </button>
-                      <button
+                      </Button>
+                      <Button variant="bare"
                         type="button"
                         disabled={isRemoving}
                         onClick={() => handleRemove(slot.position)}
@@ -310,7 +311,7 @@ export function SlotManager({
                       >
                         <TrashIcon className="size-4" />
                         <span className="sr-only">Remove</span>
-                      </button>
+                      </Button>
                     </div>
                   )}
                 </div>
@@ -329,21 +330,21 @@ export function SlotManager({
                         autoFocus
                       />
                       <div className="flex items-center justify-end gap-2">
-                        <button
+                        <Button variant="bare"
                           type="button"
                           onClick={() => setEditingNoteSlot(null)}
                           className="h-7 rounded px-2.5 text-xs text-pewter hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                         >
                           Cancel
-                        </button>
-                        <button
+                        </Button>
+                        <Button variant="bare"
                           type="button"
                           disabled={isSavingNote}
                           onClick={() => handleSaveNote(slot.position)}
                           className="inline-flex h-7 items-center justify-center rounded bg-white px-3 text-xs font-medium text-black hover:bg-singer-stone focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                         >
                           {isSavingNote ? "Saving..." : "Save note"}
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   ) : (
@@ -352,13 +353,13 @@ export function SlotManager({
                         {slot.note ? `“${slot.note}”` : "No note added"}
                       </span>
                       {!isPastDeadline && (
-                        <button
+                        <Button variant="bare"
                           type="button"
                           onClick={() => handleStartEditNote(slot)}
                           className="text-pewter hover:text-white underline underline-offset-2 shrink-0 ml-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                         >
                           {slot.note ? "Edit note" : "Add note"}
-                        </button>
+                        </Button>
                       )}
                     </div>
                   )}

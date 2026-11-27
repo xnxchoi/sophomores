@@ -1,4 +1,5 @@
 "use client";
+import { Button } from "@/components/core/Button";
 
 import {
   ArrowsClockwiseIcon,
@@ -79,7 +80,7 @@ export function CuratorControlBar({
           <div className="flex items-center gap-2 shrink-0">
             {isConfigured ? (
               <>
-                <button
+                <Button variant="bare"
                   type="button"
                   disabled={isSyncing}
                   onClick={() => syncNow()}
@@ -96,9 +97,9 @@ export function CuratorControlBar({
                       {pendingSyncCount}
                     </span>
                   )}
-                </button>
+                </Button>
 
-                <button
+                <Button variant="bare"
                   type="button"
                   disabled={isLoading}
                   onClick={() => authorizeCurator()}
@@ -107,10 +108,10 @@ export function CuratorControlBar({
                 >
                   <LinkIcon className="size-3.5" />
                   <span>Reconnect</span>
-                </button>
+                </Button>
               </>
             ) : (
-              <button
+              <Button variant="bare"
                 type="button"
                 disabled={isLoading}
                 onClick={() => authorizeCurator()}
@@ -122,7 +123,7 @@ export function CuratorControlBar({
                   <LinkIcon className="size-4" />
                 )}
                 <span>{isLoading ? "Connecting..." : "Connect Apple ID"}</span>
-              </button>
+              </Button>
             )}
           </div>
         </div>

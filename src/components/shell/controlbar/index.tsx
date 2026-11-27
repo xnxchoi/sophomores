@@ -1,4 +1,5 @@
 "use client";
+import { Button } from "@/components/core/Button";
 
 import { useTranslations } from "next-intl";
 import { usePathname } from "next/navigation";
@@ -184,7 +185,7 @@ function Strip({
         {/* The centre slot: a page's own control lands here (slot.tsx); otherwise the strip's own. */}
         <div ref={controlbarCentreRef} className="grid min-w-0">
           {!centreFilled && search ? (
-            <button
+            <Button variant="bare"
               ref={searchTrigger}
               type="button"
               aria-label={t("search")}
@@ -202,7 +203,7 @@ function Strip({
                 <Search aria-hidden="true" className="size-3.5" strokeWidth={1.5} />
                 <span className="font-sans text-[11px] font-normal">{t("search")}</span>
               </FocusShape>
-            </button>
+            </Button>
           ) : null}
         </div>
 
@@ -287,7 +288,7 @@ function Zone({ children }: { children: ReactNode }) {
 /** The bar's zone button: a 42px target (--bar-target) around a bare 16px icon. Pressed, it dims; the active view takes full ink. */
 function ZoneButton({ active, className, ...props }: ComponentProps<"button"> & { active?: boolean }) {
   return (
-    <button
+    <Button variant="bare"
       type="button"
       {...props}
       className={cn(
@@ -346,7 +347,7 @@ function NotificationsTrigger({
 function AccountTrigger({ active, onClick }: { active: boolean; onClick: (event: MouseEvent<HTMLButtonElement>) => void }) {
   const t = useTranslations("Customer.components_shell_header_actions");
   return (
-    <button
+    <Button variant="bare"
       type="button"
       aria-label={t("account")}
       aria-pressed={active}
@@ -360,6 +361,6 @@ function AccountTrigger({ active, onClick }: { active: boolean; onClick: (event:
           strokeWidth={1.5}
         />
       </FocusShape>
-    </button>
+    </Button>
   );
 }

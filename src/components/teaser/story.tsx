@@ -1,4 +1,5 @@
 "use client";
+import { Button } from "@/components/core/Button";
 import { useTranslations } from "next-intl";
 
 import { cva } from "class-variance-authority";
@@ -322,7 +323,7 @@ export function Story({
           aria-label={t("storyChapters")}
         >
           {activeStories.map((_, index) => (
-            <button
+            <Button variant="bare"
               key={index}
               className={storyControlVariants()}
               aria-label={t("readStory", { position: index + 1 })}
@@ -332,9 +333,9 @@ export function Story({
               }}
             >
               {index + 1}
-            </button>
+            </Button>
           ))}
-          <button
+          <Button variant="bare"
             className={storyControlVariants({
               kind: "playback"
             })}
@@ -356,7 +357,7 @@ export function Story({
             }}
           >
             {finished ? t("replay") : paused ? t("play") : t("pause")}
-          </button>
+          </Button>
         </div>
       </div>
     </motion.section>

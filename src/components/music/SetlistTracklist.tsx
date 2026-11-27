@@ -1,4 +1,5 @@
 "use client";
+import { Button } from "@/components/core/Button";
 
 import { useMemo, useState } from "react";
 import Image from "next/image";
@@ -80,14 +81,14 @@ export function SetlistTracklist({
               className="mt-0 h-10 w-full rounded-none border-0 border-b border-white/15 bg-transparent py-0 pl-8 pr-8 font-sans text-xs font-normal tracking-normal text-white placeholder:text-pewter focus-visible:outline-none focus-visible:border-white/40"
             />
             {filterQuery && (
-              <button
+              <Button variant="bare"
                 type="button"
                 onClick={() => setFilterQuery("")}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-pewter hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
               >
                 <XIcon className="size-3.5" />
                 <span className="sr-only">Clear filter</span>
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -155,7 +156,7 @@ export function SetlistTracklist({
                           <span className="inline-flex items-center gap-1 text-[10px] font-sans text-singer-stone">
                             <span>Added by {track.submittedByName}</span>
                             {hasNote && (
-                              <button
+                              <Button variant="bare"
                                 type="button"
                                 onClick={() =>
                                   setActiveNoteTrackId(isNoteOpen ? null : track.id)
@@ -164,7 +165,7 @@ export function SetlistTracklist({
                                 className="text-pewter hover:text-white ml-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                               >
                                 <ChatCircleTextIcon className="size-3" />
-                              </button>
+                              </Button>
                             )}
                           </span>
                         ) : (
@@ -191,7 +192,7 @@ export function SetlistTracklist({
                   {/* Actions on right */}
                   <div className="flex items-center gap-2 shrink-0">
                     {track.previewUrl && (
-                      <button
+                      <Button variant="bare"
                         type="button"
                         onClick={() =>
                           audioPreview.toggle(track.id, track.previewUrl)
@@ -210,7 +211,7 @@ export function SetlistTracklist({
                         ) : (
                           <PlayIcon aria-hidden="true" className="size-3.5" weight="fill" />
                         )}
-                      </button>
+                      </Button>
                     )}
 
                     <span className="font-sans text-xs tabular-nums text-pewter hidden sm:inline w-12 text-right">

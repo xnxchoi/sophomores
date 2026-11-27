@@ -1,7 +1,7 @@
 "use client";
 import { useTranslations } from "next-intl";
 
-import Link from "next/link";
+import { Link } from "@/components/core/Link/Link";
 import { ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSettingsNav } from "./SettingsNav";

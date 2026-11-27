@@ -32,6 +32,7 @@ import * as migration_20261124_120000_shared_event_ticket_binding from './202611
 import * as migration_20261124_121000_shared_guest_cart_kind from './20261124_121000_shared_guest_cart_kind';
 import * as migration_20261124_130000_home_entry from './20261124_130000_home_entry';
 import * as migration_20261124_140000_order_refund from './20261124_140000_order_refund';
+import * as migration_20261127_100000_business_info_biz_num from './20261127_100000_business_info_biz_num';
 
 export const migrations = [
   {
@@ -193,5 +194,10 @@ export const migrations = [
     up: migration_20261124_140000_order_refund.up,
     down: migration_20261124_140000_order_refund.down,
     name: '20261124_140000_order_refund',
+  },
+  {
+    up: migration_20261127_100000_business_info_biz_num.up,
+    down: migration_20261127_100000_business_info_biz_num.down,
+    name: '20261127_100000_business_info_biz_num',
   },
 ];

@@ -6,15 +6,14 @@ import { AppRouterContext, type AppRouterInstance } from "next/dist/shared/lib/a
 import en from "../../messages/en.json";
 import type { ReactNode } from "react";
 import { FooterShell } from "@/components/shell/Footer/footer-shell";
-import { CursorProvider, DeviceProvider, HAStoreProvider } from "@/providers/RP_Pro";
+import { SiteContexts } from "../fixtures/english-messages";
 
-// The footer's links go through the site's transition router, and core Link and Button need the device, store and
-// cursor contexts.
+// The footer's links go through the site's transition router; core Link and Button get the rest from SiteContexts.
 const router = { back() {}, forward() {}, refresh() {}, push() {}, replace() {}, prefetch() {} } as unknown as AppRouterInstance;
 const Site = ({ locale, children }: { locale: "en" | "ko"; children: ReactNode }) => (
   <AppRouterContext.Provider value={router}>
     <NextIntlClientProvider locale={locale} timeZone="Asia/Seoul" messages={en}>
-      <DeviceProvider><HAStoreProvider><CursorProvider>{children}</CursorProvider></HAStoreProvider></DeviceProvider>
+      <SiteContexts>{children}</SiteContexts>
     </NextIntlClientProvider>
   </AppRouterContext.Provider>
 );

@@ -2,6 +2,7 @@ import messages from "../../messages/en.json";
 import assert from "node:assert/strict";
 import { after, afterEach, before, test } from "node:test";
 import { JSDOM } from "jsdom";
+import { finishExitAnimations } from "../support/exit-animations";
 import { codeDescription, firstCodeCell } from "../fixtures/code-input";
 import {
   MemberAuthActionError,
@@ -11,6 +12,7 @@ import {
 
 let MemberAuthProviders: typeof import("./fixtures/providers").MemberAuthProviders;
 let dom: JSDOM;
+let stopExitAnimations: (() => void) | undefined;
 let ui: typeof import("@testing-library/react/pure");
 let Study: typeof import("@/components/Authentication/member-auth/account-study").MemberAccountStudy;
 const previous = new Map<string, PropertyDescriptor | undefined>();
@@ -98,14 +100,19 @@ before(async () => {
     value() {}
   });
   MemberAuthProviders = (await import("./fixtures/providers")).MemberAuthProviders;
+  // JSDOM never ends the sheets' CSS exit animations; this plays the browser's animationend (see the helper).
+  stopExitAnimations = finishExitAnimations(dom.window as never);
   ui = await import("@testing-library/react/pure");
   Study = (await import("@/components/Authentication/member-auth/account-study"))
     .MemberAccountStudy;
 });
 afterEach(() => ui.cleanup());
 
-
-after(() => {
+after(async () => {
+  stopExitAnimations?.();
+  // Let unmounted Motion/Vaul animation cleanup settle before removing browser globals (as the other member-auth DOM
+  // files do): the last test's timers otherwise run after window is gone.
+  await new Promise((resolve) => setTimeout(resolve, 250));
   dom.window.close();
   for (const [key, descriptor] of previous) {
     if (descriptor) Object.defineProperty(globalThis, key, descriptor);

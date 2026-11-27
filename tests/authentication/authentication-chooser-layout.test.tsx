@@ -4,9 +4,11 @@ import { readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { after, afterEach, before, test } from "node:test";
 import { JSDOM } from "jsdom";
+import { finishExitAnimations } from "../support/exit-animations";
 import type { MemberClient } from "@/lib/member-auth/client";
 
 let dom: JSDOM;
+let stopExitAnimations: (() => void) | undefined;
 let ui: typeof import("@testing-library/react/pure");
 let Entry: typeof import("@/components/Authentication/phone-verification/authentication-entry").AuthenticationEntry;
 let MemberAuthProviders: typeof import("../member-auth/fixtures/providers").MemberAuthProviders;
@@ -121,6 +123,8 @@ before(async () => {
     value() {}
   });
   MemberAuthProviders = (await import("../member-auth/fixtures/providers")).MemberAuthProviders;
+  // JSDOM never ends the sheets' CSS exit animations; this plays the browser's animationend (see the helper).
+  stopExitAnimations = finishExitAnimations(dom.window as never);
   ui = await import("@testing-library/react/pure");
   Entry = (
     await import("@/components/Authentication/phone-verification/authentication-entry")
@@ -425,8 +429,11 @@ test("focused touch auth keeps its dismiss handle above a changing visual viewpo
     const chrome = sheet.querySelector("[data-authentication-chrome]");
     assert.equal(chrome?.classList.contains("h-0"), false, "the 40px native handle hit area needs real chrome space");
     ui.fireEvent.click(ui.screen.getByRole("button", { name: "Cancel" }));
-    assert.ok(ui.screen.queryByRole("heading", { name: "Welcome" }) === null, "mobile X dismisses to the caller rather than a chooser");
-    assert.ok(ui.screen.queryByRole("heading", { name: messages.AuthPhase.login }) === null, "mobile X dismisses the login heading");
+    // The sheet leaves after its exit animation, as in a browser (tests/support/exit-animations.ts), so the wait is bounded.
+    await ui.waitFor(() => {
+      assert.ok(ui.screen.queryByRole("heading", { name: "Welcome" }) === null, "mobile X dismisses to the caller rather than a chooser");
+      assert.ok(ui.screen.queryByRole("heading", { name: messages.AuthPhase.login }) === null, "mobile X dismisses the login heading");
+    }, { timeout: 1000 });
   } finally {
     ui.cleanup();
     if (originalViewport) Object.defineProperty(window, "visualViewport", originalViewport);
@@ -462,7 +469,7 @@ for (const width of [393, 496, 639]) {
     const phase = sheet.querySelector<HTMLElement>("[data-account-phase-body]")!;
     assert.ok(!phase.style.transform || phase.style.transform === "none", "mobile phase transition has no vertical translation");
     ui.fireEvent.click(ui.screen.getByRole("button", { name: "Cancel" }));
-    assert.ok(ui.screen.queryByRole("heading", { name: "Welcome" }) === null, "Cancel must dismiss the chooser");
+    await ui.waitFor(() => assert.ok(ui.screen.queryByRole("heading", { name: "Welcome" }) === null, "Cancel must dismiss the chooser"), { timeout: 1000 });
   });
 }
 
@@ -639,6 +646,7 @@ afterEach(() => {
   Object.defineProperty(window, "innerHeight", { configurable: true, value: 768 });
 });
 after(() => {
+  stopExitAnimations?.();
   dom.window.close();
   for (const [key, descriptor] of previous) {
     if (descriptor) Object.defineProperty(globalThis, key, descriptor);

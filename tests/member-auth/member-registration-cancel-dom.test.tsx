@@ -3,9 +3,11 @@ import assert from "node:assert/strict";
 import { after, afterEach, before, test } from "node:test";
 import { useRef, useState } from "react";
 import { JSDOM } from "jsdom";
+import { finishExitAnimations } from "../support/exit-animations";
 import { MemberAuthActionError, type MemberClient, type MemberStatus } from "@/lib/member-auth/client";
 
 let dom: JSDOM;
+let stopExitAnimations: (() => void) | undefined;
 let ui: typeof import("@testing-library/react/pure");
 let Study: typeof import("@/components/Authentication/member-auth/account-study").MemberAccountStudy;
 let Dialog: typeof import("@/components/Authentication/member-auth/account-study").MemberAccountDialog;
@@ -31,6 +33,8 @@ before(async () => {
   for (const key of ["scrollIntoView", "setPointerCapture", "releasePointerCapture"])
     Object.defineProperty(win.HTMLElement.prototype, key, { value() {} });
   Object.defineProperty(win.HTMLElement.prototype, "hasPointerCapture", { value() { return false; } });
+  // JSDOM never ends the sheets' CSS exit animations; this plays the browser's animationend (see the helper).
+  stopExitAnimations = finishExitAnimations(dom.window as never);
   ui = await import("@testing-library/react/pure");
   const account = await import("@/components/Authentication/member-auth/account-study");
   Study = account.MemberAccountStudy;
@@ -38,6 +42,7 @@ before(async () => {
 });
 afterEach(() => ui.cleanup());
 after(async () => {
+  stopExitAnimations?.();
   await new Promise((resolve) => setTimeout(resolve, 250));
   dom.window.close();
   for (const [key, descriptor] of previous) {
@@ -248,7 +253,8 @@ for (const [name, status, heading] of [
     ui.fireEvent.click(ui.screen.getByRole("button", { name: "Cancel" }));
     await ui.waitFor(() => assert.ok(ui.screen.queryByRole("heading", { name: heading }) === null));
     assert.ok(ui.screen.queryByRole("heading", { name: "Welcome" }) === null);
-    assert.ok(ui.screen.getByRole("button", { name: "Open account options" }));
+    // The caller is exposed again once the sheet has left (its exit ends first; tests/support/exit-animations.ts).
+    await ui.waitFor(() => assert.ok(ui.screen.getByRole("button", { name: "Open account options" })), { timeout: 1000 });
     assert.equal(c.calls.includes("sign-out"), false);
   });
 }

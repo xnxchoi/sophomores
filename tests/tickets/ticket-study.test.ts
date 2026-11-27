@@ -63,6 +63,7 @@ test("count labels are literal, not status or personality scores", () => {
 
 test("real ticket number retains its native directional transition", () => {
   type Element = ReactElement<Record<string, unknown>>;
+  const Link = () => null;
   const modules: Record<string, unknown> = {
     react: { useState: (initial: unknown) => [initial, () => {}] },
     "react/jsx-runtime": jsxRuntime,
@@ -72,6 +73,7 @@ test("real ticket number retains its native directional transition", () => {
     "@/lib/invitation/reference-media": { referenceFilm: undefined },
     "@/lib/motion-tokens": { motionTokens },
     "@/components/core/BrandMark": { BrandMark: () => null },
+    "@/components/core/Link/Link": { Link },
     "@/lib/tickets/tickets": tickets
   };
   const source = readFileSync(
@@ -101,7 +103,7 @@ test("real ticket number retains its native directional transition", () => {
       )
   ];
   const elements = descendants(exports.TicketStudy());
-  const logoLink = elements.find((element) => element.type === "a" && element.props["aria-label"] === "Sophomores");
+  const logoLink = elements.find((element) => element.type === Link && element.props["aria-label"] === "Sophomores");
   assert.equal(logoLink?.props.href, "/studies/warp");
   assert.equal((logoLink?.props.children as Element | undefined)?.type, (modules["@/components/core/BrandMark"] as { BrandMark: unknown }).BrandMark);
   const number = elements.find(

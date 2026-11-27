@@ -2,6 +2,7 @@
 
 "use client";
 
+import { Button } from "@/components/core/Button";
 import type { ComponentProps, ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
 import { REGEXP_ONLY_DIGITS_AND_CHARS } from "input-otp";
@@ -15,7 +16,7 @@ export function StudyChoiceAction({
   ...props
 }: ComponentProps<"button"> & { tone: "primary" | "secondary" }) {
   return (
-    <button
+    <Button variant="bare"
       type="button"
       data-composition-choice-tone={tone}
       className={cn(
@@ -35,7 +36,7 @@ export function StudyPrimaryAction({
   ...props
 }: ComponentProps<"button">) {
   return (
-    <button
+    <Button variant="bare"
       type="button"
       className={cn(
         "flex h-12 min-w-0 items-center justify-center rounded-xl bg-foreground px-5 text-[15px] font-medium text-background transition-[background-color,color,opacity,transform] duration-200 ease-out hover:bg-foreground/90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-foreground active:scale-[0.985] disabled:opacity-40 aria-busy:opacity-80",
@@ -52,7 +53,7 @@ export function StudyTextAction({
   ...props
 }: ComponentProps<"button">) {
   return (
-    <button
+    <Button variant="bare"
       type="button"
       className={cn(
         "group/focus flex min-h-11 min-w-0 items-center justify-center rounded-[14px] px-4 text-[15px] font-medium text-foreground transition-[background-color,color,transform] duration-200 ease-out hover:bg-muted hover:text-foreground active:scale-[0.98]",
@@ -61,7 +62,7 @@ export function StudyTextAction({
       {...props}
     >
       <FocusShape className="inline-flex items-center justify-center gap-[inherit] outline-offset-4 group-focus-visible/focus:outline-foreground">{children}</FocusShape>
-    </button>
+    </Button>
   );
 }
 
@@ -71,7 +72,7 @@ export function StudyIconAction({
   ...props
 }: ComponentProps<"button">) {
   return (
-    <button
+    <Button variant="bare"
       type="button"
       className={cn(
         "group group/focus flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors duration-200 ease-out hover:text-foreground",
@@ -82,7 +83,7 @@ export function StudyIconAction({
       <FocusShape className="flex size-7 items-center justify-center rounded-full bg-transparent transition-colors duration-200 ease-out group-hover:bg-muted group-focus-visible/focus:outline-foreground">
         {children}
       </FocusShape>
-    </button>
+    </Button>
   );
 }
 
@@ -92,7 +93,7 @@ export function StudyBackAction({
   ...props
 }: ComponentProps<"button">) {
   return (
-    <button
+    <Button variant="bare"
       type="button"
       className={cn(
         "group/focus flex size-11 items-center justify-center rounded-full text-muted-foreground transition-[background-color,color,transform] duration-200 ease-out hover:bg-muted hover:text-foreground active:scale-95",
@@ -101,7 +102,7 @@ export function StudyBackAction({
       {...props}
     >
       <FocusShape className="flex items-center justify-center group-focus-visible/focus:outline-foreground">{children}</FocusShape>
-    </button>
+    </Button>
   );
 }
 

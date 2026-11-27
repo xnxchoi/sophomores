@@ -1,4 +1,5 @@
 "use client";
+import { Button } from "@/components/core/Button";
 import { useTranslations } from "next-intl";
 
 
@@ -61,11 +62,11 @@ export function ShippingAddressForm({ value, onChange, disabled = false }: {
           required pattern="[0-9]{5}" maxLength={5} value={value.postalCode}
           onChange={(event) => onChange({ ...value, postalCode: event.target.value })} />
       {/* An in-place action (spec §4): tracked caps with a dotted underline. */}
-      <button type="button" aria-expanded={searchOpen} aria-controls={id + "-search"}
+      <Button variant="bare" type="button" aria-expanded={searchOpen} aria-controls={id + "-search"}
         onClick={() => { setSearchError(false); searching.current = !searchOpen; setSearchOpen(!searchOpen); }}
         className="group/focus inline-flex min-h-11 items-center text-xs uppercase tracking-[0.04em] underline decoration-dotted underline-offset-4 hover:decoration-solid disabled:opacity-40">
         <FocusShape className="outline-offset-4">{searchOpen ? t('closeSearch') : t('searchAddress')}</FocusShape>
-      </button>
+      </Button>
     </div>
     {searchOpen && <div id={id + "-search"} className="overflow-hidden rounded-xl border border-border bg-white md:col-span-2">
       <div ref={searchPanel} className="h-110 w-full" />

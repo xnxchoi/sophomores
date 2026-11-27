@@ -1,5 +1,6 @@
 "use client";
 
+import { Link } from "@/components/core/Link/Link";
 import { useState } from "react";
 import { UserIcon } from "@phosphor-icons/react";
 import { AnimatePresence, motion } from "motion/react";
@@ -34,16 +35,16 @@ export function TicketStudy() {
   return (
     <main className="ticket-study">
       <header className="ticket-study__header">
-        <a
+        <Link
           className="ticket-study__wordmark"
           href="/studies/warp"
           aria-label="Sophomores"
         >
           <BrandMark />
-        </a>
-        <a className="ticket-study__back" href="/studies/warp">
+        </Link>
+        <Link className="ticket-study__back" href="/studies/warp">
           Back to the story <span aria-hidden="true">↗</span>
-        </a>
+        </Link>
       </header>
 
       <div className="ticket-study__notice">
@@ -183,9 +184,9 @@ export function TicketStudy() {
             </p>
           </div>
 
-          <a className="ticket-study__cta" href="/studies/invitation">
+          <Link className="ticket-study__cta" href="/studies/invitation">
             Notify me when tickets open <span aria-hidden="true">↗</span>
-          </a>
+          </Link>
           <p className="ticket-study__cta-note">
             Opens a local invitation preview. No registration or reservation is
             made.
@@ -223,9 +224,9 @@ export function TicketStudy() {
       <footer className="ticket-study__footer">
         <p>Still to be confirmed</p>
         <p>Price · date · venue · inclusions · capacity · ticket policy</p>
-        <a href="/studies/warp">
+        <Link href="/studies/warp">
           Back to intro study <span aria-hidden="true">↗</span>
-        </a>
+        </Link>
       </footer>
     </main>
   );

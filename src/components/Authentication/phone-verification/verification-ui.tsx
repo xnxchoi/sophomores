@@ -16,7 +16,7 @@ import { copyVerificationValue } from "../../../lib/phone-verification/clipboard
 import { motionTokens } from "../../../lib/motion-tokens";
 import { cn } from "@/lib/utils";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
-import { CopyButton } from "@/components/core/Button";
+import { Button, CopyButton } from "@/components/core/Button";
 
 export const Modal = ({
   children,
@@ -58,7 +58,7 @@ export const Close = ({
   ...props
 }: ComponentProps<"button">) => {
   return (
-    <button
+    <Button variant="bare"
       type="button"
       className={cn(
         "group/focus relative flex size-11 items-center justify-center rounded-lg text-2xl text-muted-foreground transition-colors duration-200 ease-out hover:bg-muted hover:text-foreground",
@@ -67,7 +67,7 @@ export const Close = ({
       {...props}
     >
       <FocusShape className="flex items-center justify-center group-focus-visible/focus:outline-foreground">{children}</FocusShape>
-    </button>
+    </Button>
   );
 };
 export const Panel = ({
@@ -137,7 +137,7 @@ export function PrimaryButton({
   ...props
 }: ComponentProps<"button">) {
   return (
-    <button
+    <Button variant="bare"
       className={cn(
         "relative mt-5 flex min-h-13 w-full items-center justify-between gap-3 rounded-lg bg-foreground px-5 py-3.5 text-sm font-semibold text-background transition-[background-color,transform,box-shadow] duration-200 ease-out hover:bg-foreground/90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-foreground active:scale-[0.98] disabled:bg-muted disabled:text-muted-foreground",
         className
@@ -163,7 +163,7 @@ export function SecondaryButton({
   ...props
 }: ComponentProps<"button">) {
   return (
-    <button
+    <Button variant="bare"
       className={cn(
         "relative my-3 flex min-h-12 w-full items-center justify-center gap-2 rounded-lg border border-border bg-transparent px-4 py-3 text-sm font-medium text-foreground transition-colors duration-200 ease-out hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground active:bg-muted disabled:opacity-50",
         className
@@ -174,7 +174,7 @@ export function SecondaryButton({
 }
 export function TextButton({ className, children, ...props }: ComponentProps<"button">) {
   return (
-    <button
+    <Button variant="bare"
       className={cn(
         "group/focus relative flex min-h-11 items-center justify-center px-1 text-xs text-muted-foreground underline-offset-4 transition-colors duration-200 ease-out hover:text-foreground hover:underline",
         className
@@ -182,7 +182,7 @@ export function TextButton({ className, children, ...props }: ComponentProps<"bu
       {...props}
     >
       <FocusShape className="inline-flex items-center justify-center gap-[inherit] group-focus-visible/focus:outline-foreground">{children}</FocusShape>
-    </button>
+    </Button>
   );
 }
 
@@ -200,7 +200,7 @@ export function VerificationDetails({
       className="mt-4 border-t border-border text-muted-foreground"
       data-verification-details=""
     >
-      <button
+      <Button variant="bare"
         type="button"
         aria-expanded={open}
         aria-controls={id}
@@ -215,7 +215,7 @@ export function VerificationDetails({
         >
           +
         </motion.span>
-      </button>
+      </Button>
       <motion.div
         id={id}
         inert={!open}

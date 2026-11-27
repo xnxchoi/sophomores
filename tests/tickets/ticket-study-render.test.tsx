@@ -1,8 +1,13 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { renderToStaticMarkup } from "react-dom/server";
+import type { ReactNode } from "react";
+import { renderToStaticMarkup as renderMarkup } from "react-dom/server";
+import { SiteContexts } from "../fixtures/site-contexts";
 import { TicketStudy } from "@/components/tickets/ticket-study";
+
+// Core Button and Link need the site contexts (inert in tests).
+const renderToStaticMarkup = (node: ReactNode) => renderMarkup(<SiteContexts>{node}</SiteContexts>);
 
 test("ticket study starts with unknown price, honest status, and bounded controls", () => {
   const html = renderToStaticMarkup(<TicketStudy />);

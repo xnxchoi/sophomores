@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/core/Button";
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { z } from "zod";
@@ -97,12 +98,12 @@ export function CommerceOrders({ customerID }: { customerID: string }) {
         <p className="mt-4 max-w-lg text-sm leading-relaxed text-muted-foreground">{state.result.totalDocs > 0 ? t("emptyPageDetail") : t("emptyDetail")}</p>
       </div>)}
     <nav aria-label={t("pages")} className="flex flex-wrap items-center justify-between gap-3">
-      <button type="button" disabled={loading || page <= 1} onClick={() => setPage((value) => value - 1)} className="min-h-12 rounded-full border border-border px-5 text-sm outline-offset-4 hover:bg-muted focus-visible:outline-2 disabled:opacity-40">{t("previous")}</button>
+      <Button variant="bare" type="button" disabled={loading || page <= 1} onClick={() => setPage((value) => value - 1)} className="min-h-12 rounded-full border border-border px-5 text-sm outline-offset-4 hover:bg-muted focus-visible:outline-2 disabled:opacity-40">{t("previous")}</Button>
       <p role="status" className="text-sm tabular-nums text-muted-foreground">{loading ? t("loading") : !ready || !pagination ? t("pagesUnavailable") : pagination.totalPages === 0 ? t("noPages") : page > pagination.totalPages ? t("emptyPage") : t("page", { current: page, total: pagination.totalPages })}</p>
-      <button type="button" disabled={loading || !ready || !pagination?.hasNextPage} onClick={() => setPage((value) => value + 1)} className="min-h-12 rounded-full border border-border px-5 text-sm outline-offset-4 hover:bg-muted focus-visible:outline-2 disabled:opacity-40">{t("next")}</button>
+      <Button variant="bare" type="button" disabled={loading || !ready || !pagination?.hasNextPage} onClick={() => setPage((value) => value + 1)} className="min-h-12 rounded-full border border-border px-5 text-sm outline-offset-4 hover:bg-muted focus-visible:outline-2 disabled:opacity-40">{t("next")}</Button>
     </nav>
     <nav aria-label={t("actions")} className="flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-border pt-6">
-      <button type="button" disabled={loading} onClick={() => setRetry((value) => value + 1)} className="min-h-12 rounded-full border border-border px-5 text-sm outline-offset-4 transition-colors hover:bg-muted focus-visible:outline-2 disabled:opacity-40">{t("refresh")}</button>
+      <Button variant="bare" type="button" disabled={loading} onClick={() => setRetry((value) => value + 1)} className="min-h-12 rounded-full border border-border px-5 text-sm outline-offset-4 transition-colors hover:bg-muted focus-visible:outline-2 disabled:opacity-40">{t("refresh")}</Button>
       <Link href="/me" className="group/focus inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 hover:decoration-current"><FocusShape className="outline-offset-4">{t("backToAccount")}</FocusShape></Link>
       <Link href="/shop" className="group/focus inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 hover:decoration-current"><FocusShape className="outline-offset-4">{t("shop")}</FocusShape></Link>
     </nav>

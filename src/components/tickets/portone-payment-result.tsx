@@ -1,4 +1,6 @@
 "use client";
+import { Link } from "@/components/core/Link/Link";
+import { Button } from "@/components/core/Button";
 import { useTranslations } from "next-intl";
 
 
@@ -318,7 +320,7 @@ function PaymentResult({
           </p>
         )}
         {valid && ["checking", "pending", "unavailable"].includes(status) && (
-          <button
+          <Button variant="bare"
             type="button"
             disabled={status === "checking" || resuming}
             aria-busy={status === "checking"}
@@ -330,11 +332,11 @@ function PaymentResult({
             className="min-h-12 w-full rounded-xl bg-titanium px-5 py-3 text-sm font-medium text-carbon-deep transition-colors hover:bg-singer-stone focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-titanium disabled:bg-gunmetal disabled:text-pewter"
           >
             {status === "checking" ? t('checking') : t('checkAgain')}
-          </button>
+          </Button>
         )}
         {canResume &&
           ["checking", "pending", "unavailable"].includes(status) && (
-            <button
+            <Button variant="bare"
               ref={resumeButton}
               type="button"
               disabled={resuming || status === "checking"}
@@ -343,13 +345,13 @@ function PaymentResult({
               className="min-h-12 w-full rounded-xl border border-gunmetal-lighter-2 px-5 py-3 text-sm font-medium text-titanium transition-colors hover:bg-gunmetal focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-titanium disabled:text-pewter"
             >
               {resuming ? t('openingPayment') : t('resumePayment')}
-            </button>
+            </Button>
           )}
-        <a
+        <Link
           href="/tickets"
           className="group/focus inline-flex min-h-12 items-center text-sm text-singer-stone underline decoration-gunmetal-lighter-2 underline-offset-4 transition-colors hover:text-white"
         >
-          <FocusShape className="outline-offset-4 group-focus-visible/focus:outline-titanium">{t('backToTickets')}</FocusShape></a>
+          <FocusShape className="outline-offset-4 group-focus-visible/focus:outline-titanium">{t('backToTickets')}</FocusShape></Link>
       </section>
     </main>
   );

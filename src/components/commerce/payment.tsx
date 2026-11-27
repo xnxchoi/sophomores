@@ -14,7 +14,7 @@ import { z } from "zod";
 import { shippingAddressSchema, TICKET_EMAIL_CONSENT, type GuestCheckoutQuote, type ShippingAddress } from "@/lib/commerce/contracts";
 import { providerPaymentId } from "@/lib/tickets/portone/payment-id";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
-import { ActionButton, CopyButton } from "@/components/core/Button";
+import { ActionButton, Button, CopyButton } from "@/components/core/Button";
 import { commercePaymentIntentPrefix } from "@/lib/member-auth/browser-copies";
 import { refundTermsSchema, type RefundTerms as Terms } from "@/lib/commerce/refund-policy";
 import { RefundTerms } from "./refund-terms";
@@ -302,11 +302,11 @@ function PaymentPanel({ onRefundTermsChanged, shippingAddress, disabled = false,
     <header className="border-b border-border pb-4"><h2 className="text-xl">{t('payment')}</h2></header>
     <p role="status" aria-live="polite" className="min-h-10 max-w-prose empty:hidden text-sm leading-relaxed wrap-anywhere text-foreground">{message || (stored === null ? t('paymentNeedsBrowserStorageEnableItAndReload') : stored && !intent ? t('savedPaymentInformationIsUnreadableContactSupportBeforeMaking') : reviewHold ? t('thisPaymentNeedsReviewContactSupportBeforeTryingAgain') : discovery.state === "error" ? t('existingPaymentsCouldNotBeCheckedTryAgainBefore') : recovery && !intent && discovery.state === "ready" && !discovery.attempts.length ? t('noUnresolvedPaymentAttemptWasFoundForThisAccount') : retained ? t('aPaymentAttemptIsSavedNothingWillReopenAutomatically') : discovery.state === "loading" ? t('checkingExistingPayments') : "")}</p>
     {!retained && discovery.attempts.length > 0 && <div><h3 className="pb-3 text-base">{t('existingPaymentAttempts')}</h3>
-      {discovery.attempts.map((attempt) => <button key={attempt.transactionID} type="button" disabled={unavailable}
+      {discovery.attempts.map((attempt) => <Button variant="bare" key={attempt.transactionID} type="button" disabled={unavailable}
         onClick={() => { try { saveIntent({ version: 1, cartID: attempt.cartID, transactionID: attempt.transactionID, paymentID: attempt.paymentID }); setMessage(""); } catch { fail(t('paymentNeedsBrowserStorageEnableItAndReload')); } }}
         className="grid min-h-12 w-full grid-cols-1 items-center gap-x-4 gap-y-2 border-t border-border py-4 last:border-b sm:grid-cols-[minmax(0,1fr)_auto] text-left text-sm transition-colors hover:bg-muted focus-visible:bg-muted disabled:opacity-40">
         <span className="min-w-0 tabular-nums">{attempt.orderName && <span className="mb-1 block font-medium wrap-anywhere">{attempt.orderName}</span>}{attempt.totalAmount.toLocaleString("ko-KR")} KRW <RefundTerms as="span" terms={attempt.refundTerms} className="mt-1" /><span className="mt-1 block wrap-anywhere text-xs text-muted-foreground">{t('referenceEnding')}{attempt.paymentID.slice(-6)}</span></span><span className="font-medium">{attempt.reviewHold || attempt.resolutionConflict ? t('reviewNeeded') : t('viewAttempt')}</span>
-      </button>)}
+      </Button>)}
     </div>}
     {offerTicketEmailConsent && !recovery && !retained && !orderID && <label className="flex min-h-11 items-center gap-3 text-sm">
       <input type="checkbox" checked={ticketEmailConsent} disabled={unavailable || disabled}
@@ -320,16 +320,16 @@ function PaymentPanel({ onRefundTermsChanged, shippingAddress, disabled = false,
     {retained && !orderID && <div className="grid gap-3">
       {retainedTerms ? <RefundTerms terms={retainedTerms} />
         : discovery.state === "ready" && <p className="text-sm leading-6 text-foreground text-pretty">{refundCopy('unconfirmed')}</p>}
-      <button type="button" disabled={unavailable} onClick={() => void run("check")} className="h-10 rounded-full border border-foreground bg-transparent px-5 text-[13px] uppercase tracking-[0.04em] text-foreground outline-offset-4 transition-colors hover:bg-foreground hover:text-background focus-visible:outline-2 focus-visible:outline-foreground disabled:opacity-40 pointer-coarse:h-11">{busy ? t('checking') : t('checkPayment')}</button>
+      <Button variant="bare" type="button" disabled={unavailable} onClick={() => void run("check")} className="h-10 rounded-full border border-foreground bg-transparent px-5 text-[13px] uppercase tracking-[0.04em] text-foreground outline-offset-4 transition-colors hover:bg-foreground hover:text-background focus-visible:outline-2 focus-visible:outline-foreground disabled:opacity-40 pointer-coarse:h-11">{busy ? t('checking') : t('checkPayment')}</Button>
 
-      <button type="button" disabled={unavailable || reviewHold || !retainedTerms} onClick={() => void run("resume")} className="group/focus inline-flex min-h-11 items-center text-xs uppercase tracking-[0.04em] underline decoration-dotted underline-offset-4 hover:decoration-solid disabled:opacity-40"><FocusShape className="outline-offset-4">{t('resumeSamePayment')}</FocusShape></button>
+      <Button variant="bare" type="button" disabled={unavailable || reviewHold || !retainedTerms} onClick={() => void run("resume")} className="group/focus inline-flex min-h-11 items-center text-xs uppercase tracking-[0.04em] underline decoration-dotted underline-offset-4 hover:decoration-solid disabled:opacity-40"><FocusShape className="outline-offset-4">{t('resumeSamePayment')}</FocusShape></Button>
       {/* Cancelling retires the attempt for good, so it asks first and offers no undo. Its own row, so the question has room. */}
       {retirableTransactionID === intent?.transactionID && <ConfirmMorph className="justify-self-start" label={t('cancelThisAttempt')} prompt={t('cancelThisAttemptQuestion')} confirmLabel={t('cancelAttempt')}
         cancelLabel={t('keepAttempt')} pendingLabel={t('cancellingAttempt')} doneLabel={t('attemptCancelled')} errorLabel={t('couldNotCancelAttempt')} retryLabel={t('tryAgain')}
         disabled={unavailable || reviewHold} onConfirm={async () => { if (!(await run("retire"))) throw new Error("Attempt not cancelled"); }} />}
     </div>}
 
-    {discovery.state === "error" && <button type="button" onClick={() => setDiscoveryRetry((value) => value + 1)} className="min-h-12 rounded-full border border-border bg-background px-5 py-3 text-sm outline-offset-4 transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-foreground">{t('retryPaymentLookup')}</button>}
+    {discovery.state === "error" && <Button variant="bare" type="button" onClick={() => setDiscoveryRetry((value) => value + 1)} className="min-h-12 rounded-full border border-border bg-background px-5 py-3 text-sm outline-offset-4 transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-foreground">{t('retryPaymentLookup')}</Button>}
     {orderID && <div className="space-y-3 border-t border-border pt-4"><div className="flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-2">
       <p className="min-w-0 text-sm leading-relaxed text-muted-foreground">
         {t('orderReference')}<span className="wrap-anywhere tabular-nums">{orderID}</span>

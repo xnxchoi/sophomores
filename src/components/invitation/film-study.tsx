@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/core/Button";
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { motionTokens } from "@/lib/motion-tokens";
@@ -83,14 +84,14 @@ export function FilmStudy({ still, onModalChange, media }: Props) {
 
   return (
     <>
-      <button
+      <Button variant="bare"
         className="invitation-study-text-button"
         ref={trigger}
         onClick={open}
       >
         {media ? "Watch reference clip" : "Preview film transition"}{" "}
         <span aria-hidden="true">↗</span>
-      </button>
+      </Button>
       <dialog
         ref={dialog}
         className="invitation-film-dialog"
@@ -126,14 +127,14 @@ export function FilmStudy({ still, onModalChange, media }: Props) {
           trigger.current?.focus();
         }}
       >
-        <button
+        <Button variant="bare"
           className="invitation-film-close"
           ref={closeButton}
           onClick={dismiss}
           aria-label="Close film study"
         >
           Close <span aria-hidden="true">×</span>
-        </button>
+        </Button>
         <h2 id="film-study-heading" className="invitation-study-sr-only">
           {media?.title ?? "Film transition study"}
         </h2>
@@ -182,9 +183,9 @@ export function FilmStudy({ still, onModalChange, media }: Props) {
                   {mediaFailed ? (
                     <div className="invitation-film-failure" role="alert">
                       <p>The reference video could not load.</p>
-                      <button onClick={() => setMediaFailed(false)}>
+                      <Button variant="bare" type="button" onClick={() => setMediaFailed(false)}>
                         Try loading again
-                      </button>
+                      </Button>
                     </div>
                   ) : (
                     <video
@@ -229,13 +230,13 @@ export function FilmStudy({ still, onModalChange, media }: Props) {
                   </p>
                 </div>
               )}
-              <button
+              <Button variant="bare"
                 className="invitation-film-return"
                 ref={returnButton}
                 onClick={dismiss}
               >
                 Back to the study <span aria-hidden="true">↗</span>
-              </button>
+              </Button>
             </motion.div>
           )}
         </AnimatePresence>

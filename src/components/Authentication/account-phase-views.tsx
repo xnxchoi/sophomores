@@ -811,7 +811,7 @@ function MessageDetails({ props, t }: { props: Props; t: CopyText }) {
             {props.message}
           </p>
         </div>
-        <button
+        <Button variant="bare"
           type="button"
           data-phase-action="copy"
           aria-label={props.copied ? t("copied") : t("copy")}
@@ -839,7 +839,7 @@ function MessageDetails({ props, t }: { props: Props; t: CopyText }) {
             )}
           </motion.span>
           </FocusShape>
-        </button>
+        </Button>
       </div>
       <p
         role="status"

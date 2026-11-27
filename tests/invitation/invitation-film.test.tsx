@@ -9,6 +9,7 @@ import { AnimatePresence, motion } from "motion/react";
 import type { ReactElement } from "react";
 import { motionTokens } from "@/lib/motion-tokens";
 import { FilmStudy } from "@/components/invitation/film-study";
+import { SiteContexts } from "../fixtures/site-contexts";
 
 type Element = ReactElement<Record<string, unknown>>;
 
@@ -26,7 +27,8 @@ function filmPanel(still: boolean) {
     },
     "react/jsx-runtime": jsxRuntime,
     "motion/react": { AnimatePresence, motion },
-    "@/lib/motion-tokens": { motionTokens }
+    "@/lib/motion-tokens": { motionTokens },
+    "@/components/core/Button": { Button: () => null }
   };
   const source = readFileSync(
     new URL("../../src/components/invitation/film-study.tsx", import.meta.url),
@@ -110,7 +112,7 @@ test("film owner uses direct native Motion props rather than a pose factory", ()
 
 test("film shell is an honest, labelled study rather than a fake film", () => {
   const html = renderToStaticMarkup(
-    <FilmStudy still onModalChange={() => {}} />
+    <SiteContexts><FilmStudy still onModalChange={() => {}} /></SiteContexts>
   );
   assert.match(html, /<dialog[^>]+aria-labelledby="film-study-heading"/);
   assert.match(html, /Close film study/);
@@ -122,6 +124,7 @@ test("film shell is an honest, labelled study rather than a fake film", () => {
 
 test("configured film is labelled and does not load media before interaction", () => {
   const html = renderToStaticMarkup(
+    <SiteContexts>
     <FilmStudy
       still
       onModalChange={() => {}}
@@ -131,6 +134,7 @@ test("configured film is labelled and does not load media before interaction", (
         credit: "Local reference, not our film"
       }}
     />
+    </SiteContexts>
   );
   assert.match(html, /Watch reference clip/);
   assert.match(html, /Local reference, not our film/);

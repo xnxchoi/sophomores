@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/core/Button";
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import { Link } from "@/components/core/Link/Link";
@@ -32,9 +33,9 @@ export function InvitationStudy() {
           <BrandMark />
         </Link>
         <nav aria-label="Local studies">
-          <a href="/studies/warp">Intro</a>
-          <a href="/studies/tickets">Tickets</a>
-          <a href="#film-study">Film</a>
+          <Link href="/studies/warp">Intro</Link>
+          <Link href="/studies/tickets">Tickets</Link>
+          <Link href="#film-study">Film</Link>
         </nav>
       </header>
       <main>
@@ -83,13 +84,13 @@ export function InvitationStudy() {
         </section>
       </main>
       <footer className="invitation-study-footer">
-        <button
+        <Button variant="bare"
           type="button"
           onClick={() => setPaused((value) => !value)}
           aria-pressed={still}
         >
           {paused ? "Resume motion" : "Pause motion"}
-        </button>
+        </Button>
         <span>Local study · no registration service connected</span>
       </footer>
     </div>

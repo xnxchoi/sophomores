@@ -160,7 +160,8 @@ test("source contract: Hero and Story retain original scroll ownership and playb
     studySource,
     /<Story\s+suspended=\{[^}]*current[^}]*"origin"[^}]*heroComplete/
   );
-  assert.match(studySource, /entryTokens\.complete/);
+  // The hero no longer takes an entry pose (owner, 27 Nov: no logo in the hero), so Warp builds none.
+  assert.doesNotMatch(studySource, /entryTokens/);
   assert.match(studySource, /preludeInView\s*\|\|\s*coronaInView/);
 });
 

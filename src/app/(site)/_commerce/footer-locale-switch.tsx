@@ -6,7 +6,7 @@ import { setUserLocale } from "@/lib/i18n/locale";
 import { cn } from "@/lib/utils";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { Button } from "@/components/core/Button";
-import { Locale, locales } from "@/i18n/request";
+import { locales, type Locale } from "@/i18n/locales";
 
 /**
  * The footer's EN / KO switch, ported from The Hideaway's footer LocaleSwitch (Shells/Footer/LocaleSwitch.tsx).

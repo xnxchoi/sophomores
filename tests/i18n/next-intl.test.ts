@@ -6,7 +6,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { NextIntlClientProvider, useTranslations } from "next-intl";
 import { messagesByLocale } from "@/i18n/messages";
-import { locales, defaultLocale } from "@/i18n/request";
+import { locales, defaultLocale } from "@/i18n/locales";
 
 test("next-intl integration: 2 locales without per-locale path", async (t) => {
   await t.test(

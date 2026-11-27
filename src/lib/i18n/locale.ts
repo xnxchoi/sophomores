@@ -1,7 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { locales, type Locale, defaultLocale } from "@/i18n/request";
+import { defaultLocale, locales, type Locale } from "@/i18n/locales";
 
 const COOKIE_NAME = "NEXT_LOCALE";
 const ONE_YEAR = 365 * 24 * 60 * 60;

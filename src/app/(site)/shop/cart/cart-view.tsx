@@ -9,7 +9,7 @@ import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { PageFrame } from "@/components/commerce/page-frame";
 import { CommerceAccountGate, CommerceProvider } from "@/components/commerce/checkout";
 import { CommerceCart } from "@/components/commerce/cart";
-import type { CommerceOffer } from "@/lib/commerce/catalogue";
+import type { CartProduct } from "@/lib/commerce/cart-products";
 import { z } from "zod";
 import { listGuestCart, writeThroughGuestCart, type MemberCartView, type WriteThroughResult } from "@/lib/commerce/browser-cart";
 import type { MemberCapabilities } from "@/lib/member-auth/contracts";
@@ -18,8 +18,8 @@ import type { MemberCapabilities } from "@/lib/member-auth/contracts";
  * /shop/cart (owner, 23 Nov): the cart is visible to everyone, and sign-in happens only at Checkout. Signed out, Checkout
  * swaps the page to the account step (its own title); once signed in, the page swaps back to the cart, which goes on.
  */
-export function CartView({ offer, signedIn, initialCapabilities, signInOffInReview, copy }: {
-  offer: CommerceOffer | null;
+export function CartView({ products, signedIn, initialCapabilities, signInOffInReview, copy }: {
+  products: readonly CartProduct[];
   signedIn: boolean;
   initialCapabilities: Readonly<MemberCapabilities>;
   signInOffInReview: boolean;
@@ -39,7 +39,7 @@ export function CartView({ offer, signedIn, initialCapabilities, signInOffInRevi
   return <PageFrame title={copy.title} displayTitle layout={signInOffInReview ? "editorial" : "wide"}>
     <CommerceProvider>
       {member && <GuestCartWriteThrough />}
-      <CommerceCart offer={offer} wide signedIn={member} onSignIn={member ? undefined : () => setView("sign-in")} />
+      <CommerceCart products={products} wide signedIn={member} onSignIn={member ? undefined : () => setView("sign-in")} />
     </CommerceProvider>
   </PageFrame>;
 }

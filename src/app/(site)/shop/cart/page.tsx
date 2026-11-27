@@ -5,7 +5,7 @@ import { connection } from "next/server";
 import { headers } from "next/headers";
 import { getPayload } from "payload";
 import config from "@payload-config";
-import { loadCommerceOffer, type CommerceOffer } from "@/lib/commerce/catalogue";
+import { loadCartProducts, type CartProduct } from "@/lib/commerce/cart-products";
 import { loadPublicMemberCapabilities } from "@/lib/member-auth/public-capabilities.server";
 import { readHeaderMemberState } from "@/lib/member-auth/header-state.server";
 import { CartView } from "./cart-view";
@@ -21,12 +21,12 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function CartPage() {
   await connection();
   const t = await getTranslations("Customer.app_site_shop_cart_page");
-  let offer: CommerceOffer | null = null;
-  try { offer = await loadCommerceOffer(await getPayload({ config })); }
+  let products: readonly CartProduct[] = [];
+  try { products = await loadCartProducts(await getPayload({ config })); }
   catch { console.error("Published cart pricing is unavailable."); }
   // The same request-scoped state the header reads; it only decides whether Checkout asks for sign-in first.
   const member = await readHeaderMemberState(await headers());
-  return <CartView offer={offer} signedIn={member.state === "signed-in" && member.member}
+  return <CartView products={products} signedIn={member.state === "signed-in" && member.member}
     initialCapabilities={await loadPublicMemberCapabilities()} signInOffInReview={isReviewCopyRequest()}
     copy={{ title: t("title"), signInTitle: t("signInTitle"), backToCart: t("backToCart") }} />;
 }

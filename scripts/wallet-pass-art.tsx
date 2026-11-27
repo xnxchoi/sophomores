@@ -68,14 +68,14 @@ async function main() {
           <body style="margin:0;background:transparent">
             <div id="box" style="width:${item.width}px;height:${item.height}px;display:flex;align-items:center;justify-content:${item.align};--header-logo:100px;color:${ink}">${mark}</div>
           </body></html>`);
-        const span = page.locator("#box > span");
-        const at100 = await span.evaluate(node => node.getBoundingClientRect().width);
+        // The logo is an SVG 1em tall (BrandMark), so its width follows the font size like the old text did.
+        const logo = page.locator("#box > svg");
+        const at100 = await logo.evaluate(node => node.getBoundingClientRect().width);
         const size = Math.floor(((item.width - 2) / at100) * 100 * 10) / 10;
         await page.locator("#box").evaluate((node, px) => (node as HTMLElement).style.setProperty("--header-logo", `${px}px`), size);
-        const style = await span.evaluate(node => {
-          const s = getComputedStyle(node);
-          return { fontFamily: s.fontFamily, fontWeight: s.fontWeight, fontStyle: s.fontStyle, letterSpacing: s.letterSpacing,
-            textTransform: s.textTransform, lineHeight: s.lineHeight, color: s.color, fontSize: s.fontSize, text: node.textContent };
+        const style = await logo.evaluate(node => {
+          const box = node.getBoundingClientRect();
+          return { color: getComputedStyle(node).color, fontSize: getComputedStyle(node).fontSize, width: box.width, height: box.height };
         });
         const suffix = scale === 1 ? "" : `@${scale}x`;
         await page.locator("#box").screenshot({ path: join(outDir, `${item.name}${suffix}.png`), omitBackground: true });

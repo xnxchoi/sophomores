@@ -66,7 +66,8 @@ export const Users: CollectionConfig = {
               name: doc.name,
               id: doc.id
             },
-            req.payload
+            req.payload,
+            req
           );
         }
         return doc;

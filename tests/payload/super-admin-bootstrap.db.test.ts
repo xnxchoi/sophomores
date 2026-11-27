@@ -19,9 +19,10 @@ test("two instances with different bootstrap addresses promote exactly one first
   assert.equal(container.Mounts.some((mount: { Name?: string; Destination: string }) => mount.Name === volume && mount.Destination === "/var/lib/postgresql/data"), true);
 
   const { postgresAdapter } = await import("@payloadcms/db-postgres");
-  const { buildConfig, getPayload } = await import("payload");
+  const { buildConfig, createLocalReq, getPayload, initTransaction, killTransaction } = await import("payload");
   const { capturePayloadTestLifecycle } = await import("../support/payload-lifecycle");
   const { ensureFirstSuperAdmin } = await import("../../src/payload/seed/super-admin");
+  const { Users } = await import("../../src/payload/collections/users");
   // Widen the window between "no super admin yet" and the promotion, so an unserialised decision would double-promote.
   const widen = async () => { await delay(150); };
   const config = (push: boolean) => buildConfig({
@@ -38,6 +39,23 @@ test("two instances with different bootstrap addresses promote exactly one first
   const second = await getPayload({ config: await config(false), key: randomUUID() });
   const closeSecond = capturePayloadTestLifecycle(second);
   t.after(async () => { await closeSecond(); await closeFirst(); });
+
+  await t.test("the users afterChange provisions staff inside its owning transaction", async () => {
+    const afterChange = Users.hooks?.afterChange?.[0];
+    assert.ok(afterChange);
+    const doc = { email: "person@sophomores.co", emailVerified: true, name: "Fixture staff" };
+    const req = await createLocalReq({}, first);
+    assert.equal(await initTransaction(req), true);
+    const lookup = { collection: "admins" as const, overrideAccess: true, where: { email: { equals: doc.email } } };
+    try {
+      await afterChange({ doc, req } as Parameters<typeof afterChange>[0]);
+      assert.equal((await first.find({ ...lookup, req })).docs[0]?.role, "staff");
+      assert.equal((await second.find(lookup)).totalDocs, 0, "another connection cannot see the uncommitted row");
+    } finally {
+      await killTransaction(req);
+    }
+    assert.equal((await second.find(lookup)).totalDocs, 0, "rolling back the hook request removes the new row");
+  });
 
   for (let round = 1; round <= 5; round++) {
     await first.delete({ collection: "admins", where: { id: { exists: true } }, overrideAccess: true });

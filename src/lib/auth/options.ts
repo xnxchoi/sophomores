@@ -1,5 +1,5 @@
 import { memberSocialProviders, memberTrustedOrigins, readySocialProviders } from "@/lib/auth/social-providers";
-import { memberEmailEntry } from "@/lib/member-auth/email-entry";
+import { MEMBER_EMAIL_CODE_SEND_PATH, memberEmailCodeRateLimit, memberEmailEntry } from "@/lib/member-auth/email-entry";
 import { sendTrackedEmailCode } from "@/lib/member-auth/email-code-delivery.server";
 import { generateRandomString } from "better-auth/crypto";
 import { APIError } from "better-auth/api";
@@ -140,7 +140,7 @@ export const betterAuthOptions = {
     storage: "database",
     window: 60,
     max: 60,
-    customRules: { "/sign-in/email-otp": { window: 60, max: 5 } }
+    customRules: { "/sign-in/email-otp": { window: 60, max: 5 }, [MEMBER_EMAIL_CODE_SEND_PATH]: memberEmailCodeRateLimit }
   },
   telemetry: { enabled: false },
   user: {

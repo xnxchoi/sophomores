@@ -1,5 +1,5 @@
 import { betterAuthOptions } from "@/lib/auth/options";
-import { normalizeMemberEmailEntryRequest } from "@/lib/member-auth/email-entry";
+import { MEMBER_EMAIL_CODE_SEND_PATH, normalizeMemberEmailEntryRequest } from "@/lib/member-auth/email-entry";
 import { authHandlerFailed, authUnavailable, memberJson, memberSafeAuthRedirect } from "@/lib/member-auth/http";
 import { getPayload } from "@/payload";
 import { withEmailCodeDelivery } from "@/lib/member-auth/email-code-delivery.server";
@@ -42,7 +42,7 @@ export const GET = handle;
 export async function POST(request: Request) {
   // The send result now reflects account/transport state. Use the same bounded
   // origin and non-spoofable SDK rate-limit ingress as account discovery.
-  const send = await normalizeMemberEmailEntryRequest(request, 5000, betterAuthOptions.baseURL, "/email-otp/send-verification-otp");
+  const send = await normalizeMemberEmailEntryRequest(request, 5000, betterAuthOptions.baseURL, MEMBER_EMAIL_CODE_SEND_PATH);
   if (send instanceof Response) return send;
   return send === request ? handle(request) : withEmailCodeDelivery(() => handle(send));
 }

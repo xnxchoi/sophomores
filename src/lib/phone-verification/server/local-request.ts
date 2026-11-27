@@ -27,7 +27,7 @@ type Env = Readonly<Record<string, string | undefined>>;
  * `${X-Forwarded-Proto}://${HOSTNAME}:${PORT}` (next-server.js attachRequestMeta), e.g. https://0.0.0.0:3000. Set it
  * only where that proxy is the one way to the listener. Anything but an exact https listener origin with a port is off.
  */
-function trustedProxyListener(env: Env): string | null {
+export function trustedProxyListener(env: Env): string | null {
   const value = env.TRUSTED_PROXY_LISTENER_ORIGIN;
   if (!value) return null;
   let url: URL;

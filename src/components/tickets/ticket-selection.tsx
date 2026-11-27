@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { z } from "zod";
 import { BrandMark } from "@/components/core/BrandMark";
+import { Link } from "@/components/core/Link/Link";
 import { cn } from "@/lib/utils";
 import {
   createMemberClient,
@@ -629,15 +630,9 @@ export function TicketSelection({
     <>
       <main className="dark min-h-svh bg-carbon-deep px-6 py-8 [font-family:system-ui] text-titanium sm:px-10">
         <header className="mx-auto flex max-w-[960px] items-center justify-between gap-6">
-          <BrandMark asChild>
-            {/* Match the approved customer-account header mark exactly. */}
-            {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-            <a
-              href="/"
-              className="text-[23px] tracking-[-1.4px] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
-            >
-              sophomores</a>
-          </BrandMark>
+          <Link href="/" aria-label="Sophomores" className="inline-flex min-h-11 items-center text-[23px] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
+            <BrandMark />
+          </Link>
           {/* Plain anchors keep this surface usable without client-side navigation. */}
           {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
           <a

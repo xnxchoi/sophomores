@@ -18,7 +18,7 @@ import { NextIntlClientProvider, useLocale, useTranslations } from "next-intl";
 import type { VerificationLocale } from "../../../lib/phone-verification/i18n";
 import { VerificationCataloguesContext } from "./verification-messages";
 import { VerificationCountdown } from "./verification-countdown";
-import Link from "next/link";
+import { Link } from "@/components/core/Link/Link";
 import { PhoneNumberField } from "./phone-number-field";
 import { VerificationTrayTitle } from "./verification-tray";
 import {
@@ -188,13 +188,9 @@ function StandaloneVerification() {
       lang={locale}
     >
       <header className="h-11">
-        <BrandMark asChild>
-
-            className="rounded-sm text-[25px] tracking-[-1.5px] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current"
-
-            sophomores
-
-        </BrandMark>
+        <Link href="/" aria-label="Sophomores" className="inline-flex min-h-11 items-center rounded-sm text-[25px] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current">
+          <BrandMark />
+        </Link>
       </header>
       <main className="mx-auto mt-12 max-w-[460px]">
         <VerificationFlow />

@@ -71,7 +71,7 @@ test("real ticket number retains its native directional transition", () => {
     "../invitation/film-study": { FilmStudy: () => null },
     "@/lib/invitation/reference-media": { referenceFilm: undefined },
     "@/lib/motion-tokens": { motionTokens },
-    "@/lib/brand": { BrandMark: () => null },
+    "@/components/core/BrandMark": { BrandMark: () => null },
     "@/lib/tickets/tickets": tickets
   };
   const source = readFileSync(

@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 import { Providers } from "@/providers";
 import { Suspense } from "react";
 import { ClientLayout } from "./(site)/client-layout";
-import { Footer } from "../components/shell/Footer/footer";
+import { Footer } from "@/components/shell/Footer/footer";
 import { message, NarcissianNectare, serif, Pretendard } from "../../fonts";
 
 export async function generateMetadata(): Promise<Metadata> {

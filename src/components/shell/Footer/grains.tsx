@@ -1,8 +1,8 @@
 export const BrightGrains = () => {
   /* Mersi's grain (--texture-grain), footer only, at the owner's values: 150 px tiles, two layers, the second half a
           tile off (owner, 21 Nov: "a bit more texture"). isolate keeps the blend in the footer, and -z-1 puts it under the
-          text, over only the footer's colour (Review-B: over the text it cost ~7 % contrast). Screen in both themes: the
-          ground is dark in both now, and dark grounds screened before (multiply only suited the light page colour). */
+          text, over only the footer's colour (Review-B: over the text it cost ~7 % contrast). Color-dodge at the owner's
+          opacities (27 Nov), on the footer ground in both themes. */
   return (
     <>
       <div

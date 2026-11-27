@@ -4,6 +4,7 @@ import { after, afterEach, before, test } from "node:test";
 import type { CommerceOffer } from "../../../src/lib/commerce/catalogue";
 import { membershipCartProduct, type CartProduct } from "../../../src/lib/commerce/cart-products";
 import { setupCartDom } from "../../fixtures/commerce/cart-dom";
+import { seedCart } from "../../fixtures/commerce/cart-locks";
 
 // The cart column's lines (Hamlet, 26 Nov): does it work? Lines priced, the × removes, Checkout, the edition route, the
 // empty way back, and the stack hears what's in the cart.
@@ -62,22 +63,36 @@ test("a member's membership line is priced, totalled and reported to the stack, 
   assert.equal(JSON.stringify(column.reported.at(-1)), JSON.stringify({ p1: 1 }));
 });
 
-test("signed out, the column asks to sign in to save (no checkout), and × removes the browser's line", () => {
-  env.dom.window.localStorage.setItem("sphmrs.cart.v1", JSON.stringify({ version: 1, lines: [{ productID: "p1", quantity: 1 }] }));
+test("signed out, the column asks to sign in to save (no checkout), and × removes the browser's line", async () => {
+  seedCart(env.dom.window.localStorage, [{ productID: "p1", quantity: 1 }]);
   let asked = 0;
   render([membershipCartProduct(offer)], { signedIn: false, onSignIn: () => { asked += 1; } });
   assert.equal(screen().queryByRole("button", { name: "Continue to checkout" }) === null, true);
   env.ui.fireEvent.click(screen().getByRole("button", { name: "Sign in to save your cart" }));
   assert.equal(asked, 1);
   env.ui.fireEvent.click(screen().getByRole("button", { name: "Remove Book only" }));
-  assert.ok(screen().getByText("Your cart is empty"));
+  assert.ok(await screen().findByText("Your cart is empty"));
 });
 
 test("an edition line points to its own page and offers no checkout", () => {
-  env.dom.window.localStorage.setItem("sphmrs.cart.v1", JSON.stringify({ version: 1, lines: [{ productID: "e1", quantity: 1 }] }));
+  seedCart(env.dom.window.localStorage, [{ productID: "e1", quantity: 1 }]);
   render([edition], { signedIn: false });
   assert.equal(screen().getByRole("link", { name: "Buy on its page" }).getAttribute("href"), "/shop/products/edition-one");
   assert.equal(screen().queryByRole("button", { name: "Continue to checkout" }) === null, true);
+});
+
+test("while the account's cart loads, a line kept on this browser shows and its × removes only that line", async () => {
+  // A same-member retained line (the record pinned to u1), and the account's cart still loading.
+  env.dom.window.localStorage.setItem("sphmrs.cart.v2", JSON.stringify({ generation: crypto.randomUUID(), owner: "u1",
+    lines: [{ productID: "e1", quantity: 1, intent: crypto.randomUUID() }] }));
+  env.ecommerce.setFakeEcommerce({ user: member, cart: undefined, isLoading: true });
+  render([edition]);
+  assert.ok(screen().getByText("Loading your cart"));
+  const local = screen().getByRole("region", { name: "Only on this browser" });
+  env.ui.fireEvent.click(env.ui.within(local).getByRole("button", { name: "Remove Edition one" }));
+  await env.ui.waitFor(() => assert.equal(screen().queryByRole("region", { name: "Only on this browser" }) === null, true));
+  assert.equal(JSON.parse(env.dom.window.localStorage.getItem("sphmrs.cart.v2") ?? "{\"lines\":[]}").lines?.length ?? 0, 0);
+  assert.ok(screen().getByText("Loading your cart"), "the account's cart is still loading");
 });
 
 test("empty: one line and the way back to the shelf closes the cart", () => {

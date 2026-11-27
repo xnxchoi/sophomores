@@ -262,7 +262,8 @@ test("login requires explicit registration continuation for an incomplete authen
   await untilAsserted(ui, () => assert.ok(ui.screen.queryByRole("textbox", { name: "Phone number" }) === null));
   assert.ok(ui.screen.queryByRole("heading", { name: "Welcome" }) === null);
   assert.ok(ui.screen.queryByRole("button", { name: "Resume registration" }) === null);
-  assert.ok(ui.screen.getByRole("button", { name: "Open account options" }));
+  // No chooser at any point of the close (above, strict); the caller is exposed again once the sheet has left.
+  assert.ok(await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Open account options" })));
   assert.equal(server.calls.length, 0, "closing must not create a phone challenge");
 });
 

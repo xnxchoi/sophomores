@@ -428,7 +428,7 @@ function HeaderLink({ href, label, icon, className, onClick }: { href: string; l
     <Link
       href={href}
       onClick={(event: MouseEvent<HTMLAnchorElement>) => { onClick?.(event); closeMenu(event); }}
-      className={cn("relative flex h-6 max-md:h-8 phone:h-7 m-0 px-3 gap-1.5 items-center justify-center border border-transparent rounded-full bg-[var(--button-background)] text-[oklch(from_var(--foreground)_l_c_h_/_0.9)] text-xs font-[350] leading-none tracking-[-0.01em] text-center no-underline backdrop-blur-[var(--header-button-blur,24px)] transition-[border-color] duration-200 hover:border-[oklch(from_var(--foreground)_l_c_h_/_0.8)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current after:absolute after:-inset-y-[11px] after:inset-x-0 after:content-[''] max-md:after:-inset-[6px] phone:after:-inset-x-[3px] phone:after:-inset-y-[9px]", icon && "max-md:w-8 max-md:px-0 phone:w-10", open && "border-current", className)}
+      className={cn("relative flex h-6 max-md:h-8 phone:h-7 m-0 px-3 gap-1.5 items-center justify-center border border-transparent rounded-full bg-[var(--button-background)] text-[oklch(from_var(--foreground)_l_c_h_/_0.9)] text-xs font-[350] leading-none tracking-[-0.01em] text-center no-underline backdrop-blur-[var(--header-button-blur,24px)] transition-[border-color] duration-200 hover:border-[oklch(from_var(--foreground)_l_c_h_/_0.8)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current after:absolute after:-inset-x-[3px] after:-inset-y-[11px] after:content-[''] max-md:after:-inset-y-[6px] phone:after:-inset-y-[9px]", icon && "max-md:w-10 max-md:px-0", open && "border-current", className)}
     >
       {icon}
       <span className={cn(icon && "max-md:sr-only")}>{label}</span>
@@ -468,7 +468,10 @@ export function SiteHeaderActions({ member }: { member?: Promise<HeaderMemberSta
   const { isMobile, isTouch } = useIsMobile();
   const controlbarOwnsAccount = isMobile && isTouch;
   return (
-    <div className="flex items-center gap-5 md:gap-2">
+    // One tight group at the right edge, as The Hideaway's #r-side (estate.scss:130, gap 6px): the row's space-between
+    // keeps it pinned to the edge, so it never grows in toward the logo. Each hit area reaches 3px sideways, half the
+    // gap, so neighbours' targets meet without overlapping.
+    <div className="flex items-center gap-1.5">
       <HeaderLink href="/shop" label={nav("shop")} className="max-md:hidden" />
       <HeaderLink href="/shop/cart" label={t("cart")} icon={<ShoppingBagIcon aria-hidden="true" className="size-3.5 shrink-0" />} />
       {controlbarOwnsAccount ? null : member ? (

@@ -1,5 +1,5 @@
 import { betterAuthOptions } from "@/lib/auth/options";
-import { MEMBER_EMAIL_CODE_SEND_PATH, normalizeMemberEmailEntryRequest } from "@/lib/member-auth/email-entry";
+import { limitNormalizedEmailCodeSend, MEMBER_EMAIL_CODE_SEND_PATH, normalizeMemberEmailEntryRequest } from "@/lib/member-auth/email-entry";
 import { authHandlerFailed, authUnavailable, memberJson, memberSafeAuthRedirect } from "@/lib/member-auth/http";
 import { getPayload } from "@/payload";
 import { withEmailCodeDelivery } from "@/lib/member-auth/email-code-delivery.server";
@@ -44,5 +44,6 @@ export async function POST(request: Request) {
   // origin and non-spoofable SDK rate-limit ingress as account discovery.
   const send = await normalizeMemberEmailEntryRequest(request, 5000, betterAuthOptions.baseURL, MEMBER_EMAIL_CODE_SEND_PATH);
   if (send instanceof Response) return send;
-  return send === request ? handle(request) : withEmailCodeDelivery(() => handle(send));
+  if (send === request) return handle(request);
+  return limitNormalizedEmailCodeSend(send) ?? withEmailCodeDelivery(() => handle(send));
 }

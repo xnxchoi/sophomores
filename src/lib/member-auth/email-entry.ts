@@ -1,4 +1,5 @@
 import { isIP } from "node:net";
+import { normalizeIP } from "@better-auth/core/utils/ip";
 import { APIError, createAuthEndpoint } from "better-auth/api";
 import type { BetterAuthPlugin } from "better-auth";
 import { z } from "zod";
@@ -6,6 +7,7 @@ import { hasConfiguredRequestAuthority, trustedProxyListener } from "../phone-ve
 import { normalizeLoginEmail } from "../passwordless-login";
 import { memberJson, memberRequestFailure, readMemberBody } from "./http";
 import { MEMBER_EMAIL_ENTRY_PATH } from "./paths";
+import { hitWindow, windowTable } from "@/utils/server/fixed-window";
 
 export const MEMBER_EMAIL_CODE_SEND_PATH = "/email-otp/send-verification-otp";
 const unverifiedClient = "0.0.0.0";
@@ -17,6 +19,23 @@ export const memberEmailCodeRateLimit = (request: Request) => ({
   window: 60,
   max: request.headers.get("x-forwarded-for") === unverifiedClient ? 30 : 3,
 });
+
+// Payload's SDK adapter does not atomically consume concurrent increments.
+// Bound admission in this process as well; the SDK still tracks across requests.
+export function limitNormalizedEmailCodeSend(request: Request): Response | null {
+  const now = Date.now();
+  const client = request.headers.get("x-forwarded-for") ?? unverifiedClient;
+  const options = { now, windowMs: 60_000, maxKeys: 1024 };
+  const capacity = client === unverifiedClient ? null :
+    hitWindow(windowTable("email-code-verified-capacity"), "verified", { ...options, max: 180 });
+  const retryAfter = capacity ?? hitWindow(windowTable("email-code-client"), normalizeIP(client), {
+    ...options, max: memberEmailCodeRateLimit(request).max,
+  });
+  if (retryAfter === null) return null;
+  const response = memberJson(429, { code: "RATE_LIMITED", message: "Too many requests. Try again shortly." });
+  response.headers.set("Retry-After", String(retryAfter));
+  return response;
+}
 
 /** Explicitly approved existence disclosure, never proof or account authority. */
 export function memberEmailEntry(origin: string) {

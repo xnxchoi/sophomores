@@ -4,7 +4,7 @@ import { betterAuth } from "better-auth";
 import { memoryAdapter } from "better-auth/adapters/memory";
 import { betterAuthOptions, createBetterAuthPlugins } from "@/lib/auth/options";
 import { withEmailCodeDelivery } from "@/lib/member-auth/email-code-delivery.server";
-import { normalizeMemberEmailEntryRequest } from "@/lib/member-auth/email-entry";
+import { limitNormalizedEmailCodeSend, normalizeMemberEmailEntryRequest } from "@/lib/member-auth/email-entry";
 import { createPayloadAuthBefore } from "@/lib/member-auth/payload-policy";
 
 test("the installed OTP route only acknowledges a sign-in code accepted by the mailer", async () => {
@@ -79,10 +79,10 @@ test("verified proxy clients have independent three-send limits; unverified traf
     assert.ok(normalized instanceof Request);
     assert.equal(normalized.headers.get("X-Forwarded-For"), verified ? realIP : "0.0.0.0");
     assert.equal(normalized.headers.has("X-Real-IP"), false);
-    return (await withEmailCodeDelivery(() => auth.handler(normalized))).status;
+    return (limitNormalizedEmailCodeSend(normalized) ?? await withEmailCodeDelivery(() => auth.handler(normalized))).status;
   };
-  for (let i = 0; i < 3; i++) assert.equal(await send("192.0.2.10", `198.51.100.${i + 1}`), 409);
-  assert.equal(await send("192.0.2.10", "198.51.100.100"), 429);
+  const sameClient = await Promise.all(Array.from({ length: 4 }, (_, i) => send("192.0.2.10", `198.51.100.${i + 1}`)));
+  assert.deepEqual(sameClient.sort(), [409, 409, 409, 429]);
   assert.equal(await send("192.0.2.11", "198.51.100.100"), 409);
   for (let i = 0; i < 30; i++) assert.equal(await send(`192.0.2.${i + 20}`, "198.51.100.100", false), 409);
   assert.equal(await send("192.0.2.254", "203.0.113.254", false), 429);

@@ -16,7 +16,6 @@ type DType = NonNullable<(typeof DeviceType)[keyof typeof DeviceType]>;
 type FallbackName = "Unknown";
 
 export type HA_DEVICE = {
-  fingerprint: string | null;
   device: {
     model: string;
     type: DType | FallbackName;
@@ -41,7 +40,6 @@ export type HA_DEVICE = {
 };
 
 export const DEFAULT_DEVICE: HA_DEVICE = {
-  fingerprint: null,
   device: {
     model: "Unknown",
     vendor: "Unknown",
@@ -65,7 +63,6 @@ export const DEFAULT_DEVICE: HA_DEVICE = {
 };
 
 export const cloneDevice = (device: HA_DEVICE): HA_DEVICE => ({
-  fingerprint: device.fingerprint,
   device: { ...device.device },
   browser: { ...device.browser },
   os: { ...device.os },
@@ -169,8 +166,7 @@ export const detectDevice = (env?: DeviceEnv | null): HA_DEVICE => {
   const isIOS = os.name === "iOS" || isSpoofedIpad;
 
   return {
-    fingerprint: null,
-    device: {
+      device: {
       model: device.model || "Unknown",
       vendor: device.vendor || "Unknown",
       type: device.type || "Unknown"

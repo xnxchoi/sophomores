@@ -16,8 +16,6 @@ import {
 
 import { createHAStore, HA_VAULT } from "@/stores/RP_Ui";
 
-import { createId } from "@paralleldrive/cuid2";
-import { getThumbmark } from "@thumbmarkjs/thumbmarkjs";
 
 import { MotionValue, useMotionValue, useTransform } from "motion/react";
 import { useTransitionState } from "next-transition-router";
@@ -70,28 +68,10 @@ const IntDeviceProvider = ({ children }: DeviceProviderProps) => {
     </DeviceContext.Provider>
   );
 };
-const Thumbprint = ({ children }: { children: ReactNode }) => {
-  const setFingerprint = useDeviceInfo((r) => r.setFingerPrint);
-  useEffect(() => {
-    const thumbmark = getThumbmark();
-    thumbmark
-      .then((res) => {
-        setFingerprint(res.thumbmark);
-      })
-      .catch(() => {
-        /**flimsy fallback to account for errors; this is done out of necessity as
-         **/
-        setFingerprint(createId());
-      });
-  }, [setFingerprint]);
-  return <>{children}</>;
-};
+/** The device store and its detection. No fingerprint: Thumbmark sampled third-party uploads, and nothing read the
+ * value (owner, 27 Nov: "Remove it"). */
 export const DeviceProvider = ({ children }: DeviceProviderProps) => {
-  return (
-    <IntDeviceProvider>
-      <Thumbprint>{children}</Thumbprint>
-    </IntDeviceProvider>
-  );
+  return <IntDeviceProvider>{children}</IntDeviceProvider>;
 };
 
 export const HAStoreProvider = ({ children }: HAStoreProviderProps) => {

@@ -3,9 +3,9 @@ import { test } from "node:test";
 import { EnglishMessages } from "../fixtures/english-messages";
 import { MemberAuthProviders } from "../member-auth/fixtures/providers";
 
-// Control (Review-B, 27 Nov): the site's DeviceProvider fingerprints the browser with Thumbmark, whose default logging
-// samples a POST to api.thumbmarkjs.com and fetches a remote script. The test fixtures mount an inert device store
-// instead, so a render through them must make no request, even with the sampling forced on (Math.random() = 0).
+// Control (Review-B, 27 Nov): a render through the site test fixtures makes no request. The site's DeviceProvider once
+// ran Thumbmark, whose sampled logging posted to api.thumbmarkjs.com (removed, owner, 27 Nov); Math.random() = 0 keeps
+// any such sampling switched on, so a returning call would fail here.
 test("the site test fixtures render core Button and Link without any network request", async () => {
   const { JSDOM } = await import("jsdom");
   const dom = new JSDOM("<!doctype html><html><body></body></html>", { url: "http://localhost/help", pretendToBeVisual: true });

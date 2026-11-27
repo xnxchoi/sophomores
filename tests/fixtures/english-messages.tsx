@@ -3,8 +3,6 @@ import { NextIntlClientProvider } from "next-intl";
 import { AppRouterContext, type AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import messages from "../../messages/en.json";
 import { WithVerificationMessages } from "./verification-messages";
-import { CurContext, CursorProvider, DeviceContext, HAStoreContext, HAStoreProvider } from "@/providers/RP_Pro";
-import { createDeviceStore } from "@/stores/Device/DeviceStore";
 
 /**
  * The same canonical catalogue used by the site, without network or request state. Like a purchase segment
@@ -26,6 +24,9 @@ export function EnglishMessages({ children }: { children: ReactNode }) {
  * site's DeviceProvider also fingerprints the browser (Thumbmark), which can reach the network, so tests never mount it.
  */
 export function SiteContexts({ children }: { children: ReactNode }) {
+  // Loaded at render, not at import: tests import this fixture before they install jsdom's window, and RP_Pro's
+  // dependencies (motion, the stores, the transition router) read the environment when they first load.
+  const { CurContext, CursorProvider, DeviceContext, HAStoreContext, HAStoreProvider } = siteProviders();
   const router = useContext(AppRouterContext);
   const device = useContext(DeviceContext);
   const store = useContext(HAStoreContext);
@@ -44,6 +45,9 @@ const inertRouter: AppRouterInstance = {
 
 /** The device store with its defaults and no detection or fingerprint effect. */
 function InertDevice({ children }: { children: ReactNode }) {
-  const [store] = useState(() => createDeviceStore());
+  const { DeviceContext } = siteProviders();
+  const [store] = useState(() => (require("@/stores/Device/DeviceStore") as typeof import("@/stores/Device/DeviceStore")).createDeviceStore());
   return <DeviceContext.Provider value={store}>{children}</DeviceContext.Provider>;
 }
+
+const siteProviders = () => require("@/providers/RP_Pro") as typeof import("@/providers/RP_Pro");

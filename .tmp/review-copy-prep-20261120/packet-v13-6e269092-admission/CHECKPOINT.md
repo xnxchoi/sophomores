@@ -24,6 +24,16 @@ socket-only disposable database. The archival build wrapper is pinned to
 fixtures do not run the build. The preserved Packet A packaging inputs keep
 that historical wrapper self-contained without including images or credentials.
 
+For each Python suite, the focused checks include both invocation modes,
+under the resource guard:
+
+```sh
+python3 -I tests/deployment/review-copy-v13-carried-state.test.py
+python3 -I tests/deployment/review-copy-v13-carried-collector.test.py
+python3 -I tests/deployment/review-copy-v13-carried-state.test.py .tmp/review-copy-prep-20261120/packet-v13-6e269092-admission/carried-state.py
+python3 -I tests/deployment/review-copy-v13-carried-collector.test.py .tmp/review-copy-prep-20261120/packet-v13-6e269092-admission/carried-collector.py
+```
+
 The reviewed offline collector remains a fixture. A trusted reference, live
 read-only adapters, stale-operator fencing, and interruption-safe publication
 under both locks are not implemented. Old VPS tokens remain historical, and

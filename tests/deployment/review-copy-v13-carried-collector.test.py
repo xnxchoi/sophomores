@@ -5,13 +5,15 @@ import hashlib
 import importlib.util
 import json
 from pathlib import Path
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
-import sys
 
+FIXTURE = Path(__file__).resolve().parents[2] / ".tmp/review-copy-prep-20261120/packet-v13-6e269092-admission"
+SCRIPT = Path(sys.argv.pop(1)).resolve() if len(sys.argv) > 1 else FIXTURE / "carried-collector.py"
 sys.dont_write_bytecode = True
-spec = importlib.util.spec_from_file_location("collector", Path(sys.argv.pop(1)))
+spec = importlib.util.spec_from_file_location("collector", SCRIPT)
 collector = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(collector)
 state = collector.state

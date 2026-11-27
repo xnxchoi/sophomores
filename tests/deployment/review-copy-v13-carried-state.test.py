@@ -10,7 +10,8 @@ import tempfile
 import unittest
 
 
-SCRIPT = Path(sys.argv.pop(1)).resolve()
+FIXTURE = Path(__file__).resolve().parents[2] / ".tmp/review-copy-prep-20261120/packet-v13-6e269092-admission"
+SCRIPT = Path(sys.argv.pop(1)).resolve() if len(sys.argv) > 1 else FIXTURE / "carried-state.py"
 sys.dont_write_bytecode = True
 spec = importlib.util.spec_from_file_location("carried_state", SCRIPT)
 state = importlib.util.module_from_spec(spec)

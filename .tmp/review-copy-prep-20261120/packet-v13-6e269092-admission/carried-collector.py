@@ -104,7 +104,7 @@ def acquire(stack, path):
 
 def assert_lock_paths(locks):
     for path, info in locks:
-        current = path.stat(follow_symlinks=False)
+        current = path.lstat()
         state.require(stat.S_ISREG(current.st_mode) and os.path.samestat(info, current),
                       "fixture lock path changed")
 

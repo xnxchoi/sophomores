@@ -53,20 +53,21 @@ function renderGuarded(next: () => Promise<string | null | undefined>) {
 const microtask = () => new Promise((resolve) => setTimeout(resolve, 0));
 const screen = () => env.ui.screen;
 
-test("a member's membership line is priced, totalled, reported to the stack, and goes to checkout", () => {
+test("a member's membership line is priced, totalled and reported to the stack, with no checkout while it is unavailable", () => {
   env.ecommerce.setFakeEcommerce({ user: member, cart: { id: "c1", status: "active", items: [{ id: "i1", product: "p1", quantity: 1 }] } });
   const column = render([membershipCartProduct(offer)]);
   assert.ok(screen().getByText("Book only"));
   assert.ok(screen().getByText("35,000 KRW"));
-  assert.equal(screen().getByRole("link", { name: "Continue to checkout" }).getAttribute("href"), "/shop/checkout");
+  assert.equal(screen().queryByRole("link", { name: "Continue to checkout" }) === null, true, "no checkout while the cart state does not allow it");
   assert.equal(JSON.stringify(column.reported.at(-1)), JSON.stringify({ p1: 1 }));
 });
 
-test("signed out, Checkout asks for sign-in, and × removes the browser's line", () => {
+test("signed out, the column asks to sign in to save (no checkout), and × removes the browser's line", () => {
   env.dom.window.localStorage.setItem("sphmrs.cart.v1", JSON.stringify({ version: 1, lines: [{ productID: "p1", quantity: 1 }] }));
   let asked = 0;
   render([membershipCartProduct(offer)], { signedIn: false, onSignIn: () => { asked += 1; } });
-  env.ui.fireEvent.click(screen().getByRole("button", { name: "Continue to checkout" }));
+  assert.equal(screen().queryByRole("button", { name: "Continue to checkout" }) === null, true);
+  env.ui.fireEvent.click(screen().getByRole("button", { name: "Sign in to save your cart" }));
   assert.equal(asked, 1);
   env.ui.fireEvent.click(screen().getByRole("button", { name: "Remove Book only" }));
   assert.ok(screen().getByText("Your cart is empty"));

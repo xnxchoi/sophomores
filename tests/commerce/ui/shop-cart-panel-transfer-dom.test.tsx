@@ -73,8 +73,10 @@ test("in the shop's column, a refused line stays under 'Only on this browser', a
 test("while the transfer runs, the column's browser lines say they're being added, and stay removable", async () => {
   seedCart(env.dom.window.localStorage, [{ productID: "e1", quantity: 1 }]);
   let answer: (response: Response) => void = () => {};
-  server(me("u1"), () => new Promise<Response>((resolve) => { answer = resolve; }));
+  const api = server(me("u1"), () => new Promise<Response>((resolve) => { answer = resolve; }));
   renderPanel();
+  // The write itself has started (its reply is held), not only the note.
+  await env.ui.waitFor(() => assert.equal(api.calls.some((call) => call.method !== "GET"), true));
   assert.ok(await screen().findByText("Adding these to your account."));
   assert.equal(screen().queryByText("These weren't added to your account's cart.") === null, true);
   assert.ok(env.ui.within(local()!).getByRole("button", { name: /^Remove / }));

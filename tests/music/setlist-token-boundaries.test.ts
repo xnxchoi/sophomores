@@ -8,6 +8,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { NextIntlClientProvider } from "next-intl";
 import { AppRouterContext, type AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { messagesByLocale } from "@/i18n/messages";
+import { SiteContexts } from "../fixtures/site-contexts";
 import type { SetlistData, UserSlotState } from "@/lib/music/types";
 import { Setlists } from "@/payload/collections/setlists";
 import { Tracks } from "@/payload/collections/tracks";
@@ -866,7 +867,8 @@ test("actual entry DELETE removes one entry by id and returns the rest without c
   assert.deepEqual(body.entries, [{ id: "track-2", title: "Synthetic track 2", artist: "Synthetic artist", note: "Synthetic note 2" }]);
 });
 
-// SlotManager's links go through the transition router, which needs a mounted app router (a render, never a push).
+// SlotManager's links go through the transition router, which needs a mounted app router (a render, never a push). Core
+// Button and Link also need the site contexts (SiteContexts: inert device, store and cursor).
 const renderRouter = { back() {}, forward() {}, refresh() {}, push() {}, replace() {}, prefetch() {} } as unknown as AppRouterInstance;
 
 function renderSetlist(props: Awaited<ReturnType<typeof pageProps>>) {
@@ -875,7 +877,7 @@ function renderSetlist(props: Awaited<ReturnType<typeof pageProps>>) {
       locale: "en",
       timeZone: "Asia/Seoul",
       messages: messagesByLocale.en,
-      children: createElement(SetlistView, { ...props, initialUserSlotState: null })
+      children: createElement(SiteContexts, null, createElement(SetlistView, { ...props, initialUserSlotState: null }))
     })));
 }
 

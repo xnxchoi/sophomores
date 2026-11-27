@@ -42,7 +42,7 @@ test("global-not-found holds dark on the served <html> and runs no script that w
   );
   assert.match(
     source,
-    /<Providers>\s*<ClientLayout headerMember=\{headerMember\}>\s*<NotFoundPage \/>[\s\S]*?<BusinessFooter \/>[\s\S]*?<\/ClientLayout>\s*<\/Providers>/,
+    /<Providers>\s*<ClientLayout headerMember=\{headerMember\}>\s*<NotFoundPage \/>[\s\S]*?<Footer \/>[\s\S]*?<\/ClientLayout>\s*<\/Providers>/,
     "the same 404 inside the same shell as the site layout"
   );
 });

@@ -53,7 +53,7 @@ function LocaleButton({ locale }: { locale: Locale }) {
         // The pick shows by an underline, not by dimming the other (Review-B: 40 % ink on the footer ground was
         // 2.87:1); both hold 80 % ink or more.
         active
-          ? "text-foreground disabled:cursor-default disabled:text-foreground"
+          ? "text-foreground disabled:text-foreground"
           : "text-footer-muted transition-colors hover:text-foreground disabled:opacity-40"
       )}
     >

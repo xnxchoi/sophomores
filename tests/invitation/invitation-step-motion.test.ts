@@ -53,7 +53,9 @@ function mountForm(still = false) {
         Subscribe: () => null
       })
     },
-    "../../lib/invitation/registration": registration
+    "../../lib/invitation/registration": registration,
+    // The form's buttons are core Button; the walker finds them by className, so the element type is opaque here.
+    "@/components/core/Button": { Button: () => null }
   };
   const source = readFileSync(
     new URL("../../src/components/invitation/invitation-form.tsx", import.meta.url),

@@ -19,9 +19,9 @@ before(async () => {
   dom = new JSDOM("<!doctype html><html><body></body></html>", { url: "http://localhost/tickets" });
   Object.defineProperty(dom.window.navigator, "locks", { configurable: true, value: { request: async (_name: string, _options: unknown, callback: (lock: object) => Promise<unknown>) => callback({}) } });
   sessionStorageDescriptor = Object.getOwnPropertyDescriptor(dom.window, "sessionStorage")!;
-  for (const key of ["window", "document", "navigator", "HTMLElement", "Node", "MutationObserver", "Event"]) {
+  for (const key of ["window", "self", "document", "navigator", "HTMLElement", "Node", "MutationObserver", "Event"]) {
     previous.set(key, Object.getOwnPropertyDescriptor(globalThis, key));
-    Object.defineProperty(globalThis, key, { configurable: true, writable: true, value: key === "window" ? dom.window : dom.window[key as keyof typeof dom.window] });
+    Object.defineProperty(globalThis, key, { configurable: true, writable: true, value: key === "window" || key === "self" ? dom.window : dom.window[key as keyof typeof dom.window] });
   }
   previous.set("IS_REACT_ACT_ENVIRONMENT", Object.getOwnPropertyDescriptor(globalThis, "IS_REACT_ACT_ENVIRONMENT"));
   Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { configurable: true, writable: true, value: true });

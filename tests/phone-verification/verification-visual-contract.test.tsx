@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { renderToStaticMarkup } from "react-dom/server";
+import { renderToStaticMarkup as renderMarkup } from "react-dom/server";
+import { SiteContexts } from "../fixtures/site-contexts";
 import { NextIntlClientProvider } from "next-intl";
 import * as verificationUi from "@/components/Authentication/phone-verification/verification-ui";
 import type { ComponentType, ReactNode } from "react";
@@ -17,6 +18,9 @@ import {
 } from "@/components/Authentication/phone-verification/verification-ui";
 import { messagesByLocale } from "@/i18n/messages";
 import { readFileSync } from "node:fs";
+
+// Core Button and Link need the site contexts (inert in tests).
+const renderToStaticMarkup = (node: ReactNode) => renderMarkup(<SiteContexts>{node}</SiteContexts>);
 
 test("verification sheet follows the page theme while retaining short-screen internal scrolling", () => {
   // The sheet follows the page theme on tokens (owner, 22 Nov: no forced dark, no white/black literals).

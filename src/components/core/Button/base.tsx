@@ -80,8 +80,8 @@ function BareButton({ type = "button", loading, size: _size, onClick, onMouseEnt
   const ownRing = className?.includes("group/focus");
   return (
     <button
-      {...rest}
       type={type}
+      {...rest}
       aria-busy={loading ? true : rest["aria-busy"]}
       aria-disabled={loading ? true : rest["aria-disabled"]}
       // As Arc's button: while loading or aria-disabled it keeps focus but neither clicks nor submits. A caller's own

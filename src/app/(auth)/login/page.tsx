@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
-import { Button } from "@/components/core/Button";
+import { Field } from "../_shared/field";
+import { SubmitButton } from "../_shared/submit-button";
 export const dynamic = "force-dynamic";
 
 interface LoginPageProps {
@@ -11,17 +12,16 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const invalid = (await searchParams).error === "credentials";
   return (
     <>
-      <div id="login-feedback" className="flex h-20 items-start" aria-hidden={invalid ? undefined : true}>
+      <div id="login-feedback" className="flex h-20 items-end pb-2" aria-hidden={invalid ? undefined : true}>
         {invalid && (
           <p className="m-0 border-l-2 border-current pl-3 text-sm leading-6 text-preview-error" role="alert">
             {t("theUsernameOrPasswordIsIncorrectPleaseTryAgain")}
           </p>
         )}
       </div>
-      <form method="post" action="/api/session">
-        <label className="mt-5 block" htmlFor="username">{t("user")}</label>
-        <input
-          className="mt-1.5 block w-full rounded-md border border-preview-border bg-preview-input p-3 text-inherit shadow-[inset_0_1px_2px_color-mix(in_oklab,var(--color-shadow)_18%,transparent)] transition-[border-color,box-shadow,background-color,outline-color] duration-200 ease-out focus-visible:border-preview-accent focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-preview-accent"
+      <form method="post" action="/api/session" className="flex flex-col gap-6">
+        <Field
+          label={t("user")}
           id="username"
           name="username"
           autoComplete="username"
@@ -30,9 +30,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           maxLength={128}
           required
         />
-        <label className="mt-5 block" htmlFor="password">{t("passcode")}</label>
-        <input
-          className="mt-1.5 block w-full rounded-md border border-preview-border bg-preview-input p-3 text-inherit shadow-[inset_0_1px_2px_color-mix(in_oklab,var(--color-shadow)_18%,transparent)] transition-[border-color,box-shadow,background-color,outline-color] duration-200 ease-out focus-visible:border-preview-accent focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-preview-accent"
+        <Field
+          label={t("passcode")}
           id="password"
           name="password"
           type="password"
@@ -40,9 +39,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           maxLength={1024}
           required
         />
-        <label className="mt-5 flex items-center gap-3">
+        <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm text-preview-secondary">
           <input
-            className="size-5 shrink-0 accent-preview-accent transition-[border-color,box-shadow,background-color,outline-color] duration-200 ease-out focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-preview-accent"
+            className="size-4 shrink-0 cursor-pointer accent-preview-accent transition-[border-color,box-shadow,background-color,outline-color] duration-200 ease-out focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-preview-accent"
             type="checkbox"
             name="remember"
             value="yes"
@@ -50,12 +49,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           />
           {t("remember")}
         </label>
-        <Button
-          className="mt-7 w-full rounded-md border-0 bg-preview-accent p-3.25 font-semibold text-preview-on-accent transition-[border-color,box-shadow,background-color,outline-color] duration-200 ease-out hover:bg-preview-foreground active:bg-preview-secondary focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-preview-accent"
-          type="submit"
-        >
-          {t("preview")}
-        </Button>
+        <SubmitButton className="mt-2">{t("preview")}</SubmitButton>
       </form>
     </>
   );

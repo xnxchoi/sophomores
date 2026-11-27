@@ -6,16 +6,41 @@
 /* Paths are relative to this entry, not TypeScript aliases. */
 @source "./**/*.tsx";
 
+/* The site's Sophomores Sans (src/styles/globals.css): the installed Helvetica Neue named face by face, so weight 500 is
+   Medium and not the condensed bold Chrome picks by family name. local() only: nothing is fetched (CSP font-src unset). */
+@font-face { font-family: "Sophomores Sans"; font-style: normal; font-weight: 1 399; src: local("HelveticaNeue-Light"), local("Helvetica Neue Light"); }
+@font-face { font-family: "Sophomores Sans"; font-style: normal; font-weight: 400 499; src: local("HelveticaNeue"), local("Helvetica Neue"); }
+@font-face { font-family: "Sophomores Sans"; font-style: normal; font-weight: 500 599; src: local("HelveticaNeue-Medium"), local("Helvetica Neue Medium"); }
+@font-face { font-family: "Sophomores Sans"; font-style: normal; font-weight: 600 1000; src: local("HelveticaNeue-Bold"), local("Helvetica Neue Bold"); }
+
+/* The main site's roles (src/styles/globals.css), dark first like the site's device fallback (owner, 27 Nov: "we style
+   them to match the look and feel of the main site"). These pages run no script, so the visitor's device setting picks
+   the theme through the media query below rather than the site's saved pick. */
 @theme {
-  --font-sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-sans: "Sophomores Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  /* background */
   --color-preview-surface: var(--black);
+  /* foreground */
   --color-preview-foreground: var(--white);
-  --color-preview-input: var(--dark-grey);
-  --color-preview-border: var(--light-grey);
+  /* muted-foreground: labels and small print */
   --color-preview-secondary: var(--stone);
   --color-preview-muted: var(--stone);
+  /* control-rule: the field's resting underline */
+  --color-preview-border: var(--light-grey);
+  /* primary: the submit button and the focus outline */
   --color-preview-accent: var(--white);
   --color-preview-on-accent: var(--black);
   /* Staff error: Deep Cinnabar Tuned (owner, 26 Nov: "deep cinnabar tuned"). */
   --color-preview-error: var(--red);
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --color-preview-surface: var(--white);
+    --color-preview-foreground: var(--carbon-deep);
+    --color-preview-secondary: var(--dark-grey-lighter-2);
+    --color-preview-muted: var(--dark-grey-lighter-2);
+    --color-preview-accent: var(--carbon-deep);
+    --color-preview-on-accent: var(--white);
+  }
 }

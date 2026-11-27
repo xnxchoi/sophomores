@@ -5,6 +5,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { ActionButton } from "@/components/settings/ActionField";
 import { NextIntlClientProvider } from "next-intl";
 import { VerificationStatus } from "@/components/Authentication/phone-verification/verification-status";
+import { EnglishMessages } from "../../fixtures/english-messages";
 
 test("shared Spinner retains the original Phosphor SVG, dimensions and accessible status", () => {
   const element = Spinner({ className: "size-6" });
@@ -24,7 +25,7 @@ test("settings pending ring retains its span, size, track and linear period", ()
   const ring = element.props.children[0];
   assert.deepEqual(ring.props.animate, { rotate: 360 });
   assert.deepEqual(ring.props.transition, { duration: 1, ease: "linear", repeat: Infinity });
-  const html = renderToStaticMarkup(<ActionButton loading>Save</ActionButton>);
+  const html = renderToStaticMarkup(<EnglishMessages><ActionButton loading>Save</ActionButton></EnglishMessages>);
   assert.match(html, /<span class="size-3 rounded-full border border-white\/40 border-t-white"/);
   assert.match(html, /disabled=""/);
 });

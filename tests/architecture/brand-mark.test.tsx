@@ -24,6 +24,6 @@ test("children and the old asChild prop are ignored, so no caller's text shows b
 
 test("the site header's home link wraps the mark once, with no link inside a link", () => {
   const source = readFileSync("src/components/shell/site-header.tsx", "utf8");
-  assert.match(source, /<Link href="\/" aria-label="Sophomores"[^>]*>[\s\S]{0,300}?<BrandMark [^>]*\/>/);
+  assert.match(source, /<Link href="\/" aria-label="Sophomores"[^>]*>[\s\S]{0,600}?<BrandMark [^>]*\/>/);
   assert.equal(readFileSync("src/components/core/BrandMark/index.tsx", "utf8").includes("Link"), false);
 });

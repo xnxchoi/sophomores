@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import { ContentsNav } from "@/app/(site)/_long-form/contents-nav";
+import { EnglishMessages } from "../fixtures/english-messages";
 
 const entries = [
   { id: "shipping", label: "Shipping", depth: 2 as const },
@@ -12,7 +13,7 @@ const entries = [
 ];
 
 test("nested contents entries are numbered under their parent and top-level numbers don't shift", () => {
-  const html = renderToStaticMarkup(<ContentsNav entries={entries} label="Contents" />);
+  const html = renderToStaticMarkup(<EnglishMessages><ContentsNav entries={entries} label="Contents" /></EnglishMessages>);
   // The rail repeats the phone list, so read one list.
   const rail = html.slice(html.lastIndexOf("<ol"));
   const numbers = [...rail.matchAll(/<span aria-hidden="true"[^>]*>([^<]*)<\/span>/g)].map((match) => match[1]);
@@ -22,7 +23,7 @@ test("nested contents entries are numbered under their parent and top-level numb
 
 test("a nested entry with no top-level entry before it is listed as top-level, never 00.1", () => {
   const leading = [{ id: "intro", label: "Intro", depth: 3 as const }, ...entries];
-  const html = renderToStaticMarkup(<ContentsNav entries={leading} label="Contents" />);
+  const html = renderToStaticMarkup(<EnglishMessages><ContentsNav entries={leading} label="Contents" /></EnglishMessages>);
   const rail = html.slice(html.lastIndexOf("<ol"));
   const numbers = [...rail.matchAll(/<span aria-hidden="true"[^>]*>([^<]*)<\/span>/g)].map((match) => match[1]);
   assert.deepEqual(numbers, ["01", "02", "03", "03.1", "03.2", "04"]);
@@ -30,7 +31,7 @@ test("a nested entry with no top-level entry before it is listed as top-level, n
 
 test("every nested entry before the first top-level entry is listed as top-level, not under the first", () => {
   const run = [{ id: "a", label: "A", depth: 3 as const }, { id: "b", label: "B", depth: 3 as const }, ...entries];
-  const html = renderToStaticMarkup(<ContentsNav entries={run} label="Contents" />);
+  const html = renderToStaticMarkup(<EnglishMessages><ContentsNav entries={run} label="Contents" /></EnglishMessages>);
   const rail = html.slice(html.lastIndexOf("<ol"));
   const numbers = [...rail.matchAll(/<span aria-hidden="true"[^>]*>([^<]*)<\/span>/g)].map((match) => match[1]);
   assert.deepEqual(numbers, ["01", "02", "03", "04", "04.1", "04.2", "05"]);

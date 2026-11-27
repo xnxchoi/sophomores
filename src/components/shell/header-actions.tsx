@@ -460,19 +460,22 @@ function AccountEntry({ member }: { member: Promise<HeaderMemberState> }) {
  * selected cart lives in the gated commerce session, so a server count would invent authority (Auth,
  * R-P17a). Search, notifications and the mode switch stay in the reading view until they have real data
  * and a working theme writer. On touch phones Cart stays (owner: "Keep on top") and Account moves to the
- * Controlbar; Shop is already hidden below md.
+ * Controlbar; Shop is already hidden below md, and anywhere in the shop it isn't shown at all (owner: no Shop link
+ * to where you already are).
  */
 export function SiteHeaderActions({ member }: { member?: Promise<HeaderMemberState> }) {
   const nav = useTranslations("Customer.navigation");
   const t = useTranslations("Customer.components_shell_header_actions");
   const { isMobile, isTouch } = useIsMobile();
   const controlbarOwnsAccount = isMobile && isTouch;
+  const pathname = usePathname() ?? "";
+  const inShop = pathname === "/shop" || pathname.startsWith("/shop/");
   return (
     // One tight group at the right edge, as The Hideaway's #r-side (estate.scss:130, gap 6px): the row's space-between
     // keeps it pinned to the edge, so it never grows in toward the logo. Each hit area reaches 3px sideways, half the
     // gap, so neighbours' targets meet without overlapping.
     <div className="flex items-center gap-1.5">
-      <HeaderLink href="/shop" label={nav("shop")} className="max-md:hidden" />
+      {inShop ? null : <HeaderLink href="/shop" label={nav("shop")} className="max-md:hidden" />}
       <HeaderLink href="/shop/cart" label={t("cart")} icon={<ShoppingBagIcon aria-hidden="true" className="size-3.5 shrink-0" />} />
       {controlbarOwnsAccount ? null : member ? (
         <Suspense fallback={<HeaderLink href="/me" label={nav("account")} icon={<UserIcon aria-hidden="true" className="size-3.5 shrink-0" />} />}>

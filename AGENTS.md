@@ -139,8 +139,13 @@ TDD/coverage/test-only, blanket isolation and project-level proposal-approval ho
   key paths and key order, with string values and `""` for untranslated keys.
 - Any change that adds, renames or removes an English key makes the same structural
   change to `messages/ko.json` in the same commit, using `""` for new keys.
-- Existing Korean text is never overwritten, auto-filled or translated without an
-  owner translation request, including existing values written in English.
+- Eligible copy may be translated without a separate owner request. Use natural
+  Korean with the right tone, register and form. Existing Korean may be revised
+  to meet the same bar. Leave untranslated keys empty when you cannot meet it.
+  Owner, 2026-11-28: "If it can be translated, sure, do it. I'm just saying, like,
+  don't do shitty translations like you have for many other cases right now ...
+  it's not about, you know, me requesting it, it's just having the right tone,
+  manner, form ... for Korean."
 - An empty Korean string displays English through the shared next-intl catalogue.
   The owner activated this fallback on 2026-11-13; see
   `docs/reference/i18n-consolidation-plan.md`.

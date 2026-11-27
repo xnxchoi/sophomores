@@ -939,9 +939,10 @@ function TitleRail({ railRef, label, titles, refunds, active, fade, shelf, detai
         <button ref={(item) => { items.current[slot] = item; }} type="button" tabIndex={middle ? undefined : -1} onClick={() => onPick(index)}
           data-shelf-return={middle && index === active ? "" : undefined}
           className="pointer-events-auto relative font-display text-[length:calc(40px+16*(100vw-375px)/1353)] leading-[1.12] font-medium tracking-[-0.1rem] whitespace-nowrap text-foreground outline-offset-4 focus-visible:outline-2 max-[900px]:text-[length:calc(44px+17.6*(100vw-375px)/1353)]">
-          {/* Theirs (FeaturedTitle): both faces skew from 0 78 %, over 448 ms into the active title and 400 ms out of it. */}
+          {/* Theirs (FeaturedTitle): both faces skew from 0 78 %, over 448 ms into the active title and 400 ms out of it. The
+              unfocused (italic) face is our palette's muted ink, where theirs is the ink at 0.8 (owner, 27 Nov). */}
           <span className={cn("block origin-[0_78%] italic transition-[opacity,transform] ease-[ease]",
-            middle && index === active ? "opacity-0 duration-[448ms] [transform:skewX(9deg)]" : "opacity-80 duration-[400ms]")}>{title}</span>
+            middle && index === active ? "opacity-0 duration-[448ms] [transform:skewX(9deg)]" : "text-muted-foreground duration-[400ms]")}>{title}</span>
           <span className={cn("absolute inset-0 origin-[0_78%] not-italic transition-[opacity,transform] ease-[ease]",
             middle && index === active ? "opacity-100 duration-[448ms]" : "opacity-0 duration-[400ms] [transform:skewX(-5deg)]")}>{title}</span>
           {refunds[index] && <span className="mt-1 block font-sans text-sm leading-6 font-normal tracking-normal not-italic">{refunds[index]}</span>}

@@ -30,7 +30,10 @@ const content = useTeaserContent();
       <div className="flex flex-col gap-7 p-7">
         <div className="flex items-center justify-between gap-4 font-sans text-teaser-caption leading-[1.1] text-titanium uppercase">
           <span>
-            From: <BrandMark>{content.brandWordmark}</BrandMark>
+            From:{" "}
+            {/* The logo at the caption's cap height; the editorial wordmark stays its name. */}
+            <BrandMark className="h-[0.72em] align-baseline" />
+            <span className="sr-only">{content.brandWordmark}</span>
           </span>
           <button
             className="group/focus bg-transparent p-2 text-white focus-visible:outline-none"

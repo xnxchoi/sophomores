@@ -28,11 +28,9 @@ export function InvitationStudy() {
         <StudyLight paused={still || modal} />
       </div>
       <header className="invitation-study-header">
-        <BrandMark asChild>
-          <Link href="/public" className="invitation-study-wordmark">
-            sophomores
-          </Link>
-        </BrandMark>
+        <Link href="/" aria-label="Sophomores" className="invitation-study-wordmark">
+          <BrandMark />
+        </Link>
         <nav aria-label="Local studies">
           <a href="/studies/warp">Intro</a>
           <a href="/studies/tickets">Tickets</a>

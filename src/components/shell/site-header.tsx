@@ -585,7 +585,7 @@ export function SiteHeader({ member: memberProp }: { member?: Promise<HeaderMemb
           <Link href="/" aria-label="Sophomores" onClick={closeMenu} className="site-header-logo group/focus relative flex items-center rounded-full before:absolute before:inset-x-0 before:top-1/2 before:h-11 before:-translate-y-1/2 before:content-['']">
             {/* On phones a fixed 22px (owner, 2026-11-19). */}
             <FocusShape className="flex group-focus-visible/focus:outline-current">
-              <BrandMark className="site-header-mark text-[length:var(--header-logo,28px)] leading-none max-md:text-[22px]">Sophomores</BrandMark>
+              <BrandMark className="site-header-mark text-[length:var(--header-logo,28px)] max-md:text-[22px]" />
             </FocusShape>
           </Link>
         </m.div>

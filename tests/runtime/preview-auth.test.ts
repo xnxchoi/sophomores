@@ -296,7 +296,8 @@ test(
     }
     assert.match(loginCss, /\.bg-preview-surface/);
     assert.match(loginCss, /--color-preview-surface/);
-    assert.doesNotMatch(loginCss, /--color-teaser-|wordmark|@font-face|Manrope|Nib|url\(/i);
+    // Faces are local() Helvetica Neue only (Sophomores Sans, owner 27 Nov restyle); url( stays banned, so nothing is fetched.
+    assert.doesNotMatch(loginCss, /--color-teaser-|wordmark|Manrope|Nib|url\(/i);
     const loginScripts = [...markup.matchAll(/<script\b[^>]*src="([^"]+)"/g)]
       .map((match) => match[1].replaceAll("&amp;", "&"));
     for (const path of loginScripts) {

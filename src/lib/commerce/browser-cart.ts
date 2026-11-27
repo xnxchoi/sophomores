@@ -81,12 +81,18 @@ export function readGuestCartCount(target?: CartStorage, memberID?: string): Gue
 }
 
 /** False means the selection was not saved. */
-export async function addGuestCartLine(productID: string, target?: CartStorage, options?: { quantity?: number; maximum?: number | null; memberID?: string }): Promise<boolean> {
+/**
+ * `stillCurrent` (optional, synchronous; Review-B/Auth-editions HOLD on ef2e63eac): checked inside the lock, before the
+ * record is read or changed. When it returns false the helper writes nothing, notifies nobody and returns false, so an
+ * action queued behind the lock for a viewer who has since left changes nothing. Without it, nothing changes.
+ */
+export async function addGuestCartLine(productID: string, target?: CartStorage, options?: { quantity?: number; maximum?: number | null; memberID?: string; stillCurrent?: () => boolean }): Promise<boolean> {
   const id = productIDSchema.parse(productID);
   const quantity = quantitySchema.parse(options?.quantity ?? 1);
   if (options?.maximum != null && quantity > options.maximum) return false;
   const store = storage(target);
   const result = await withCartLock(store, () => {
+    if (options?.stillCurrent && !options.stillCurrent()) return;
     const previous = readStoredRecord(store);
     const record = readRecord(store);
     if (record?.owner && record.owner !== options?.memberID) return;
@@ -105,9 +111,11 @@ export async function addGuestCartLine(productID: string, target?: CartStorage, 
   return result !== undefined;
 }
 
-export async function removeGuestCartLine(productID: string, target?: CartStorage, memberID?: string): Promise<boolean> {
+/** `stillCurrent`: as addGuestCartLine's. */
+export async function removeGuestCartLine(productID: string, target?: CartStorage, memberID?: string, options?: { stillCurrent?: () => boolean }): Promise<boolean> {
   const store = storage(target);
   const result = await withCartLock(store, () => {
+    if (options?.stillCurrent && !options.stillCurrent()) return;
     const record = readRecord(store);
     if (record?.owner && record.owner !== memberID) return;
     if (!record) return record === null ? "unchanged" : undefined;

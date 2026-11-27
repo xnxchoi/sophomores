@@ -61,8 +61,14 @@ export function useShopViewer(): Viewer {
   return useSyncExternalStore(subscribe, () => viewer, () => undefined);
 }
 
-/** Verify the viewer afresh before a change. Undefined means it could not be confirmed: change nothing. */
-export const verifyShopViewer = read;
-
-/** The viewer now, for checking after an await that the same viewer is still looking. */
-export const currentShopViewer = (): Viewer => viewer;
+/**
+ * Verify the viewer afresh before a change. Undefined means it could not be confirmed: change nothing. Otherwise the
+ * confirmed viewer with its generation; `isCurrent` stays true only while that same check is the latest one (no later
+ * read, conceal or lifecycle recheck), so a recheck that lands on the same member still retires a queued action.
+ */
+export async function verifyShopViewer(): Promise<{ viewer: string | null; isCurrent: () => boolean } | undefined> {
+  const confirmed = await read();
+  if (confirmed === undefined) return undefined;
+  const generation = epoch;
+  return { viewer: confirmed, isCurrent: () => epoch === generation && viewer === confirmed };
+}

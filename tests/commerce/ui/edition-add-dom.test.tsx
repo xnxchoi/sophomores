@@ -35,11 +35,14 @@ const pinned = (owner: string, productIDs: string[]) => env.dom.window.localStor
   generation: crypto.randomUUID(), owner, lines: productIDs.map((productID) => ({ productID, quantity: 1, intent: crypto.randomUUID() })) }));
 /** Who /api/users/me says is signed in, one answer per read (the last repeats). */
 function viewers(...answers: Array<string | null | (() => Promise<string | null>)>) {
+  const served: (string | null)[] = [];
   globalThis.fetch = (async () => {
     const next = answers.length > 1 ? answers.shift()! : answers[0];
     const id = typeof next === "function" ? await next() : next;
+    served.push(id);
     return Response.json({ user: id === null ? null : { id } });
   }) as typeof fetch;
+  return served;
 }
 function render(flown: string[] = []) {
   env.ui.render(<MemberAuthProviders><CartFlyContext value={(id) => { flown.push(id); }}>
@@ -115,27 +118,40 @@ test("a focus recheck hides the member's selection until the server answers agai
   assert.ok(await screen().findByText("In your cart"));
 });
 
-test("an account switch while the write is pending: no fly and no status for the viewer who left", async () => {
+/**
+ * Queue an add behind a held cart lock, then recheck the viewer (a focus) to `next`, and only after that answer release
+ * the lock. Whatever `next` is, the queued add is retired: it writes nothing, and nothing flies or is reported.
+ */
+async function queuedAddThenRecheck(next: string) {
   pinned("u1", ["e2"]);
   viewers("u1");
   const flown = render();
   await ready();
-  // Hold the cart's lock so the add is pending, switch the viewer (a focus recheck answers u2), then let it finish.
   const saved = Object.getOwnPropertyDescriptor(navigator, "locks")!;
-  let release: () => void = () => {};
+  let requested = false, release: () => void = () => {};
   const gate = new Promise<void>((resolve) => { release = resolve; });
   Object.defineProperty(navigator, "locks", { configurable: true,
-    value: { request: async (_name: string, _options: unknown, work: () => unknown) => { await gate; return work(); } } });
+    value: { request: async (_name: string, _options: unknown, work: () => unknown) => { requested = true; await gate; return work(); } } });
   try {
     env.ui.fireEvent.click(add());
-    await env.ui.waitFor(() => assert.equal((add() as HTMLButtonElement).disabled, true));
-    viewers("u2");
+    await env.ui.waitFor(() => assert.equal(requested, true), { timeout: 1000 });
+    const served = viewers(next);
     env.ui.act(() => { env.dom.window.dispatchEvent(new env.dom.window.FocusEvent("focus")); });
-    await new Promise((resolve) => setTimeout(resolve, 20));
+    await env.ui.waitFor(() => assert.deepEqual(served, [next]));
+    await new Promise((resolve) => setTimeout(resolve, 0));
     release();
-    await new Promise((resolve) => setTimeout(resolve, 20));
+    await env.ui.waitFor(() => assert.equal((add() as HTMLButtonElement).disabled, false));
   } finally { Object.defineProperty(navigator, "locks", saved); }
-  assert.deepEqual(flown, [], "no fly for the member who left");
-  assert.equal(screen().queryByText("We couldn't add it to your cart.") === null, true);
-  assert.equal(screen().queryByText("In your cart") === null, true, "u1's pinned lines are not shown to u2");
+  assert.deepEqual(ids(), ["e2"], "the queued add wrote nothing");
+  assert.equal(stored()?.owner, "u1");
+  assert.deepEqual(flown, [], "no fly");
+  assert.equal(screen().queryByText("We couldn't add it to your cart.") === null, true, "no status");
+}
+
+test("an account switch while the add waits for the lock: nothing is written, flown or reported", async () => {
+  await queuedAddThenRecheck("u2");
+});
+
+test("control: a recheck that lands on the same member still retires the queued add (generation, not just the id)", async () => {
+  await queuedAddThenRecheck("u1");
 });

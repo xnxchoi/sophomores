@@ -15,7 +15,7 @@ import type { ProductPageContent } from "../product-page/_shared/content";
 import { physicalDetails, type EditionProduct } from "../product-page/product-page";
 import { DetailGallery } from "./detail-gallery";
 import { useCartFly } from "./cart-fly";
-import { currentShopViewer, useShopViewer, verifyShopViewer } from "./use-shop-viewer";
+import { useShopViewer, verifyShopViewer } from "./use-shop-viewer";
 import { Button } from "@/components/core/Button";
 
 /**
@@ -218,15 +218,16 @@ function AddRow({ productID, title, price }: { productID: string; title: string;
     setPending(true);
     setFailed(null);
     try {
-      const confirmed = await verifyShopViewer();
-      if (confirmed === undefined || confirmed !== before) return;
-      const memberID = confirmed ?? undefined;
+      const check = await verifyShopViewer();
+      if (!check || check.viewer !== before) return;
+      const memberID = check.viewer ?? undefined;
+      // Checked inside the cart's lock too: an action queued there for a viewer who has since left writes nothing.
       const ok = kind === "add"
-        ? await addGuestCartLine(productID, undefined, { memberID })
-        : await removeGuestCartLine(productID, undefined, memberID);
-      // A switch while the write was pending: nothing is flown or reported for the viewer who left.
-      if (currentShopViewer() !== confirmed) return;
-      if (!ok) { setFailed({ viewer: confirmed, kind }); return; }
+        ? await addGuestCartLine(productID, undefined, { memberID, stillCurrent: check.isCurrent })
+        : await removeGuestCartLine(productID, undefined, memberID, { stillCurrent: check.isCurrent });
+      // Any recheck since (a switch, or even the same member again): nothing is flown or reported for it.
+      if (!check.isCurrent()) return;
+      if (!ok) { setFailed({ viewer: check.viewer, kind }); return; }
       if (kind === "add") fly?.(productID);
     } finally { setPending(false); }
   }

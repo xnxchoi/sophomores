@@ -303,3 +303,22 @@ test("a v1 cart is never silently adopted, even if an older tab still writes it"
   storage.removeItem("sphmrs.cart.v1");
   assert.deepEqual(listGuestCart(storage), [line("new")]);
 });
+
+test("stillCurrent false inside the lock: no write, no notification, false; true or absent: unchanged behaviour", async () => {
+  const storage = memoryStorage();
+  let notified = 0;
+  const stop = subscribeGuestCart(() => { notified += 1; });
+  try {
+    assert.equal(await addGuestCartLine("a", storage, { stillCurrent: () => false }), false);
+    assert.equal(storage.values.has(GUEST_CART_STORAGE_KEY), false);
+    assert.equal(await addGuestCartLine("a", storage, { stillCurrent: () => true }), true);
+    assert.equal(await addGuestCartLine("b", storage), true);
+    const before = storage.values.get(GUEST_CART_STORAGE_KEY);
+    const seen = notified;
+    assert.equal(await removeGuestCartLine("a", storage, undefined, { stillCurrent: () => false }), false);
+    assert.equal(storage.values.get(GUEST_CART_STORAGE_KEY), before, "the record is untouched");
+    assert.equal(notified, seen, "nobody is notified");
+    assert.equal(await removeGuestCartLine("a", storage, undefined, { stillCurrent: () => true }), true);
+    assert.deepEqual(listGuestCart(storage).map((line) => line.productID), ["b"]);
+  } finally { stop(); }
+});

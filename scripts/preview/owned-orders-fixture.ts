@@ -33,6 +33,8 @@ const allowedEnvironment = new Set([
   "NODE_ENV", "DATABASE_URI", "PORTONE_PAYMENT_MODE", "PAYLOAD_SECRET", "BETTER_AUTH_SECRET",
   "BETTER_AUTH_URL", "NEXT_PUBLIC_SERVER_URL", "SPHMRS_PREVIEW_CHECKOUT", "SPHMRS_PREVIEW_CLUSTER_SYSTEM_ID",
   "NEXT_TELEMETRY_DISABLED", "DISABLE_PAYLOAD_HMR", "TMPDIR",
+  // macOS adds these locale keys to every process (Python adds LC_CTYPE too, e.g. resource-guard).
+  "__CF_USER_TEXT_ENCODING", "LC_CTYPE",
 ]);
 
 async function assertOwnedPath(path: string, kind: "directory" | "socket" | "file") {

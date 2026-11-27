@@ -2,13 +2,15 @@ import { useState, type ReactNode } from "react";
 import { NextIntlClientProvider, useLocale } from "next-intl";
 import { messagesByLocale } from "../../src/i18n/messages";
 import { WithVerificationMessages } from "./verification-messages";
+import { SiteContexts } from "./site-contexts";
 
 function LocaleBoundary({ children }: { children: ReactNode }) {
   const locale = useLocale();
   return <div data-authentication-provider-locale={locale}>{children}</div>;
 }
 
-/** Legacy study controls select locale; active phase copy uses the native catalogue. */
+/** Legacy study controls select locale; active phase copy uses the native catalogue. Mounts the site contexts core
+ * Button and Link need (SiteContexts: inert, and only where the test has none). */
 export function AuthenticationMessages({ children, locale = "en" }: {
   children: ReactNode;
   locale?: "en" | "ko";
@@ -23,7 +25,7 @@ export function AuthenticationMessages({ children, locale = "en" }: {
         setSelection({ initial: locale, current: target.value });
       }
     }}>
-      <LocaleBoundary><WithVerificationMessages>{children}</WithVerificationMessages></LocaleBoundary>
+      <LocaleBoundary><WithVerificationMessages><SiteContexts>{children}</SiteContexts></WithVerificationMessages></LocaleBoundary>
     </div>
   </NextIntlClientProvider>;
 }

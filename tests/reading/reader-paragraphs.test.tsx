@@ -4,12 +4,15 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { NextIntlClientProvider } from "next-intl";
 import { messagesByLocale } from "@/i18n/messages";
 import { Reader } from "@/components/reading/reader";
+import { SiteContexts } from "../fixtures/site-contexts";
 
 test("Reader keeps an essay's paragraph and line breaks", () => {
   const body = "첫 문단.\n\n둘째 문단,\n시의 한 줄.";
   const html = renderToStaticMarkup(
     <NextIntlClientProvider locale="en" messages={messagesByLocale.en} timeZone="Asia/Seoul">
-      <Reader body={body} highlights={[]} onHighlight={() => {}} />
+      <SiteContexts>
+        <Reader body={body} highlights={[]} onHighlight={() => {}} />
+      </SiteContexts>
     </NextIntlClientProvider>
   );
   assert.match(html, /<article[^>]*whitespace-pre-line/);
@@ -22,11 +25,13 @@ test("Reader hides outer blank lines without moving any highlight offset", () =>
   const end = body.indexOf("둘째") + "둘째".length;
   const html = renderToStaticMarkup(
     <NextIntlClientProvider locale="en" messages={messagesByLocale.en} timeZone="Asia/Seoul">
+      <SiteContexts>
       <Reader
         body={body}
         highlights={[{ id: "h1", postId: "p1", quote: body.slice(start, end), start, end, note: "", authorLabel: "" }]}
         onHighlight={() => {}}
       />
+      </SiteContexts>
     </NextIntlClientProvider>
   );
   const article = /<article[^>]*>([\s\S]*?)<\/article>/.exec(html)?.[1] ?? "";
@@ -39,11 +44,13 @@ test("Reader hides outer blank lines without moving any highlight offset", () =>
 function renderArticle(body: string, start: number, end: number) {
   const html = renderToStaticMarkup(
     <NextIntlClientProvider locale="en" messages={messagesByLocale.en} timeZone="Asia/Seoul">
+      <SiteContexts>
       <Reader
         body={body}
         highlights={[{ id: "h1", postId: "p1", quote: body.slice(start, end).trim(), start, end, note: "", authorLabel: "" }]}
         onHighlight={() => {}}
       />
+      </SiteContexts>
     </NextIntlClientProvider>
   );
   return /<article[^>]*>([\s\S]*?)<\/article>/.exec(html)?.[1] ?? "";

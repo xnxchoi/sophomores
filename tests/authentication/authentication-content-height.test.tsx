@@ -210,5 +210,6 @@ test("closing disconnects measurement and holds the last natural height during t
   dimensions = { ...dimensions, logical: 0 };
   rendered.rerender(content(false));
   assert.ok(!observations.has(inner), "exit disposes the private content observer");
-  assert.equal(wrapper.style.height, "520px", "shell must not collapse while the dismissed phase exits");
+  // Sub-pixel tolerance: the held height can come back as 519.999px from the scaled measurement.
+  assert.ok(wrapper.style.height.endsWith("px") && Math.abs(parseFloat(wrapper.style.height) - 520) < 0.01, `shell must not collapse while the dismissed phase exits (${wrapper.style.height})`);
 });

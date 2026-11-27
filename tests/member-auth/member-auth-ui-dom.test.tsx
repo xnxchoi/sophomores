@@ -5,11 +5,13 @@ import { readFile } from "node:fs/promises";
 import { readFileSync } from "node:fs";
 import { after, afterEach, before, test } from "node:test";
 import { JSDOM } from "jsdom";
+import { finishExitAnimations } from "../support/exit-animations";
 import { untilAsserted } from "../support/dom-state";
 import type { MemberClient, MemberStatus } from "@/lib/member-auth/client";
 
 let MemberAuthProviders: typeof import("./fixtures/providers").MemberAuthProviders;
 let dom: JSDOM;
+let stopExitAnimations: (() => void) | undefined;
 let ui: typeof import("@testing-library/react/pure");
 let Study: typeof import("@/components/Authentication/member-auth/account-study").MemberAccountStudy;
 let SignIn: typeof import("@/components/Authentication/member-auth/account-study").MemberAccountPage;
@@ -102,6 +104,8 @@ before(async () => {
     value() {}
   });
   MemberAuthProviders = (await import("./fixtures/providers")).MemberAuthProviders;
+  // JSDOM never ends the sheets' CSS exit animations; this plays the browser's animationend (see the helper).
+  stopExitAnimations = finishExitAnimations(dom.window as never);
   ui = await import("@testing-library/react/pure");
   Study = (await import("@/components/Authentication/member-auth/account-study"))
     .MemberAccountStudy;
@@ -115,6 +119,7 @@ before(async () => {
 afterEach(() => ui.cleanup());
 
 after(async () => {
+  stopExitAnimations?.();
   // Let unmounted Motion/Vaul animation cleanup settle before removing browser globals.
   await new Promise((resolve) => setTimeout(resolve, 250));
   dom.window.close();
@@ -257,7 +262,8 @@ test("login requires explicit registration continuation for an incomplete authen
   await untilAsserted(ui, () => assert.ok(ui.screen.queryByRole("textbox", { name: "Phone number" }) === null));
   assert.ok(ui.screen.queryByRole("heading", { name: "Welcome" }) === null);
   assert.ok(ui.screen.queryByRole("button", { name: "Resume registration" }) === null);
-  assert.ok(ui.screen.getByRole("button", { name: "Open account options" }));
+  // No chooser at any point of the close (above, strict); the caller is exposed again once the sheet has left.
+  assert.ok(await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Open account options" })));
   assert.equal(server.calls.length, 0, "closing must not create a phone challenge");
 });
 
@@ -450,7 +456,9 @@ test("a sign-in button opens the in-place sheet on a plain click and keeps its s
   await untilAsserted(ui, () => assert.ok(document.querySelector("[data-vaul-drawer]")));
   // The chooser is dismissible; closing it returns to the page without leaving it.
   ui.fireEvent.click(await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Close account options" })));
-  await untilAsserted(ui, () => assert.equal(document.querySelector("[data-vaul-drawer][data-state=open]") === null, true));
+  // Closed means gone: the sheet leaves after its exit animation (tests/support/exit-animations.ts) and the page
+  // behind it is exposed again.
+  await untilAsserted(ui, () => assert.equal(document.querySelector("[data-vaul-drawer]") === null, true));
   const submitted = new dom.window.Event("submit", { bubbles: true, cancelable: true });
   ui.act(() => { ui.screen.getByRole("button", { name: "Sign in here" }).closest("form")!.dispatchEvent(submitted); });
   assert.equal(submitted.defaultPrevented, true, "the NFC form opens the sheet instead of leaving");
@@ -697,7 +705,7 @@ test("a disposed sign-out cannot clear the next flow's identity", async () => {
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign out" }));
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Cancel" }));
   c.setStatus(anonymous);
-  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Open account options" }));
+  ui.fireEvent.click(await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Open account options" })));
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign in" }));
   await untilAsserted(ui, () =>
     assert.equal((ui.screen.getByLabelText("Email address") as HTMLInputElement).disabled, false)
@@ -741,7 +749,7 @@ test("explicit signup resumes phone verification and Cancel returns directly to 
   await untilAsserted(ui, () => assert.ok(ui.screen.queryByRole("textbox", { name: "Phone number" }) === null));
   assert.ok(ui.screen.queryByRole("button", { name: "Resume registration" }) === null);
   assert.ok(ui.screen.queryByRole("heading", { name: "Welcome" }) === null);
-  assert.ok(ui.screen.getByRole("button", { name: "Open account options" }));
+  assert.ok(await untilAsserted(ui, () => ui.screen.getByRole("button", { name: "Open account options" })));
 });
 test("authenticated returning member resumes the account screen without repeating signup", async () => {
   const c = client();

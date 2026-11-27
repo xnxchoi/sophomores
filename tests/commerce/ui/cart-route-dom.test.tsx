@@ -1,161 +1,237 @@
 import assert from "node:assert/strict";
 import { after, afterEach, before, test } from "node:test";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { setupCartDom } from "../../fixtures/commerce/cart-dom";
-import type { CartConstants, CartMotion, CartPhase, CartTiming } from "../../../src/components/commerce/shop/use-cart-mode";
+import type { CartConstants, CartMotion, CartTiming } from "../../../src/components/commerce/shop/use-cart-mode";
+import type { BookDetailSource } from "../../../src/components/commerce/shop/use-book-detail";
+import type { SceneCatalogue, SceneHub, SceneRouter } from "../../../src/components/commerce/shop/stripe-scene";
 
-// The in-place cart's address and its direct entry (Review-B, 28 Nov): does it work? ShopHome's scene can't mount here, so
-// this drives the two hooks it uses with a stand-in cart whose motions only change phase: an open runs "toCart" until
-// settled, a close runs "toBrowse" with the mode still on until it finishes (as useCartMode does).
+// The in-place cart's address and its direct entry (Review-B HOLDs on 2f3c63d2): does it work? ShopHome's scene can't
+// mount here, so this composes the real writers in ShopHome's order: the details' hook (its scene-shift writer), the
+// cart mode (its frame writes the cart's −20vw shift while the cart is on) and the cart's address controller, over a
+// stand-in scene hub. The motions run on a fake frame clock; Back and Forward are the browser's own history traversal.
 let env: Awaited<ReturnType<typeof setupCartDom>>;
 let useCartRoute: typeof import("../../../src/components/commerce/shop/use-cart-route").useCartRoute;
 let useCartMode: typeof import("../../../src/components/commerce/shop/use-cart-mode").useCartMode;
+let useBookDetail: typeof import("../../../src/components/commerce/shop/use-book-detail").useBookDetail;
 
+// The frame clock: requestAnimationFrame and performance.now, advanced by run().
+let now = 0, nextFrame = 0, frames = new Map<number, (time: number) => void>();
+const savedFrame = Object.getOwnPropertyDescriptor(globalThis, "requestAnimationFrame");
+const savedCancel = Object.getOwnPropertyDescriptor(globalThis, "cancelAnimationFrame");
 before(async () => {
   env = await setupCartDom();
+  Object.defineProperty(globalThis, "requestAnimationFrame", { configurable: true, writable: true,
+    value: (callback: (time: number) => void) => { frames.set(++nextFrame, callback); return nextFrame; } });
+  Object.defineProperty(globalThis, "cancelAnimationFrame", { configurable: true, writable: true, value: (id: number) => { frames.delete(id); } });
+  Object.defineProperty(performance, "now", { configurable: true, value: () => now });
   useCartRoute = (await import("../../../src/components/commerce/shop/use-cart-route")).useCartRoute;
   useCartMode = (await import("../../../src/components/commerce/shop/use-cart-mode")).useCartMode;
+  useBookDetail = (await import("../../../src/components/commerce/shop/use-book-detail")).useBookDetail;
 });
-afterEach(() => { env.ui.cleanup(); env.dom.window.history.replaceState(null, "", "/shop/cart"); });
-after(async () => { await env.restore(); });
-
-const path = () => env.dom.window.location.pathname;
-/** A Back or Forward: the address moves, then the browser's popstate. */
-function traverse(to: string) {
+afterEach(() => { env.ui.cleanup(); frames = new Map(); env.dom.window.history.replaceState(null, "", "/shop/cart"); });
+after(async () => {
+  for (const [key, saved] of [["requestAnimationFrame", savedFrame], ["cancelAnimationFrame", savedCancel]] as const) {
+    if (saved) Object.defineProperty(globalThis, key, saved); else Reflect.deleteProperty(globalThis, key);
+  }
+  Reflect.deleteProperty(performance, "now");
+  await env.restore();
+});
+function run(ms: number) {
   env.ui.act(() => {
-    env.dom.window.history.replaceState(null, "", to);
-    env.dom.window.dispatchEvent(new env.dom.window.PopStateEvent("popstate"));
+    for (const end = now + ms; now < end;) {
+      now += 16;
+      const due = frames; frames = new Map();
+      for (const callback of due.values()) callback(now);
+    }
   });
+}
+
+// Stand-ins for the vendored timing (module 60444) and curves (72646): a 1 s open, a 1 s close.
+const clamp = (x: number) => Math.max(0, Math.min(1, x));
+const timing = { m: { bookSettled: 0 }, B: () => { throw new Error("no entry clock here"); }, W: () => { throw new Error("no entry clock here"); },
+  s: (ms: number) => { const x = clamp(ms / 1000); return { panel: x, page: x, bookSlide: x, nonCartSlide: x, layout: x, shelfSlide: null, done: ms >= 1000 }; },
+  k: () => null, t: () => [] } as unknown as CartTiming;
+const k = { $: 800, p: 1000, A: 1000, o: 1000, F: 800, X: 500, g: 0, a: 1000, _: 500, O: 500, j: clamp, T: clamp, B: clamp } as CartConstants;
+const catalogue = { J: 0, K: 0, t: 0 } as unknown as SceneCatalogue;
+const router = { _: { current: {} }, v: () => () => undefined } as unknown as SceneRouter;
+function sceneHub() {
+  const refs: Record<string | symbol, { current: unknown }> = {};
+  return new Proxy(refs, { get: (target, key) => (target[key] ??= { current: undefined }) }) as unknown as SceneHub & Record<string, { current: unknown }>;
+}
+
+/** ShopHome's cart wiring, in its order, over a stand-in hub. */
+function useShop(direct: boolean) {
+  const hub = useMemo(sceneHub, []);
+  const cartOn = useRef(direct);
+  const source = useRef<BookDetailSource>({ rawProgress: () => 0, hrefOf: () => null, home: "/shop", placeOf: () => 0, shelfAt: () => null,
+    pin: () => undefined, unpin: () => undefined, pagesOpen: () => false, cartHoldsShift: () => cartOn.current });
+  const detail = useBookDetail(hub, catalogue, router, { P: 0, i: 0 }, source);
+  const cart = useCartMode({ initialOpen: direct, timing, k, coverReady: { current: new Set() },
+    onFrame: (frame) => { if (frame.active || cartOn.current) hub.detailCanvasShiftVwLiveRef.current = -20 * frame.bookSlide; } });
+  useEffect(() => { cartOn.current = cart.cartMode; }, [cart.cartMode]);
+  const counts = useRef({ opens: 0, closes: 0 });
+  const route = useCartRoute({ enabled: true, cart, detailOpen: detail.open != null,
+    open: () => { cartOn.current = true; const accepted = cart.toggle({ entry: null }); if (accepted) counts.current.opens += 1; return accepted; },
+    close: () => { const accepted = cart.toggle({}); if (accepted) counts.current.closes += 1; return accepted; } });
+  return { hub, cart, route, counts: counts.current };
+}
+const path = () => env.dom.window.location.pathname;
+const entries = () => env.dom.window.history.length;
+function mount(direct: boolean, at: string) {
+  env.dom.window.history.replaceState(null, "", at);
+  const hook = env.ui.renderHook(() => useShop(direct));
+  const shop = () => hook.result.current;
+  /** At rest, the cart and its address agree. */
+  const agrees = () => {
+    assert.equal(shop().cart.phase, "idle");
+    assert.equal(shop().cart.cartMode, path() === "/shop/cart", `cart ${shop().cart.cartMode ? "on" : "off"} at ${path()}`);
+  };
+  return { hook, shop, agrees };
 }
 function escape() {
   const event = new env.dom.window.KeyboardEvent("keydown", { key: "Escape", cancelable: true });
-  env.ui.act(() => { env.dom.window.dispatchEvent(event); });
+  env.dom.window.dispatchEvent(event);
   return event.defaultPrevented;
 }
-
-function useStandIn(start: { cartMode: boolean }) {
-  const [state, setState] = useState<{ cartMode: boolean; phase: CartPhase }>({ cartMode: start.cartMode, phase: "idle" });
-  const modeRef = useRef(start.cartMode);
-  const calls = useRef<string[]>([]);
-  const route = useCartRoute({ enabled: true, cart: { ...state, modeRef }, detailOpen: false,
-    open: () => { calls.current.push("open"); modeRef.current = true; setState({ cartMode: true, phase: "toCart" }); },
-    close: () => { calls.current.push("close"); setState((now) => ({ ...now, phase: "toBrowse" })); } });
-  /** The running motion reaches its end. */
-  const settle = () => setState((now) => {
-    if (now.phase === "toBrowse") { modeRef.current = false; return { cartMode: false, phase: "idle" }; }
-    return { ...now, phase: "idle" };
-  });
-  return { route, state, calls: calls.current, settle };
-}
-function mount(start: { cartMode: boolean }, at: string) {
-  env.dom.window.history.replaceState(null, "", at);
-  const hook = env.ui.renderHook(() => useStandIn(start));
-  const settle = () => env.ui.act(() => hook.result.current.settle());
-  /** At rest, the cart and its address agree. */
-  const agrees = () => {
-    const { state } = hook.result.current;
-    assert.equal(state.phase, "idle");
-    assert.equal(state.cartMode, path() === "/shop/cart", `cart ${state.cartMode ? "on" : "off"} at ${path()}`);
-  };
-  return { hook, settle, agrees, calls: () => hook.result.current.calls };
-}
-function clickCartLink() {
+function cartLink() {
   const link = env.dom.window.document.createElement("a");
   link.href = "/shop/cart"; env.dom.window.document.body.append(link);
-  env.ui.act(() => { link.click(); });
-  link.remove();
+  return { click: () => link.click(), remove: () => link.remove() };
+}
+/** The browser's own Back (-1) or Forward (1), and its popstate. */
+async function traverse(step: -1 | 1) {
+  const fired = new Promise<boolean>((resolve) => {
+    env.dom.window.addEventListener("popstate", () => resolve(true), { once: true });
+    setTimeout(() => resolve(false), 500);
+  });
+  await env.ui.act(async () => {
+    if (step < 0) env.dom.window.history.back(); else env.dom.window.history.forward();
+    assert.equal(await fired, true, "the traversal fired popstate");
+  });
 }
 
-test("a cart link on the shelf opens it in place on a shallow push, and Escape closes it back to where it came from", () => {
-  const shop = mount({ cartMode: false }, "/shop");
-  clickCartLink();
+test("direct /shop/cart: the cart's −20vw shift holds over the details' first write, and on later renders", () => {
+  const view = mount(true, "/shop/cart");
+  assert.equal(view.shop().cart.cartMode, true);
+  assert.equal(view.shop().hub.detailCanvasShiftVwLiveRef.current, -20);
+  view.hook.rerender();
+  assert.equal(view.shop().hub.detailCanvasShiftVwLiveRef.current, -20);
+});
+
+test("control: loaded on the shop, the details own the shift (0) and the cart is closed", () => {
+  const view = mount(false, "/shop");
+  assert.equal(view.shop().cart.cartMode, false);
+  assert.equal(view.shop().hub.detailCanvasShiftVwLiveRef.current === 0, true);
+});
+
+test("two Escapes before React commits: one close, one history entry, no restart", () => {
+  const view = mount(true, "/shop/cart");
+  const base = entries();
+  env.ui.act(() => { assert.equal(escape(), true); escape(); });
+  assert.equal(view.shop().counts.closes, 1);
+  assert.equal(entries(), base + 1);
+  assert.equal(path(), "/shop");
+  run(1100);
+  view.agrees();
+  assert.equal(view.shop().hub.detailCanvasShiftVwLiveRef.current === 0, true, "the close brings the shift back");
+});
+
+test("the back control twice before React commits: one close, one history entry", () => {
+  const view = mount(true, "/shop/cart");
+  const base = entries();
+  env.ui.act(() => { view.shop().route.closeCart(); view.shop().route.closeCart(); });
+  assert.equal(view.shop().counts.closes, 1);
+  assert.equal(entries(), base + 1);
+  run(1100);
+  view.agrees();
+});
+
+test("two clicks on a cart link before React commits: one open, one history entry", () => {
+  const view = mount(false, "/shop");
+  const base = entries(), link = cartLink();
+  env.ui.act(() => { link.click(); link.click(); });
+  link.remove();
+  assert.equal(view.shop().counts.opens, 1, "the second click is refused, not navigated");
+  assert.equal(entries(), base + 1);
   assert.equal(path(), "/shop/cart");
-  assert.deepEqual(shop.calls(), ["open"]);
-  shop.settle(); shop.agrees();
-  assert.equal(escape(), true);
+  run(1100);
+  view.agrees();
+});
+
+test("Back and Forward through history close and reopen it in place, adding no entries", async () => {
+  const view = mount(false, "/shop");
+  const link = cartLink();
+  env.ui.act(() => link.click());
+  link.remove();
+  run(1100); view.agrees();
+  const base = entries();
+  await traverse(-1);
   assert.equal(path(), "/shop");
-  shop.settle(); shop.agrees();
-  assert.deepEqual(shop.calls(), ["open", "close"]);
-  assert.equal(escape(), false, "Escape is the page's again once the cart is closed");
+  assert.equal(view.shop().counts.closes, 1);
+  run(1100); view.agrees();
+  await traverse(1);
+  assert.equal(path(), "/shop/cart");
+  assert.equal(view.shop().counts.opens, 2);
+  run(1100); view.agrees();
+  assert.equal(entries(), base, "traversal adds no entries");
 });
 
-test("rapid: Back while it is still opening closes it in place, with no push, and it rests closed on /shop", () => {
-  const shop = mount({ cartMode: false }, "/shop");
-  clickCartLink();
-  traverse("/shop");
-  assert.deepEqual(shop.calls(), ["open", "close"]);
+test("Back while it is still opening closes it in place, with no push", async () => {
+  const view = mount(false, "/shop");
+  const link = cartLink();
+  env.ui.act(() => link.click());
+  link.remove();
+  const base = entries();
+  run(200);
+  await traverse(-1);
+  assert.equal(view.shop().counts.closes, 1);
+  assert.equal(entries(), base);
+  run(1100); view.agrees();
+});
+
+test("Back onto /shop/cart while it is closing is held, then the cart reopens when the close settles", async () => {
+  const view = mount(true, "/shop/cart");
+  env.ui.act(() => { escape(); });
+  const base = entries();
   assert.equal(path(), "/shop");
-  shop.settle(); shop.agrees();
-});
-
-test("rapid: Forward while it is closing is held, then the cart reopens when the close settles", () => {
-  const shop = mount({ cartMode: true }, "/shop/cart");
-  assert.equal(escape(), true);
-  assert.equal(path(), "/shop");
-  traverse("/shop/cart");
-  assert.deepEqual(shop.calls(), ["close"], "nothing acts in the middle of the close");
-  shop.settle();
-  assert.deepEqual(shop.calls(), ["close", "open"], "the address decides once the motion is done");
-  shop.settle(); shop.agrees();
-});
-
-test("rapid: a second Back or Escape during the close does nothing more", () => {
-  const shop = mount({ cartMode: true }, "/shop/cart");
-  traverse("/shop");
-  traverse("/shop");
-  escape();
-  assert.deepEqual(shop.calls(), ["close"]);
-  shop.settle(); shop.agrees();
-});
-
-test("rapid open/close/Back/Forward in a row settles with the cart matching its address", () => {
-  const shop = mount({ cartMode: false }, "/shop");
-  clickCartLink();               // opening
-  escape();                      // close mid-open: pushes /shop
-  traverse("/shop/cart");        // Forward during the close: held
-  shop.settle();                 // close done: the address reopens it
-  traverse("/shop");             // Back while reopening: closes in place
-  shop.settle();
-  shop.agrees();
-  assert.deepEqual(shop.calls(), ["open", "close", "open", "close"]);
-});
-
-test("the listeners use the latest commit's motions, never an earlier render's", () => {
-  const seen: string[] = [];
-  env.dom.window.history.replaceState(null, "", "/shop/cart");
-  const hook = env.ui.renderHook(({ v }: { v: number }) => {
-    const modeRef = useRef(true);
-    return useCartRoute({ enabled: true, cart: { cartMode: true, phase: "idle", modeRef }, detailOpen: false,
-      open: () => seen.push("open " + v), close: () => seen.push("close " + v) });
-  }, { initialProps: { v: 0 } });
-  hook.rerender({ v: 1 });
-  traverse("/shop");
-  assert.deepEqual(seen, ["close 1"]);
+  run(200);
+  await traverse(-1);
+  assert.equal(path(), "/shop/cart");
+  assert.equal(view.shop().counts.opens, 0, "nothing acts in the middle of the close");
+  run(1100);
+  assert.equal(view.shop().counts.opens, 1, "the address decides once the close is done");
+  run(1100); view.agrees();
+  assert.equal(entries(), base);
 });
 
 // Direct entry (useCartMode's initialOpen): the first render is the cart's, and its open frame is written at commit,
 // before any passive effect (so before the first paint).
-const timing = {} as CartTiming, k = {} as CartConstants;
 test("direct /shop/cart starts open from the route: no browse frame first", () => {
-  const order: string[] = [], frames: CartMotion[] = [], firstRender: boolean[] = [];
+  const order: string[] = [], written: CartMotion[] = [], firstRender: boolean[] = [];
   env.ui.renderHook(() => {
     const cart = useCartMode({ initialOpen: true, timing, k, coverReady: { current: new Set() },
-      onFrame: (frame) => { frames.push(frame); order.push("frame"); } });
+      onFrame: (frame) => { written.push(frame); order.push("frame"); } });
     if (firstRender.length === 0) firstRender.push(cart.cartMode && cart.panelOpen && cart.layoutBlend === 1 && cart.nonCartSlide === 1);
     useEffect(() => { order.push("passive"); }, []);
     return cart;
   });
   assert.deepEqual(firstRender, [true], "the first render is already open");
   assert.equal(order[0], "frame", "the open frame lands before any passive effect");
-  assert.equal(frames.length, 1);
-  assert.deepEqual({ panel: frames[0].panel, layout: frames[0].layout, page: frames[0].pageOpacity, backdrop: frames[0].backdropOpacity, active: frames[0].active },
+  assert.equal(written.length, 1);
+  assert.deepEqual({ panel: written[0].panel, layout: written[0].layout, page: written[0].pageOpacity, backdrop: written[0].backdropOpacity, active: written[0].active },
     { panel: 1, layout: 1, page: 0, backdrop: 1, active: false });
 });
 
-test("loaded on the shop, the cart mode starts closed and writes no frame", () => {
-  const frames: CartMotion[] = [];
-  const hook = env.ui.renderHook(() => useCartMode({ timing, k, coverReady: { current: new Set() }, onFrame: (frame) => { frames.push(frame); } }));
+test("a close is refused while one is under way, before and after React commits", () => {
+  const hook = env.ui.renderHook(() => useCartMode({ initialOpen: true, timing, k, coverReady: { current: new Set() }, onFrame: () => undefined }));
+  let first = false, second = true;
+  env.ui.act(() => { first = hook.result.current.toggle({}); second = hook.result.current.toggle({}); });
+  assert.equal(first, true);
+  assert.equal(second, false);
+  assert.equal(hook.result.current.phaseRef.current, "toBrowse");
+  assert.equal(hook.result.current.toggle({}), false);
+  run(1100);
   assert.equal(hook.result.current.cartMode, false);
-  assert.equal(hook.result.current.modeRef.current, false);
-  assert.equal(frames.length, 0);
+  assert.equal(hook.result.current.phaseRef.current, "idle");
 });

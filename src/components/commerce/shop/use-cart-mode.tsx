@@ -54,6 +54,10 @@ export function useCartMode({ timing, k, coverReady, onFrame, initialOpen = fals
   const clock = useRef<Clock | null>(null), motion = useRef<CartMotion>(initialOpen ? open() : rest()), pending = useRef<CartMotion | null>(null), frame = useRef<number | null>(null);
   /** Set with every mode change, not after render, so a close right after an open sees it. */
   const modeRef = useRef(initialOpen);
+  /** The phase as each transition is accepted, before React commits it: a second close in the same task is refused
+   * instead of restarting the motion (Review-B, 28 Nov). */
+  const phaseRef = useRef<CartPhase>("idle");
+  const enter = useCallback((next: CartPhase) => { phaseRef.current = next; setPhase(next); }, []);
   const frameRef = useRef(onFrame);
   useEffect(() => { frameRef.current = onFrame; });
 
@@ -71,10 +75,11 @@ export function useCartMode({ timing, k, coverReady, onFrame, initialOpen = fals
   const startedOpen = useRef(initialOpen);
   useLayoutEffect(() => { if (startedOpen.current) write(motion.current); }, [write]);
 
-  const toggle = useCallback((options?: CartToggle) => {
-    if (phase === "toBrowse") return;
+  /** Start the open or the close; false (and nothing changes) when a close is already under way. */
+  const toggle = useCallback((options?: CartToggle): boolean => {
+    if (phaseRef.current === "toBrowse") return false;
     if (!modeRef.current) {
-      cancel(); modeRef.current = true; setPhase("toCart"); setLayoutBlend(0); setNonCartSlide(0); setStackExit(null);
+      cancel(); modeRef.current = true; enter("toCart"); setLayoutBlend(0); setNonCartSlide(0); setStackExit(null);
       const from = options?.entry ?? null, fromShelf = from?.fromShelf === true;
       setEntry(from); setShelfSlide(fromShelf ? 0 : null); setPanelOpen(true); setCartMode(true);
       write({ ...rest(), active: true, shelfSlide: fromShelf ? 0 : null });
@@ -95,7 +100,7 @@ export function useCartMode({ timing, k, coverReady, onFrame, initialOpen = fals
           if (!seen.layout && c.layout >= 1) { seen.layout = true; setLayoutBlend(1); }
         }
         if (c.done) {
-          frame.current = null; setLayoutBlend(1); setNonCartSlide(1); setShelfSlide(null); setPhase("idle"); hold(open());
+          frame.current = null; setLayoutBlend(1); setNonCartSlide(1); setShelfSlide(null); enter("idle"); hold(open());
           return;
         }
         if (live) write({ active: true, layout: c.layout, panel: c.panel, bookSlide: c.bookSlide, nonCartSlide: c.nonCartSlide,
@@ -103,7 +108,7 @@ export function useCartMode({ timing, k, coverReady, onFrame, initialOpen = fals
         frame.current = requestAnimationFrame(tick);
       };
       frame.current = requestAnimationFrame(tick);
-      return;
+      return true;
     }
     // Closing, from wherever the open had got to.
     const was = motion.current, from = { layout: was.layout, panel: was.panel, bookSlide: was.bookSlide, nonCartSlide: was.nonCartSlide, shelfSlide: was.shelfSlide };
@@ -124,7 +129,7 @@ export function useCartMode({ timing, k, coverReady, onFrame, initialOpen = fals
         shelfSlide: null, done: t >= lead + Math.max(span, k.p, k.F) };
     };
     const first = at(0), backdrop = 1 - was.pageOpacity;
-    setStackExit(first.stackExit); setShelfSlide(first.shelfSlide); setPanelOpen(false); cancel(); setPhase("toBrowse");
+    setStackExit(first.stackExit); setShelfSlide(first.shelfSlide); setPanelOpen(false); cancel(); enter("toBrowse");
     write({ active: true, layout: first.layout, panel: first.panel, bookSlide: first.bookSlide, nonCartSlide: first.nonCartSlide,
       shelfSlide: first.shelfSlide, stackExit: first.stackExit, pageOpacity: first.pageOpacity, backdropOpacity: backdrop });
     const start = performance.now(), seen = { shelf: first.shelfSlide != null, exit: first.stackExit == null };
@@ -134,7 +139,7 @@ export function useCartMode({ timing, k, coverReady, onFrame, initialOpen = fals
       if (!seen.exit && c.stackExit != null && c.stackExit >= 1) { seen.exit = true; setStackExit(1); }
       if (c.done) {
         frame.current = null; setLayoutBlend(0); setNonCartSlide(0); setStackExit(null); setShelfSlide(null); setEntry(null);
-        clock.current = null; modeRef.current = false; setPhase("idle"); setCartMode(false); hold(rest());
+        clock.current = null; modeRef.current = false; enter("idle"); setCartMode(false); hold(rest());
         return;
       }
       write({ active: true, layout: c.layout, panel: c.panel, bookSlide: c.bookSlide, nonCartSlide: c.nonCartSlide, shelfSlide: c.shelfSlide,
@@ -142,8 +147,9 @@ export function useCartMode({ timing, k, coverReady, onFrame, initialOpen = fals
       frame.current = requestAnimationFrame(tick);
     };
     frame.current = requestAnimationFrame(tick);
-  }, [phase, timing, k, coverReady, cancel, write, hold]);
+    return true;
+  }, [timing, k, coverReady, cancel, write, hold, enter]);
 
-  return { cartMode, modeRef, panelOpen, layoutBlend, phase, nonCartSlide, stackExit, shelfSlide, entry, clock, motion,
+  return { cartMode, modeRef, phaseRef, panelOpen, layoutBlend, phase, nonCartSlide, stackExit, shelfSlide, entry, clock, motion,
     toggle, settle, cancel };
 }

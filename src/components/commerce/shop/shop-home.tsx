@@ -323,11 +323,18 @@ function Home({ vendored, items, labels, initialOpen, cartPanel, cartOpen, onCar
     held: () => held.current, seatBottom: setSeatBottom }; });
   useShelfCatch(hub, catalogue, catchSource);
 
+  // Loaded on the cart's address: it starts open (their openInstantly), from the route, with no browse frame first
+  // (Review-B, 28 Nov). cartOn (the cart's open through its close) starts on too: the open frame is written at rest (not
+  // active), the scene only takes the cart's −20vw shift while the cart is on (G14: the stack sat ~180 px right of the card
+  // without it), and the details' own shift writer stands down meanwhile (cartHoldsShift).
+  const direct = Boolean(cartPanel && cartOpen);
+  const cartOn = useRef(direct);
   // Opening a book into its details inside the scene (use-book-detail.tsx), at every width.
   const detailSource = useRef<BookDetailSource>({ rawProgress: () => 0, hrefOf: () => null, home: "/shop", placeOf: () => 0, shelfAt: () => null,
-    pin: () => undefined, unpin: () => undefined, pagesOpen: () => false });
+    pin: () => undefined, unpin: () => undefined, pagesOpen: () => false, cartHoldsShift: () => cartOn.current });
   useEffect(() => { detailSource.current = { rawProgress: () => hub.scrollProgressDirectLiveRef.current as number,
     hrefOf: (index) => items[index]?.href ?? null, home: "/shop", placeOf: bookY, shelfAt: seatY, pagesOpen: () => lookOpen.current,
+    cartHoldsShift: () => cartOn.current,
     // The scene poses an open book by the progress in its details: at the open book's own index, the top of them. As
     // theirs (06w9:15271-15273), the scene's row smoother snaps to it (snap 6 frames, row seed 3) instead of easing
     // through the stack between the shelf and the book's own place.
@@ -388,11 +395,7 @@ function Home({ vendored, items, labels, initialOpen, cartPanel, cartOpen, onCar
   // on desktop the scene's shift from where it stood to −20vw with the books' slide.
   const cartTiming = useMemo(() => vendored.module(60444) as unknown as CartTiming, [vendored]);
   const cartConstants = useMemo(() => vendored.module(72646) as unknown as CartConstants, [vendored]);
-  // Loaded on the cart's address: it starts open (their openInstantly), from the route, with no browse frame first
-  // (Review-B, 28 Nov). cartOn starts on too: the open frame is written at rest (not active), and the scene only takes
-  // the cart's −20vw shift while the cart is on (G14: the stack sat ~180 px right of the card without it).
-  const direct = Boolean(cartPanel && cartOpen);
-  const cartShiftFrom = useRef(0), cartOn = useRef(direct);
+  const cartShiftFrom = useRef(0);
   const cart = useCartMode({ initialOpen: direct, timing: cartTiming, k: cartConstants, coverReady: hub.coverAppliedLiveRef as unknown as { current: Set<number> },
     onFrame: (frame: CartMotion) => {
       const root = document.documentElement.style;
@@ -447,10 +450,11 @@ function Home({ vendored, items, labels, initialOpen, cartPanel, cartOpen, onCar
     open: () => {
       const inCart = items.flatMap((entry, index) => (cartQuantities[entry.id] ?? 0) > 0 ? [index] : []);
       cartShiftFrom.current = Number(hub.detailCanvasShiftVwLiveRef.current) || 0; cartOn.current = true; ownInput(true);
-      setCartVeil(true); cart.toggle({ entry: cartTiming.k(activeRef.current, inCart) });
+      setCartVeil(true); return cart.toggle({ entry: cartTiming.k(activeRef.current, inCart) });
     },
-    close: () => { setCartVeil(false); cart.toggle(closing()); } });
-  const backToShelf = route.closeCart;
+    close: () => { if (!cart.toggle(closing())) return false; setCartVeil(false); return true; } });
+  const { closeCart } = route;
+  const backToShelf = useCallback(() => { closeCart(); }, [closeCart]);
   const lookOpen = useRef(false);
   useEffect(() => { lookOpen.current = look.open; });
   // The scene hears the book being read 200 ms late (their `uK`), the first one at once.

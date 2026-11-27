@@ -218,7 +218,9 @@ test("SetlistTracklist renders tracks, badges, durations and curator attribution
 
 test("CuratorControlBar renders connection prompt when unconfigured", () => {
   const html = renderToStaticMarkup(
-    <CuratorControlBar slug="seoul-2026" initialIsConfigured={false} />
+    <EnglishMessages>
+      <CuratorControlBar slug="seoul-2026" initialIsConfigured={false} />
+    </EnglishMessages>
   );
 
   assert.match(html, /Curator controls/);
@@ -228,7 +230,9 @@ test("CuratorControlBar renders connection prompt when unconfigured", () => {
 
 test("CuratorControlBar renders sync action and reconnect when configured", () => {
   const html = renderToStaticMarkup(
-    <CuratorControlBar slug="seoul-2026" initialIsConfigured={true} pendingSyncCount={3} />
+    <EnglishMessages>
+      <CuratorControlBar slug="seoul-2026" initialIsConfigured={true} pendingSyncCount={3} />
+    </EnglishMessages>
   );
 
   assert.match(html, /Curator controls/);

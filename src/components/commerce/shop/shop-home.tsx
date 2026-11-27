@@ -419,6 +419,10 @@ function Home({ vendored, items, labels, initialOpen, cartPanel, cartOpen, onCar
     : JSON.parse(guestKey) as { productID: string; quantity: number }[])
     .filter((line) => items.some((entry) => entry.id === line.productID) && line.quantity > 0).map((line) => [line.productID, line.quantity])), [guestKey, panelQuantities, items]);
   const backToShelf = useCallback(() => closeCart.current(), []);
+  // The cart's books share the cart's private-page concealment (Review-B HOLD on 38f56878): the lines mark the shop's root
+  // the moment their guard conceals, before any paint, and clear it only when the guard shows them again (the same
+  // member verified). Under the mark the stack (scene or flat images) is invisible in cart mode.
+  const concealCart = useCallback((hidden: boolean) => { page.current?.toggleAttribute("data-cart-concealed", hidden); }, []);
   const itemIds = useMemo(() => items.map((entry) => entry.id), [items]);
   // Loaded on the cart's address: open at once (their openInstantly), the books not in the cart veiled until it closes.
   // cartOn is set first: the open frame is written at rest (not active), and the scene only takes the cart's −20vw shift
@@ -637,12 +641,12 @@ function Home({ vendored, items, labels, initialOpen, cartPanel, cartOpen, onCar
   // outside the cart. Review-B HOLD on 16920259: opening the cart drops it, so a book removed in the cart doesn't fire on
   // close, and a switch of source (the column's lines arriving or going) starts a new one instead of reading as a removal.
   const quantitySource = panelQuantities ? "lines" : "browser";
-  const stageCount = useRef<{ index: number; count: number; source: string } | null>(null);
+  const stageCount = useRef<{ id: string | undefined; count: number; source: string } | null>(null);
   useEffect(() => {
     if (cart.cartMode) { stageCount.current = null; return; }
     const id = items[stageIndex]?.id, count = id ? (cartQuantities[id] ?? 0) : 0, seen = stageCount.current;
-    stageCount.current = { index: stageIndex, count, source: quantitySource };
-    if (seen && seen.source === quantitySource && seen.index === stageIndex && seen.count > 0 && count === 0) setRemoval((current) => ({ trigger: current.trigger + 1, index: stageIndex }));
+    stageCount.current = { id, count, source: quantitySource };
+    if (id && seen && seen.source === quantitySource && seen.id === id && seen.count > 0 && count === 0) setRemoval((current) => ({ trigger: current.trigger + 1, index: stageIndex }));
   }, [cartQuantities, quantitySource, stageIndex, cart.cartMode, items]);
   const sceneProps = useMemo(() => ({ skipIntro, ...lookProps,
     books: (window as unknown as { __SPBOOKS: unknown }).__SPBOOKS, scrollProgress: committed, scrollProgressLiveRef: progressRef,
@@ -741,11 +745,12 @@ function Home({ vendored, items, labels, initialOpen, cartPanel, cartOpen, onCar
   // While reading, the page is the stack of every book's details (their sections, then half a screen); otherwise the
   // home's own scroll.
   const readingHeight = reading.layout.total + Math.round(geometry.lvh / 2);
-  return <CartFlyContext value={flyFor}><div ref={page} className="relative overflow-x-clip" style={{ "--shop-shift": geometry.shift + "px", "--shop-drop": geometry.drop + "px" } as CSSProperties}>
+  return <CartFlyContext value={flyFor}><div ref={page} className="group/shop relative overflow-x-clip" style={{ "--shop-shift": geometry.shift + "px", "--shop-drop": geometry.drop + "px" } as CSSProperties}>
     <CartBehind open={cart.cartMode} art={items[active]?.stageArt} cardTop={geometry.top} />
     {/* Without WebGL the cart's books are images (theirs: NoWebglCartStack, desktop only). */}
-    {cart.cartMode && noWebgl && !geometry.mobile && <NoWebglCartStack ids={itemIds} quantities={cartQuantities} cardTop={geometry.top} />}
-    {cartPanel && <CartColumn open={cart.cartMode} shown={cart.panelOpen} back={labels.toShelf} onBack={backToShelf} onLines={setPanelQuantities}>{cartPanel}</CartColumn>}
+    {cart.cartMode && noWebgl && !geometry.mobile && <div className="contents group-data-[cart-concealed]/shop:invisible">
+      <NoWebglCartStack ids={itemIds} quantities={cartQuantities} cardTop={geometry.top} /></div>}
+    {cartPanel && <CartColumn open={cart.cartMode} shown={cart.panelOpen} back={labels.toShelf} onBack={backToShelf} onLines={setPanelQuantities} onConceal={concealCart}>{cartPanel}</CartColumn>}
     {/* The browse layer: the scene stays mounted, but takes no input while the cart owns it. */}
     <div inert={cart.cartMode} className="contents">
     <div aria-hidden="true" className="h-(--page-height)" style={{ "--page-height": (readingOpen ? readingHeight : Math.max(0, nextTop)) + "px" } as CSSProperties} />
@@ -769,7 +774,8 @@ function Home({ vendored, items, labels, initialOpen, cartPanel, cartOpen, onCar
         <NoWebglSpineRow vendored={vendored} books={flatBooks} hidden={detail.open != null || look.open}
           onBookOpen={(index) => openRef.current(index)} labels={{ open: labels.openTitle, show: labels.showOnShelf }} />
       </div>
-    ) : <StripeScene vendored={vendored} props={sceneProps} className="pointer-events-none fixed inset-0 isolate z-10" />}
+    ) : <StripeScene vendored={vendored} props={sceneProps}
+      className={cn("pointer-events-none fixed inset-0 isolate z-10", cart.cartMode && "group-data-[cart-concealed]/shop:invisible")} />}
     {/* On a phone the return link takes the label's place while a book is open (their Nav__FeaturedSlot: the label slides
         −10 px and fades, the link comes in from +10 px 100 ms later, 300 ms each). */}
     <div style={{ opacity: "var(--cart-page-opacity, 1)" }} className="fixed top-[calc(53px+var(--shop-shift,0px))] left-4 z-20 grid text-[11px] uppercase leading-4 tracking-[0.06em] text-muted-foreground">

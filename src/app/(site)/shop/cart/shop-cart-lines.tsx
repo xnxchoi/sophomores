@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import NumberFlow, { NumberFlowGroup } from "@number-flow/react";
 import { useTranslations } from "next-intl";
 import { ArrowLeftIcon } from "@phosphor-icons/react/dist/ssr";
@@ -29,15 +29,41 @@ export function ShopCartLines({ products, signedIn, onSignIn }: { products: read
   const { lines, waiting, busy, feedback, purchased, subtotalKRW, shippingKRW, totalKRW, checkoutAvailable, checkoutHref,
     checkoutReason, removingLineID, refreshing, canRefresh, remove, refresh } = useCommerceCartState({ signedIn, products });
   // The stack shows what's in this cart (their cartQuantitiesByBookId): the member's cart once signed in, not only the browser's.
-  const report = column?.report;
+  const report = column?.report, conceal = column?.conceal;
   const counts = lines.filter((line) => line.quantity > 0).map((line) => line.productID + ":" + line.quantity).join(",");
+  const quantities = () => Object.fromEntries(counts ? counts.split(",").map((entry) => { const [id, count] = entry.split(":"); return [id, Number(count)]; }) : []);
+  // Those books are this member's, drawn outside the private page (the scene, or the flat stack), so they follow its guard
+  // (Review-B HOLD on 38f56878): when the guard conceals the page (left, tab hidden, rechecking who is signed in), the
+  // stack is hidden in the same task and the counts are withdrawn; they come back only when the guard shows the page again,
+  // which it does for the same member only (otherwise it reloads). Read from the guard's own mark, never a second check.
+  const root = useRef<HTMLElement | null>(null);
+  const concealed = useRef(false);
+  const latest = useRef({ waiting, quantities });
+  latest.current = { waiting, quantities };
   useEffect(() => {
-    if (!report || waiting) return;
-    report(Object.fromEntries(counts ? counts.split(",").map((entry) => { const [id, count] = entry.split(":"); return [id, Number(count)]; }) : []));
-  }, [report, counts, waiting]);
+    const guard = root.current?.closest("[data-private-page]");
+    if (!guard || !report || !conceal) return;
+    const apply = () => {
+      const hidden = guard.hasAttribute("data-concealed");
+      if (hidden === concealed.current) return;
+      concealed.current = hidden;
+      conceal(hidden);
+      if (hidden) report(null);
+      else if (!latest.current.waiting) report(latest.current.quantities());
+    };
+    concealed.current = false;
+    apply();
+    const watch = new MutationObserver(apply);
+    watch.observe(guard, { attributes: true, attributeFilter: ["data-concealed"] });
+    return () => { watch.disconnect(); concealed.current = false; conceal(false); };
+  }, [report, conceal]);
+  useEffect(() => {
+    if (!report || waiting || concealed.current) return;
+    report(quantities());
+  }, [report, counts, waiting]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => () => report?.(null), [report]);
 
-  if (waiting) return <p className="pt-3.5 pl-3.5 text-[11px] uppercase leading-[1.5] text-muted-foreground">{t("loading")}</p>;
+  if (waiting) return <p ref={(node) => { root.current = node; }} className="pt-3.5 pl-3.5 text-[11px] uppercase leading-[1.5] text-muted-foreground">{t("loading")}</p>;
   // Feedback and Refresh whenever the member's cart exists (canRefresh), the empty saved cart included (Review-B, 27 Nov).
   const status = <>
     <p role="status" className="mt-3 min-h-[18px] text-[11px] leading-[1.5] text-muted-foreground">{feedback}</p>
@@ -45,7 +71,7 @@ export function ShopCartLines({ products, signedIn, onSignIn }: { products: read
       className="group/focus inline-flex min-h-8 items-center text-[11px] uppercase tracking-[0.04em] underline decoration-dotted underline-offset-4 hover:decoration-solid disabled:opacity-40 pointer-coarse:min-h-11">
       <FocusShape className="outline-offset-4">{refreshing ? t("refreshing") : t("refresh")}</FocusShape></button>}
   </>;
-  if (lines.length === 0) return <div className="pt-3.5 pl-3.5">
+  if (lines.length === 0) return <div ref={(node) => { root.current = node; }} className="pt-3.5 pl-3.5">
     <p className="text-[13px] leading-[1.5]">{t("empty")}</p>
     {status}
     {column && <button type="button" onClick={column.close}
@@ -54,7 +80,7 @@ export function ShopCartLines({ products, signedIn, onSignIn }: { products: read
     </button>}
   </div>;
 
-  return <section aria-label={t("contents")} aria-busy={busy}>
+  return <section ref={(node) => { root.current = node; }} aria-label={t("contents")} aria-busy={busy}>
     <ul>
       {lines.map((line, index) => {
         const title = line.title ?? t("savedItem", { number: index + 1 });

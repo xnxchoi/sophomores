@@ -10,6 +10,7 @@ import { setupCartDom } from "../../fixtures/commerce/cart-dom";
 let env: Awaited<ReturnType<typeof setupCartDom>>;
 let ShopCartLines: typeof import("../../../src/app/(site)/shop/cart/shop-cart-lines").ShopCartLines;
 let CartColumn: typeof import("../../../src/components/commerce/shop/cart-column").CartColumn;
+let PrivatePageGuard: typeof import("../../../src/components/auth/private-page-guard").PrivatePageGuard;
 const offer = { productID: "p1", title: "Book only", description: "", images: [], priceKRW: 35000, maximumQuantity: 1,
   shippingFeeKRW: 3000, availableQuantity: 5 } as unknown as CommerceOffer;
 const edition: CartProduct = { productID: "e1", kind: "edition", title: "Edition one", image: null, unitPriceKRW: 50000, shippingKRW: null,
@@ -20,16 +21,36 @@ before(async () => {
   env = await setupCartDom();
   ShopCartLines = (await import("../../../src/app/(site)/shop/cart/shop-cart-lines")).ShopCartLines;
   CartColumn = (await import("../../../src/components/commerce/shop/cart-column")).CartColumn;
+  PrivatePageGuard = (await import("../../../src/components/auth/private-page-guard")).PrivatePageGuard;
 });
 afterEach(() => { env.ui.cleanup(); env.ecommerce.resetFakeEcommerce(); env.dom.window.localStorage.clear(); });
 after(async () => { await env.restore(); });
 
-function render(products: readonly CartProduct[], props: { signedIn?: boolean; onSignIn?: () => void } = {}, column = { closed: 0, reported: [] as unknown[] }) {
-  env.ui.render(<MemberAuthProviders><CartColumn open shown back="All products" onBack={() => { column.closed += 1; }} onLines={(lines) => { column.reported.push(lines); }}>
+function render(products: readonly CartProduct[], props: { signedIn?: boolean; onSignIn?: () => void } = {},
+  column = { closed: 0, reported: [] as unknown[], concealed: [] as boolean[] }) {
+  env.ui.render(<MemberAuthProviders><CartColumn open shown back="All products" onBack={() => { column.closed += 1; }}
+    onLines={(lines) => { column.reported.push(lines); }} onConceal={(hidden) => { column.concealed.push(hidden); }}>
     <ShopCartLines products={products} signedIn={props.signedIn ?? true} onSignIn={props.onSignIn} />
   </CartColumn></MemberAuthProviders>);
   return column;
 }
+
+// The in-place cart's lines inside their private page's guard, as /shop renders them (Review-B HOLD on 38f56878): the
+// stack hears "conceal" in the same task the guard hides the panel, the counts are withdrawn, and both come back only for
+// the same member.
+function renderGuarded(next: () => Promise<string | null | undefined>) {
+  const column = { closed: 0, reported: [] as unknown[], concealed: [] as boolean[] }, reloads = { count: 0 };
+  env.ecommerce.setFakeEcommerce({ user: member, cart: { id: "c1", status: "active", items: [{ id: "i1", product: "p1", quantity: 1 }] } });
+  env.ui.render(<MemberAuthProviders><CartColumn open shown back="All products" onBack={() => undefined}
+    onLines={(lines) => { column.reported.push(lines); }} onConceal={(hidden) => { column.concealed.push(hidden); }}>
+    <PrivatePageGuard principal="u1" readPrincipal={next} reload={() => { reloads.count += 1; }}>
+      <ShopCartLines products={[membershipCartProduct(offer)]} signedIn />
+    </PrivatePageGuard>
+  </CartColumn></MemberAuthProviders>);
+  const panel = () => env.dom.window.document.querySelector("[data-private-page]") as HTMLElement;
+  return { column, reloads, panel };
+}
+const microtask = () => new Promise((resolve) => setTimeout(resolve, 0));
 const screen = () => env.ui.screen;
 
 test("a member's membership line is priced, totalled, reported to the stack, and goes to checkout", () => {
@@ -95,4 +116,49 @@ test("focus moves into the cart column when it takes input", () => {
   env.ecommerce.setFakeEcommerce({ user: member, cart: undefined });
   render([membershipCartProduct(offer)]);
   assert.equal(env.dom.window.document.activeElement === env.dom.window.document.querySelector("aside"), true);
+});
+
+test("guarded: leaving the page hides the panel and the stack in the same task, and the same member gets both back", async () => {
+  const { column, reloads, panel } = renderGuarded(async () => "u1");
+  assert.equal(JSON.stringify(column.reported.at(-1)), JSON.stringify({ p1: 1 }));
+  env.dom.window.dispatchEvent(new env.dom.window.Event("pagehide"));
+  await Promise.resolve(); // the observer's microtask, before any paint
+  assert.equal(panel().hasAttribute("data-concealed"), true);
+  assert.equal(column.concealed.at(-1), true);
+  assert.equal(column.reported.at(-1), null);
+  env.dom.window.dispatchEvent(new env.dom.window.Event("focus"));
+  await microtask(); await microtask();
+  assert.equal(panel().hasAttribute("data-concealed"), false);
+  assert.equal(column.concealed.at(-1), false);
+  assert.equal(JSON.stringify(column.reported.at(-1)), JSON.stringify({ p1: 1 }));
+  assert.equal(reloads.count, 0);
+});
+
+for (const [name, who] of [["account switch", "u2"], ["sign-out", null]] as const) {
+  test(`guarded ${name}: the stack stays hidden and empty, never shown again, and the page reloads`, async () => {
+    const { column, reloads, panel } = renderGuarded(async () => who);
+    env.dom.window.dispatchEvent(new env.dom.window.Event("pagehide"));
+    await Promise.resolve();
+    env.dom.window.dispatchEvent(new env.dom.window.Event("focus"));
+    await microtask(); await microtask();
+    assert.equal(reloads.count, 1);
+    assert.equal(panel().hasAttribute("data-concealed"), true);
+    assert.equal(column.concealed.at(-1), true);
+    assert.equal(column.concealed.includes(false), false, "never revealed after concealment");
+    assert.equal(column.reported.at(-1), null);
+  });
+}
+
+test("guarded restored frame (back-forward cache): concealed from pagehide through the restore, then reloaded", async () => {
+  const { column, reloads, panel } = renderGuarded(async () => "u1");
+  env.dom.window.dispatchEvent(new env.dom.window.Event("pagehide"));
+  await Promise.resolve();
+  const restored = new env.dom.window.Event("pageshow") as Event & { persisted?: boolean };
+  Object.defineProperty(restored, "persisted", { value: true });
+  env.dom.window.dispatchEvent(restored);
+  await microtask();
+  assert.equal(reloads.count, 1);
+  assert.equal(panel().hasAttribute("data-concealed"), true);
+  assert.equal(column.concealed.at(-1), true);
+  assert.equal(column.reported.at(-1), null);
 });

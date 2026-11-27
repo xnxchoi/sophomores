@@ -19,9 +19,12 @@ import { FocusShape } from "@/components/core/FocusShape/FocusShape";
  * - The return link (ReturnToShelfWrap, 1imu): at 60vw + 24 px, 46 px down; in over 320 ms (opacity) and 420 ms
  *   (from 28 px right), 220 ms after it's asked for, out at once; desktop only.
  */
-/** What the column's contents can reach: its close (the way back to the shelf), that link's label, and where the lines
- * report their quantities (the stack's cartQuantitiesByBookId), or null when they leave. */
-type CartColumnValue = { close: () => void; back: string; report: (quantities: Record<string, number> | null) => void };
+/** What the column's contents can reach: its close (the way back to the shelf), that link's label, where the lines
+ * report their quantities (the stack's cartQuantitiesByBookId), or null when they leave, and the stack's concealment:
+ * the lines hide the cart's books with their private page's guard (Review-B HOLD on 38f56878). */
+type CartColumnValue = {
+  close: () => void; back: string; report: (quantities: Record<string, number> | null) => void; conceal: (hidden: boolean) => void;
+};
 const CartColumnContext = createContext<CartColumnValue | null>(null);
 /** Whether the cart owns input now: the shop's global keys and wheel stand down while it does (Review-B, 27 Nov). */
 export function cartOwnsInput() { return document.documentElement.hasAttribute("data-cart-owns"); }
@@ -31,12 +34,13 @@ export function ownInput(owns: boolean) { document.documentElement.toggleAttribu
 /** The cart column around the caller, or null outside one (the cart's own page). */
 export function useCartColumn() { return useContext(CartColumnContext); }
 
-export function CartColumn({ open, shown, back, onBack, onLines, children }: {
+export function CartColumn({ open, shown, back, onBack, onLines, onConceal, children }: {
   /** The cart mode is on (the column is mounted and faded by the frame). */
   open: boolean;
   /** The column takes input (theirs: cartPanelOpen). */
-  shown: boolean; back: string; onBack: () => void; onLines: CartColumnValue["report"]; children: ReactNode }) {
-  const value = useMemo(() => ({ close: onBack, back, report: onLines }), [onBack, back, onLines]);
+  shown: boolean; back: string; onBack: () => void; onLines: CartColumnValue["report"]; onConceal: CartColumnValue["conceal"];
+  children: ReactNode }) {
+  const value = useMemo(() => ({ close: onBack, back, report: onLines, conceal: onConceal }), [onBack, back, onLines, onConceal]);
   // Focus moves into the cart when it takes input (Review-B, 27 Nov); the column itself, so no control is pressed by it.
   const column = useRef<HTMLElement>(null);
   useEffect(() => { if (shown) column.current?.focus({ preventScroll: true }); }, [shown]);

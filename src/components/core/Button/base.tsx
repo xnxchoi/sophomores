@@ -82,9 +82,10 @@ function BareButton({ type = "button", loading, size: _size, onClick, onMouseEnt
     <button
       {...rest}
       type={type}
-      aria-busy={loading || undefined}
-      aria-disabled={loading || rest["aria-disabled"] || undefined}
-      // As Arc's button: while loading or aria-disabled it keeps focus but neither clicks nor submits.
+      aria-busy={loading ? true : rest["aria-busy"]}
+      aria-disabled={loading ? true : rest["aria-disabled"]}
+      // As Arc's button: while loading or aria-disabled it keeps focus but neither clicks nor submits. A caller's own
+      // aria-busy passes through and stays clickable; only loading makes the button inert (Auth-editions, 27 Nov).
       onClick={inert ? (event) => event.preventDefault() : onClick}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}

@@ -5,12 +5,12 @@ import { type BusinessFacts, loadBusinessInformation } from "@/payload/globals/b
 import { loadPublishedCommerceDisclosure } from "@/lib/commerce/catalogue";
 import type { SellerInformation } from "@/lib/commerce/disclosures";
 import { useTranslations } from "next-intl";
-import { FooterLocaleSwitch } from "../../../app/(site)/_commerce/footer-locale-switch";
+import { FooterLocaleSwitch } from "./locale-switch";
 import { SellerPolicyLinks } from "../../../app/(site)/_commerce/seller-disclosure";
-import { CommerceFacts } from "../../../app/(site)/_commerce/commerce-facts";
+import { CommerceFacts } from "./commerce-facts";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { cn } from "@/lib/utils";
-import { BrightGrains } from "@/components/UX/Grains";
+import { BrightGrains } from "./grains";
 import { Link } from "@/components/core/Link/Link";
 
 /**

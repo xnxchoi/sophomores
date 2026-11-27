@@ -42,7 +42,7 @@ test("pressing the other language sets the NEXT_LOCALE cookie through setUserLoc
   const set: Array<[string, string, { path?: string }]> = [];
   headers.cookies = async () => ({ set: (name: string, value: string, options: { path?: string }) => { set.push([name, value, options]); } });
   const ui = await import("@testing-library/react/pure");
-  const { FooterLocaleSwitch } = await import("@/app/(site)/_commerce/footer-locale-switch");
+  const { FooterLocaleSwitch } = await import("@/components/shell/Footer/locale-switch");
   try {
     ui.render(<NextIntlClientProvider locale="en" timeZone="Asia/Seoul" messages={en}><FooterLocaleSwitch /></NextIntlClientProvider>);
     await ui.act(async () => { ui.fireEvent.click(ui.screen.getByRole("button", { name: "EN" })); });

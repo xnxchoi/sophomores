@@ -94,7 +94,7 @@ test("SlotManager displays sign-in prompt for unauthenticated users", () => {
 test("SlotManager displays verification required prompt for ineligible users", () => {
   const ineligibleState: UserSlotState = {
     eligible: false,
-    reason: "Setlist access is reserved for verified attendees.",
+    reason: "ineligible_product",
     campaignStatus: "active",
     deadline: mockSetlist.deadline,
     deadlinePassed: false,
@@ -117,6 +117,36 @@ test("SlotManager displays verification required prompt for ineligible users", (
 
   assert.match(html, /Verification required/);
   assert.match(html, /Get ticket/);
+});
+
+test("SlotManager shows a closed or unknown state with no ticket or activation action", () => {
+  const render = (reason: string) =>
+    renderToStaticMarkup(
+      <MemberAuthProviders>
+        <SlotManager
+          userSlotState={{ eligible: false, reason, campaignStatus: "locked", deadline: mockSetlist.deadline, deadlinePassed: true, slots: [] }}
+          isAuthenticated={true}
+          onOpenSearch={() => {}}
+          onRemoveSlot={async () => {}}
+          onUpdateNote={async () => {}}
+          audioPreview={mockAudioPreview}
+          isPastDeadline={true}
+        />
+      </MemberAuthProviders>
+    );
+  const noAction = (html: string) =>
+    !/Get ticket|Activate account|Verification required|Activation required|href="\/tickets"|href="\/account"/.test(html);
+  for (const reason of ["deadline_passed", "setlist_locked"]) {
+    const html = render(reason);
+    assert.equal(html.includes("Nominations closed"), true, reason);
+    assert.equal(noAction(html), true, reason);
+  }
+  for (const reason of ["slots_full", "unauthenticated", "something_new"]) {
+    const html = render(reason);
+    assert.equal(html.includes("Nominations aren’t available."), true, reason);
+    assert.equal(html.includes(reason), false, reason);
+    assert.equal(noAction(html), true, reason);
+  }
 });
 
 test("SlotManager displays activation required prompt for unactivated users with tickets", () => {

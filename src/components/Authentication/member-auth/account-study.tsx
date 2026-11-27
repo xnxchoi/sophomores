@@ -104,7 +104,9 @@ export function MemberAccountDialog({
   const t = useTranslations("MemberAuth");
   const [entry, setEntry] = useState<{ open: boolean; choice: "chooser" | "login" | "signup" | null }>({ open, choice: null });
   if (entry.open !== open) {
-    setEntry({ open, choice: null });
+    // A fresh entry on reopen only. Through the exit the sheet keeps the phase it closed from, so its chooser header
+    // never flashes as it leaves (S9, 27 Nov); the flow body below is still gated by `open` and disposed at once.
+    setEntry(open ? { open, choice: null } : { open, choice: entry.choice });
   }
   const flow = useRef<{ requestCancel: () => void } | null>(null);
   const step = entry.choice ?? initialFlow ?? "chooser";

@@ -932,7 +932,7 @@ function TitleRail({ railRef, label, titles, refunds, active, fade, shelf, detai
       hidden ? "duration-300" : detail ? "[clip-path:inset(0_40%_0_0)] [transition-duration:1600ms,600ms] [transition-timing-function:ease,cubic-bezier(0.16,1,0.3,1)]" : "[clip-path:inset(0_0_0_0)] ease-[ease]",
       shown && shelf && !detail && !hidden && "duration-[350ms]")}>
     <ul style={{ transform: "translateX(" + shift + "px)" }}
-      className="flex w-max gap-x-[72px] transition-transform duration-500 ease-[ease-in-out] max-[900px]:gap-x-[30px]">
+      className="relative z-0 flex w-max gap-x-[72px] transition-transform duration-500 ease-[ease-in-out] max-[900px]:gap-x-[30px]">
       {/* Three copies, the middle one active, so the active title always has neighbours on both sides (theirs: 21ix). */}
       {[...titles, ...titles, ...titles].map((title, slot) => { const index = slot % titles.length, middle = slot >= titles.length && slot < 2 * titles.length;
         return <li key={slot} aria-hidden={middle ? undefined : true}>
@@ -948,6 +948,11 @@ function TitleRail({ railRef, label, titles, refunds, active, fade, shelf, detai
         </button>
       </li>; })}
     </ul>
+    {/* Their TitleBandAbyss pair (21ix:230-280), desktop only: page-coloured plates over the strip, opaque on the outer 8 %
+        of each side, so the clipped titles fade out at the edges; the right one stops at the details column while it's open. */}
+    <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 bottom-2 z-1 bg-background [mask-image:linear-gradient(270deg,transparent_0%,transparent_92%,#000_100%)] max-[900px]:hidden" />
+    <div aria-hidden="true" className={cn("pointer-events-none absolute top-0 bottom-2 left-0 z-1 bg-background [mask-image:linear-gradient(90deg,transparent_0%,transparent_92%,#000_100%)] transition-[right] max-[900px]:hidden",
+      detail ? "right-[calc(40%-1px)] duration-[600ms] ease-[cubic-bezier(0.16,1,0.3,1)]" : "-right-px duration-[400ms] ease-[cubic-bezier(0.32,0,0.67,0)]")} />
   </nav>;
 }
 

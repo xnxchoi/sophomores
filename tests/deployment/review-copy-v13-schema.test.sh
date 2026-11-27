@@ -22,7 +22,7 @@ db -c 'CREATE TABLE public.commerce_admissions (id integer primary key); CREATE 
 fk=commerce_key_grant_intents_entitlement_id_commerce_admissions_i
 db -c "ALTER TABLE public.commerce_key_grant_intents ADD CONSTRAINT \"$fk\" FOREIGN KEY (entitlement_id) REFERENCES public.commerce_admissions (id) ON DELETE SET NULL ON UPDATE NO ACTION;"
 for name in $EXPECTED_MIGRATIONS; do db -c "INSERT INTO public.payload_migrations VALUES ('$name',1)"; done
-git show 624d4fa38:src/payload/migrations/20261127_100000_business_info_biz_num.ts > "$scratch/migration.ts"
+git show 6e269092ba04229caf0b55cfb7d28baeef1c4d35:src/payload/migrations/20261127_100000_business_info_biz_num.ts > "$scratch/migration.ts"
 up=$(rg -F 'RENAME COLUMN "business_registration_number" TO "biz_num"' "$scratch/migration.ts")
 down=$(rg -F 'RENAME COLUMN "biz_num" TO "business_registration_number"' "$scratch/migration.ts")
 schema_query() { db -c "$1"; }

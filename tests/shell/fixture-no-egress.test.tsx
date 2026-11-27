@@ -15,8 +15,8 @@ test("the site test fixtures render core Button and Link without any network req
     saved.set(key, Object.getOwnPropertyDescriptor(globalThis, key));
     Object.defineProperty(globalThis, key, { value, configurable: true, writable: true });
   };
-  for (const key of ["window", "document", "navigator", "HTMLElement", "Element", "Node", "MutationObserver", "Event", "sessionStorage", "localStorage"]) {
-    replace(key, key === "window" ? dom.window : (dom.window as never as Record<string, unknown>)[key]);
+  for (const key of ["window", "self", "document", "navigator", "HTMLElement", "Element", "Node", "MutationObserver", "Event", "sessionStorage", "localStorage"]) {
+    replace(key, key === "window" || key === "self" ? dom.window : (dom.window as never as Record<string, unknown>)[key]);
   }
   replace("IS_REACT_ACT_ENVIRONMENT", true);
   const record = (input: unknown) => { requests.push(String(input instanceof URL ? input.href : (input as { url?: string })?.url ?? input)); };

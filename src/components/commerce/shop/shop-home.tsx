@@ -18,6 +18,7 @@ import { useBookSounds } from "./use-book-sounds";
 import { LookInsideBar } from "./look-inside-bar";
 import { ShelfPager, ShelfPills, type ShelfHub } from "./shelf-controls";
 import { useCartMode, type CartConstants, type CartMotion, type CartTiming } from "./use-cart-mode";
+import { useCartRoute } from "./use-cart-route";
 import { CartFlyContext } from "./cart-fly";
 import { CartBehind, CartColumn, cartOwnsInput, ownInput } from "./cart-column";
 import { NoWebglCartStack } from "./no-webgl-cart-stack";
@@ -387,8 +388,12 @@ function Home({ vendored, items, labels, initialOpen, cartPanel, cartOpen, onCar
   // on desktop the scene's shift from where it stood to −20vw with the books' slide.
   const cartTiming = useMemo(() => vendored.module(60444) as unknown as CartTiming, [vendored]);
   const cartConstants = useMemo(() => vendored.module(72646) as unknown as CartConstants, [vendored]);
-  const cartShiftFrom = useRef(0), cartOn = useRef(false);
-  const cart = useCartMode({ timing: cartTiming, k: cartConstants, coverReady: hub.coverAppliedLiveRef as unknown as { current: Set<number> },
+  // Loaded on the cart's address: it starts open (their openInstantly), from the route, with no browse frame first
+  // (Review-B, 28 Nov). cartOn starts on too: the open frame is written at rest (not active), and the scene only takes
+  // the cart's −20vw shift while the cart is on (G14: the stack sat ~180 px right of the card without it).
+  const direct = Boolean(cartPanel && cartOpen);
+  const cartShiftFrom = useRef(0), cartOn = useRef(direct);
+  const cart = useCartMode({ initialOpen: direct, timing: cartTiming, k: cartConstants, coverReady: hub.coverAppliedLiveRef as unknown as { current: Set<number> },
     onFrame: (frame: CartMotion) => {
       const root = document.documentElement.style;
       root.setProperty("--cart-page-opacity", String(frame.pageOpacity));
@@ -424,69 +429,28 @@ function Home({ vendored, items, labels, initialOpen, cartPanel, cartOpen, onCar
     ? Object.entries(panelQuantities).map(([productID, quantity]) => ({ productID, quantity }))
     : JSON.parse(guestKey) as { productID: string; quantity: number }[])
     .filter((line) => items.some((entry) => entry.id === line.productID) && line.quantity > 0).map((line) => [line.productID, line.quantity])), [guestKey, panelQuantities, items]);
-  const backToShelf = useCallback(() => closeCart.current(), []);
   // The cart's books share the cart's private-page concealment (Review-B HOLD on 38f56878): the lines mark the shop's root
   // the moment their guard conceals, before any paint, and clear it only when the guard shows them again (the same
   // member verified). Under the mark the stack (scene or flat images) is invisible in cart mode.
   const concealCart = useCallback((hidden: boolean) => { page.current?.toggleAttribute("data-cart-concealed", hidden); }, []);
   const itemIds = useMemo(() => items.map((entry) => entry.id), [items]);
-  // Loaded on the cart's address: open at once (their openInstantly), the books not in the cart veiled until it closes.
-  // cartOn is set first: the open frame is written at rest (not active), and the scene only takes the cart's −20vw shift
-  // while the cart is on (G14: the stack sat ~180 px right of the card without it).
-  const [cartVeil, setCartVeil] = useState(false);
-  useEffect(() => { if (cartPanel && cartOpen) { cartShiftFrom.current = 0; cartOn.current = true; ownInput(true); setCartVeil(true); cart.openInstantly(); } }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // The books not in the cart are veiled while it is open, from the first render on its own address.
+  const [cartVeil, setCartVeil] = useState(direct);
   // How it closes (their c5): with books in the cart and the shelf's book not one of them, the stack leaves first
   // (500 ms) and the page comes back after; on a phone, or without WebGL (no stack to send off), it doesn't.
   const closing = () => ({ exitStackFirst: !geo.current.mobile && !noWebgl && Object.values(cartQuantities).some((count) => count > 0)
     && !((cartQuantities[items[activeRef.current]?.id ?? ""] ?? 0) > 0) });
-  const closeCart = useRef(() => {});
-  useEffect(() => { closeCart.current = () => {
-    if (!cart.cartMode || cart.phase === "toBrowse") return;
-    setCartVeil(false); cart.toggle(closing());
-    if (window.location.pathname === "/shop/cart") window.history.pushState(null, "", cartFrom.current);
-  }; });
-  // Escape and Back close it (theirs: Esc, and their router leaving /cart).
-  useEffect(() => {
-    if (!cart.cartMode) return;
-    const key = (event: KeyboardEvent) => { if (event.key === "Escape") { event.preventDefault(); closeCart.current(); } };
-    const back = () => { if (window.location.pathname !== "/shop/cart") { setCartVeil(false); if (cart.phase !== "toBrowse") cart.toggle(closing()); } };
-    window.addEventListener("keydown", key); window.addEventListener("popstate", back);
-    return () => { window.removeEventListener("keydown", key); window.removeEventListener("popstate", back); };
-  }, [cart]);
-  // Forward (or Back) onto the cart's address after it closed opens it again in place (their router entering /cart).
-  useEffect(() => {
-    if (!cartPanel || cart.cartMode) return;
-    const again = () => { if (window.location.pathname === "/shop/cart") openCart.current(); };
-    window.addEventListener("popstate", again);
-    return () => window.removeEventListener("popstate", again);
-  }, [cart, cartPanel]);
-  // Opening in place (their c5 toward the cart): the scene's shift is taken from where it stands, the books not in the
-  // cart are veiled, and the cart's books fly into the stack on their entry clock (module 60444 `k`), the shelf's book first.
-  const cartFrom = useRef("/shop");
-  const openCart = useRef(() => {});
-  useEffect(() => { openCart.current = () => {
-    if (cart.cartMode) return;
-    const inCart = items.flatMap((entry, index) => (cartQuantities[entry.id] ?? 0) > 0 ? [index] : []);
-    cartShiftFrom.current = Number(hub.detailCanvasShiftVwLiveRef.current) || 0; cartOn.current = true; ownInput(true);
-    setCartVeil(true); cart.toggle({ entry: cartTiming.k(activeRef.current, inCart) });
-  }; });
-  // The site's links to the cart open it here instead of loading /shop/cart (their nav cart button): a shallow push to
-  // the cart's address, so the scene stays. Only on the shelf and the featured books, not over an open book, and only a
-  // plain click (a new tab or window still loads the page).
-  useEffect(() => {
-    if (!cartPanel || cart.cartMode || detail.open != null) return;
-    const click = (event: MouseEvent) => {
-      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-      const link = (event.target as Element | null)?.closest?.("a[href]") as HTMLAnchorElement | null;
-      if (!link || link.target === "_blank" || new URL(link.href, window.location.href).pathname !== "/shop/cart") return;
-      event.preventDefault(); event.stopPropagation();
-      cartFrom.current = window.location.pathname + window.location.search;
-      window.history.pushState(null, "", "/shop/cart");
-      openCart.current();
-    };
-    window.addEventListener("click", click, true);
-    return () => window.removeEventListener("click", click, true);
-  }, [cart.cartMode, cartPanel, detail.open]);
+  // Its address, Escape and Back/Forward (use-cart-route.tsx). Opening in place (their c5 toward the cart): the scene's
+  // shift is taken from where it stands, the books not in the cart are veiled, and the cart's books fly into the stack on
+  // their entry clock (module 60444 `k`), the shelf's book first.
+  const route = useCartRoute({ enabled: Boolean(cartPanel), cart, detailOpen: detail.open != null,
+    open: () => {
+      const inCart = items.flatMap((entry, index) => (cartQuantities[entry.id] ?? 0) > 0 ? [index] : []);
+      cartShiftFrom.current = Number(hub.detailCanvasShiftVwLiveRef.current) || 0; cartOn.current = true; ownInput(true);
+      setCartVeil(true); cart.toggle({ entry: cartTiming.k(activeRef.current, inCart) });
+    },
+    close: () => { setCartVeil(false); cart.toggle(closing()); } });
+  const backToShelf = route.closeCart;
   const lookOpen = useRef(false);
   useEffect(() => { lookOpen.current = look.open; });
   // The scene hears the book being read 200 ms late (their `uK`), the first one at once.

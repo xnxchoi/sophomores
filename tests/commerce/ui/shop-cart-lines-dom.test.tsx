@@ -150,6 +150,29 @@ test("guarded: leaving the page hides the panel and the stack in the same task, 
   assert.equal(reloads.count, 0);
 });
 
+test("guarded: lines that change while concealed stay withdrawn, and the reveal reports the committed lines", async () => {
+  // Review-B, 28 Nov: the guard's reveal publishes what the last commit shows, not a render's values.
+  const column = { reported: [] as unknown[], concealed: [] as boolean[] };
+  env.ecommerce.setFakeEcommerce({ user: member, cart: { id: "c1", status: "active", items: [{ id: "i1", product: "p1", quantity: 1 }] } });
+  env.ui.render(<MemberAuthProviders><CartColumn open shown back="All products" onBack={() => undefined}
+    onLines={(lines) => { column.reported.push(lines); }} onConceal={(hidden) => { column.concealed.push(hidden); }}>
+    <PrivatePageGuard principal="u1" readPrincipal={async () => "u1"} reload={() => undefined}>
+      <ShopCartLines products={[membershipCartProduct(offer), edition]} signedIn />
+    </PrivatePageGuard>
+  </CartColumn></MemberAuthProviders>);
+  assert.equal(JSON.stringify(column.reported.at(-1)), JSON.stringify({ p1: 1 }));
+  env.dom.window.dispatchEvent(new env.dom.window.Event("pagehide"));
+  await Promise.resolve();
+  assert.equal(column.concealed.at(-1), true);
+  env.ui.act(() => { env.ecommerce.setFakeEcommerce({ cart: { id: "c1", status: "active",
+    items: [{ id: "i1", product: "p1", quantity: 1 }, { id: "i2", product: "e1", quantity: 1 }] } }); });
+  assert.equal(column.reported.at(-1), null, "nothing is published while concealed");
+  env.dom.window.dispatchEvent(new env.dom.window.Event("focus"));
+  await microtask(); await microtask();
+  assert.equal(column.concealed.at(-1), false);
+  assert.equal(JSON.stringify(column.reported.at(-1)), JSON.stringify({ p1: 1, e1: 1 }));
+});
+
 for (const [name, who] of [["account switch", "u2"], ["sign-out", null]] as const) {
   test(`guarded ${name}: the stack stays hidden and empty, never shown again, and the page reloads`, async () => {
     const { column, reloads, panel } = renderGuarded(async () => who);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import NumberFlow, { NumberFlowGroup } from "@number-flow/react";
 import { useTranslations } from "next-intl";
 import { ArrowLeftIcon } from "@phosphor-icons/react/dist/ssr";
@@ -42,8 +42,10 @@ export function ShopCartLines({ products, signedIn, onSignIn, localPendingFor }:
   // which it does for the same member only (otherwise it reloads). Read from the guard's own mark, never a second check.
   const root = useRef<HTMLElement | null>(null);
   const concealed = useRef(false);
+  // What a reveal reports: the lines of the last commit, never a render React may still discard (Review-B, 28 Nov). Set at
+  // commit, before the guard's watch below can read it.
   const latest = useRef({ waiting, quantities });
-  latest.current = { waiting, quantities };
+  useLayoutEffect(() => { latest.current = { waiting, quantities }; });
   useEffect(() => {
     const guard = root.current?.closest("[data-private-page]");
     if (!guard || !report || !conceal) return;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 /** The cart's frame state (their `cartMotionRef`, read by the scene every frame; 06w9 eR/eM for rest and open). */
 export type CartMotion = { active: boolean; layout: number; panel: number; bookSlide: number; nonCartSlide: number;
@@ -36,22 +36,24 @@ const open = (): CartMotion => ({ active: false, layout: 1, panel: 1, bookSlide:
  * last; closing runs it back (panel 500, layout 1000, slides 1100, page 800) or, to the shelf, snaps the stack and
  * springs the row back (critically damped, 1000 ms). Their own clock and curves (modules 60444 and 72646) do the
  * timing. `onFrame` receives every frame's state (theirs writes three :root variables and the scene shift from it).
+ * `initialOpen` (a direct load of the cart's address) starts it open at rest, everything at 1 (their openInstantly): the
+ * first render is already the cart's, and its frame is written at commit, before the first paint (Review-B, 28 Nov).
  */
-export function useCartMode({ timing, k, coverReady, onFrame }: { timing: CartTiming; k: CartConstants;
+export function useCartMode({ timing, k, coverReady, onFrame, initialOpen = false }: { timing: CartTiming; k: CartConstants;
   /** The books whose covers are on (their coverAppliedLiveRef): a book waits up to 2.5 s for its cover before it moves. */
   coverReady: { current: Set<number> };
-  onFrame: (motion: CartMotion) => void }) {
-  const [cartMode, setCartMode] = useState(false);
-  const [panelOpen, setPanelOpen] = useState(false);
-  const [layoutBlend, setLayoutBlend] = useState(0);
+  onFrame: (motion: CartMotion) => void; initialOpen?: boolean }) {
+  const [cartMode, setCartMode] = useState(initialOpen);
+  const [panelOpen, setPanelOpen] = useState(initialOpen);
+  const [layoutBlend, setLayoutBlend] = useState(initialOpen ? 1 : 0);
   const [phase, setPhase] = useState<CartPhase>("idle");
-  const [nonCartSlide, setNonCartSlide] = useState(0);
+  const [nonCartSlide, setNonCartSlide] = useState(initialOpen ? 1 : 0);
   const [stackExit, setStackExit] = useState<number | null>(null);
   const [shelfSlide, setShelfSlide] = useState<number | null>(null);
   const [entry, setEntry] = useState<CartEntry | null>(null);
-  const clock = useRef<Clock | null>(null), motion = useRef<CartMotion>(rest()), pending = useRef<CartMotion | null>(null), frame = useRef<number | null>(null);
+  const clock = useRef<Clock | null>(null), motion = useRef<CartMotion>(initialOpen ? open() : rest()), pending = useRef<CartMotion | null>(null), frame = useRef<number | null>(null);
   /** Set with every mode change, not after render, so a close right after an open sees it. */
-  const modeRef = useRef(false);
+  const modeRef = useRef(initialOpen);
   const frameRef = useRef(onFrame);
   useEffect(() => { frameRef.current = onFrame; });
 
@@ -65,11 +67,9 @@ export function useCartMode({ timing, k, coverReady, onFrame }: { timing: CartTi
   const hold = useCallback((next: CartMotion) => { pending.current = next; write({ ...next, active: true }); }, [write]);
   const settle = useCallback(() => { const next = pending.current; if (next) { pending.current = null; write(next); } }, [write]);
 
-  /** A direct load of the cart's address: everything at 1 at once (their openInstantly). */
-  const openInstantly = useCallback(() => {
-    cancel(); modeRef.current = true; setCartMode(true); setPanelOpen(true); setLayoutBlend(1); setPhase("idle"); setNonCartSlide(1);
-    setStackExit(null); setShelfSlide(null); setEntry(null); clock.current = null; write(open());
-  }, [cancel, write]);
+  /** A direct load of the cart's address writes its open frame once, at commit (the state above already starts open). */
+  const startedOpen = useRef(initialOpen);
+  useLayoutEffect(() => { if (startedOpen.current) write(motion.current); }, [write]);
 
   const toggle = useCallback((options?: CartToggle) => {
     if (phase === "toBrowse") return;
@@ -145,5 +145,5 @@ export function useCartMode({ timing, k, coverReady, onFrame }: { timing: CartTi
   }, [phase, timing, k, coverReady, cancel, write, hold]);
 
   return { cartMode, modeRef, panelOpen, layoutBlend, phase, nonCartSlide, stackExit, shelfSlide, entry, clock, motion,
-    toggle, openInstantly, settle, cancel };
+    toggle, settle, cancel };
 }

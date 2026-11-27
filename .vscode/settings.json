@@ -3,5 +3,8 @@
   "powerquery.client.additionalSymbolsDirectories": [
     "/Users/seanschoi/Projects/sphmrs/.vscode/excel-pq-symbols"
   ],
-  "tailwindCSS.experimental.configFile": "/Users/seanschoi/Projects/sphmrs/src/styles/globals.css"
+  "tailwindCSS.experimental.configFile": "/Users/seanschoi/Projects/sphmrs/src/styles/globals.css",
+  "editor.snippets.codeActions.enabled": true,
+  "editor.formatOnSave": false,
+  "git.ignoreLimitWarning": true
 }

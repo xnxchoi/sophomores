@@ -1515,7 +1515,7 @@
       "returnToHelp": "Return to Help",
       "selectionUpdateUnavailable": "Your selection couldn’t be updated. You can choose again in the shop."
     },
-    "app_site_team_page": {
+    "team": {
       "title": "Team",
       "introduction": "The people behind Sophomores.",
       "credits": "Credits",

@@ -57,7 +57,7 @@ function groupByRole(people: ReadonlyArray<TeamPerson>): CreditGroup[] {
 }
 
 export function TeamCredits({ people }: { people: ReadonlyArray<TeamPerson> }) {
-  const t = useTranslations("Customer.app_site_team_page");
+  const t = useTranslations("Customer.team");
   const groups = useMemo(() => groupByRole(people), [people]);
   const ordered = useMemo(() => groups.flatMap((group) => group.people), [groups]);
   const phone = usePhone();
@@ -229,7 +229,7 @@ function Portrait({ person, focused, onClose }: { person: TeamPerson | null; foc
  * Hideaway had no focus handling here; the visuals are unchanged.
  */
 function FocusCard({ person, onClose }: { person: TeamPerson; onClose: () => void }) {
-  const t = useTranslations("Customer.app_site_team_page");
+  const t = useTranslations("Customer.team");
   const present = useIsPresent();
   const { refs, context } = useFloating({ open: present });
   const card = useRef<HTMLDivElement>(null);
@@ -469,7 +469,7 @@ function MobileProfiles({ people, start, onShow, onClose }: {
   onShow: (person: TeamPerson) => void;
   onClose: () => void;
 }) {
-  const t = useTranslations("Customer.app_site_team_page");
+  const t = useTranslations("Customer.team");
   const row = useRef<HTMLUListElement>(null);
   const [snap, setSnap] = useState(false);
   const settle = useRef<ReturnType<typeof setTimeout> | null>(null);

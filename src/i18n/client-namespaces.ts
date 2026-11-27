@@ -104,7 +104,7 @@ export const segmentNamespaces = {
     "Customer.components_commerce_offer",
     "Customer.components_commerce_order_admissions"
   ],
-  team: ["Customer.app_site_team_page"],
+  team: ["Customer.team"],
   terms: ["Customer.policy"],
   tickets: [
     // /tickets renders the shop page, including its failed-read retry.

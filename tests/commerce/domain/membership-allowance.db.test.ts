@@ -17,8 +17,9 @@ test(
     process.env.DISABLE_PAYLOAD_HMR = "true";
     const { openReconciliationDatabase, target } =
       await import("../portone/reconciliation-postgres-fixture");
-    const { seedCheckoutCart, initiateThroughEndpoint } =
+    const { seedCheckoutCart, publishFixtureCatalogue } =
       await import("../core/payment-postgres-fixture");
+    const { editions, seedMember, seedEvent, seedNativeCart, prepare } = await import("../editions/native-settlement-fixture");
     const { createLocalReq } = await import("payload");
     const { inPaymentTransaction } =
       await import("../../../src/lib/commerce/_shared/transaction");
@@ -58,8 +59,10 @@ test(
         )
       ).rows[0];
 
-    const first = await seedCheckoutCart(db.payload);
-    const second = await seedCheckoutCart(db.payload, first);
+    await publishFixtureCatalogue(db.payload);
+    const owner = await seedMember(db.payload);
+    const first = await seedNativeCart(db.payload, owner, editions[1], await seedEvent(db.payload, "First bundle"));
+    const second = await seedNativeCart(db.payload, owner, editions[2], await seedEvent(db.payload, "Second bundle"));
     let preparedID = "";
     let blocked = first;
 
@@ -69,10 +72,7 @@ test(
         const carts = [first, second];
         const results = await Promise.allSettled(
           carts.map((cart) =>
-            initiateThroughEndpoint(db.payload, first.user, {
-              cartID: cart.cartID,
-              shippingAddress: cart.shippingAddress
-            })
+            prepare(db.payload, cart)
           )
         );
         assert.deepEqual(results.map((result) => result.status).sort(), [
@@ -93,11 +93,8 @@ test(
           reserved: 1
         });
         // Another account is independent.
-        const other = await seedCheckoutCart(db.payload);
-        await initiateThroughEndpoint(db.payload, other.user, {
-          cartID: other.cartID,
-          shippingAddress: other.shippingAddress
-        });
+        const other = await seedNativeCart(db.payload, await seedMember(db.payload), editions[1], first.eventID);
+        await prepare(db.payload, other);
         assert.equal((await account(other.customerID)).reserved, 1);
       }
     );
@@ -106,10 +103,7 @@ test(
       "a verified release frees the account and the other product can then prepare",
       async () => {
         await assert.rejects(
-          initiateThroughEndpoint(db.payload, first.user, {
-            cartID: blocked.cartID,
-            shippingAddress: blocked.shippingAddress
-          })
+          prepare(db.payload, blocked)
         );
         const req = (await createLocalReq({}, db.payload)) as PayloadRequest;
         await inPaymentTransaction(req, () =>
@@ -123,10 +117,7 @@ test(
           )
         );
         assert.equal((await account(first.customerID)).reserved, 0);
-        await initiateThroughEndpoint(db.payload, first.user, {
-          cartID: blocked.cartID,
-          shippingAddress: blocked.shippingAddress
-        });
+        await prepare(db.payload, blocked);
         assert.deepEqual(await account(first.customerID), {
           reserved_rows: 1,
           allowance_rows: 1,

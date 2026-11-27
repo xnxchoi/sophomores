@@ -9,11 +9,11 @@ test('I2 disposable PostgreSQL admission, accounting, native fencing and restart
   skip: process.env.COMMERCE_PAYLOAD_DATABASE_TESTS !== '1', timeout: 300000,
 }, async (t) => {
   const { openReconciliationDatabase, identityFor, target } = await import('./reconciliation-postgres-fixture')
-  const { seedAttempt, confirmation, effects, providerConfig } = await import('../core/payment-postgres-fixture')
+  const { seedAttempt, confirmation, effects, providerConfig, publishFixtureCatalogue, initiateThroughEndpoint } = await import('../core/payment-postgres-fixture')
   const { createLocalReq } = await import('payload')
   const { admitReconciliation, debitProviderGet, endReconciliation, assertReconciliationFence, retainReconciliationRisk, accountedProviderGet } = await import('../../../src/lib/commerce/portone/accounting')
   const { runReconciliation } = await import('../../../src/lib/commerce/portone/admission')
-  const { readSettlementProof } = await import('../../../src/lib/commerce/portone/adapter')
+  const { readPortOneTransaction, readSettlementProof } = await import('../../../src/lib/commerce/portone/adapter')
   const { createAdapterEndpoints } = await import('../../../src/lib/commerce/portone/endpoints')
   const { inPaymentTransaction } = await import('../../../src/lib/commerce/_shared/transaction')
   const { withCommerceWrite } = await import('../../../src/lib/commerce/access')
@@ -36,6 +36,17 @@ test('I2 disposable PostgreSQL admission, accounting, native fencing and restart
   }
   const db = await openReconciliationDatabase()
   t.after(db.close)
+  await publishFixtureCatalogue(db.payload)
+  const { editions, seedMember, seedEvent, seedNativeCart, prepare } = await import('../editions/native-settlement-fixture')
+  const freshBundle = async (owner: { user: Parameters<typeof seedNativeCart>[1] }, title: string, eventID?: string) =>
+    seedNativeCart(db.payload, owner.user, editions[1], eventID ?? await seedEvent(db.payload, title))
+  const readPrepared = async (cart: Awaited<ReturnType<typeof freshBundle>>) => {
+    const prepared = await prepare(db.payload, cart)
+    const row = await readPortOneTransaction(await createLocalReq({ user: cart.user }, db.payload), prepared.paymentID)
+    assert.equal(row.portone.snapshot.version, 2)
+    return { ...prepared, snapshot: row.portone.snapshot }
+  }
+
   const ledger = async (transactionID: string) => {
     const found = await db.payload.find({ collection: 'commerce-reconciliations', where: { scope: { equals: 'reconciliation-attempt:' + transactionID } }, overrideAccess: true })
     return found.docs[0]
@@ -110,7 +121,6 @@ test('I2 disposable PostgreSQL admission, accounting, native fencing and restart
   await setTimeout(1100)
   await t.test('real Payload isolates legacy backlinks in replay and quarantines a legacy-only pending attempt', async () => {
     const { projectLocalResult } = await import('../../../src/lib/commerce/portone/result')
-    const { readPortOneTransaction } = await import('../../../src/lib/commerce/portone/adapter')
     const f = await seedAttempt(db.payload), a = await confirmation(db.payload, f)
     const paymentID = f.transactionID.replaceAll('-', '')
     assert.equal((await runReconciliation(a.req, { transactionID: f.transactionID, paymentID }, 'confirm', a.run, a.deps)).status, 200)
@@ -145,13 +155,12 @@ test('I2 disposable PostgreSQL admission, accounting, native fencing and restart
   await setTimeout(1100)
   await t.test('native retired Paid case is private and blocks every membership purchase of that account only', async (st) => {
     const { randomUUID } = await import('node:crypto')
-    const { initiateAttempt, initiateThroughEndpoint, seedCheckoutCart } = await import('../core/payment-postgres-fixture')
     const { createPendingEndpoint } = await import('../../../src/lib/commerce/portone/pending')
     const { retireFailedPayment } = await import('../../../src/lib/commerce/portone/review')
     const { commerceSnapshotHash } = await import('../../../src/lib/commerce/snapshot-hash')
-    const { readPortOneTransaction } = await import('../../../src/lib/commerce/portone/adapter')
     const { paidReviewScope, reconciliationEventScope } = await import('../../../src/lib/commerce/portone/accounting')
-    const old = await initiateAttempt(db.payload), other = await seedAttempt(db.payload)
+    const old = await seedAttempt(db.payload), other = await seedAttempt(db.payload)
+    const positiveCart = await freshBundle(old, 'Replacement bundle', old.eventID)
     const paymentID = old.transactionID.replaceAll('-', '')
     const input = { transactionID: old.transactionID, paymentID }
     let status = 'FAILED'
@@ -161,7 +170,7 @@ test('I2 disposable PostgreSQL admission, accounting, native fencing and restart
     const deps = { config: providerConfig, verifyWebhook: async () => signed, getPayment: async (requested: { paymentId: string; storeId: string }) => {
       if (status === 'READY') readyReads.push(requested)
       return { id: requested.paymentId, status, storeId: providerConfig.storeId, channel: { key: providerConfig.channelKey, type: 'TEST' },
-        customer: { id: old.customerID }, currency: 'KRW', amount: { total: old.snapshot.totalAmount, paid: 0, cancelled: 0 }, disputes: [] }
+        customer: { id: old.customerID }, currency: 'KRW', amount: { total: requested.paymentId === paymentID ? old.snapshot.totalAmount : positiveCart.total, paid: 0, cancelled: 0 }, disputes: [] }
     } }
     const control = new Pool({ connectionString: target.url, max: 1 })
     st.after(() => control.end())
@@ -175,13 +184,14 @@ test('I2 disposable PostgreSQL admission, accounting, native fencing and restart
     const freshSameProductCart = async () => {
       const cartID = randomUUID()
       await db.payload.db.create({ collection: 'carts', customID: cartID, data: {
-        customer: old.customerID, currency: 'KRW', subtotal: old.snapshot.unitAmount,
-        items: [{ id: randomUUID(), product: old.productID, quantity: 1 }],
+        customer: old.customerID, currency: 'KRW', subtotal: positiveCart.offer.priceKRW,
+        items: [{ id: randomUUID(), product: positiveCart.productID, variant: positiveCart.variantID, quantity: 1 }],
       } })
       return cartID
     }
-    const assertPrepared = async (cartID: string, productID: string, eventID: string) => {
-      const result = await initiateThroughEndpoint(db.payload, old.user, { cartID, shippingAddress: old.snapshot.shippingAddress }) as {
+    const assertPrepared = async () => {
+      const { cartID, productID, eventID, total } = positiveCart
+      const result = await initiateThroughEndpoint(db.payload, old.user, { cartID, shippingAddress: old.snapshot.shippingAddress }, undefined, true) as {
         outcome: string; transactionID: string; paymentID: string; paymentRequest?: unknown
       }
       assert.equal(result.outcome, 'prepared')
@@ -190,22 +200,23 @@ test('I2 disposable PostgreSQL admission, accounting, native fencing and restart
       assert.equal(result.paymentID, result.transactionID.replaceAll('-', ''))
       assert.deepEqual(result.paymentRequest, {
         paymentId: result.paymentID, storeId: providerConfig.storeId, channelKey: providerConfig.channelKey,
-        totalAmount: old.snapshot.totalAmount, orderName: old.snapshot.orderName, currency: 'KRW',
+        totalAmount: total, orderName: positiveCart.edition.title, currency: 'KRW',
         redirectUrl: providerConfig.origin + '/shop/payment',
         customer: { customerId: old.customerID, email: old.user.email, ...(old.user.name ? { fullName: old.user.name } : {}) },
       })
       const row = await readPortOneTransaction(await createLocalReq({ user: old.user }, db.payload), result.paymentID)
       const { snapshot } = row.portone
+      assert.equal(snapshot.version, 2)
       assert.deepEqual([snapshot.cartID, snapshot.productID, snapshot.eventID, snapshot.customerID], [cartID, productID, eventID, old.customerID])
       const hash = commerceSnapshotHash(snapshot)
       assert.deepEqual((await control.query(
         'SELECT id, customer_id, status, amount::int, portone_payment_i_d, portone_snapshot_hash FROM transactions WHERE cart_id=$1', [cartID],
-      )).rows, [{ id: result.transactionID, customer_id: old.customerID, status: 'pending', amount: old.snapshot.totalAmount,
+      )).rows, [{ id: result.transactionID, customer_id: old.customerID, status: 'pending', amount: total,
         portone_payment_i_d: result.paymentID, portone_snapshot_hash: hash }])
       assert.deepEqual((await control.query(
         'SELECT customer_id, product_id, event_id, release_i_d, quantity::int, snapshot_hash, state, order_id FROM commerce_reservations WHERE attempt_i_d=$1',
         [result.transactionID],
-      )).rows, [{ customer_id: old.customerID, product_id: productID, event_id: eventID, release_i_d: 'membership',
+      )).rows, [{ customer_id: old.customerID, product_id: productID, event_id: eventID, release_i_d: productID,
         quantity: 1, snapshot_hash: hash, state: 'reserved', order_id: null }])
       return { transactionID: result.transactionID, paymentID: result.paymentID }
     }
@@ -217,7 +228,7 @@ test('I2 disposable PostgreSQL admission, accounting, native fencing and restart
     assert.equal(before.status, 'failed')
     // A real replacement can prepare after verified retirement, before any case exists.
     assert.equal(await caseCount(), 0)
-    const positive = await assertPrepared(await freshSameProductCart(), old.productID, old.eventID)
+    const positive = await assertPrepared()
     await retire(positive)
     assert.deepEqual(await effects(control, old), before)
     status = 'READY'
@@ -261,7 +272,7 @@ test('I2 disposable PostgreSQL admission, accounting, native fencing and restart
     const cartID = await freshSameProductCart()
     const samePurchaseState = async () => (await control.query(`SELECT
       (SELECT count(*)::int FROM transactions WHERE cart_id=$1) AS attempts,
-      (SELECT count(*)::int FROM commerce_reservations WHERE customer_id=$2 AND release_i_d=$3) AS reservations,
+      (SELECT count(*)::int FROM commerce_reservations WHERE customer_id=$2) AS reservations,
       (SELECT reserved_quantity::int FROM commerce_allowances WHERE customer_id=$2 AND release_i_d=$3) AS allowance_reserved,
       (SELECT purchased_at FROM carts WHERE id=$1) AS cart_purchased,
       (SELECT reserved_quantity::int FROM commerce_events WHERE id=$4) AS event_reserved,
@@ -269,19 +280,19 @@ test('I2 disposable PostgreSQL admission, accounting, native fencing and restart
     [cartID, old.customerID, 'membership', old.eventID])).rows
     const beforeDenial = await samePurchaseState()
     assert.deepEqual(beforeDenial, [{ attempts: 0, reservations: 2, allowance_reserved: 0, cart_purchased: null, event_reserved: 0, event_committed: 0 }])
-    await assert.rejects(initiateThroughEndpoint(db.payload, old.user, { cartID, shippingAddress: old.snapshot.shippingAddress }),
+    await assert.rejects(initiateThroughEndpoint(db.payload, old.user, { cartID, shippingAddress: old.snapshot.shippingAddress }, undefined, true),
       /initiate answered 500:.*Error initiating payment/)
     assert.deepEqual(await samePurchaseState(), beforeDenial)
     assert.deepEqual(await effects(control, old), before)
     // Single membership token per account: the same buyer's open Paid case also holds
     // a different membership product, with no attempt, reservation or allowance written.
-    const distinct = await seedCheckoutCart(db.payload, old)
+    const distinct = await freshBundle(old, 'Different bundle')
     const distinctState = async () => (await control.query(`SELECT
       (SELECT count(*)::int FROM transactions WHERE cart_id=$1) AS attempts,
       (SELECT reserved_quantity::int FROM commerce_allowances WHERE customer_id=$2 AND release_i_d='membership') AS allowance_reserved`,
     [distinct.cartID, old.customerID])).rows
     const beforeDistinct = await distinctState()
-    await assert.rejects(initiateThroughEndpoint(db.payload, old.user, { cartID: distinct.cartID, shippingAddress: old.snapshot.shippingAddress }),
+    await assert.rejects(prepare(db.payload, distinct),
       /initiate answered 500:.*Error initiating payment/)
     assert.deepEqual(await distinctState(), beforeDistinct)
     assert.deepEqual(await effects(control, old), before)
@@ -289,14 +300,12 @@ test('I2 disposable PostgreSQL admission, accounting, native fencing and restart
   await setTimeout(1100)
   await t.test('a settled Paid case stops holding after verified full cancellation; an unresolved late Paid still holds', async (st) => {
     const { randomUUID } = await import('node:crypto')
-    const { initiateAttempt, initiateThroughEndpoint, seedCheckoutCart } = await import('../core/payment-postgres-fixture')
     const { createPendingEndpoint } = await import('../../../src/lib/commerce/portone/pending')
     const { assertPurchaseWithoutPaidReview, PaymentReviewRequired, retireFailedPayment } = await import('../../../src/lib/commerce/portone/review')
-    const { readPortOneTransaction } = await import('../../../src/lib/commerce/portone/adapter')
     const { paidReviewScope, paidDispositionScope, reconciliationEventScope } = await import('../../../src/lib/commerce/portone/accounting')
     const control = new Pool({ connectionString: target.url, max: 1 })
     st.after(() => control.end())
-    type Attempt = Awaited<ReturnType<typeof initiateAttempt>>
+    type Attempt = Awaited<ReturnType<typeof seedAttempt>> | Awaited<ReturnType<typeof readPrepared>>
     const url = providerConfig.origin + '/api/payments/portone'
     const provider = (f: Attempt, status: string, paid: number, cancelled: number) => async () => ({ id: f.transactionID.replaceAll('-', ''),
       storeId: providerConfig.storeId, status, channel: { key: providerConfig.channelKey, type: 'TEST' }, customer: { id: f.customerID },
@@ -338,7 +347,7 @@ test('I2 disposable PostgreSQL admission, accounting, native fencing and restart
     }
 
     // A signed Paid arrives while the attempt is still pending, so the immutable case opens first.
-    const settled = await initiateAttempt(db.payload)
+    const settled = await seedAttempt(db.payload)
     assert.equal((await signedWebhook(settled, 'paid-before-settlement', 'Transaction.Paid', provider(settled, 'READY', 0, 0))).ok, false)
     const opened = await evidence(settled.transactionID)
     assert.deepEqual(Object.keys(opened), [paidReviewScope(settled.transactionID)])
@@ -410,7 +419,7 @@ test('I2 disposable PostgreSQL admission, accounting, native fencing and restart
       const cancelPayment = async (input: unknown) => { calls.push(input); return answers.shift()! }
 
       // The membership product is refused: nothing written, nothing sent.
-      const membership = await initiateAttempt(db.payload)
+      const membership = await seedAttempt(db.payload)
       const membershipOrder = await settle(membership)
       assert.deepEqual(await requestOrderRefund({ req: admin, orderID: membershipOrder, reason: 'Owner refund', deps: { config: providerConfig, cancelPayment } }),
         { outcome: 'refused', reason: 'not-refundable-product' })
@@ -541,13 +550,9 @@ test('I2 disposable PostgreSQL admission, accounting, native fencing and restart
     const tied = await signedWebhook(settled, 'paid-before-settlement', 'Transaction.Paid', provider(settled, 'PAID', settled.snapshot.totalAmount, 0))
     assert.deepEqual([tied.status, (await tied.json()).outcome], [200, 'already-cancelled'])
     assert.deepEqual(await discover(settled), [])
-    // The account can buy membership again, on another release.
-    const again = await seedCheckoutCart(db.payload, settled)
-    const prepared = await initiateThroughEndpoint(db.payload, settled.user, { cartID: again.cartID, shippingAddress: again.shippingAddress }) as {
-      outcome: string; transactionID: ReturnType<typeof randomUUID> }
-    assert.equal(prepared.outcome, 'prepared')
+    // A permitted physical bundle can prepare after the historical payment closes.
+    const next = await readPrepared(await freshBundle(settled, 'Post-cancellation bundle'))
     // Case 13: an independent unresolved case on the same account holds by itself.
-    const next: Attempt = { ...settled, transactionID: prepared.transactionID, cartID: again.cartID, productID: again.productID, eventID: again.eventID }
     const retire = async (f: Attempt) => {
       await pace()
       const input = { transactionID: f.transactionID, paymentID: f.transactionID.replaceAll('-', '') }
@@ -592,7 +597,7 @@ test('I2 disposable PostgreSQL admission, accounting, native fencing and restart
     await assert.rejects(purchaseGate(settled), PaymentReviewRequired)
 
     // Case 12: a late Paid on a retired attempt, without a verified full cancellation, still holds.
-    const retired = await initiateAttempt(db.payload)
+    const retired = await seedAttempt(db.payload)
     await retire(retired)
     await latePaid(retired, 'late-paid-after-retirement')
     const lateCase = await evidence(retired.transactionID)
@@ -634,7 +639,7 @@ test('I2 disposable PostgreSQL admission, accounting, native fencing and restart
     assert.deepEqual(await localResult(retired), ['local-terminal', 'failed'])
 
     // Case 12: an unreadable provider never frees the account.
-    const unreadable = await initiateAttempt(db.payload)
+    const unreadable = await seedAttempt(db.payload)
     await retire(unreadable)
     await latePaid(unreadable, 'late-paid-unreadable')
     await signedWebhook(unreadable, 'cancel-unreadable', 'Transaction.Cancelled', async () => { throw new Error('Provider unavailable') })
@@ -645,7 +650,7 @@ test('I2 disposable PostgreSQL admission, accounting, native fencing and restart
     // Case 14: no Paid case ever. Settled by the browser alone, then fully cancelled,
     // then a fresh authoritative PAID read contradicts the cancellation. The
     // contradiction alone must hold the account in /pending, /result and the purchase fence.
-    const quiet = await initiateAttempt(db.payload)
+    const quiet = await seedAttempt(db.payload)
     await pace()
     const quietBrowser = await confirmation(db.payload, quiet)
     assert.equal((await runReconciliation(quietBrowser.req, { transactionID: quiet.transactionID,
@@ -665,12 +670,12 @@ test('I2 disposable PostgreSQL admission, accounting, native fencing and restart
     assert.equal((await localResult(quiet))[0], 'review-required')
     await assert.rejects(purchaseGate(quiet), PaymentReviewRequired)
     // The real prepare path refuses a new membership purchase on another product, writing nothing.
-    const blockedCart = await seedCheckoutCart(db.payload, quiet)
+    const blockedCart = await freshBundle(quiet, 'Blocked bundle')
     const attemptsOn = async (cartID: string) => (await control.query('SELECT count(*)::int AS n FROM transactions WHERE cart_id=$1', [cartID])).rows[0].n
-    await assert.rejects(initiateThroughEndpoint(db.payload, quiet.user, { cartID: blockedCart.cartID, shippingAddress: blockedCart.shippingAddress }))
+    await assert.rejects(prepare(db.payload, blockedCart))
     assert.equal(await attemptsOn(blockedCart.cartID), 0)
     // Another account is not held by it.
-    const stranger = await initiateAttempt(db.payload)
+    const stranger = await readPrepared(await freshBundle({ user: await seedMember(db.payload) }, 'Unrelated account bundle'))
     await purchaseGate(stranger)
     // A later, distinct verified full cancellation that accounts for the contradiction frees the account.
     await signedWebhook(quiet, 'quiet-second-cancel', 'Transaction.Cancelled', quietCancel)
@@ -692,7 +697,7 @@ test('I2 disposable PostgreSQL admission, accounting, native fencing and restart
     }
     const outcome = <T>(work: Promise<T>) => work.then(value => ({ ok: true as const, value }), error => ({ ok: false as const, error }))
     const releasedAttempt = async (name: string) => {
-      const f = await initiateAttempt(db.payload)
+      const f = await seedAttempt(db.payload)
       await pace()
       const run = await confirmation(db.payload, f)
       assert.equal((await runReconciliation(run.req, { transactionID: f.transactionID,
@@ -705,11 +710,11 @@ test('I2 disposable PostgreSQL admission, accounting, native fencing and restart
       [`reconciliation-paid-contradiction:${f.transactionID}:%`])).rows[0].n
     // (a) The review holds the account and pauses before the reservation; initiate waits, then refuses.
     const first = await releasedAttempt('race-review-first')
-    const firstCart = await seedCheckoutCart(db.payload, first)
+    const firstCart = await freshBundle(first, 'Review-first bundle')
     await hold('attempt:' + first.transactionID)
     const firstReview = outcome(signedWebhook(first, 'race-review-first-paid', 'Transaction.DisputeResolved', provider(first, 'PAID', first.snapshot.totalAmount, 0)))
     await waitingOn(1, 'the review pauses on the reservation lock')
-    const firstInitiate = outcome(initiateThroughEndpoint(db.payload, first.user, { cartID: firstCart.cartID, shippingAddress: firstCart.shippingAddress }))
+    const firstInitiate = outcome(prepare(db.payload, firstCart))
     await waitingOn(2, 'initiate waits for the review that holds the account')
     await letGo('attempt:' + first.transactionID)
     const [reviewedFirst, initiatedSecond] = await Promise.all([firstReview, firstInitiate])
@@ -720,16 +725,17 @@ test('I2 disposable PostgreSQL admission, accounting, native fencing and restart
     await assert.rejects(purchaseGate(first), PaymentReviewRequired)
     // (b) Initiate holds the account and pauses before its cart; the review waits until it commits.
     const racer = await releasedAttempt('race-initiate-first')
-    const secondCart = await seedCheckoutCart(db.payload, racer)
+    const secondCart = await freshBundle(racer, 'Prepare-first bundle')
     await hold('cart:' + secondCart.cartID)
-    const secondInitiate = outcome(initiateThroughEndpoint(db.payload, racer.user, { cartID: secondCart.cartID, shippingAddress: secondCart.shippingAddress }))
+    const secondInitiate = outcome(prepare(db.payload, secondCart))
     await waitingOn(1, 'initiate pauses on the cart lock')
     const secondReview = outcome(signedWebhook(racer, 'race-initiate-first-paid', 'Transaction.DisputeResolved', provider(racer, 'PAID', racer.snapshot.totalAmount, 0)))
     await waitingOn(2, 'the review waits for the initiate that holds the account')
     assert.equal(await contradictions(racer), 0)
     await letGo('cart:' + secondCart.cartID)
     const [initiatedFirst, reviewedSecond] = await Promise.all([secondInitiate, secondReview])
-    assert.equal(initiatedFirst.ok && (initiatedFirst.value as { outcome: string }).outcome, 'prepared', 'initiate committed before the evidence existed')
+    assert.ok(initiatedFirst.ok, 'prepare() requires a prepared response before returning')
+    assert.equal(await attemptsOn(secondCart.cartID), 1, 'one attempt committed before the evidence existed')
     assert.equal(reviewedSecond.ok, true)
     assert.equal(await contradictions(racer), 1)
     assert.ok((await discover(racer)).includes(racer.transactionID))

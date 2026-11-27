@@ -2442,6 +2442,7 @@ export const products = pgTable(
     }),
     dispatchSchedule: varchar("dispatch_schedule"),
     shippingFeeKRW: numeric("shipping_fee_k_r_w", { mode: "number" }),
+    maximumPerPerson: numeric("maximum_per_person", { mode: "number" }),
     publicationApproved: boolean("publication_approved").default(false),
     reservedQuantity: numeric("reserved_quantity", { mode: "number" }).default(
       0
@@ -2832,6 +2833,9 @@ export const _products_v = pgTable(
     }),
     version_dispatchSchedule: varchar("version_dispatch_schedule"),
     version_shippingFeeKRW: numeric("version_shipping_fee_k_r_w", {
+      mode: "number"
+    }),
+    version_maximumPerPerson: numeric("version_maximum_per_person", {
       mode: "number"
     }),
     version_publicationApproved: boolean(

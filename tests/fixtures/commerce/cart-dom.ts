@@ -2,6 +2,7 @@
 // tests/fixtures/commerce/fake-ecommerce.ts so a test drives the member's cart directly.
 import { registerHooks } from "node:module";
 import { JSDOM } from "jsdom";
+import { installCartLocks } from "./cart-locks";
 
 const fake = new URL("./fake-ecommerce.ts", import.meta.url).href;
 
@@ -23,6 +24,7 @@ export async function setupCartDom() {
       configurable: true, writable: true });
   }
   Object.defineProperty(dom.window, "matchMedia", { configurable: true, value: () => ({ matches: true, addEventListener() {}, removeEventListener() {} }) });
+  installCartLocks();
   const ui = await import("@testing-library/react/pure");
   ui.configure({ getElementError: (message) => new Error(message ?? "Element not found") });
   const ecommerce = await import(fake) as typeof import("./fake-ecommerce");

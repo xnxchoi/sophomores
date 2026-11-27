@@ -1,3 +1,4 @@
+import { seedCart } from "../../fixtures/commerce/cart-locks";
 import { MemberAuthProviders } from "../../member-auth/fixtures/providers";
 import assert from "node:assert/strict";
 import { after, afterEach, before, test } from "node:test";
@@ -48,20 +49,21 @@ test("signed in with no saved cart: empty, and the next step is the shop", () =>
   assert.equal(screen().queryByRole("button", { name: "Refresh cart" }) === null, true, "no cart, nothing to refresh");
 });
 
-test("one line of the current offer is quoted and goes to checkout", () => {
+test("one line of the current offer can be reviewed but does not link to checkout", () => {
   env.ecommerce.setFakeEcommerce({ user: member, cart: cart([line]) });
   render();
   assert.ok(screen().getByRole("heading", { name: "Book only" }));
   assert.ok(screen().getByText("35,000 KRW each"));
   assert.equal(status().includes("Estimated total: 38,000 KRW"), true);
-  assert.equal(link("Continue to checkout").getAttribute("href"), "/shop/checkout");
+  assert.equal(link("Review and purchase in the shop").getAttribute("href"), "/shop");
+  assert.equal(screen().queryByRole("link", { name: "Continue to checkout" }) === null, true);
 });
 
 test("signed out with onSignIn, a quoted line asks for sign-in instead of linking on", () => {
-  env.dom.window.localStorage.setItem("sphmrs.cart.v1", JSON.stringify({ version: 1, lines: [{ productID: "p1", quantity: 1 }] }));
+  seedCart(env.dom.window.localStorage, [{ productID: "p1", quantity: 1 }]);
   let asked = 0;
   render(offer, { signedIn: false, onSignIn: () => { asked += 1; } });
-  env.ui.fireEvent.click(screen().getByRole("button", { name: "Continue to checkout" }));
+  env.ui.fireEvent.click(screen().getByRole("button", { name: "Sign in to save your cart" }));
   assert.equal(asked, 1);
   env.dom.window.localStorage.clear();
 });
@@ -132,4 +134,22 @@ test("refresh: refreshed on success, failed on error", async () => {
   render();
   env.ui.fireEvent.click(screen().getByRole("button", { name: "Refresh cart" }));
   await env.ui.waitFor(() => assert.equal(status().some((text) => text.startsWith("We couldn't refresh the cart")), true));
+});
+
+// Review-B HOLD, 27 Nov: signed in, the browser's cart lines its transfer kept back or the account refused stay visible
+// apart from the account's cart and can be removed here; removing one never touches the account's cart.
+test("signed in, the browser's remaining lines show under their own heading and × removes only them", async () => {
+  let accountRemovals = 0;
+  seedCart(env.dom.window.localStorage, [{ productID: "e1", quantity: 1 }]);
+  env.ecommerce.setFakeEcommerce({ user: member, cart: cart([line]), removeItem: async () => { accountRemovals += 1; } });
+  render();
+  assert.ok(screen().getByText("Book only"));
+  const local = screen().getByRole("region", { name: "Only on this browser" });
+  assert.ok(env.ui.within(local).getByText("These weren't added to your account's cart."));
+  env.ui.fireEvent.click(env.ui.within(local).getByRole("button", { name: /^Remove / }));
+  await env.ui.waitFor(() => assert.equal(JSON.parse(env.dom.window.localStorage.getItem("sphmrs.cart.v2") ?? "{}").lines?.length ?? 0, 0));
+  assert.equal(screen().queryByRole("region", { name: "Only on this browser" }) === null, true);
+  assert.equal(accountRemovals, 0);
+  assert.ok(screen().getByText("Book only"));
+  env.dom.window.localStorage.clear();
 });

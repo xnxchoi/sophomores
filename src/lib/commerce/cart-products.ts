@@ -2,6 +2,7 @@ import type { Payload } from "payload";
 import { loadCommerceOffer, type CommerceOffer } from "./catalogue";
 import { z } from "zod";
 import { commerceEditionOfferFrom, loadPublishedCommerceEditions, type CommerceEditionShop } from "./editions";
+import { sharedGuestSalePin } from "./event-tickets";
 
 /**
  * What the cart needs to name and price each of its lines (Cordy/Hamlet, 26 Nov: the cart resolves "per product line,
@@ -47,13 +48,14 @@ export function cartProductsFrom(offer: CommerceOffer | null, editions: Commerce
   return products;
 }
 
-/**
- * The membership product only (Review-B, 26 Nov): the server cart holds the legacy offer alone, so rendering a cart never
- * enumerates the native catalogue. Editions in a browser cart are named on demand by loadCartEditionProducts.
- */
+/** A legacy standalone offer is no longer a shop cart product. Keep the Guest projection. */
 export async function loadCartProducts(payload: Payload): Promise<readonly CartProduct[]> {
-  try { return cartProductsFrom(await loadCommerceOffer(payload), null); }
-  catch { console.error("Cart membership pricing is unavailable."); return []; }
+  try {
+    const sale = sharedGuestSalePin();
+    const offer = sale ? await loadCommerceOffer(payload, undefined, sale.productID) : null;
+    return cartProductsFrom(offer?.ticketTarget ? offer : null, null);
+  }
+  catch { console.error("Cart Guest ticket pricing is unavailable."); return []; }
 }
 
 /** At most as many IDs as a cart can hold lines (browser cart: one; server cart: one), with headroom. */

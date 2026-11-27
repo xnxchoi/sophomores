@@ -16,7 +16,7 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
     port: proofTargets.nativeEdition.port, database: proofTargets.nativeEdition.database };
   assert.match(target.container, /^sphmrs-native-edition-[a-f0-9-]{36}$/);
   assert.match(target.runLabel, /^[a-f0-9-]{36}$/);
-  const { openProofDatabase, isolateTransport, publishFixtureCatalogue, initiateAttempt, nativeSession,
+  const { openProofDatabase, isolateTransport, publishFixtureCatalogue, seedAttempt, nativeSession,
     providerConfig, seedConfiguredAttempt } = await import("../core/payment-postgres-fixture");
   const { editions, seedMember, seedEvent, seedNativeCart, prepare, settle, settleOne, readResult, orders, effects,
     eventCapacity, eventWriteStamp, corruptVersion } = await import("./native-settlement-fixture");
@@ -84,9 +84,24 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
     await migrate(cart.up); // On current main Home Entry has already run.
     assert.deepEqual(await columns(), [cartColumn, ...homeColumns]);
   });
+  await t.test("the product maximum migration is nullable on products and draft versions", async () => {
+    const maximum = await import("../../../src/payload/migrations/20261127_033000_product_maximum_per_person");
+    const columns = async () => (await control.query(`SELECT table_name, column_name, is_nullable
+      FROM information_schema.columns WHERE table_schema = 'public' AND (
+        (table_name = 'products' AND column_name = 'maximum_per_person') OR
+        (table_name = '_products_v' AND column_name = 'version_maximum_per_person'))
+      ORDER BY table_name`)).rows;
+    await migrate(maximum.down);
+    assert.deepEqual(await columns(), []);
+    await migrate(maximum.up);
+    assert.deepEqual(await columns(), [
+      { table_name: "_products_v", column_name: "version_maximum_per_person", is_nullable: "YES" },
+      { table_name: "products", column_name: "maximum_per_person", is_nullable: "YES" },
+    ]);
+  });
   await publishFixtureCatalogue(payload);
-  await t.test("legacy payment control settles through the same installed plugin and owned PG fixture", async () => {
-    const donor = await initiateAttempt(payload);
+  await t.test("an already-prepared legacy payment settles through the same installed plugin and owned PG fixture", async () => {
+    const donor = await seedAttempt(payload);
     await settleOne(payload, { ...donor, paymentID: donor.transactionID.replaceAll("-", ""), total: 13_000 });
     assert.equal((await orders(control, donor.transactionID)).length, 1);
   });
@@ -104,6 +119,9 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
     const member = await seedMember(payload);
     const guest = await seedCheckoutCart(payload, { user: member, customerID: z.uuid().parse(member.id) as ReturnType<typeof randomUUID> });
     const eventID = guest.eventID;
+    const setGuestMaximum = (maximumPerPerson: number | null) => payload.update({
+      collection: "products", id: guest.productID, draft: false, overrideAccess: true, data: { maximumPerPerson },
+    });
     // The refund terms a guest quote shows beside Pay, as the page derives them (Review-B r3: the server re-derives them).
     const guestTerms = async () => refundTerms(refundPolicy({ version: 3, kind: "guest-ticket-v1", eventID }),
       (await payload.findByID({ collection: "commerce-events", id: eventID, depth: 0, overrideAccess: true }) as { partIStartsAt?: unknown }).partIStartsAt);
@@ -168,6 +186,17 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
         req, attemptID, customerID: String(member.id), productID: guest.productID, releaseID: guest.productID,
         eventID, quantity: 1, accountLimit: 2, ticketTarget, snapshotHash: "a".repeat(64),
       }));
+      await shared.test("the locked Guest product maximum includes paid units", async () => {
+        const attemptID = randomUUID();
+        await setGuestMaximum(1);
+        try {
+          // One already paid plus one new unit fits the historical ceiling of two, but not the configured maximum.
+          await assert.rejects(inCommerceTransaction(req, () => reservation(attemptID, req)), /Guest ticket product limit exceeded/);
+          assert.deepEqual((await control.query("SELECT id FROM commerce_reservations WHERE attempt_i_d=$1", [attemptID])).rows, []);
+        } finally {
+          await setGuestMaximum(null);
+        }
+      });
       const holder = deferred<number>(), waiter = deferred<number>(), release = deferred<void>();
       const second = randomUUID(), third = randomUUID();
       const winning = inCommerceTransaction(req, async () => {
@@ -258,13 +287,12 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
       assert.equal(await readAllowance(), false, "the live Signet itself still blocks repurchase");
       await control.query("UPDATE commerce_key_grant_intents SET state='cancelled' WHERE id=$1", [grants.rows[1].id]);
       assert.equal(await readAllowance(), true, "a live Member Event intent and a Guest intent are not Signet holds");
-      await initiateThroughEndpoint(payload, member, { cartID: repurchase.cartID, shippingAddress: repurchase.shippingAddress });
-      await control.query("UPDATE commerce_allowances SET reserved_quantity=0 WHERE customer_id=$1 AND release_i_d='membership'", [member.id]);
+      await assert.rejects(initiateThroughEndpoint(payload, member, { cartID: repurchase.cartID, shippingAddress: repurchase.shippingAddress }));
       await control.query("UPDATE commerce_key_grant_intents SET target=jsonb_set(target, '{ticketTier}', to_jsonb($2::text)) WHERE id=$1", [grants.rows[2].id, "guest"]);
       await assert.rejects(readAllowance, /Member Event grant identity is inconsistent/);
       await assert.rejects(migrate(downBinding), /Cannot drop shared event ticket evidence|Failed query/);
 
-      await shared.test("a typed two-Guest line survives a cart save and reload and initiates at the canonical price", async () => {
+      await shared.test("a typed two-Guest line survives a cart save and reload and initiates at the canonical price", async (proof) => {
         const { down: downCartKind } = await import("../../../src/payload/migrations/20261124_121000_shared_guest_cart_kind");
         await payload.update({ collection: "commerce-events" as never, id: eventID, overrideAccess: true,
           data: { capacity: 5, transportCapacity: 5 } as never });
@@ -287,6 +315,13 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
         const reloaded = await payload.findByID({ collection: "carts", id: saved.id, depth: 0, overrideAccess: true });
         assert.equal(reloaded.items?.[0]?.ticketKind, line.ticketKind);
         assert.equal(reloaded.items?.[0]?.quantity, 2);
+        const editionLine = { product: memberCart.productID, quantity: 1 };
+        for (const items of [[line, editionLine], [editionLine, line]]) {
+          await assert.rejects(payload.update({
+            collection: "carts", id: saved.id, req: await createLocalReq({ user: sponsor }, payload), overrideAccess: false, depth: 0,
+            data: { items },
+          }), /cart-refusal:guest-ticket-alone/);
+        }
         await assert.rejects(payload.update({
           collection: "carts", id: saved.id, req: await createLocalReq({ user: sponsor }, payload), overrideAccess: false, depth: 0,
           data: { items: [{ ...line, quantity: 3 }] },
@@ -309,6 +344,53 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
           guestQuote: { productID: guest.productID, quantity: 2, totalAmount: 20_000, refundTerms: { kind: "refundable" } } }),
           { message: "Guest quote changed", outcome: "guest-quote-changed", refundTerms: await guestTerms() });
         assert.deepEqual((await control.query("SELECT id FROM transactions WHERE cart_id=$1", [reloaded.id])).rows, []);
+        await proof.test("a saved Guest cart cannot prepare after the product maximum falls below its quantity", async () => {
+          const quote = { productID: guest.productID, quantity: 2, totalAmount: 20_000, refundTerms: await guestTerms() };
+          const pay = () => initiateThroughEndpoint(payload, sponsor, { ...checkout, guestQuote: quote });
+          const assertNoPreparation = async () => {
+            assert.deepEqual((await control.query("SELECT id FROM transactions WHERE cart_id=$1", [reloaded.id])).rows, []);
+            assert.deepEqual((await control.query("SELECT id FROM commerce_reservations WHERE customer_id=$1", [sponsor.id])).rows, []);
+          };
+          await setGuestMaximum(1);
+          try {
+            await assert.rejects(pay(), /initiate answered 500/);
+            await assertNoPreparation();
+          } finally {
+            await setGuestMaximum(null);
+          }
+          // Edit after catalogue preflight when Pay reads refund terms: the locked reservation must detect this
+          // change and roll back the new attempt.
+          const hooks = payload.collections["commerce-events"].config.hooks;
+          let changed = false;
+          const lowerAfterPreflight = async ({ doc }: { doc: Record<string, unknown> }) => {
+            if (!changed && "partIStartsAt" in doc && !("name" in doc)) {
+              changed = true;
+              await setGuestMaximum(1);
+            }
+            return doc;
+          };
+          hooks.afterRead.push(lowerAfterPreflight as never);
+          try {
+            await assert.rejects(pay(), /initiate answered 500/);
+            assert.equal(changed, true, "The cap changed after catalogue preflight");
+            await assertNoPreparation();
+          } finally {
+            hooks.afterRead.splice(hooks.afterRead.indexOf(lowerAfterPreflight as never), 1);
+            await setGuestMaximum(null);
+          }
+          const saveQuantity = async (quantity: number) => payload.update({
+            collection: "carts", id: saved.id, req: await createLocalReq({ user: sponsor }, payload), overrideAccess: false, depth: 0,
+            data: { items: [{ ...line, quantity }] },
+          });
+          await setGuestMaximum(1);
+          try {
+            assert.equal((await saveQuantity(1)).items?.[0]?.quantity, 1);
+            await assert.rejects(saveQuantity(2), /cart-refusal:product-limit-reached/);
+          } finally {
+            await setGuestMaximum(null);
+            await saveQuantity(2);
+          }
+        });
         // The event's start is edited while this Pay is in flight, after the fast check has passed (a committed edit on
         // another connection, made from the fast check's own read): the check under the event lock sees the new start and
         // the whole preparation rolls back. No attempt, no reservation, every counter as it was (Review-B r4).
@@ -810,7 +892,7 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
     // Separately eligible Guest Ticket with a settled legacy donor/order.
     // Prepare unoccupied admission fixture state, then use the real claim path;
     // this proves no cross-type admission block, not event-token issuance.
-    const donor = await initiateAttempt(payload);
+    const donor = await seedAttempt(payload);
     await settleOne(payload, { ...donor, paymentID: donor.transactionID.replaceAll("-", ""), total: 13_000 });
     const donorTicket = (await effects(control, donor.transactionID)).tickets[0];
     assert.ok(donorTicket);

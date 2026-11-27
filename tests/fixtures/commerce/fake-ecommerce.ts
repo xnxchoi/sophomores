@@ -1,6 +1,6 @@
 // Test-only stand-in for "@payloadcms/plugin-ecommerce/client/react" (swapped in by registerHooks in
 // tests/commerce/ui/cart-state-dom.test.tsx): the cart's useCart/useEcommerce, driven by the test.
-import { useSyncExternalStore } from "react";
+import { useSyncExternalStore, type ReactNode } from "react";
 
 type FakeState = {
   cart: unknown;
@@ -8,12 +8,14 @@ type FakeState = {
   user: unknown;
   removeItem: (itemID: string) => Promise<void>;
   refreshCart: () => Promise<void>;
+  clearSession: () => void;
+  onLogin: () => Promise<void>;
 };
 
 const listeners = new Set<() => void>();
 let state: FakeState = {
   cart: undefined, isLoading: false, user: null,
-  removeItem: async () => {}, refreshCart: async () => {},
+  removeItem: async () => {}, refreshCart: async () => {}, clearSession: () => {}, onLogin: async () => {},
 };
 
 /** Replace part of the fake plugin state and re-render every consumer. */
@@ -23,7 +25,8 @@ export function setFakeEcommerce(next: Partial<FakeState>) {
 }
 
 export function resetFakeEcommerce() {
-  setFakeEcommerce({ cart: undefined, isLoading: false, user: null, removeItem: async () => {}, refreshCart: async () => {} });
+  setFakeEcommerce({ cart: undefined, isLoading: false, user: null, removeItem: async () => {}, refreshCart: async () => {},
+    clearSession: () => {}, onLogin: async () => {} });
 }
 
 function useFakeState() {
@@ -38,5 +41,11 @@ export function useCart() {
 }
 
 export function useEcommerce() {
-  return { user: useFakeState().user };
+  const current = useFakeState();
+  return { user: current.user, clearSession: current.clearSession, onLogin: current.onLogin };
+}
+
+/** The cart page mounts CommerceProvider; the fake state needs no provider. */
+export function EcommerceProvider({ children }: { children: ReactNode }) {
+  return children;
 }

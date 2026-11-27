@@ -25,7 +25,7 @@ let ui: typeof import('@testing-library/react/pure')
 let Payment: typeof import('../../../src/components/commerce/payment').CommercePayment
 let AccountGate: typeof import('../../../src/components/commerce/checkout').CommerceAccountGate
 let IdentityBoundary: typeof import('../../../src/components/commerce/checkout').CommerceIdentityBoundary
-const checkoutPagePath = '/src/app/(site)/shop/checkout/page.tsx'
+const paymentPagePaths = ['/src/app/(site)/shop/checkout/page.tsx', '/src/app/(site)/shop/payment/page.tsx']
 const capabilities = { apple: false, google: false, kakao: false, emailOtp: false, magicLink: false, passkey: false }
 const activeMember: MemberStatus = {
   authenticated: true, phoneBindingAuth: 'ready', emailVerified: true, phoneBound: true, member: true, capabilities
@@ -74,7 +74,7 @@ let cssHook: ReturnType<typeof registerHooks>;
 before(async () => {
   cssHook = registerHooks({
     resolve(specifier, context, next) {
-      if (context.parentURL && new URL(context.parentURL).pathname.endsWith(checkoutPagePath)
+      if (context.parentURL && paymentPagePaths.some((path) => context.parentURL && new URL(context.parentURL).pathname.endsWith(path))
         && ['payload', '@payload-config', 'next/server', 'next-intl/server',
           '@/lib/commerce/catalogue', '@/lib/member-auth/public-capabilities.server'].includes(specifier)) {
         return { url: new URL('../../fixtures/commerce/checkout-route.ts', import.meta.url).href, shortCircuit: true }
@@ -163,81 +163,25 @@ test('explicit review mode renders a settled notice without mounting the commerc
   assert.deepEqual(calls, [])
 })
 
-test('the checkout route keeps published details visible while identity is checked, fails and retries', async () => {
+test('the standalone checkout route shows no account, delivery, or Pay controls', async () => {
   const { default: CheckoutPage } = await import('@/app/(site)/shop/checkout/page')
-  let failCheck!: (response: Response) => void
-  const firstCheck = new Promise<Response>((resolve) => { failCheck = resolve })
-  ownAccountRead = () => firstCheck
   ui.render(<EnglishMessages>{await CheckoutPage()}</EnglishMessages>)
-
-  const assertPublicDetails = () => {
-    const details = ui.within(ui.screen.getByRole('region', { name: 'Published checkout fixture' }))
-    assert.ok(details.getByRole('heading', { name: 'Published checkout fixture' }))
-    assert.ok(details.getByText('Dispatches after the launch'))
-    assert.ok(details.getByText('₩3,000'))
-    // Policy links moved from the summary to the page footer (checkout redesign, 21 Nov); still on the page.
-    // The quiet foot row (spec §7); terms, privacy and refunds live in the business footer.
-    assert.equal(ui.screen.getByRole('link', { name: 'Check payment status' }).getAttribute('href'), '/shop/payment')
-  }
-  const assertPrivateCheckoutBlocked = () => {
-    assert.equal(ui.screen.queryByRole('textbox', { name: 'Recipient name' }) === null, true)
-    assert.equal(ui.screen.queryByRole('button', { name: 'Pay by card' }) === null, true)
-  }
-  await ui.waitFor(() => assert.equal(calls.filter((call) => call.path === '/api/users/me').length >= 2, true))
-  await ui.screen.findByText('Checking your account…')
-  assertPublicDetails()
-  assertPrivateCheckoutBlocked()
-
-  await ui.act(async () => failCheck(Response.json({}, { status: 429 })))
-  const retry = await ui.screen.findByRole('button', { name: 'Retry account check' })
-  assertPublicDetails()
-  assertPrivateCheckoutBlocked()
-
-  let confirmCheck!: (response: Response) => void
-  const retryCheck = new Promise<Response>((resolve) => { confirmCheck = resolve })
-  ownAccountRead = () => retryCheck
-  ui.fireEvent.click(retry)
-  await ui.screen.findByText('Checking your account…')
-  assertPublicDetails()
-  assertPrivateCheckoutBlocked()
-
-  const bar = ui.screen.getAllByRole('progressbar')
-  assert.equal(bar.length === 1 && bar[0]!.getAttribute('aria-label') === 'Step 2 of 3: Delivery', true)
-  await ui.act(async () => confirmCheck(Response.json({ user: { id: accountID } })))
-  await ui.screen.findByRole('textbox', { name: 'Recipient name' })
-  // The account check and the checkout share the one mounted step bar.
-  assert.equal(ui.screen.getAllByRole('progressbar').length === 1 && ui.screen.getAllByRole('progressbar')[0] === bar[0], true)
-  // In checkout the summary is an Arc ExpandableCard titled with the product name; the published rows stay visible.
-  assert.equal(ui.screen.getAllByText('Published checkout fixture').length > 0, true)
-  assert.equal(ui.screen.getAllByText('Dispatches after the launch').length > 0, true)
-  assert.equal(ui.screen.getAllByText('₩3,000').length > 0, true)
-  assert.equal(calls.some((call) => call.path.endsWith('/initiate')), false)
+  await ui.screen.findByText('Purchasing is not open.')
+  assert.equal(ui.screen.queryByRole('textbox') === null, true)
+  assert.equal(ui.screen.queryByRole('button', { name: 'Pay by card' }) === null, true)
+  assert.equal(ui.screen.getByRole('link', { name: 'Check payment status' }).getAttribute('href'), '/shop/payment')
+  assert.deepEqual(calls, [])
 })
 
-test('legacy checkout is closed: an existing cart and a valid address leave Pay disabled; a retained attempt stays checkable', async () => {
-  const { default: CheckoutPage } = await import('@/app/(site)/shop/checkout/page')
-  ui.render(<EnglishMessages>{await CheckoutPage()}</EnglishMessages>)
-  const field = (name: string) => ui.screen.findByRole<HTMLInputElement>('textbox', { name })
-  ui.fireEvent.change(await field('Recipient name'), { target: { value: 'Recipient' } })
-  ui.fireEvent.change(await field('Phone number for delivery'), { target: { value: '01012345678' } })
-  ui.fireEvent.change(await field('Postcode'), { target: { value: '12345' } })
-  ui.fireEvent.change(await field('Address'), { target: { value: 'Address' } })
-  // The cart already holds the product and the address is valid, but the server allows nothing for a legacy offer, so
-  // the step bar stays on Delivery: Payment would point at a Pay button that can't be used.
-  await ui.waitFor(() => assert.equal(ui.screen.getAllByRole<HTMLInputElement>('textbox', { name: 'Address' })[0]!.value, 'Address'))
-  assert.equal(ui.screen.getAllByRole('progressbar')[0]!.getAttribute('aria-label'), 'Step 2 of 3: Delivery')
-  const pay = await ui.screen.findByRole<HTMLButtonElement>('button', { name: 'Pay by card' })
-  assert.equal(pay.disabled, true)
-  ui.fireEvent.click(pay)
-  assert.equal(calls.some((call) => call.path.endsWith('/initiate')), false)
-  ui.cleanup()
-  // Recovery is separate from purchase entry: a retained attempt can still be checked.
+test('the payment recovery route still exposes Check for a retained attempt, not fresh Pay', async () => {
+  const { default: PaymentPage } = await import('@/app/(site)/shop/payment/page')
   dom.window.sessionStorage.setItem(storageKey, JSON.stringify(intent))
-  ui.render(<EnglishMessages>{await CheckoutPage()}</EnglishMessages>)
+  discovered = [discoveredIntent()]
+  ui.render(<EnglishMessages>{await PaymentPage()}</EnglishMessages>)
   const check = await ui.screen.findByRole<HTMLButtonElement>('button', { name: 'Check payment' })
-  assert.equal(check.disabled, false)
-  // A retained attempt is at Payment even with no allowance: its recovery actions are what's on screen.
-  await ui.waitFor(() => assert.equal(ui.screen.getAllByRole('progressbar')[0]!.getAttribute('aria-label'), 'Step 3 of 3: Payment'))
+  await ui.waitFor(() => assert.equal(check.disabled, false))
+  assert.equal(ui.screen.queryByRole('button', { name: 'Pay by card' }) === null, true)
+  assert.equal(calls.some(({ path }) => path.endsWith('/initiate')), false)
 })
 
 test('a native product goes to its own display-only checkout through the real E1 loaders, never the legacy cart or payment', async () => {
@@ -266,61 +210,6 @@ test('a native product goes to its own display-only checkout through the real E1
   } finally {
     setCheckoutPayload({})
   }
-})
-
-test('the checkout route gates private checkout on fresh membership and retains same-account delivery on restoration', async () => {
-  const { default: CheckoutPage } = await import('@/app/(site)/shop/checkout/page')
-  const phoneUnbound = { ...activeMember, phoneBound: false, member: false }
-  membership = { ...phoneUnbound, authenticated: false, emailVerified: false, phoneBindingAuth: 'anonymous' }
-  ui.render(<EnglishMessages>{await CheckoutPage()}</EnglishMessages>)
-  const delivery = () => ui.screen.queryByRole('textbox', { name: 'Recipient name' })
-  const assertCheckoutBlocked = () => {
-    assert.equal(delivery() === null, true)
-    assert.equal(ui.screen.queryByRole('button', { name: 'Pay by card' }) === null, true)
-  }
-  const assertNoCommerceReads = () => {
-    assert.equal(calls.some(({ path }) => path === '/api/member/status'), true)
-    assert.deepEqual(calls.filter(({ path }) => !['/api/member/status', '/api/member/identify'].includes(path)), [])
-  }
-  const refresh = async (status: MemberStatus) => {
-    membership = status
-    const reads = calls.filter(({ path }) => path === '/api/member/status').length
-    await ui.act(async () => { dom.window.dispatchEvent(new dom.window.Event('focus')) })
-    await ui.waitFor(() => assert.ok(calls.filter(({ path }) => path === '/api/member/status').length > reads))
-  }
-
-  await ui.screen.findByRole('textbox', { name: 'Email address' })
-  await ui.waitFor(assertNoCommerceReads)
-  assertCheckoutBlocked()
-  // One step bar for the whole checkout: the same node from account to checkout and back; a hidden retained session never moves it.
-  const bars = () => ui.screen.getAllByRole('progressbar')
-  const bar = bars()[0]!
-  const step = () => bar.getAttribute('aria-label')
-  assert.equal(bars().length, 1)
-  assert.equal(step(), 'Step 1 of 3: Account')
-  await refresh(phoneUnbound)
-  await ui.screen.findByRole('heading', { name: 'Verify your phone to finish' })
-  assertCheckoutBlocked()
-  assertNoCommerceReads()
-
-  await refresh(activeMember)
-  const recipient = await ui.screen.findByRole<HTMLInputElement>('textbox', { name: 'Recipient name' })
-  await ui.waitFor(() => assert.equal(step(), 'Step 2 of 3: Delivery'))
-  assert.equal(bars().length === 1 && bars()[0] === bar, true)
-  ui.fireEvent.change(recipient, { target: { value: 'Same-account delivery draft' } })
-  assert.equal(recipient.value, 'Same-account delivery draft')
-  await refresh(phoneUnbound)
-  await ui.screen.findByRole('heading', { name: 'Verify your phone to finish' })
-  assertCheckoutBlocked()
-  assert.equal(recipient.isConnected, true)
-  await ui.waitFor(() => assert.equal(step(), 'Step 1 of 3: Account'))
-  assert.equal(bars().length === 1 && bars()[0] === bar, true)
-
-  await refresh(activeMember)
-  const restored = await ui.screen.findByRole<HTMLInputElement>('textbox', { name: 'Recipient name' })
-  assert.equal(restored === recipient, true)
-  assert.equal(restored.value, 'Same-account delivery draft')
-  assert.equal(calls.some((call) => call.path.endsWith('/initiate')), false)
 })
 
 test('a verified failed attempt is retired only after an explicit confirm, unlocks checkout and never opens payment', async () => {

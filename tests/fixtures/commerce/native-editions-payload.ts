@@ -10,11 +10,13 @@ export const nativeProducts = [
 // missingTypeFor: that product points at a variant type that doesn't exist. dbFault: findByID fails as a database error would.
 // readsOf(payload) counts every Local API read by kind and collection ("find:products", "findByID:variantTypes", ...).
 export function nativeEditionsPayload({ extra = [] as typeof nativeProducts, hasNextPage = false, schema = true, priceOffset = 0,
-  missingTypeFor = "", dbFault = false } = {}) {
+  missingTypeFor = "", dbFault = false, productMaximums = {} as Record<string, unknown> } = {}) {
   const all = [...nativeProducts, ...extra].map((p) => ({ ...p, price: p.price + priceOffset }));
   const rows: Record<string, Row[]> = {
     products: all.map((p) => ({ id: p.id, commerceModel: "native-edition-v2", _status: "published", publicationApproved: true,
-      title: p.title, description: "Description", images: [{ image: "img" }], variantTypes: [p.id === missingTypeFor ? "gone" : "type"], updatedAt: "r1" })),
+      title: p.title, description: "Description", images: [{ image: "img" }], variantTypes: [p.id === missingTypeFor ? "gone" : "type"], updatedAt: "r1",
+      saleStartsAt: "2026-01-01T00:00:00.000Z", saleEndsAt: "2027-01-01T00:00:00.000Z", event: "event-1",
+      maximumPerPerson: productMaximums[p.id] })),
     variants: all.map((p) => ({ id: "v-" + p.id, product: p.id, options: ["o-" + p.id], _status: "published", publicationApproved: true,
       priceInKRWEnabled: true, priceInKRW: p.price, updatedAt: "r1" })),
     variantOptions: all.map((p) => ({ id: "o-" + p.id, variantType: "type", label: p.title, value: p.value, updatedAt: "r1" })),

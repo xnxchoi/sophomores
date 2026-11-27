@@ -1,3 +1,4 @@
+import { seedCart } from "../../fixtures/commerce/cart-locks";
 import { MemberAuthProviders } from "../../member-auth/fixtures/providers";
 import assert from "node:assert/strict";
 import type { ReactNode } from "react";
@@ -29,13 +30,13 @@ function state(products: readonly CartProduct[], signedIn = true) {
   return env.ui.renderHook(() => useCommerceCartState({ signedIn, products }), { wrapper });
 }
 
-test("a membership line resolves, is quoted, and checks out", () => {
+test("a legacy line can be quoted without allowing checkout", () => {
   env.ecommerce.setFakeEcommerce({ user: member, cart: cart([{ id: "i1", product: "p1", quantity: 1 }]) });
   const { result } = state([membership, edition]);
   assert.deepEqual(result.current.lines, [{ id: "i1", productID: "p1", kind: "membership", title: "Book only", image: null,
     unitPriceKRW: 35000, quantity: 1, maxQuantity: 1, available: true, quoted: true, productHref: null }]);
   assert.deepEqual([result.current.subtotalKRW, result.current.shippingKRW, result.current.totalKRW], [35000, 3000, 38000]);
-  assert.deepEqual([result.current.checkoutAvailable, result.current.checkoutReason, result.current.checkoutHref], [true, "ready", "/shop/checkout"]);
+  assert.deepEqual([result.current.checkoutAvailable, result.current.checkoutReason, result.current.checkoutHref], [false, "checkout-held", null]);
   assert.equal(result.current.canRefresh, true);
 });
 
@@ -51,7 +52,7 @@ test("an edition line resolves its name, image and price, and points to its prod
 });
 
 test("a signed-out browser line resolves the same way, its ID being the product ID", () => {
-  env.dom.window.localStorage.setItem("sphmrs.cart.v1", JSON.stringify({ version: 1, lines: [{ productID: "e1", quantity: 1 }] }));
+  seedCart(env.dom.window.localStorage, [{ productID: "e1", quantity: 1 }]);
   const { result } = state([membership, edition], false);
   assert.equal(result.current.lines[0]?.id, "e1");
   assert.equal(result.current.lines[0]?.title, "Signed edition");
@@ -102,7 +103,7 @@ function resolving(products: readonly CartProduct[], resolveProducts: Resolver, 
 }
 
 test("an edition line not loaded up front is resolved once; meanwhile the row shows and only checkout waits", async () => {
-  env.dom.window.localStorage.setItem("sphmrs.cart.v1", JSON.stringify({ version: 1, lines: [{ productID: "e1", quantity: 1 }] }));
+  seedCart(env.dom.window.localStorage, [{ productID: "e1", quantity: 1 }]);
   const asked: string[][] = [];
   let answer!: (found: readonly CartProduct[]) => void;
   const { result } = resolving([membership], (ids) => { asked.push(ids); return new Promise((resolve) => { answer = resolve; }); }, false);
@@ -144,5 +145,5 @@ test("nothing unknown, nothing asked", async () => {
   let calls = 0;
   const { result } = resolving([membership], async () => { calls += 1; return []; });
   await env.ui.act(async () => {});
-  assert.deepEqual([calls, result.current.checkoutReason], [0, "ready"]);
+  assert.deepEqual([calls, result.current.checkoutReason], [0, "checkout-held"]);
 });

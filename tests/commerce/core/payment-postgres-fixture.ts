@@ -146,13 +146,13 @@ export async function openProofDatabase(push = true, continuations: ReadonlySet<
 
 type FixtureTicketTarget = { chainID: 137 | 84532; lock: string; memberLock: string };
 
-export async function seedAttempt(payload: Payload, startedAt?: string) {
-  const fixture = await seedConfiguredAttempt(payload, startedAt);
+export async function seedAttempt(payload: Payload, startedAt?: string, prepareKey?: string) {
+  const fixture = await seedConfiguredAttempt(payload, startedAt, undefined, prepareKey);
   if (fixture.snapshot.version !== 1) throw new Error("Expected a legacy fixture snapshot");
   return { ...fixture, snapshot: fixture.snapshot };
 }
 
-export async function seedConfiguredAttempt(payload: Payload, startedAt?: string, ticketTarget?: FixtureTicketTarget) {
+export async function seedConfiguredAttempt(payload: Payload, startedAt?: string, ticketTarget?: FixtureTicketTarget, prepareKey?: string) {
   const customerID = randomUUID(), eventID = randomUUID(), productID = randomUUID(), cartID = randomUUID(), transactionID = randomUUID();
   const now = startedAt ?? new Date().toISOString();
   const legacySnapshot: CommerceSnapshot = { version: 1, customerID, eventID, productID, releaseID: MEMBERSHIP_RELEASE, accountLimit: 1, cartID,
@@ -163,7 +163,7 @@ export async function seedConfiguredAttempt(payload: Payload, startedAt?: string
   const snapshot = target ? { ...legacySnapshot, version: 3 as const, kind: "guest-ticket-v1" as const,
     releaseID: productID, accountLimit: 2, quantity: 2, shippingAmount: 0 as const, totalAmount: 20000, ticketTarget: target } : legacySnapshot;
   const rows = [
-    { collection: "users", id: customerID, data: { email: `${customerID}@fixture.invalid`, name: "Fixture" } },
+    { collection: "users", id: customerID, data: { email: `${customerID}@fixture.invalid`, name: "Fixture", emailVerified: true } },
     { collection: "commerce-events", id: eventID, data: { name: "Fixture", publicationApproved: true, capacity: 10, transportCapacity: 10,
       reservedQuantity: 0, committedQuantity: 0, partIStartsAt: now, partIEndsAt: new Date(Date.now() + 3600000).toISOString(), claimCutoffAt: now,
       ...(ticketTarget ? { checkInAuthority: "unlock-events", unlockTicketConfiguration: {
@@ -175,11 +175,11 @@ export async function seedConfiguredAttempt(payload: Payload, startedAt?: string
     { collection: "carts", id: cartID, data: { customer: customerID, currency: "KRW", subtotal: snapshot.unitAmount * snapshot.quantity, items: [{ id: randomUUID(), product: productID, quantity: snapshot.quantity }] } },
     { collection: "transactions", id: transactionID, data: { customer: customerID, cart: cartID, currency: "KRW", amount: snapshot.totalAmount, status: "pending",
       paymentMethod: "portone", items: [{ id: randomUUID(), product: productID, quantity: snapshot.quantity }], portone: { paymentID: transactionID.replaceAll("-", ""),
-        prepareKey: commerceSnapshotHash(snapshot), snapshotHash: commerceSnapshotHash(snapshot), snapshot, storeID: providerConfig.storeId, channelKey: providerConfig.channelKey } } },
+        prepareKey: prepareKey ?? commerceSnapshotHash(snapshot), snapshotHash: commerceSnapshotHash(snapshot), snapshot, storeID: providerConfig.storeId, channelKey: providerConfig.channelKey } } },
   ];
   // Only fixture preparation bypasses business hooks; settlement uses unmodified Local API/hooks.
   for (const row of rows) await payload.db.create({ collection: row.collection as CollectionSlug, customID: row.id, data: { ...row.data, createdAt: now, updatedAt: now } });
-  const user = { id: customerID, email: `${customerID}@fixture.invalid`, collection: "users" } as TypedUser;
+  const user = { id: customerID, email: `${customerID}@fixture.invalid`, collection: "users", emailVerified: true } as TypedUser;
   const req = await createLocalReq({ user }, payload);
   await inPaymentTransaction(req, async () => {
     try {
@@ -270,18 +270,8 @@ export async function seedCheckoutCart(payload: Payload, owner?: Pick<Attempt, "
   return { user, customerID, eventID, productID, cartID, shippingAddress };
 }
 
-export async function initiateAttempt(payload: Payload): Promise<Attempt> {
-  const { user, customerID, eventID, productID, cartID, shippingAddress } = await seedCheckoutCart(payload);
-  const prepared = await initiateThroughEndpoint(payload, user, { cartID, shippingAddress }) as { transactionID: string; paymentID: string };
-  const stored = await payload.findByID({ collection: "transactions" as CollectionSlug, id: prepared.transactionID, depth: 0, overrideAccess: true }) as unknown as {
-    id: ReturnType<typeof randomUUID>; portone: { paymentID: string; snapshot: CommerceSnapshot } };
-  assert.equal(stored.id, prepared.transactionID, "the transaction is stored under the id the adapter chose");
-  assert.equal(stored.portone.paymentID, prepared.paymentID);
-  return { snapshot: stored.portone.snapshot, user, customerID, eventID, productID, cartID, transactionID: stored.id };
-}
-
 export async function confirmation(payload: Payload, f: Pick<Attempt, "user" | "cartID" | "transactionID"> &
-  Partial<Pick<Attempt, "snapshot">> & { customerID: string }, options: ProofOptions = {}) {
+  { snapshot?: { totalAmount: number }; customerID: string }, options: ProofOptions = {}) {
   const amount = options.expectedAmount ?? f.snapshot?.totalAmount;
   assert.ok(amount);
   const req = await createLocalReq({ user: f.user }, payload);

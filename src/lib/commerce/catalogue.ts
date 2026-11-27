@@ -2,7 +2,7 @@ import english from "../../../messages/en.json";
 import { z } from "zod";
 import type { CollectionSlug, GlobalConfig, GlobalSlug, Payload, PayloadRequest } from "payload";
 import { publishedCommerceDisclosureSchema } from "./disclosures";
-import { MEMBERSHIP_ACCOUNT_LIMIT, MEMBERSHIP_RELEASE, commerceSnapshotSchema, type ShippingAddress } from "./contracts";
+import { MEMBERSHIP_ACCOUNT_LIMIT, productMaximumPerPersonSchema, type ShippingAddress } from "./contracts";
 import { commerceAdmin } from "./access";
 import { guestPurchaseSnapshotSchema, type PurchaseSnapshot } from "./purchase-snapshot";
 import { rejectHeldNativeCheckout } from "./_shared/native-checkout-hold";
@@ -19,6 +19,7 @@ export const commerceProductSchema = z.object({
   dispatchSchedule: z.string().trim().min(1), shippingFeeKRW: z.int().min(0),
   inventory: z.int().min(0), reservedQuantity: z.int().min(0),
   priceInKRWEnabled: z.literal(true), priceInKRW: z.int().min(1), updatedAt: z.string().min(1),
+  maximumPerPerson: productMaximumPerPersonSchema,
 }).refine((product) => Date.parse(product.saleStartsAt) < Date.parse(product.saleEndsAt));
 
 export const commercePublicationSchema = z.object({
@@ -58,6 +59,7 @@ export type CommerceOffer = Readonly<{
   images: readonly Readonly<{ image: string | Readonly<{ id: string; url?: string; alt?: string | null }> }>[];
   ticketTarget?: EventTicketTarget;
   priceKRW: number; maximumQuantity: number; saleStartsAt: string; saleEndsAt: string;
+  maximumPerPerson?: number | null;
   dispatchSchedule: string; shippingFeeKRW: number; availableQuantity: number;
   productVersion: string; eventVersion: string;
   event: Readonly<{ id: string; title: string; eventStartsAt: string }>;
@@ -129,6 +131,7 @@ export async function loadCommerceOffer(payload: Payload, req?: PayloadRequest, 
   } else if (tickets.success && "mode" in tickets.data) return null; // Shared Member seats are native-edition only.
   return { productID: product.id, title: product.title, description: product.description, images: product.images,
     priceKRW: product.priceInKRW, maximumQuantity: ticketTarget ? SHARED_GUEST_LIMIT : MEMBERSHIP_ACCOUNT_LIMIT,
+    ...(product.maximumPerPerson != null ? { maximumPerPerson: product.maximumPerPerson } : {}),
     ...(ticketTarget ? { ticketTarget } : {}), saleStartsAt: product.saleStartsAt, saleEndsAt: product.saleEndsAt,
     dispatchSchedule: product.dispatchSchedule, shippingFeeKRW: ticketTarget ? 0 : product.shippingFeeKRW,
     availableQuantity: Math.max(0, Math.min(product.inventory - product.reservedQuantity,
@@ -157,17 +160,16 @@ export async function buildCommerceSnapshot({ req, cart, shippingAddress, allowN
     return buildNativePurchaseSnapshot(req, { cartID: parsed.id, productID: item.product, variantID: item.variant, shippingAddress });
   }
   const offer = await loadCommerceCatalogue({ req, productID: item.product });
-  if (!offer || (item.ticketKind != null && (item.ticketKind !== SHARED_GUEST_CART_KIND || !offer.ticketTarget)) ||
+  if (!offer?.ticketTarget || (item.ticketKind != null && item.ticketKind !== SHARED_GUEST_CART_KIND) ||
     item.quantity > offer.availableQuantity || item.quantity > offer.maximumQuantity) throw new Error("Offer is not available");
-  if (offer.ticketTarget) return guestPurchaseSnapshotSchema.parse({
+  // Reject an over-limit saved cart before creating an attempt. Reservation rechecks the product and account under lock.
+  if (offer.maximumPerPerson != null && item.quantity > offer.maximumPerPerson) {
+    throw new Error("Guest ticket product limit exceeded");
+  }
+  return guestPurchaseSnapshotSchema.parse({
     version: 3, kind: "guest-ticket-v1", customerID: parsed.customer, cartID: parsed.id, productID: offer.productID,
     eventID: offer.event.id, releaseID: offer.productID, quantity: item.quantity, accountLimit: SHARED_GUEST_LIMIT, currency: "KRW",
     unitAmount: offer.priceKRW, shippingAmount: 0, totalAmount: offer.priceKRW * item.quantity, orderName: offer.title,
     shippingAddress, productVersion: offer.productVersion, eventVersion: offer.eventVersion, ticketTarget: offer.ticketTarget,
   });
-  return commerceSnapshotSchema.parse({ version: 1, customerID: parsed.customer, cartID: parsed.id,
-    productID: offer.productID, eventID: offer.event.id, releaseID: MEMBERSHIP_RELEASE, quantity: item.quantity, accountLimit: MEMBERSHIP_ACCOUNT_LIMIT,
-    currency: "KRW", unitAmount: offer.priceKRW, shippingAmount: offer.shippingFeeKRW,
-    totalAmount: offer.priceKRW * item.quantity + offer.shippingFeeKRW, orderName: offer.title,
-    shippingAddress, productVersion: offer.productVersion, eventVersion: offer.eventVersion });
 }

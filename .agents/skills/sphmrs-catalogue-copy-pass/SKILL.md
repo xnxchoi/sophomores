@@ -13,7 +13,8 @@ metadata:
 ## Before you start
 - Read `AGENTS.md` (the canonical UI copy and Korean authoring policy, one writer per checkout, the resource guard) and load `ux-writing`, including its Korean branch.
 - Have reviewers read `docs/design/identity.md`, `docs/design/brand-voice.md` and `docs/reference/korean-copy-passes/` (`learning-instincts.md` and the pass records). The pass records hold owner-calibrated Korean.
-- Translating or rewriting existing Korean needs an explicit owner request. The structure of `messages/ko.json` must mirror `en.json` exactly: same key paths and order, with `""` for untranslated keys (they fall back to English).
+- Eligible copy may be translated, and existing Korean may be improved, without a separate owner request. Follow the 2026-11-28 owner correction in `AGENTS.md`: use natural Korean with the right tone, register and form. Do not automatically translate names, titles or functional labels.
+- The structure of `messages/ko.json` must mirror `messages/en.json` exactly: same key paths and order. Use `""` for newly mirrored keys and leave untranslated keys empty; they fall back to English.
 
 ## Terms (used across the 17 Nov pass)
 | English | Korean |
@@ -42,7 +43,7 @@ metadata:
 ## Tests that pin catalogue state
 - `tests/i18n/catalog-contract.test.ts`:
   - the mirror rule, plus `ownerRequestedKorean` for word-for-word owner values;
-  - the 175-string byte-identical baseline (update the baseline when the owner approves a fix);
+  - the 175-string byte-identical baseline for previously owner-reviewed copy (account for any intentional revisions in the same reviewed copy packet);
   - the plural test.
 - `tests/i18n/next-intl.test.ts` and `tests/i18n/copy-loop-public.test.ts`.
 - Owned tests: `tests/authentication/*` and `tests/phone-verification/phone-verification-i18n.test.tsx` (its placeholder regex must ignore plural option text).

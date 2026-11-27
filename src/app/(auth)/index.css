@@ -30,7 +30,8 @@
   /* primary: the submit button and the focus outline */
   --color-preview-accent: var(--white);
   --color-preview-on-accent: var(--black);
-  /* Staff error: Deep Cinnabar Tuned (owner, 26 Nov: "deep cinnabar tuned"). */
+  /* Staff error: Deep Cinnabar Tuned (owner, 26 Nov: "deep cinnabar tuned"), as the message's rule only; the message
+     itself is in the ink, the site's dark destructive pattern (red text on Carbon is about 2.9:1; Review-B, 27 Nov). */
   --color-preview-error: var(--red);
 }
 

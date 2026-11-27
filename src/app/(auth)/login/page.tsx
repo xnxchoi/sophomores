@@ -14,7 +14,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     <>
       <div id="login-feedback" className="flex h-20 items-end pb-2" aria-hidden={invalid ? undefined : true}>
         {invalid && (
-          <p className="m-0 border-l-2 border-current pl-3 text-sm leading-6 text-preview-error" role="alert">
+          <p className="m-0 border-l-2 border-preview-error pl-3 text-sm leading-6 text-preview-foreground" role="alert">
             {t("theUsernameOrPasswordIsIncorrectPleaseTryAgain")}
           </p>
         )}

@@ -70,7 +70,7 @@ function ArcBackedButton({ variant, type = "button", onMouseEnter: doME, onMouse
  * changing how it looks. The keyboard ring is the filled buttons' (2 px, 2 px out, current colour) unless the caller
  * draws its own on its content (group/focus with a FocusShape inside).
  */
-function BareButton({ type = "button", loading, size: _size, onMouseEnter: doME, onMouseLeave: doML, className, ...rest }: Omit<ButtonProps, "variant">) {
+function BareButton({ type = "button", loading, size: _size, onClick, onMouseEnter: doME, onMouseLeave: doML, className, ...rest }: Omit<ButtonProps, "variant">) {
   const inert = isInert({ disabled: rest.disabled, loading, ariaDisabled: rest["aria-disabled"] });
   const { onMouseEnter, onMouseLeave } = useDomCursor<HTMLButtonElement>({
     onEnter: doME,
@@ -83,6 +83,9 @@ function BareButton({ type = "button", loading, size: _size, onMouseEnter: doME,
       {...rest}
       type={type}
       aria-busy={loading || undefined}
+      aria-disabled={loading || rest["aria-disabled"] || undefined}
+      // As Arc's button: while loading or aria-disabled it keeps focus but neither clicks nor submits.
+      onClick={inert ? (event) => event.preventDefault() : onClick}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       className={cn(!ownRing && "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current", className)}

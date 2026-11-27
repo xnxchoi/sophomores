@@ -11,7 +11,8 @@ import { readSignedInMemberID, watchPrivateView } from "@/lib/member-auth/privat
  * - null: verified signed out (the plain browser cart);
  * - undefined: checking or unavailable. Scoped selections are hidden and nothing is changed; there is no silent fallback
  *   to the guest cart.
- * Concealing (page hidden, frozen or restored) drops back to undefined, and a later answer from before it is ignored.
+ * Concealing (page hidden, frozen or restored) and every lifecycle recheck drop back to undefined; an answer from before
+ * the latest one is ignored.
  */
 type Viewer = string | null | undefined;
 
@@ -39,7 +40,11 @@ function subscribe(listener: () => void) {
   listeners.add(listener);
   if (listeners.size === 1) {
     void read();
-    stop = watchPrivateView({ conceal: () => { epoch += 1; set(undefined); }, reveal: () => { void read(); }, recheckOnFocus: true });
+    // A lifecycle recheck (visible again, focus, restore) drops the viewer to unknown first, so nothing scoped to the
+    // previous viewer stays shown or answers while the server is asked again (Review-B/Auth-editions HOLD on ef2e63eac).
+    // An action's own check (verifyShopViewer) does not: it confirms the viewer it already shows.
+    const invalidate = () => { epoch += 1; set(undefined); };
+    stop = watchPrivateView({ conceal: invalidate, reveal: () => { invalidate(); void read(); }, recheckOnFocus: true });
   }
   return () => {
     listeners.delete(listener);

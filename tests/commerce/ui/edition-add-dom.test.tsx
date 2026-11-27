@@ -102,6 +102,19 @@ test("another member's pinned record refuses the add: it says so in place, with 
   assert.equal(stored()?.owner, "u2");
 });
 
+test("a focus recheck hides the member's selection until the server answers again", async () => {
+  pinned("u1", ["e1"]);
+  let answer: (id: string | null) => void = () => {};
+  viewers("u1", () => new Promise((resolve) => { answer = resolve; }));
+  render();
+  assert.ok(await screen().findByText("In your cart"));
+  env.ui.act(() => { env.dom.window.dispatchEvent(new env.dom.window.FocusEvent("focus")); });
+  assert.equal(screen().queryByText("In your cart") === null, true, "nothing scoped to the previous answer stays shown");
+  assert.equal((add() as HTMLButtonElement).disabled, true);
+  answer("u1");
+  assert.ok(await screen().findByText("In your cart"));
+});
+
 test("an account switch while the write is pending: no fly and no status for the viewer who left", async () => {
   pinned("u1", ["e2"]);
   viewers("u1");

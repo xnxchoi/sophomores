@@ -246,10 +246,9 @@ function actionFailure(
     (code === "ACCESS_DENIED" || code === "access_denied")
   )
     return new MemberAuthActionError("provider-denied");
-  if (
-    (operation === "send-code" || operation === "magic-link") &&
-    httpStatus === 500
-  )
+  if (operation === "send-code" && (code === "EMAIL_CODE_DELIVERY_FAILED" || code === "EMAIL_CODE_NOT_SENT"))
+    return new MemberAuthActionError("delivery-failed");
+  if ((operation === "send-code" || operation === "magic-link") && httpStatus === 500)
     return new MemberAuthActionError("delivery-failed");
   return unavailable();
 }

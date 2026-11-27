@@ -29,13 +29,13 @@ export function memberEmailEntry(origin: string) {
 }
 
 /**
- * Discovery-only ingress boundary: run BEFORE the SDK limiter (plugin onRequest is too late).
- * Until a separately verified trusted ingress exists, all clients share ten requests/minute.
- * No distributed/production limiter assurance is implied by this conservative local bucket.
+ * Account discovery and code delivery both expose an account-dependent result.
+ * Pin the client IP before Better Auth applies each endpoint's own rate limit.
  */
-export async function normalizeMemberEmailEntryRequest(request: Request, bodyTimeoutMs = 5000, origin = new URL(request.url).origin): Promise<Request | Response> {
+export async function normalizeMemberEmailEntryRequest(request: Request, bodyTimeoutMs = 5000, origin = new URL(request.url).origin,
+  endpoint: typeof MEMBER_EMAIL_ENTRY_PATH | "/email-otp/send-verification-otp" = MEMBER_EMAIL_ENTRY_PATH): Promise<Request | Response> {
   const path = new URL(request.url).pathname;
-  const canonical = `/api/auth${MEMBER_EMAIL_ENTRY_PATH}`;
+  const canonical = `/api/auth${endpoint}`;
   let decoded: string;
   try { decoded = decodeURIComponent(path); } catch { return request; }
   if (decoded.replace(/\/+$/, "") !== canonical) return request;

@@ -1,5 +1,6 @@
 import messages from "../../messages/en.json";
 import { EnglishMessages } from "../fixtures/english-messages";
+import { MemberAuthProviders } from "../member-auth/fixtures/providers";
 import { enteredCode, firstCodeCell } from "../fixtures/code-input";
 import assert from "node:assert/strict";
 import { after, afterEach, before, test } from "node:test";
@@ -49,6 +50,8 @@ async function completeSignupEmail() {
 before(async () => {
   dom = new JSDOM("<!doctype html><html><body></body></html>", { url: "http://localhost/tickets", pretendToBeVisual: true });
   const win = dom.window;
+  previous.set("self", Object.getOwnPropertyDescriptor(globalThis, "self"));
+  Object.defineProperty(globalThis, "self", { configurable: true, value: win });
   win.document.elementFromPoint = () => null;
   // JSDOM has no LockManager. Model the native nonqueued exclusive contract,
   // including holding ownership until the asynchronous SDK callback settles.
@@ -233,10 +236,10 @@ test("lookup branches existing and new email without delivery until a separate e
   const calls: string[] = [];
   let resolveOld!: (value: { account: "existing" | "new" }) => void;
   const old = new Promise<{ account: "existing" | "new" }>((resolve) => { resolveOld = resolve; });
-  const client: MemberClient = { ...memberActions, status: async () => anonymous,
+  const client: MemberClient = { ...memberActions, status: async () => ({ ...anonymous, capabilities: { ...anonymous.capabilities, apple: true, google: true } }),
     lookupEmail: async (email) => { calls.push("lookup:" + email); return email === "old@example.com" ? old : { account: email === "new@example.com" ? "new" : "existing" }; },
     sendEmailCode: async (email) => { calls.push("send:" + email); } };
-  ui.render(<EnglishMessages><Tickets memberClient={client} /></EnglishMessages>);
+  ui.render(<Tickets memberClient={client} />, { wrapper: MemberAuthProviders });
   const email = await ui.screen.findByRole("textbox", { name: "Email address" });
   await ui.waitFor(() => assert.equal((email as HTMLInputElement).disabled, false));
   ui.fireEvent.change(email, { target: { value: "OLD@example.com" } });
@@ -246,6 +249,8 @@ test("lookup branches existing and new email without delivery until a separate e
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Continue" }));
   assert.equal(ui.screen.queryByRole("button", { name: "Send sign-in code" }) === null, true);
   await ui.screen.findByText(/There’s no account for this email/);
+  assert.ok(ui.screen.getByRole("button", { name: /apple/i }));
+  assert.ok(ui.screen.getByRole("button", { name: /google/i }));
   await ui.act(async () => resolveOld({ account: "existing" }));
   assert.equal(ui.screen.queryByRole("button", { name: "Send sign-in code" }) === null, true);
   assert.equal(calls.some((call) => call.startsWith("send:")), false);

@@ -307,6 +307,12 @@ test("rate limits preserve only bounded retry metadata and safe delivery failure
       "rate-limited"
     );
   const unavailable = failingClient({ status: 500, message: privateDetail });
+  for (const error of [
+    { code: "EMAIL_CODE_DELIVERY_FAILED", status: 502 },
+    { code: "EMAIL_CODE_NOT_SENT", status: 409 },
+  ]) {
+    await failureKind(failingClient({ ...error, message: privateDetail }).sendEmailCode("member@example.com"), "delivery-failed");
+  }
   await failureKind(
     unavailable.sendEmailCode("member@example.com"),
     "delivery-failed"

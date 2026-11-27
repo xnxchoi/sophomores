@@ -22,6 +22,7 @@ import { CartFlyContext } from "./cart-fly";
 import { CartBehind, CartColumn, cartOwnsInput, ownInput } from "./cart-column";
 import { NoWebglCartStack } from "./no-webgl-cart-stack";
 import { listGuestCart, subscribeGuestCart } from "@/lib/commerce/browser-cart";
+import { useShopViewer } from "./use-shop-viewer";
 import { Button } from "@/components/core/Button";
 
 /**
@@ -411,8 +412,11 @@ function Home({ vendored, items, labels, initialOpen, cartPanel, cartOpen, onCar
   useEffect(() => () => ownInput(false), []);
   useEffect(() => () => { const root = document.documentElement.style; for (const name of ["--cart-page-opacity", "--cart-panel-enter", "--cart-backdrop-opacity"]) root.removeProperty(name); }, []);
   // What the stack shows: each product's quantity in the cart (their cartQuantitiesByBookId; our book ids are product
-  // ids). Read from Auth's browser cart for now; the member's cart comes with Auth's cart-state hook.
-  const guestKey = useSyncExternalStore(subscribeGuestCart, () => JSON.stringify(listGuestCart()), () => "[]");
+  // ids). Read from Auth's browser cart in the shop viewer's scope (Review-B HOLD on 0336e57b): nothing while the viewer
+  // is unknown; signed in, only lines this member may see.
+  const viewer = useShopViewer();
+  const guestKey = useSyncExternalStore(subscribeGuestCart,
+    () => (viewer === undefined ? "[]" : JSON.stringify(listGuestCart(undefined, viewer ?? undefined))), () => "[]");
   // In the cart column, its lines report what's in the cart (a member's too); until they do, the browser's cart.
   const [panelQuantities, setPanelQuantities] = useState<Record<string, number> | null>(null);
   const cartQuantities = useMemo(() => Object.fromEntries((panelQuantities

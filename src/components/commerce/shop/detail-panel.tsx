@@ -15,6 +15,7 @@ import type { ProductPageContent } from "../product-page/_shared/content";
 import { physicalDetails, type EditionProduct } from "../product-page/product-page";
 import { DetailGallery } from "./detail-gallery";
 import { useCartFly } from "./cart-fly";
+import { currentShopViewer, useShopViewer, verifyShopViewer } from "./use-shop-viewer";
 import { Button } from "@/components/core/Button";
 
 /**
@@ -193,23 +194,63 @@ function Prose({ data }: { data: SerializedEditorState }) {
  * × of their cart lines to take it out. One per account, so no quantity. Through Auth's browser cart (its exports only);
  * a member's cart takes it at sign-in. In the preview it works while the sale isn't open (owner, 27 Nov: "pretend that
  * the non-live parts are live").
+ * Scoped to the shop's viewer (Review-B HOLD on 0336e57b, Auth-editions' boundary): while it is unknown the row shows no
+ * selection and changes nothing; each add or remove first re-verifies the same viewer, passes that member to Auth's
+ * helpers, and is awaited. The book flies and the row turns only on a confirmed add for the viewer still looking; a
+ * refusal says so in place, without the fly. One action at a time.
  */
 function AddRow({ productID, title, price }: { productID: string; title: string; price: string }) {
   const t = useTranslations("Customer.components_commerce_book_offer");
-  const inCart = useSyncExternalStore(subscribeGuestCart, () => listGuestCart().some((line) => line.productID === productID), () => false);
+  const cart = useTranslations("Customer.components_commerce_cart");
+  const viewer = useShopViewer();
+  const known = viewer !== undefined;
+  const inCart = useSyncExternalStore(subscribeGuestCart,
+    () => known && listGuestCart(undefined, viewer ?? undefined).some((line) => line.productID === productID), () => false);
   const fly = useCartFly();
-  if (inCart) return <div className="flex min-h-[41px] items-center justify-between border-t border-dotted border-foreground/45 text-[15px] leading-[1.4] first:border-t-0 pointer-coarse:min-h-11">
-    <span className="min-w-0 px-4">{t("inCart")}</span>
-    <span className="flex shrink-0 items-center gap-3 px-4 tabular-nums">{price}
-      <Button variant="bare" type="button" aria-label={t("removeFromCart", { title })} onClick={() => removeGuestCartLine(productID)}
-        className="group/focus -m-3 inline-flex size-11 items-center justify-center">
-        <FocusShape className="flex size-5 items-center justify-center rounded-full border-[0.8px] border-current pb-0.5 text-[19.5px] leading-none opacity-75 transition-opacity duration-200 group-hover/focus:opacity-100">×</FocusShape>
-      </Button></span>
+  const [pending, setPending] = useState(false);
+  const [failed, setFailed] = useState<{ viewer: string | null; kind: "add" | "remove" } | null>(null);
+  // A failure is shown only to the viewer it happened to.
+  const failure = failed && failed.viewer === viewer ? failed.kind : null;
+
+  async function change(kind: "add" | "remove") {
+    if (pending || !known) return;
+    const before = viewer;
+    setPending(true);
+    setFailed(null);
+    try {
+      const confirmed = await verifyShopViewer();
+      if (confirmed === undefined || confirmed !== before) return;
+      const memberID = confirmed ?? undefined;
+      const ok = kind === "add"
+        ? await addGuestCartLine(productID, undefined, { memberID })
+        : await removeGuestCartLine(productID, undefined, memberID);
+      // A switch while the write was pending: nothing is flown or reported for the viewer who left.
+      if (currentShopViewer() !== confirmed) return;
+      if (!ok) { setFailed({ viewer: confirmed, kind }); return; }
+      if (kind === "add") fly?.(productID);
+    } finally { setPending(false); }
+  }
+
+  const note = failure && <p role="status" className="px-4 pb-2 text-[12px] leading-[1.5] text-muted-foreground">
+    {failure === "add" ? cart("writeRejected") : cart("removeFailed")}</p>;
+  if (inCart) return <div>
+    <div className="flex min-h-[41px] items-center justify-between border-t border-dotted border-foreground/45 text-[15px] leading-[1.4] first:border-t-0 pointer-coarse:min-h-11">
+      <span className="min-w-0 px-4">{t("inCart")}</span>
+      <span className="flex shrink-0 items-center gap-3 px-4 tabular-nums">{price}
+        <Button variant="bare" type="button" aria-label={t("removeFromCart", { title })} disabled={pending} onClick={() => void change("remove")}
+          className="group/focus -m-3 inline-flex size-11 items-center justify-center disabled:opacity-40">
+          <FocusShape className="flex size-5 items-center justify-center rounded-full border-[0.8px] border-current pb-0.5 text-[19.5px] leading-none opacity-75 transition-opacity duration-200 group-hover/focus:opacity-100">×</FocusShape>
+        </Button></span>
+    </div>
+    {note}
   </div>;
-  return <Button variant="bare" type="button" onClick={() => { fly?.(productID); addGuestCartLine(productID); }}
-    className="group/focus flex min-h-[41px] w-full items-center border-t border-dotted border-foreground/45 text-left text-[15px] leading-[1.4] transition-colors duration-200 ease-[ease] first:border-t-0 hover:bg-foreground/8 pointer-coarse:min-h-11">
-    <FocusShape className="flex w-full items-center justify-between"><span className="min-w-0 px-4">{t("addToCart")}</span><span className="shrink-0 px-4 tabular-nums">{price}</span></FocusShape>
-  </Button>;
+  return <div>
+    <Button variant="bare" type="button" disabled={pending || !known} onClick={() => void change("add")}
+      className="group/focus flex min-h-[41px] w-full items-center border-t border-dotted border-foreground/45 text-left text-[15px] leading-[1.4] transition-colors duration-200 ease-[ease] first:border-t-0 hover:bg-foreground/8 disabled:opacity-60 pointer-coarse:min-h-11">
+      <FocusShape className="flex w-full items-center justify-between"><span className="min-w-0 px-4">{t("addToCart")}</span><span className="shrink-0 px-4 tabular-nums">{price}</span></FocusShape>
+    </Button>
+    {note}
+  </div>;
 }
 
 function PriceRow({ label, value, url, disabled }: { label: string; value: string; url?: string; disabled?: boolean }) {

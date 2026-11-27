@@ -47,13 +47,18 @@ function readGuestLines(memberID?: string) {
  * loadCartEditionProducts), so edition lines are named and priced from the published catalogue (owner launch gap, 28 Nov).
  *
  * An edition line shows its price and a subtotal, never a guessed total: its shipping is set at checkout. One saved
- * native edition, one unit, named and priced, with nothing kept only on this browser, links to /shop/checkout
- * (Auth-editions, 28 Nov: the account cart is authoritative, no product query or browser totals; the link is not payment
- * permission, the checkout decides). Anything else keeps checkout closed.
+ * native edition, one unit, named and priced, with nothing kept only on this browser, links to `editionCheckoutHref`
+ * (Auth-editions, 28 Nov: /shop/checkout, the account cart is authoritative, no product query or browser totals; the
+ * link is not payment permission, the checkout decides), and only when (Review-A HOLD on 5147095f): the candidate
+ * passes that href (its route works), the saved cart is active and the signed-in member's own, and nothing is unknown
+ * or in progress (loading, resolving, removing, refreshing). Anything else keeps checkout closed.
  */
-export function useCommerceCartState({ signedIn, products: loaded, resolveProducts }: {
+export function useCommerceCartState({ signedIn, products: loaded, resolveProducts, editionCheckoutHref }: {
   signedIn: boolean; products: readonly CartProduct[];
   resolveProducts?: (productIDs: string[]) => Promise<readonly CartProduct[]>;
+  /** Where one saved edition checks out, given only by a candidate whose account-cart checkout route works (Auth's
+   * editions-pay); without it the cart never links an edition to checkout (Review-A HOLD on 5147095f). */
+  editionCheckoutHref?: string;
 }) {
   const t = useTranslations("Customer.components_commerce_cart");
   const { cart, isLoading, removeItem, refreshCart } = useCart();
@@ -119,8 +124,10 @@ export function useCommerceCartState({ signedIn, products: loaded, resolveProduc
     && Number.isSafeInteger(subtotal) && Number.isSafeInteger(total) && !purchased;
   const variant = !!line && "variant" in line && line.variant != null;
   const edition = resolved?.kind === "edition" && resolved.quoted && resolved.unitPriceKRW !== null ? resolved : undefined;
-  const editionCheckout = !!edition && !guest && !waiting && !resolving && !busy && !purchased && !variant
-    && quantity === 1 && localItems.length === 0;
+  const cartOwner = typeof cart?.customer === "object" ? cart?.customer?.id : cart?.customer;
+  const ownActiveCart = !!cart && cart.status === "active" && memberID !== undefined && cartOwner != null && String(cartOwner) === memberID;
+  const editionCheckout = !!editionCheckoutHref && !!edition && !guest && !waiting && !resolving && !busy && !purchased && !variant
+    && quantity === 1 && localItems.length === 0 && ownActiveCart;
   const checkoutReason: CheckoutReason = waiting ? "loading"
     : items.length === 0 ? "empty"
     : purchased ? "purchased"
@@ -179,7 +186,7 @@ export function useCommerceCartState({ signedIn, products: loaded, resolveProduc
     lines, waiting, resolvingDetails: resolving, busy, feedback, purchased,
     subtotalKRW: quoted ? subtotal : edition ? (edition.unitPriceKRW ?? 0) * edition.quantity : null,
     shippingKRW: quoted ? membership.shippingKRW : null, totalKRW: quoted ? total : null,
-    checkoutAvailable: editionCheckout, checkoutReason, checkoutHref: editionCheckout ? "/shop/checkout" : null,
+    checkoutAvailable: editionCheckout, checkoutReason, checkoutHref: editionCheckout ? editionCheckoutHref : null,
     removingLineID: action?.kind === "removing" ? action.itemID : null, refreshing: action?.kind === "refreshing",
     canRefresh: !!cart, remove, refresh, localLines, removeLocal, memberID,
   };

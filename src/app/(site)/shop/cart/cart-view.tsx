@@ -31,6 +31,9 @@ export type CartProps = {
   copy: { title: string; signInTitle: string; backToCart: string };
   /** Names and prices the cart's edition lines: the server action resolveCartEditions, passed down by loadCartProps. */
   resolveProducts?: (productIDs: string[]) => Promise<readonly CartProduct[]>;
+  /** Where one saved edition checks out: set only by a candidate whose account-cart checkout route works (Auth's
+   * editions-pay). Unset here, so the cart never links an edition to checkout (Review-A HOLD on 5147095f). */
+  editionCheckoutHref?: string;
 };
 
 /**
@@ -38,11 +41,11 @@ export type CartProps = {
  * guest cart's write-through once signed in. `frame` lays each step out: the cart page's PageFrame, or the shop's cart
  * panel (shop/cart-panel.tsx), which shows the same steps in stripe.press's cart column.
  */
-export function CartContents({ products, signedIn, initialCapabilities, signInOffInReview, copy, resolveProducts, frame, cart }: CartProps & {
+export function CartContents({ products, signedIn, initialCapabilities, signInOffInReview, copy, resolveProducts, editionCheckoutHref, frame, cart }: CartProps & {
   frame: (props: { title: string; step: "cart" | "sign-in"; children: ReactNode }) => ReactNode;
   /** The cart itself (default CommerceCart): the shop's cart column lays out its own lines. */
   cart?: (props: { products: readonly CartProduct[]; signedIn: boolean; localPendingFor?: string; onSignIn?: () => void;
-    resolveProducts?: CartProps["resolveProducts"] }) => ReactNode;
+    resolveProducts?: CartProps["resolveProducts"]; editionCheckoutHref?: string }) => ReactNode;
 }) {
   const [view, setView] = useState<"cart" | "sign-in">("cart");
   const [member, setMember] = useState(signedIn);
@@ -61,8 +64,8 @@ export function CartContents({ products, signedIn, initialCapabilities, signInOf
   return frame({ title: copy.title, step: "cart", children: <>
     <CommerceProvider>
       {member && <GuestCartWriteThrough running={transferring !== undefined} onRunning={setTransferring} />}
-      {cart ? cart({ products, signedIn: member, localPendingFor: transferring, resolveProducts, onSignIn: member ? undefined : () => setView("sign-in") })
-        : <CommerceCart products={products} wide signedIn={member} localPendingFor={transferring} resolveProducts={resolveProducts}
+      {cart ? cart({ products, signedIn: member, localPendingFor: transferring, resolveProducts, editionCheckoutHref, onSignIn: member ? undefined : () => setView("sign-in") })
+        : <CommerceCart products={products} wide signedIn={member} localPendingFor={transferring} resolveProducts={resolveProducts} editionCheckoutHref={editionCheckoutHref}
           onSignIn={member ? undefined : () => setView("sign-in")} />}
     </CommerceProvider>
   </> });

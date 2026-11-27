@@ -15,16 +15,18 @@ import { useCommerceCartState, type CartLine } from "./use-commerce-cart-state";
  * Auth's browser cart (src/lib/commerce/browser-cart.ts), written through to the member's cart after sign-in. Its state
  * is useCommerceCartState; this view only renders it. It never submits payment. With `onSignIn`, a signed-out shopper can sign in to save selections, not start payment.
  */
-export function CommerceCart({ products, wide = false, signedIn = true, onSignIn, localPendingFor, resolveProducts }: {
+export function CommerceCart({ products, wide = false, signedIn = true, onSignIn, localPendingFor, resolveProducts, editionCheckoutHref }: {
   products: readonly CartProduct[]; wide?: boolean; signedIn?: boolean; onSignIn?: () => void;
   /** Names and prices the cart's edition lines (the shop's resolveCartEditions); see useCommerceCartState. */
   resolveProducts?: (productIDs: string[]) => Promise<readonly CartProduct[]>;
+  /** Where one saved edition checks out, only on a candidate whose checkout route works; see useCommerceCartState. */
+  editionCheckoutHref?: string;
   /** The browser's lines are being added to the account now (CartView's transfer after sign-in). */
   localPendingFor?: string;
 }) {
   const t = useTranslations("Customer.components_commerce_cart");
   const { lines, waiting, busy, feedback, purchased, subtotalKRW, shippingKRW, totalKRW, checkoutAvailable, checkoutHref,
-    removingLineID, refreshing, canRefresh, remove, refresh, localLines, removeLocal, memberID } = useCommerceCartState({ signedIn, products, resolveProducts });
+    removingLineID, refreshing, canRefresh, remove, refresh, localLines, removeLocal, memberID } = useCommerceCartState({ signedIn, products, resolveProducts, editionCheckoutHref });
   const localPending = memberID !== undefined && memberID === localPendingFor;
 
   return <section aria-label={t("contents")} aria-busy={busy} className={cn("grid min-w-0 gap-8",

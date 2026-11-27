@@ -23,17 +23,19 @@ import { Button } from "@/components/core/Button";
  * Their mono becomes our sans. The state is Auth's useCommerceCartState; Checkout is exactly CommerceCart's (signed out,
  * it asks for sign-in first). There is no quantity control: one per account, and the hook has no setter.
  */
-export function ShopCartLines({ products, signedIn, onSignIn, localPendingFor, resolveProducts }: {
+export function ShopCartLines({ products, signedIn, onSignIn, localPendingFor, resolveProducts, editionCheckoutHref }: {
   products: readonly CartProduct[]; signedIn: boolean; onSignIn?: () => void;
   /** The browser's lines are being added to the account now (CartContents' transfer after sign-in). */
   localPendingFor?: string;
   /** Names and prices edition lines (resolveCartEditions, from loadCartProps); without it they stay unnamed. */
   resolveProducts?: (productIDs: string[]) => Promise<readonly CartProduct[]>;
+  /** See CartProps.editionCheckoutHref. */
+  editionCheckoutHref?: string;
 }) {
   const t = useTranslations("Customer.components_commerce_cart");
   const column = useCartColumn();
   const { lines, waiting, busy, feedback, purchased, subtotalKRW, shippingKRW, totalKRW, checkoutAvailable, checkoutHref,
-    checkoutReason, removingLineID, refreshing, canRefresh, remove, refresh, localLines, removeLocal, memberID } = useCommerceCartState({ signedIn, products, resolveProducts });
+    checkoutReason, removingLineID, refreshing, canRefresh, remove, refresh, localLines, removeLocal, memberID } = useCommerceCartState({ signedIn, products, resolveProducts, editionCheckoutHref });
   // The stack shows what's in this cart (their cartQuantitiesByBookId): the member's cart once signed in, not only the browser's.
   const report = column?.report, conceal = column?.conceal;
   const counts = lines.filter((line) => line.quantity > 0).map((line) => line.productID + ":" + line.quantity).join(",");

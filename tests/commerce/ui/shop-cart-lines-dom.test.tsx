@@ -136,10 +136,10 @@ test("focus moves into the cart column when it takes input", () => {
 
 test("a saved edition the page didn't load is named and priced on demand, with its subtotal, and links to checkout", async () => {
   // Owner launch gap, 28 Nov: the cart said "Saved item 1". The resolver (resolveCartEditions, via loadCartProps) names it.
-  env.ecommerce.setFakeEcommerce({ user: member, cart: { id: "c1", status: "active", items: [{ id: "i1", product: "e1", quantity: 1 }] } });
+  env.ecommerce.setFakeEcommerce({ user: member, cart: { id: "c1", status: "active", customer: "u1", items: [{ id: "i1", product: "e1", quantity: 1 }] } });
   const asked: string[][] = [];
   env.ui.render(<MemberAuthProviders><CartColumn open shown back="All products" onBack={() => undefined} onLines={() => undefined} onConceal={() => undefined}>
-    <ShopCartLines products={[]} signedIn resolveProducts={async (ids) => { asked.push(ids); return [edition]; }} />
+    <ShopCartLines products={[]} signedIn resolveProducts={async (ids) => { asked.push(ids); return [edition]; }} editionCheckoutHref="/shop/checkout" />
   </CartColumn></MemberAuthProviders>);
   assert.ok(await screen().findByText("Edition one"));
   assert.deepEqual(asked, [["e1"]]);

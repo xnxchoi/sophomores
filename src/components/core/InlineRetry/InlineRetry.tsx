@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { RotateCw } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/core/ArcFocus/ArcFocus";
+import { Button } from "@/components/core/Button";
 
 /**
  * A failed load and its retry, in the same space: the failure line as plain text, then a plain refresh

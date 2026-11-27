@@ -7,7 +7,7 @@ import { motionValue } from "motion/react";
 import { Hero } from "@/components/teaser/hero";
 import { TicketStudy } from "@/components/tickets/ticket-study";
 import Link from "next/link";
-import { BrandMark } from "@/lib/brand";
+import { BrandMark } from "@/components/core/BrandMark";
 import { entryTokens } from "@/lib/teaser/entry-tokens";
 
 test("the shared brandmark component preserves semantics and prioritizes Helvetica", () => {

@@ -3198,7 +3198,7 @@ export interface BusinessInfo {
   tradeName?: string | null;
   representative?: string | null;
   businessAddress?: string | null;
-  businessRegistrationNumber?: string | null;
+  bizNum?: string | null;
   /**
    * Enter the report number, or “면제 (간이과세자)” when exempt.
    */
@@ -3342,7 +3342,7 @@ export interface BusinessInfoSelect<T extends boolean = true> {
   tradeName?: T;
   representative?: T;
   businessAddress?: T;
-  businessRegistrationNumber?: T;
+  bizNum?: T;
   mailOrderRegistration?: T;
   customerServicePhone?: T;
   customerServiceEmail?: T;

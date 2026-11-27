@@ -7,7 +7,7 @@ import { FXFrame } from "@/components/Shells/FXFrame";
 import VGradient from "@/components/UX/Gradient";
 import { MenuMediaPreview } from "@/components/UX/MediaPreview/MenuMediaPreview";
 import { getMenuPagePreviewKey, getPageTypeFromUrl } from "@/utilities/Helpers";
-import { HelpPill } from "./help-pill";
+import { HelpPill } from "../../components/UX/help-pill";
 import { RP_Menu } from "@/components/UX/Menu";
 import { RPage } from "@/components/UX/Transition";
 import { isSettingsPath, isShopShelfPath } from "@/components/UX/Transition/useTransitionSetter";

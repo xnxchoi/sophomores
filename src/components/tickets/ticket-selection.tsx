@@ -23,7 +23,7 @@ import {
   Ticket
 } from "lucide-react";
 import { z } from "zod";
-import { BrandMark } from "@/lib/brand";
+import { BrandMark } from "@/components/core/BrandMark";
 import { cn } from "@/lib/utils";
 import {
   createMemberClient,

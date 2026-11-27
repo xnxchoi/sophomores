@@ -5,7 +5,7 @@ import { animate } from "motion/react";
 import { useTranslations } from "next-intl";
 import { PageInset } from "@/components/core/PageInset/PageInset";
 import { Spinner } from "@/components/ui/spinner";
-import { FXFrameKeep } from "@/components/shell/footer-visibility";
+import { FXFrameKeep } from "@/components/shell/Footer/footer-visibility";
 
 /**
  * When the page arrives, the hold leaves in the same commit, before paint: the page layer starts at 0 and fades in,

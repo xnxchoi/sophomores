@@ -47,7 +47,7 @@ test("approved seller fields render together, including a non-mobile contact and
         representative: "Fixture representative",
         address: "Fixture office address",
         phone: "02-000-0000",
-        mailOrderRegistrationNumber: "Fixture mail-order registration"
+        mailOrderNum: "Fixture mail-order registration"
       }}
     /></MemberAuthProviders>
   );

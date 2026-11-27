@@ -106,7 +106,7 @@ test("if the English read fails, the Korean read stands", async () => {
   // Synthetic fixture facts only.
   const korean = {
     tradeName: "Fixture trade name", representative: "Fixture representative", businessAddress: "Fixture address",
-    businessRegistrationNumber: "000-00-00000", mailOrderRegistration: "Fixture exemption",
+    bizNum: "000-00-00000", mailOrderRegistration: "Fixture exemption",
     customerServicePhone: "02-000-0000", customerServiceEmail: "help@example.test",
     terms: lexical(""),
     privacy: lexical("Fixture Korean privacy"),

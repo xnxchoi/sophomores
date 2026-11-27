@@ -7,7 +7,7 @@ export type SellerInformation = Readonly<{
   address: string;
   /** Approved business contact; a mobile number does not satisfy PG review. */
   phone: string;
-  mailOrderRegistrationNumber?: string;
+  mailOrderNum?: string;
   /** Customer-service email, from the owner-edited business-info global. */
   email?: string;
 }>;
@@ -63,7 +63,7 @@ const sellerInformationSchema = z.object({
     .regex(
       /^(?:(?:0|\+82[ -]?)(?:2|[3-6][1-5]|70|80)[ -]?\d{3,4}[ -]?\d{4}|1[568]\d{2}[ -]?\d{4})$/
     ),
-  mailOrderRegistrationNumber: z.string().trim().min(1).optional()
+  mailOrderNum: z.string().trim().min(1).optional()
 });
 
 const approvedPolicySchema = z.object({

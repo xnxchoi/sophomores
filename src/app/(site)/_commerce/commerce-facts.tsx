@@ -11,18 +11,19 @@ import { usePathname } from "next/navigation";
  * (owner, 23 Nov: "Yes, show them"), and the policy pages (shipping and returns, terms,
  * privacy, refund). A layout can't read the pathname on the server, so this client gate wraps the server-streamed facts.
  */
-export const SELLER_FACTS_PATTERNS: ReadonlyArray<RegExp> = [
+export const COMMERCE_PATHS_REGEX: ReadonlyArray<RegExp> = [
   /^\/shop(\/|$)/,
   /^\/tickets(\/|$)/,
   /^\/me\/orders(\/|$)/,
   /^\/help\/shipping(\/|$)/,
-  /^\/(terms|privacy|refund)(\/|$)/,
+  /^\/(terms|privacy|refund)(\/|$)/
 ];
 
-export function pathShowsSellerFacts(pathname: string | null): boolean {
-  return pathname !== null && SELLER_FACTS_PATTERNS.some((pattern) => pattern.test(pathname));
-}
 
-export function SellerFactsGate({ children }: { children: ReactNode }) {
-  return pathShowsSellerFacts(usePathname()) ? children : null;
+export function CommerceFacts({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  return pathname !== null &&
+    COMMERCE_PATHS_REGEX.some((pattern) => pattern.test(pathname))
+    ? children
+    : null;
 }

@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { FilmStudy } from "../invitation/film-study";
 import { referenceFilm } from "@/lib/invitation/reference-media";
 import { motionTokens } from "@/lib/motion-tokens";
-import { BrandMark } from "@/lib/brand";
+import { BrandMark } from "@/components/core/BrandMark";
 import {
   changeTicketQuantity,
   computeTicketTotal,

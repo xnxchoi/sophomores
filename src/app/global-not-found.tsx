@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 import { Providers } from "@/providers";
 import { Suspense } from "react";
 import { ClientLayout } from "./(site)/client-layout";
-import { BusinessFooter } from "./(site)/_commerce/business-footer";
+import { Footer } from "../components/shell/Footer/footer";
 import { message, NarcissianNectare, serif, Pretendard } from "../../fonts";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -63,7 +63,7 @@ export default async function GlobalNotFound() {
             <ClientLayout headerMember={headerMember}>
               <NotFoundPage />
               <Suspense fallback={null}>
-                <BusinessFooter />
+                <Footer />
               </Suspense>
             </ClientLayout>
           </Providers>

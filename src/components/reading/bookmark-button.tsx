@@ -2,7 +2,7 @@
 
 import { BookmarkSimpleIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
-import { Button } from "@/components/core/ArcFocus/ArcFocus";
+import { Button } from "@/components/core/Button";
 
 export function BookmarkButton({ saved, onToggle }: { saved: boolean; onToggle: () => void }) {
   const t = useTranslations("Customer.components_reading_bookmark_button");

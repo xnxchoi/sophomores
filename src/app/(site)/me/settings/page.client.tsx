@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import { Link as TransitionLink } from "next-transition-router";
+import { Link as TransitionLink } from "@/components/core/Link/Link";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { AddressBookIcon, ArrowLeftIcon, BellIcon, CaretRightIcon, IdentificationCardIcon, ShieldCheckIcon, SlidersHorizontalIcon, UserCircleIcon } from "@phosphor-icons/react";
 import type { User } from "@/payload-types";

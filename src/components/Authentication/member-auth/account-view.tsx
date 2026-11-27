@@ -17,7 +17,7 @@ import { AccountPhaseViews } from "@/components/Authentication/account-phase-vie
 import { normalizeLoginEmail } from "@/lib/passwordless-login";
 import { motionTokens } from "@/lib/motion-tokens";
 import { DrawnField } from "@/components/ui/input";
-import { Button } from "@/components/core/ArcFocus/ArcFocus";
+import { Button } from "@/components/core/Button";
 
 import {
   AccountButton,

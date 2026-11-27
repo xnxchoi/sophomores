@@ -83,7 +83,7 @@ A final sweep of `src` (excluding `hideaway`) found one remaining TEST literal, 
 
 **Policy pages.** `/terms`, `/privacy` and `/refund` render the global's rich text when it holds visible text. Otherwise they keep their current content: the `commerce-publication` disclosure, or the "not published yet" notice.
 
-**Footer.** `BusinessFooter` is streamed inside `<Suspense fallback={null}>` in the `(site)` layout.
+**Footer.** `Footer` is streamed inside `<Suspense fallback={null}>` in the `(site)` layout.
 - It renders nothing until every required fact is filled.
 - It reuses `SellerDisclosure`, with a new optional email row, and links to the three pages.
 - Once the footer shows, the per-page seller blocks yield to it: home, the policy pages and the legacy `tickets/payment` page.

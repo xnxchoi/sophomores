@@ -8,7 +8,7 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motionTokens } from "@/lib/motion-tokens";
-import { CopyButton } from "@/components/core/ArcFocus/ArcFocus";
+import { CopyButton } from "@/components/core/Button";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 
 const walletPassPath = z.string().regex(/^\/api\/commerce\/orders\/[a-f0-9-]{36}\/admissions\/[a-f0-9-]{36}\/wallet-pass\/(ios|android)$/i);

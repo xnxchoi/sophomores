@@ -193,7 +193,7 @@ function CoveredPage({ children }: { children: ReactNode }) {
     // Below md the footer isn't pinned, so the page keeps square corners. overflow-clip keeps a page's own full-width
     // background (such as /shop's) inside the rounding; unlike overflow-hidden it isn't a scroll container, so sticky
     // children still work.
-    <div ref={cover} data-themed="background-color" className="relative z-1 bg-background md:overflow-clip md:rounded-b-[32px]">
+    <div ref={cover} data-themed="background-color" className="relative mx-2.5 shadow-2xl shadow-carbon/25 z-1 bg-background md:overflow-clip md:rounded-b-4xl">
       {children}
       <div ref={end} aria-hidden="true" />
     </div>

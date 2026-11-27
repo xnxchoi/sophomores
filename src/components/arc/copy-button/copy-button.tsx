@@ -6,6 +6,7 @@ import { CircleAlert, Copy } from "lucide-react";
 import { motionTokens } from "../_shared/motion-tokens";
 import { useCopyFeedback } from "./use-copy-feedback";
 import styles from "./copy-button.module.css";
+import { Button } from "@/components/core/Button";
 
 export interface CopyButtonProps {
   value: string;
@@ -74,7 +75,7 @@ export function CopyButton({
 
   return (
     <>
-      <button
+      <Button
         type="button"
         className={[
           styles.button,
@@ -129,7 +130,7 @@ export function CopyButton({
             </AnimatePresence>
           </span>
         )}
-      </button>
+      </Button>
       <span className={styles.srOnly} role="status" aria-live="polite">
         {state === "idle"
           ? ""

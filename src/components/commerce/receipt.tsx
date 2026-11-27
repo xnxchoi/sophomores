@@ -1,7 +1,7 @@
 import { getLocale, getTranslations } from "next-intl/server";
 import type { OrderReceipt, OrderRecord } from "@/lib/commerce/receipt/order-receipt";
 import { Link } from "@/components/core/Link/Link";
-import { CopyButton } from "@/components/core/ArcFocus/ArcFocus";
+import { CopyButton } from "@/components/core/Button";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { ReceiptShare } from "./receipt-share";
 import { ReceiptDelivery } from "./receipt-delivery";

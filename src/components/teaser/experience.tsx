@@ -47,6 +47,7 @@ import { useHomeNavigation } from "../../hooks/use-home-navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { InvitationDialog } from "./invitation-dialog";
+import { Button } from "@/components/core/Button";
 
 function MobileChapterControl({
   children
@@ -336,7 +337,7 @@ export default function TeaserExperience() {
             )}
           </AnimatePresence>
           <MobileChapterControl>
-            <button
+            <Button
               ref={menuButton}
               className="bg-white text-black"
               aria-controls={menuOpen ? "mobile-chapter-list" : undefined}
@@ -349,7 +350,7 @@ export default function TeaserExperience() {
                   ? "Menu"
                   : chapters[currentIndex].label}
               <span aria-hidden="true">{menuOpen ? "−" : "="}</span>
-            </button>
+            </Button>
           </MobileChapterControl>
         </div>
       </motion.nav>

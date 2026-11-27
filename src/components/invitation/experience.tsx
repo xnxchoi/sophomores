@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { Link } from "next-transition-router";
+import { Link } from "@/components/core/Link/Link";
 import { useRouter } from "next/navigation";
 import { InvitationForm } from "./invitation-form";
 import { FilmStudy } from "./film-study";
 import { referenceFilm } from "@/lib/invitation/reference-media";
-import { BrandMark } from "@/lib/brand";
+import { BrandMark } from "@/components/core/BrandMark";
 
 const StudyLight = dynamic(
   () => import("./study-light").then((module) => module.StudyLight),

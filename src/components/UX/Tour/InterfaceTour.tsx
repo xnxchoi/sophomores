@@ -8,7 +8,7 @@ import * as m from "motion/react-m";
 import { Link } from "@/components/core/Link/Link";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useTourStore } from "./TourProvider";
-import { Button } from "@/components/core/ArcFocus/ArcFocus";
+import { Button } from "@/components/core/Button";
 
 // The opener the guide was last opened from. Set on click, so it is known before the guide or the menu moves focus.
 let lastOpener: HTMLElement | null = null;

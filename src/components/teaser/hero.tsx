@@ -5,7 +5,7 @@ import { motion, useMotionValueEvent, useScroll, useTransform } from "motion/rea
 import type { ReactNode, RefObject } from "react";
 import { teaser } from "@/lib/teaser/content";
 import { useTeaserContent } from "./content-provider";
-import { BrandMark } from "@/lib/brand";
+import { BrandMark } from "@/components/core/BrandMark";
 import { motionTokens } from "@/lib/motion-tokens";
 import { entryTokens } from "@/lib/teaser/entry-tokens";
 import type { ChapterId } from "@/lib/teaser/choreography";

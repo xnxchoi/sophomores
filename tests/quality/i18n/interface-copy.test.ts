@@ -27,6 +27,6 @@ test("residual UI preserves notification and seller content values", () => {
   assert.match(notifications, /list\("empty"\)/);
   const seller = readFileSync("src/app/(site)/_commerce/seller-disclosure.tsx", "utf8");
   // The fields render from one list of [field, value] pairs; each value is the seller's own data, not catalogue copy.
-  for (const field of ["name", "registrationNumber", "representative", "address", "phone", "mailOrderRegistrationNumber"]) assert.ok(seller.includes(`seller.${field}`), field);
+  for (const field of ["name", "registrationNumber", "representative", "address", "phone", "mailOrderNum"]) assert.ok(seller.includes(`seller.${field}`), field);
   assert.doesNotMatch(seller, /lang="ko"/);
 });

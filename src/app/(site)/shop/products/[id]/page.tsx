@@ -10,7 +10,7 @@ import { ProductPage, type ShelfEntry } from "@/components/commerce/product-page
 import { readProductPageContent, type ProductPageContent } from "@/components/commerce/product-page/_shared/content";
 import { loadProductPageDocuments } from "./page-documents";
 // The shell's FX foot band is off here (owner: "Switch it off on certain page -> e.g. this").
-import { FXFrameOff } from "@/components/shell/footer-visibility";
+import { FXFrameOff } from "@/components/shell/Footer/footer-visibility";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("PageMetadata");

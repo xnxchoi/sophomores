@@ -65,7 +65,7 @@ export function VerificationCountdown({
       aria-label={t(labelKey, { seconds })}
     >
       {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, "0")}{" "}
-      <span>{t("remainingTime")}</span>
+      <span>{t("rermaining")}</span>
     </p>
   );
 }

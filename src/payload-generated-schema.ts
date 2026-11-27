@@ -4802,7 +4802,7 @@ export const business_info = pgTable("business_info", {
   tradeName: varchar("trade_name"),
   representative: varchar("representative"),
   businessAddress: varchar("business_address"),
-  businessRegistrationNumber: varchar("business_registration_number"),
+  bizNum: varchar("business_registration_number"),
   mailOrderRegistration: varchar("mail_order_registration"),
   customerServicePhone: varchar("customer_service_phone"),
   customerServiceEmail: varchar("customer_service_email"),

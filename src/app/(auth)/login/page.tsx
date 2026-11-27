@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { Button } from "@/components/core/Button";
 export const dynamic = "force-dynamic";
 
 interface LoginPageProps {
@@ -49,12 +50,12 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           />
           {t("remember")}
         </label>
-        <button
+        <Button
           className="mt-7 w-full rounded-md border-0 bg-preview-accent p-3.25 font-semibold text-preview-on-accent transition-[border-color,box-shadow,background-color,outline-color] duration-200 ease-out hover:bg-preview-foreground active:bg-preview-secondary focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-preview-accent"
           type="submit"
         >
           {t("preview")}
-        </button>
+        </Button>
       </form>
     </>
   );

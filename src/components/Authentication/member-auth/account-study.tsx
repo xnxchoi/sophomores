@@ -8,7 +8,7 @@ import {
   MemberAuthActionError,
   type MemberClient
 } from "../../../lib/member-auth/client";
-import { BrandMark } from "../../../lib/brand";
+import { BrandMark } from "@/components/core/BrandMark";
 import { cn } from "../../../lib/utils";
 import { subscribeVisibility } from "@/utils/browser/visibility";
 import { normalizeLoginEmail } from "../../../lib/passwordless-login";

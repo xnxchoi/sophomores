@@ -8,6 +8,7 @@ import { BlurText } from "../blur-text";
 import { sectionHeightVh } from "@/lib/teaser/step-motion";
 import { useFooterPlayback } from "@/hooks/use-footer-playback";
 import { useTeaserContent } from "./content-provider";
+import { Button } from "@/components/core/Button";
 
 export { Hero } from "./hero";
 export { Story } from "./story";
@@ -92,7 +93,7 @@ export function Invitation({
           >
             <BlurText text={content.invitationHeadline} />
           </h2>
-          <button
+          <Button
             className="self-start bg-none p-0 text-left text-[18px] leading-[1.3] uppercase hover:text-saffron-amber-lighter-1"
             onClick={onOpen}
           >
@@ -100,7 +101,7 @@ export function Invitation({
             <span className="mt-3 block text-[12px] text-singer-stone">
               {content.rsvpButtonSubtext}
             </span>
-          </button>
+          </Button>
         </div>
       </div>
       <footer className="flex flex-wrap justify-between gap-5 font-sans text-teaser-fine text-singer-stone uppercase md:flex-nowrap md:text-teaser-caption">

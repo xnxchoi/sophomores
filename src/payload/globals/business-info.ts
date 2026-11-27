@@ -20,7 +20,7 @@ export const BusinessInfo: GlobalConfig = {
     { name: "tradeName", type: "text", label: label.tradeName },
     { name: "representative", type: "text", label: label.businessRepresentative },
     { name: "businessAddress", type: "text", label: label.businessAddress },
-    { name: "businessRegistrationNumber", type: "text", label: label.businessRegistrationNumber },
+    { name: "bizNum", type: "text", label: label.bizNum },
     { name: "mailOrderRegistration", type: "text", label: label.mailOrderRegistration,
       admin: { description: label.mailOrderRegistrationDescription } },
     { name: "customerServicePhone", type: "text", label: label.customerServicePhone },
@@ -33,7 +33,7 @@ export const BusinessInfo: GlobalConfig = {
 
 const fact = z.string().trim().min(1);
 const factsSchema = z.object({
-  tradeName: fact, representative: fact, businessAddress: fact, businessRegistrationNumber: fact,
+  tradeName: fact, representative: fact, businessAddress: fact, bizNum: fact,
   mailOrderRegistration: fact, customerServicePhone: fact, customerServiceEmail: z.email(),
 });
 export type BusinessFacts = z.infer<typeof factsSchema>;

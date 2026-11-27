@@ -7,7 +7,7 @@ import { AnimatePresence, useMotionValue, useSpring } from "motion/react";
 import * as m from "motion/react-m";
 import { useEffect, useRef, useState } from "react";
 import { useShallow } from "zustand/shallow";
-import { useFXFrameOff } from "@/components/shell/footer-visibility";
+import { useFXFrameOff } from "@/components/shell/Footer/footer-visibility";
 
 export const FXFrame = () => {
   const showFXFrame = useRPStore(useShallow((l) => l.showFXFrame));

@@ -31,7 +31,7 @@ const offerTitle = "PREVIEW Legacy Release";
 const address = "PREVIEW address - do not ship";
 const business = {
   tradeName: marker, representative: "PREVIEW representative", businessAddress: address,
-  businessRegistrationNumber: "000-00-00000", mailOrderRegistration: "PREVIEW - no registration",
+  bizNum: "000-00-00000", mailOrderRegistration: "PREVIEW - no registration",
   customerServicePhone: "02-0000-0000", customerServiceEmail: "support@preview.invalid",
 };
 const policy = {
@@ -42,8 +42,8 @@ const publication = {
   _status: "published" as const, publicationApproved: true, physicalProductApproved: true,
   fulfillmentReady: true, addressRetentionApproved: true, shippingCountries: ["KR" as const],
   disclosure: {
-    seller: { name: marker, representative: business.representative, registrationNumber: business.businessRegistrationNumber,
-      address, phone: business.customerServicePhone, mailOrderRegistrationNumber: business.mailOrderRegistration },
+    seller: { name: marker, representative: business.representative, registrationNumber: business.bizNum,
+      address, phone: business.customerServicePhone, mailOrderNum: business.mailOrderRegistration },
     policies: { terms: policy, privacy: policy, refund: policy },
   },
 };

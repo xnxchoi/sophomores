@@ -7,14 +7,15 @@ import { useTranslations } from "next-intl";
 import { AnimatePresence } from "motion/react";
 import * as m from "motion/react-m";
 import { CircleQuestionMark } from "lucide-react";
-import { HelpPillLinks } from "./_commerce/help-pill-links";
+import { HelpPillLinks } from "@/app/(site)/_commerce/help-pill-links";
 import { useControlbarHelp } from "@/components/shell/controlbar/slot";
-import { useFooterReveal } from "@/components/shell/footer-visibility";
+import { useFooterReveal } from "@/components/shell/Footer/footer-visibility";
 import { siteLayer } from "@/constants/site-layers";
 import { cn } from "@/lib/utils";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { useIsMobile } from "@/providers/MiddleMan";
 import { useRPStore } from "@/providers/RP_Pro";
+import { Button } from "@/components/core/Button";
 
 /**
  * The Help pill (Osklen study, owner 20 Nov: "help pill should maybe just become the functional but boring stuff
@@ -43,7 +44,11 @@ import { useRPStore } from "@/providers/RP_Pro";
  * Arc's popover would fit, but it needs @radix-ui/react-popover, which isn't installed; Arc's dropdown-menu is for
  * commands, and this is a navigation list. So it's a plain disclosure button.
  */
-export function HelpPill({ contactEmail }: { contactEmail: Promise<string | null> }) {
+export function HelpPill({
+  contactEmail
+}: {
+  contactEmail: Promise<string | null>;
+}) {
   const t = useTranslations("Interface.seller");
   const pathname = usePathname() ?? "/";
   const { isMobile, isTouch } = useIsMobile();
@@ -106,7 +111,13 @@ export function HelpPill({ contactEmail }: { contactEmail: Promise<string | null
         ys.some((y) =>
           document
             .elementsFromPoint(x, y)
-            .some((element) => !place.current?.contains(element) && element.closest("form, label, input, select, textarea, fieldset") !== null)
+            .some(
+              (element) =>
+                !place.current?.contains(element) &&
+                element.closest(
+                  "form, label, input, select, textarea, fieldset"
+                ) !== null
+            )
         )
       );
       setOverForm(covers);
@@ -119,7 +130,13 @@ export function HelpPill({ contactEmail }: { contactEmail: Promise<string | null
     layout.observe(document.body);
     // Local reflow (a field appearing, a section opening, a class or style change) need not change the body's size.
     const content = new MutationObserver(schedule);
-    content.observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["class", "style", "hidden", "open"] });
+    content.observe(document.body, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+      attributes: true,
+      attributeFilter: ["class", "style", "hidden", "open"]
+    });
     window.addEventListener("scroll", schedule, { passive: true });
     window.addEventListener("resize", schedule);
     return () => {
@@ -149,7 +166,11 @@ export function HelpPill({ contactEmail }: { contactEmail: Promise<string | null
           animate={inRow ? { opacity: 1 } : { opacity: 1, y: 0 }}
           exit={inRow ? { opacity: 0 } : { opacity: 0, y: 12 }}
           transition={{ type: "spring", bounce: 0.15, duration: 0.4 }}
-          className={cn(inRow ? "relative flex items-center" : "absolute bottom-0 left-0 flex w-max flex-col items-start gap-2")}
+          className={cn(
+            inRow
+              ? "relative flex items-center"
+              : "absolute bottom-0 left-0 flex w-max flex-col items-start gap-2"
+          )}
         >
           <AnimatePresence>
             {open && (
@@ -160,15 +181,30 @@ export function HelpPill({ contactEmail }: { contactEmail: Promise<string | null
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 6, transition: { duration: 0.18 } }}
                 transition={{ type: "spring", bounce: 0.15, duration: 0.4 }}
-                className={cn("w-max origin-bottom-left pl-2", inRow && "absolute bottom-[calc(100%+12px)] left-0")}
+                className={cn(
+                  "w-max origin-bottom-left pl-2",
+                  inRow && "absolute bottom-[calc(100%+12px)] left-0"
+                )}
               >
-                <Suspense fallback={<StaggeredHelpLinks contactEmail={null} onClose={close} closeLabel={closeLabel} />}>
-                  <PublishedHelpLinks contactEmail={contactEmail} onClose={close} closeLabel={closeLabel} />
+                <Suspense
+                  fallback={
+                    <StaggeredHelpLinks
+                      contactEmail={null}
+                      onClose={close}
+                      closeLabel={closeLabel}
+                    />
+                  }
+                >
+                  <PublishedHelpLinks
+                    contactEmail={contactEmail}
+                    onClose={close}
+                    closeLabel={closeLabel}
+                  />
                 </Suspense>
               </m.div>
             )}
           </AnimatePresence>
-          <button
+          <Button
             ref={trigger}
             type="button"
             aria-label={t("help")}
@@ -176,8 +212,10 @@ export function HelpPill({ contactEmail }: { contactEmail: Promise<string | null
             aria-controls={open ? listId : undefined}
             onClick={toggle}
             className={cn(
-              "group group/focus flex items-center justify-center rounded-full text-foreground/55 touch-manipulation transition-[color,opacity] hover:text-foreground",
-              inRow ? "size-(--bar-target) active:opacity-60 [&>*]:translate-y-[calc((var(--bar-target)_-_var(--frame-bottom))/2)]" : "size-11 active:text-foreground",
+              "group group/focus flex touch-manipulation items-center justify-center rounded-full text-foreground/55 transition-[color,opacity] hover:text-foreground",
+              inRow
+                ? "size-(--bar-target) active:opacity-60 [&>*]:translate-y-[calc((var(--bar-target)_-_var(--frame-bottom))/2)]"
+                : "size-11 active:text-foreground",
               open && "text-foreground"
             )}
           >
@@ -186,12 +224,16 @@ export function HelpPill({ contactEmail }: { contactEmail: Promise<string | null
               aria-hidden="true"
               className={cn(
                 "flex items-center justify-center rounded-full group-focus-visible/focus:outline-current",
-                !inRow && "size-7 bg-background/70 ring-1 ring-foreground/10 backdrop-blur-md"
+                !inRow &&
+                  "size-7 bg-background/70 ring-1 ring-foreground/10 backdrop-blur-md"
               )}
             >
-              <CircleQuestionMark className={cn(inRow ? "size-[15px]" : "size-4")} strokeWidth={1.5} />
+              <CircleQuestionMark
+                className={cn(inRow ? "size-[15px]" : "size-4")}
+                strokeWidth={1.5}
+              />
             </FocusShape>
-          </button>
+          </Button>
         </m.div>
       )}
     </AnimatePresence>
@@ -206,7 +248,11 @@ export function HelpPill({ contactEmail }: { contactEmail: Promise<string | null
       className={cn(
         "pointer-events-none fixed size-11 *:pointer-events-auto",
         // The 28 px disc sits where the old pill's edge did; its 44 px target reaches 8 px beyond it.
-        isMobile && isTouch ? "bottom-[calc(env(safe-area-inset-bottom)+79px)] left-[22px]" : isMobile ? "bottom-[42px] left-[22px]" : "bottom-[44px] left-[24px]"
+        isMobile && isTouch
+          ? "bottom-[calc(env(safe-area-inset-bottom)+79px)] left-[22px]"
+          : isMobile
+            ? "bottom-[42px] left-[22px]"
+            : "bottom-[44px] left-[24px]"
       )}
     >
       {pill}
@@ -215,7 +261,14 @@ export function HelpPill({ contactEmail }: { contactEmail: Promise<string | null
 }
 
 /** Contact appears once the customer-service email is published; until then the list shows without it. */
-function PublishedHelpLinks({ contactEmail, ...props }: { contactEmail: Promise<string | null>; onClose: () => void; closeLabel?: string }) {
+function PublishedHelpLinks({
+  contactEmail,
+  ...props
+}: {
+  contactEmail: Promise<string | null>;
+  onClose: () => void;
+  closeLabel?: string;
+}) {
   return <StaggeredHelpLinks contactEmail={use(contactEmail)} {...props} />;
 }
 
@@ -225,11 +278,15 @@ function PublishedHelpLinks({ contactEmail, ...props }: { contactEmail: Promise<
  * nearest the button) first. Each pill is 32 px tall; its target reaches 44 px on touch screens, with gaps that keep
  * the targets apart.
  */
-function StaggeredHelpLinks(props: { contactEmail: string | null; onClose: () => void; closeLabel?: string }) {
+function StaggeredHelpLinks(props: {
+  contactEmail: string | null;
+  onClose: () => void;
+  closeLabel?: string;
+}) {
   return (
     <HelpPillLinks
       {...props}
-      className="items-start gap-1 pointer-coarse:gap-3 [&>li>*]:relative [&>li>*]:min-h-8 [&>li>*]:w-auto [&>li>*]:rounded-lg [&>li>*]:bg-[oklch(from_var(--background)_l_c_h_/_0.8)] [&>li>*]:px-3 [&>li>*]:text-(--foreground) [&>li>*]:ring-1 [&>li>*]:ring-[oklch(from_var(--foreground)_l_c_h_/_0.08)] [&>li>*]:shadow-sm [&>li>*]:shadow-black/5 [&>li>*]:backdrop-blur-md [&>li>*]:after:absolute [&>li>*]:after:inset-x-0 [&>li>*]:after:-inset-y-0.5 [&>li>*]:after:content-[''] pointer-coarse:[&>li>*]:after:-inset-y-1.5 [&>li]:animate-in [&>li]:fade-in-0 [&>li]:slide-in-from-bottom-2 [&>li]:fill-mode-both [&>li]:duration-400 [&>li:nth-last-child(1)]:delay-[60ms] [&>li:nth-last-child(2)]:delay-[100ms] [&>li:nth-last-child(3)]:delay-[140ms] [&>li:nth-last-child(4)]:delay-[180ms] [&>li:nth-last-child(5)]:delay-[220ms] [&>li:nth-last-child(6)]:delay-[260ms] [&>li:nth-last-child(7)]:delay-[300ms]"
+      className="items-start gap-1 pointer-coarse:gap-3 [&>li]:animate-in [&>li]:duration-400 [&>li]:fade-in-0 [&>li]:fill-mode-both [&>li]:slide-in-from-bottom-2 [&>li:nth-last-child(1)]:delay-[60ms] [&>li:nth-last-child(2)]:delay-[100ms] [&>li:nth-last-child(3)]:delay-[140ms] [&>li:nth-last-child(4)]:delay-[180ms] [&>li:nth-last-child(5)]:delay-[220ms] [&>li:nth-last-child(6)]:delay-[260ms] [&>li:nth-last-child(7)]:delay-[300ms] [&>li>*]:relative [&>li>*]:min-h-8 [&>li>*]:w-auto [&>li>*]:rounded-lg [&>li>*]:bg-[oklch(from_var(--background)_l_c_h_/_0.8)] [&>li>*]:px-3 [&>li>*]:text-(--foreground) [&>li>*]:shadow-sm [&>li>*]:ring-1 [&>li>*]:shadow-black/5 [&>li>*]:ring-[oklch(from_var(--foreground)_l_c_h_/_0.08)] [&>li>*]:backdrop-blur-md [&>li>*]:after:absolute [&>li>*]:after:inset-x-0 [&>li>*]:after:-inset-y-0.5 [&>li>*]:after:content-[''] pointer-coarse:[&>li>*]:after:-inset-y-1.5"
     />
   );
 }

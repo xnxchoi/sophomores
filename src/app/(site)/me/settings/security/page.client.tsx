@@ -8,6 +8,7 @@ import type { User } from "@/payload-types";
 import { authClient } from "@/lib/auth/client";
 import { SubRouteHeader } from "@/components/settings/SubRouteHeader";
 import { ActionField, ActionButton } from "@/components/settings/ActionField";
+import { Button } from "@/components/core/Button";
 
 interface SessionItem {
   id: string;
@@ -142,10 +143,10 @@ export default function SecuritySectionClient({
                     {pk.createdAt ? t("addedDate", { date: new Date(pk.createdAt).toLocaleDateString() }) : t("recordDateNotProvided")}
                   </p>
                 </div>
-                <button type="button" onClick={() => handleDeletePasskey(pk.id)} aria-label={t("removePasskey", { name: pk.name || pk.id })}
+                <Button type="button" onClick={() => handleDeletePasskey(pk.id)} aria-label={t("removePasskey", { name: pk.name || pk.id })}
                   className="inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-full border border-border px-4 text-sm transition-colors outline-offset-4 hover:bg-muted focus-visible:outline-2">
                   {t("removePasskeyAction")}
-                </button>
+                </Button>
               </li>
             ))}
           </ul>

@@ -1,7 +1,7 @@
 "use client";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
-import { Link } from "next-transition-router";
+import { Link } from "@/components/core/Link/Link";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { LogOut } from "lucide-react";
 import type { User } from "@/payload-types";

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { useTranslations } from "next-intl";
-import { BrandMark } from "@/lib/brand";
+import { BrandMark } from "@/components/core/BrandMark";
 import { ArrowSquareOutIcon, ClockIcon, LockKeyIcon, MusicNotesIcon } from "@phosphor-icons/react";
 import { Check, CircleAlert, Copy } from "lucide-react";
 import { useCopyFeedback } from "@/components/arc/copy-button/use-copy-feedback";

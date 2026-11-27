@@ -38,7 +38,7 @@ import {
   type Variants
 } from "motion/react";
 import * as m from "motion/react-m";
-import { Link as NextLink } from "next-transition-router";
+import { Link as NextLink } from "@/components/core/Link/Link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {

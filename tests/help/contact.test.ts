@@ -24,7 +24,7 @@ test("anything else stays plain text", () => {
 
 test("contact uses complete business facts as one unit, else the seller, else nothing", () => {
   const facts = {
-    tradeName: "Trade", representative: "R", businessAddress: "A", businessRegistrationNumber: "123-45-67890",
+    tradeName: "Trade", representative: "R", businessAddress: "A", bizNum: "123-45-67890",
     mailOrderRegistration: "M", customerServicePhone: "02-123-4567", customerServiceEmail: "help@example.com",
   };
   const seller = { name: "Seller", registrationNumber: "123-45-67890", representative: "R", address: "A", phone: "031-123-4567" };

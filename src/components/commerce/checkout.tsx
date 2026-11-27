@@ -22,7 +22,7 @@ import { Progress } from "@/components/arc/progress/progress";
 import { AnimatedCounter } from "@/components/arc/animated-counter/animated-counter";
 import { Badge } from "@/components/arc/badge/badge";
 import { NumberField } from "@/components/arc/number-field/number-field";
-import { Button } from "@/components/core/ArcFocus/ArcFocus";
+import { Button } from "@/components/core/Button";
 import { ExpandableCard } from "@/components/arc/expandable-card/expandable-card";
 
 type CommerceAccountGateProps = {

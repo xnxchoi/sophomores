@@ -1,6 +1,6 @@
 "use client";
 
-import { BrandMark } from "../../../lib/brand";
+import { BrandMark } from "@/components/core/BrandMark";
 
 import { attachHaptics } from "../../../lib/haptics";
 import { ChevronDown } from "lucide-react";
@@ -189,15 +189,11 @@ function StandaloneVerification() {
     >
       <header className="h-11">
         <BrandMark asChild>
-          <Link
-            href="/"
-            prefetch={false}
-            aria-label={t("home")}
-            data-brand-mark=""
+
             className="rounded-sm text-[25px] tracking-[-1.5px] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current"
-          >
+
             sophomores
-          </Link>
+
         </BrandMark>
       </header>
       <main className="mx-auto mt-12 max-w-[460px]">
@@ -359,7 +355,7 @@ export function VerificationFlow({
                   )}
                   {screen === "waiting" && (
                     <>
-                      <Description>{t("waitingDescription")}</Description>
+                      <Description>{t("waitDesc")}</Description>
                       <Note>{t("waitingNote")}</Note>
                       <SecondaryButton
                         type="button"

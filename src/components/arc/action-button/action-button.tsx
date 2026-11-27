@@ -7,6 +7,7 @@ import type { TargetAndTransition, Variants } from "motion/react";
 import { ArrowRight } from "lucide-react";
 import { motionTokens } from "../_shared/motion-tokens";
 import styles from "./action-button.module.css";
+import { MotionButton } from "@/components/core/Button";
 
 export interface ActionButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "onClick" | "onDrag" | "onDragEnd" | "onDragStart" | "onAnimationStart"> {
   label: string;
@@ -104,14 +105,14 @@ export function ActionButton({ label, successLabel = "Saved", pendingLabel = "Sa
   const arrow = state === "idle";
 
   // Pending stays focusable (aria-disabled instead of disabled), so a keyboard user keeps focus through the whole save.
-  return <motion.button {...props} ref={buttonRef} tabIndex={props.tabIndex ?? 0} type={props.type ?? "button"} className={[styles.button, className].filter(Boolean).join(" ")} disabled={disabled} aria-disabled={pending ? true : props["aria-disabled"]} aria-busy={pending} data-state={state} onClick={run} custom={buttonRef} variants={pressVariants} whileTap={disabled || pending ? undefined : "pressed"} transition={motionTokens.spring.snappy}>
+  return <MotionButton {...props} ref={buttonRef} tabIndex={props.tabIndex ?? 0} type={props.type ?? "button"} className={[styles.button, className].filter(Boolean).join(" ")} disabled={disabled} aria-disabled={pending ? true : props["aria-disabled"]} aria-busy={pending} data-state={state} onClick={run} custom={buttonRef} variants={pressVariants} whileTap={disabled || pending ? undefined : "pressed"} transition={motionTokens.spring.snappy}>
     <span className={styles.content} aria-hidden="true">
       <SwapText text={text} />
       <span className={styles.iconSlot}><AnimatePresence initial={false}><motion.span key={state} className={styles.phase} initial={arrow ? arrowIn : iconIn} animate={iconRest} exit={arrow ? arrowOut : iconOut} transition={iconEnter}>{pending ? <span className={styles.spinner} /> : state === "success" ? <DrawnCheck /> : <ArrowRight className={styles.arrow} width={17} height={17} />}</motion.span></AnimatePresence></span>
     </span>
     <span className={styles.visuallyHidden}>{label}</span>
     <span className={styles.visuallyHidden} role="status">{state === "pending" ? pendingLabel : state === "success" ? successLabel : ""}</span>
-  </motion.button>;
+  </MotionButton>;
 }
 
 export default ActionButton;

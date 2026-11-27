@@ -1835,7 +1835,7 @@
       "source_review_status": "retained"
     },
     {
-      "key": "Verification.waitingDescription",
+      "key": "Verification.waitDesc",
       "status": "retained",
       "reason": "Conditional once connected language is visibly bounded by preview/no-real-verification notices; not proof of a running service.",
       "evidence": [
@@ -1856,9 +1856,9 @@
       "source_review_status": "retained"
     },
     {
-      "key": "Verification.remainingTime",
+      "key": "Verification.rermaining",
       "status": "retained",
-      "reason": "Clear remainingTime preview/control label; surrounding preview disclosures prevent treating the disconnected screen as real verification.",
+      "reason": "Clear rermaining preview/control label; surrounding preview disclosures prevent treating the disconnected screen as real verification.",
       "evidence": [
         "src/components/Authentication/phone-verification/verification-countdown.tsx:68"
       ],
@@ -10042,9 +10042,9 @@
       "source_review_status": "retained"
     },
     {
-      "key": "Customer.components_commerce_offer.businessRegistrationNumber",
+      "key": "Customer.components_commerce_offer.bizNum",
       "status": "retained",
-      "reason": "Retain businessRegistrationNumber label or unpublished-offer boundary. Product/seller/policy details remain approved CMS content, not invented copy defaults or purchasing readiness.",
+      "reason": "Retain bizNum label or unpublished-offer boundary. Product/seller/policy details remain approved CMS content, not invented copy defaults or purchasing readiness.",
       "evidence": [
         "src/components/commerce/offer.tsx:43"
       ],
@@ -10072,9 +10072,9 @@
       "source_review_status": "retained"
     },
     {
-      "key": "Customer.components_commerce_offer.mailOrderBusinessRegistrationNumber",
+      "key": "Customer.components_commerce_offer.mailOrderbizNum",
       "status": "retained",
-      "reason": "Retain mailOrderBusinessRegistrationNumber label or unpublished-offer boundary. Product/seller/policy details remain approved CMS content, not invented copy defaults or purchasing readiness.",
+      "reason": "Retain mailOrderbizNum label or unpublished-offer boundary. Product/seller/policy details remain approved CMS content, not invented copy defaults or purchasing readiness.",
       "evidence": [
         "src/components/commerce/offer.tsx:46"
       ],
@@ -14021,9 +14021,9 @@
       "source_review_status": "retained"
     },
     {
-      "key": "Interface.seller.mailOrderRegistrationNumber",
+      "key": "Interface.seller.mailOrderNum",
       "status": "retained",
-      "reason": "Retain mailOrderRegistrationNumber seller/policy label or unpublished-content boundary. No legal terms, contact details or service commitment fabricated.",
+      "reason": "Retain mailOrderNum seller/policy label or unpublished-content boundary. No legal terms, contact details or service commitment fabricated.",
       "evidence": [
         "src/app/(site)/_commerce/seller-disclosure.tsx:51"
       ],

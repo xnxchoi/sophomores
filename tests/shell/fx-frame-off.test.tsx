@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { after, afterEach, before, test } from "node:test";
 import { JSDOM } from "jsdom";
-import { FXFrameKeep, FXFrameOff, useFXFrameOff } from "@/components/shell/footer-visibility";
+import { FXFrameKeep, FXFrameOff, useFXFrameOff } from "@/components/shell/Footer/footer-visibility";
 
 // A page that drops in <FXFrameOff /> holds the FXFrame band off while it is mounted, and gives it back on leaving.
 let dom: JSDOM;

@@ -2,7 +2,7 @@
 import { useTranslations } from "next-intl";
 
 import type { RefObject } from "react";
-import { BrandMark } from "@/lib/brand";
+import { BrandMark } from "@/components/core/BrandMark";
 import { useTeaserContent } from "./content-provider";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 

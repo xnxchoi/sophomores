@@ -2,7 +2,7 @@
 
 import { useId, useLayoutEffect, useRef, useState, type ComponentProps } from "react";
 import NextLink from "next/link";
-import { Link } from "next-transition-router";
+import { Link } from "@/components/core/Link/Link";
 import { useTranslations } from "next-intl";
 import { animate, resize, type AnimationPlaybackControls } from "motion";
 import { XIcon } from "@phosphor-icons/react";

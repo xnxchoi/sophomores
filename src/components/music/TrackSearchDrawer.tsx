@@ -22,7 +22,7 @@ import {
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import type { MusicTrackView } from "@/lib/music/types";
-import { Button } from "@/components/core/ArcFocus/ArcFocus";
+import { Button } from "@/components/core/Button";
 
 interface TrackSearchDrawerProps {
   isOpen: boolean;

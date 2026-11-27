@@ -1,9 +1,5 @@
 "use client";
-import {
-  CursorStatus,
-  DomCursorOptions,
-  useDomCursor
-} from "@/components/core/cursorWrapper";
+import { CursorStatus, DomCursorOptions, useDomCursor } from "@/components/core/cursorWrapper";
 import { cn } from "@/lib/utils";
 import { HTMLMotionProps } from "motion/react";
 import * as m from "motion/react-m";
@@ -15,14 +11,22 @@ import {
   useCallback,
   useState
 } from "react";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
+import { Button as ArcButton } from "@/components/arc/button/button";
+import { CopyButton as ArcCopyButton } from "@/components/arc/copy-button/copy-button";
+import {ActionButton as ArcActionButton} from "@/components/arc/action-button/action-button";
 type MotionBtnProps = HTMLMotionProps<"button">;
 
-export const RP_Btn = (props: ComponentProps<"button">) => {
+export const RP_Btn = ({
+  variant = "primary",
+  ...props
+}: ComponentProps<typeof ArcButton>  ) => {
   const {
     onClick,
     disabled,
     onMouseLeave: doML,
     onMouseEnter: doME,
+    children,
     ref,
     className,
     ...rest
@@ -34,18 +38,33 @@ export const RP_Btn = (props: ComponentProps<"button">) => {
   });
 
   return (
-    <button
+    <ArcButton
       disabled={disabled}
       onClick={onClick}
       ref={ref as RefAttributes<HTMLButtonElement>["ref"]}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      className={className}
       {...rest}
-    ></button>
+      variant={variant}
+
+      className={cn(
+        variant === "ghost"
+          ? "group/focus"
+          : "focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-foreground",
+        className
+      )}
+    >
+      {variant === "ghost" ? (
+        <FocusShape className="inline-flex items-center gap-[inherit] group-focus-visible/focus:outline-current">
+          {children}
+        </FocusShape>
+      ) : (
+        children
+      )}
+    </ArcButton>
   );
 };
-export const MotionBtn = (props: MotionBtnProps) => {
+export const MotionButton = (props: MotionBtnProps) => {
   const {
     onClick,
     disabled,
@@ -84,7 +103,7 @@ export const MotionBtn = (props: MotionBtnProps) => {
   );
 };
 
-export function Button(props: ComponentPropsWithRef<"button">) {
+export function Button(props: ComponentProps<typeof ArcButton>) {
   return RP_Btn(props);
 }
 
@@ -188,13 +207,7 @@ export const MotionPill = ({
   return (
     <m.div
       className={cn(
-        `flex appearance-none items-center justify-center overflow-hidden border-[1px] border-transparent px-[1.2rem] text-sm leading-[2] font-light tracking-[-0.01em] backdrop-blur-[2.4rem] outline-none [text-decoration:none] hover:bg-transparent data-[hover=true]:bg-transparent max-md:px-[1.4rem]`,
-        size === "sm"
-          ? "h-[2.4rem] rounded-[2.4rem] max-md:h-[2rem] max-md:rounded-[2rem]"
-          : size === "md"
-            ? "h-[3.2rem] rounded-[3.2rem] max-md:h-[2.56rem] max-md:rounded-[2.56rem]"
-            : "h-[3.6rem] rounded-[3.6rem] text-3xl max-md:h-[2.56rem] max-md:rounded-[2.88rem]",
-        className
+
       )}
       data-disabled={disabled}
       data-hover={hover}
@@ -246,9 +259,7 @@ export const PillButton = ({
           "h-[2.88rem] rounded-[2.88rem] text-3xl md:h-[3.6rem] md:rounded-[3.6rem]":
             size === "lg"
         },
-        inverted
-          ? "text-background/90"
-          : "text-foreground/90",
+        inverted ? "text-background/90" : "text-foreground/90",
         className
       )}
       onClick={onClick}
@@ -259,3 +270,37 @@ export const PillButton = ({
     />
   );
 };
+export function CopyButton({
+  variant = "outline",
+  className,
+  ...props
+}: ComponentProps<typeof ArcCopyButton>) {
+  return (
+    <ArcCopyButton
+      variant={variant}
+      {...props}
+
+      className={cn(
+        variant === "plain"
+          ? "focus-visible:bg-muted focus-visible:text-foreground"
+          : "focus-visible:outline-foreground",
+        className
+      )}
+    />
+  );
+}
+
+export function ActionButton({
+  className,
+  ...props
+}: ComponentProps<typeof ArcActionButton>) {
+  return (
+    <ArcActionButton
+      {...props}
+      className={cn(
+        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground",
+        className
+      )}
+    />
+  );
+}

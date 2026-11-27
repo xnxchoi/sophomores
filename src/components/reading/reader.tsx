@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { sliceBody, type TextPart } from "@/lib/content/highlight";
 import type { HighlightRange } from "@/lib/content/slots";
-import { Button } from "@/components/core/ArcFocus/ArcFocus";
+import { Button } from "@/components/core/Button";
 
 export function Reader({
   body,

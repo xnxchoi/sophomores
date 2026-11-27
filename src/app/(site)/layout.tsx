@@ -9,8 +9,8 @@ import { ClientLayout } from "./client-layout";
 import { AccountSheetProvider } from "@/components/auth/account-sheet";
 import { VerificationMessages } from "@/components/Authentication/phone-verification/verification-messages";
 import { verificationCatalogues } from "@/lib/phone-verification/messages.server";
-import { BusinessFooter } from "./_commerce/business-footer";
-import { FooterGate, PageCover } from "@/components/shell/footer-visibility";
+import { Footer } from "../../components/shell/Footer/footer";
+import { FooterGate, PageCover } from "@/components/shell/Footer/footer-visibility";
 import { loadBusinessInformation } from "@/payload/globals/business-info";
 import { Providers } from "@/providers";
 import { themeBoot } from "@/lib/content/theme";
@@ -114,7 +114,7 @@ export default async function RootLayout({
               <PageCover>{children}</PageCover>
               <FooterGate>
                 <Suspense fallback={null}>
-                  <BusinessFooter />
+                  <Footer />
                 </Suspense>
               </FooterGate>
             </ClientLayout>

@@ -2,7 +2,7 @@ import { mkdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { chromium } from "playwright";
 import { renderToStaticMarkup } from "react-dom/server";
-import { BrandMark } from "@/lib/brand";
+import { BrandMark } from "@/components/core/BrandMark";
 import { WALLET_PASS_COLOURS } from "@/lib/commerce/keys/wallet-pass-colours";
 
 /*

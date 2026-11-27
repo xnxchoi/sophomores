@@ -1,5 +1,5 @@
 import { useTranslations } from "next-intl";
-import { Link } from "next-transition-router";
+import { Link } from "@/components/core/Link/Link";
 import { cn } from "@/lib/utils";
 import type { SellerInformation } from "@/lib/commerce/disclosures";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
@@ -20,7 +20,7 @@ export function SellerDisclosure({ seller = null, className, showNavigation = tr
             ["name", seller.name],
             ["representative", seller.representative],
             ["registrationNumber", seller.registrationNumber],
-            ["mailOrderRegistrationNumber", seller.mailOrderRegistrationNumber],
+            ["mailOrderNum", seller.mailOrderNum],
             ["address", seller.address],
             ["phone", seller.phone],
             ["email", seller.email],

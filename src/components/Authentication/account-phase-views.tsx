@@ -31,7 +31,7 @@ import { motionTokens } from "../../lib/motion-tokens";
 import { useTranslations } from "next-intl";
 import { useAccountPhaseFocus } from "./account-phase-focus";
 import { VerificationPresentation } from "./phone-verification/verification-tray";
-import { Button } from "@/components/core/ArcFocus/ArcFocus";
+import { Button } from "@/components/core/Button";
 import type {
   AccountPhaseViewProps,
   PhaseAction

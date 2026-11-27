@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 
-import { BrandMark } from "../../../lib/brand";
+import { BrandMark } from "@/components/core/BrandMark";
 
 import { useRef, useState } from "react";
 import { PrimaryButton } from "./verification-ui";

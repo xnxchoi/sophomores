@@ -4,13 +4,13 @@ import { NextIntlClientProvider } from "next-intl";
 import { renderToStaticMarkup } from "react-dom/server";
 import { AppRouterContext, type AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import en from "../../messages/en.json";
-import { BusinessFooterView } from "@/app/(site)/_commerce/business-footer";
+import { FooterShell } from "@/components/shell/Footer/footer";
 
 // The footer's links go through the site's transition router, which needs a mounted app router.
 const router = { back() {}, forward() {}, refresh() {}, push() {}, replace() {}, prefetch() {} } as unknown as AppRouterInstance;
 const render = (locale: "en" | "ko") => renderToStaticMarkup(
   <AppRouterContext.Provider value={router}>
-    <NextIntlClientProvider locale={locale} timeZone="Asia/Seoul" messages={en}><BusinessFooterView /></NextIntlClientProvider>
+    <NextIntlClientProvider locale={locale} timeZone="Asia/Seoul" messages={en}><FooterShell /></NextIntlClientProvider>
   </AppRouterContext.Provider>
 );
 const button = (html: string, label: string) => html.match(new RegExp(`<button[^>]*>(?:<span[^>]*>)?${label}(?:</span>)?</button>`))?.[0] ?? "";

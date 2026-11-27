@@ -1,7 +1,7 @@
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/components/core/Link/Link";
 import { PageInset } from "@/components/core/PageInset/PageInset";
-import { FXFrameOff } from "@/components/shell/footer-visibility";
+import { FXFrameOff } from "@/components/shell/Footer/footer-visibility";
 import type { SerializedEditorState } from "@payloadcms/richtext-lexical/lexical";
 import {
   type ApprovedPolicy,

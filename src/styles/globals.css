@@ -165,11 +165,10 @@
   --texture-grain: url("/assets/textures/texture-grain.webp");
   --texture-travertine: url("/assets/textures/texture-travertine.webp");
 }
-/* The footer's own ground (owner, 26 Nov: "Carbon lighter"; the plum is retired): Carbon Lighter +2 under Titanium ink,
-   with Singer Stone for its small labels. The same in both themes: it is the layer under the page, not a theme surface.
-   Not inline, so the footer can hand the ink to its children as --foreground. */
+/* The footer's ink on the owner's gunmetal ground (footer-shell, bg-gunmetal): Titanium, with Singer Stone for its small
+   labels. The same in both themes: it is the layer under the page, not a theme surface. Not inline, so the footer can
+   hand the ink to its children as --foreground. */
 @theme {
-  --color-footer: var(--black-lighter-2);
   --color-footer-ink: var(--white);
   --color-footer-muted: var(--stone);
 }

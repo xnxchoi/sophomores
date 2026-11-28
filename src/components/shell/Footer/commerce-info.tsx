@@ -63,7 +63,7 @@ function FactLink({ href, reach, children }: { href: string; reach: "up" | "down
     <Link
       href={href}
       className={cn(
-        "group/focus inline-flex min-h-11 max-w-full break-all underline decoration-current/60 underline-offset-4 hover:decoration-current",
+        "group/focus inline-flex min-h-11 max-w-full break-all underline decoration-current underline-offset-4 hover:decoration-current",
         reach === "up" ? "-mt-8 items-end" : "-mb-8 items-start"
       )}
     >

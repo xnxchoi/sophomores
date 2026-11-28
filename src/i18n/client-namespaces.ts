@@ -111,7 +111,10 @@ export const segmentNamespaces = {
     // /tickets renders the shop page, including its failed-read retry.
     "InlineRetry",
     ...purchase,
+    // The shop page's cart column (its edition line's link and the cart itself), as on /shop.
+    "Customer.app_site_shop_cart_page",
     "Customer.components_commerce_book_offer",
+    "Customer.components_commerce_cart",
     "Customer.components_commerce_offer",
     "Customer.components_tickets_portone_payment_result"
   ],

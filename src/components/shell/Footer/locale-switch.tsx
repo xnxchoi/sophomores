@@ -22,7 +22,7 @@ export function FooterLocaleSwitch() {
       {locales.map((locale, index) => (
         <span key={locale} className="flex items-center">
           {index > 0 && (
-            <span aria-hidden="true" className="text-[10px] text-foreground/20">
+            <span aria-hidden="true" className="text-[9px] text-foreground/20">
               /
             </span>
           )}
@@ -47,9 +47,10 @@ function LocaleButton({ locale }: { locale: Locale }) {
       disabled={pending || active}
       onClick={() => startTransition(() => setUserLocale(locale))}
       className={cn(
-        // On the button itself: the base styles reset text-shadow on buttons, so it can't be inherited.
         // bg-transparent holds through Arc's ghost hover and press grounds, which would show as grey chips on the footer.
-        "min-h-11 min-w-11 rounded-none bg-transparent px-0 font-sans text-[10px] font-normal tracking-widest uppercase text-shadow-footer-ground",
+        // 9 px: the footer's floor (owner, 28 Nov: about a third of its size). No ground-coloured halo: it was cut from
+        // the old footer colour and would outline the small letters on the gunmetal ground.
+        "min-h-11 min-w-11 rounded-none bg-transparent px-0 font-sans text-[9px] font-normal tracking-widest uppercase",
         // The pick shows by an underline, not by dimming the other (Review-B: 40 % ink on the footer ground was
         // 2.87:1); both hold 80 % ink or more.
         active

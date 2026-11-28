@@ -53,7 +53,7 @@ function LocaleButton({ locale }: { locale: Locale }) {
         "min-h-11 min-w-11 rounded-none bg-transparent px-0 font-sans text-[9px] font-normal tracking-widest uppercase",
         // The pick shows by an underline, not by dimming the other (Review-B: 40 % ink on the footer ground was
         // 2.87:1). Nothing dims while a change is pending either (Santa review, 28 Nov): the button is disabled, its
-        // 9 px label stays at full Singer Stone (10.4:1 on gunmetal).
+        // 9 px label stays at full Singer Stone (10.4:1 on the flat gunmetal).
         active
           ? "text-foreground disabled:text-foreground"
           : "text-footer-muted transition-colors hover:text-foreground disabled:text-footer-muted disabled:opacity-100"

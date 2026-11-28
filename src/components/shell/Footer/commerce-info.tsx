@@ -17,8 +17,16 @@ export function CommerceInfo({ facts }: { facts: FooterSellerFacts | null }) {
     <section id="seller-information" aria-label={t("section")} className="scroll-mt-header">
       {/* One compact block in the Korean form's order (Courtney, 28 Nov: the stacked pairs were a long, sparse column):
           label and value on one row, the labels' column at most 45 % wide (a longer label wraps), the value column
-          taking the rest, where the address and email wrap. The same block on every width. */}
-      <dl className="grid max-w-[40rem] grid-cols-[fit-content(45%)_minmax(0,1fr)] gap-x-3 gap-y-1">
+          taking the rest, where the address and email wrap. The same block on every width. The phone's target reaches
+          32 px up; when no plain row sits above it, pt-8 gives it that room so it never reaches the legal links. */}
+      <dl
+        className={cn(
+          "grid max-w-[40rem] grid-cols-[fit-content(45%)_minmax(0,1fr)] gap-x-3 gap-y-1",
+          facts.customerServicePhone &&
+            !(facts.tradeName || facts.representative || facts.bizNum || facts.mailOrderRegistration || facts.businessAddress) &&
+            "pt-8"
+        )}
+      >
         {facts.tradeName && <InfoItem label={t("name")}>{facts.tradeName}</InfoItem>}
         {facts.representative && <InfoItem label={t("representative")}>{facts.representative}</InfoItem>}
         {facts.bizNum && <InfoItem label={t("registrationNumber")}>{facts.bizNum}</InfoItem>}
@@ -40,7 +48,7 @@ export function CommerceInfo({ facts }: { facts: FooterSellerFacts | null }) {
 }
 
 /**
- * A tiny label beside its value (uppercase, 0.06em), in --color-footer-muted (10.4:1 on gunmetal); one row of the block's
+ * A tiny label beside its value (uppercase, 0.06em), in --color-footer-muted (10.4:1 on the flat gunmetal; see footer-shell for the grain); one row of the block's
  * shared columns (subgrid). Owner, 28 Nov: the footer at about a third of its size; 11 and 13 px would be 4 px, so both
  * sit on the 9 px floor.
  */
@@ -63,7 +71,7 @@ function FactLink({ href, reach, children }: { href: string; reach: "up" | "down
     <Link
       href={href}
       className={cn(
-        "group/focus inline-flex min-h-11 max-w-full break-all underline decoration-current underline-offset-4 hover:decoration-current",
+        "group/focus inline-flex min-h-11 min-w-11 max-w-full break-all underline decoration-current underline-offset-4 hover:decoration-current",
         reach === "up" ? "-mt-8 items-end" : "-mb-8 items-start"
       )}
     >

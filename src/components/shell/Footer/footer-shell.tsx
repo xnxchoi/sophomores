@@ -15,12 +15,15 @@ export function FooterShell({ children }: { children?: ReactNode }) {
   return (
     // The owner's ground (faa7c4277, 27 Nov): w-screen, h-full, mt-1.5 and bg-gunmetal, carried by the phone after layer
     // too. His mix-blend-overlay is off (Courtney, 28 Nov, after the owner's "It's fucking illegible"): blended, the
-    // gunmetal read as a pale band under the light ink; solid, Titanium ink is 12.5:1 and Singer Stone 10.4:1 on it.
+    // gunmetal read as a pale band under the light ink; solid, Titanium ink is 12.5:1 and Singer Stone 10.4:1 on the flat
+    // ground. The owner's grain (BrightGrains) still lifts the lightest specks: Santa review measured Singer Stone at about
+    // 7.3:1 for the brightest 1 % of pixels and 4.5:1 at the single brightest speck. Left at the owner's values.
     // Owner, 28 Nov: everything in the footer at about a third of its size, KO and EN; nothing goes under a 9 px floor.
-    // Every 44 px target reaches 16 px past its 12 px line (the email's 32 px down), so the padding holds them: pt-4 on
-    // phones; pb-8 under the email's reach. From md the footer tucks a net 22 px under the page's rounded end (FooterGate's
-    // 28 px less mt-1.5), so md:pt-10 starts the links' targets just clear of the page; md:pb-10 keeps the email's target
-    // above the frame's 30 px bottom rail's reach as far as it goes.
+    // The links' and EN/KO's 44 px targets reach 16 px past their 12 px line, the phone's 32 px up and the email's 32 px
+    // down, so the padding holds them: pt-4 on phones; pb-8 under the email's reach. From md the footer tucks a net 22 px
+    // under the page's rounded end (FooterGate's 28 px less mt-1.5), so md:pt-10 starts the links' targets just clear of
+    // the page. md:pb-10 leaves the email's target ending 8 px above the footer's foot, inside the frame's 30 px bottom
+    // rail; the rail passes taps through (live hit test at 1440, 28 Nov), so the whole target answers.
     // On touch phones the bottom bar's spacer (client-layout) follows the footer with the page colour
     // and the 36 px bar leaves a sliver of it showing: the after layer carries the footer colour through that spacer, at
     // its exact height. The text sits in the pages' own column (PageInset), at the page text's left edge.

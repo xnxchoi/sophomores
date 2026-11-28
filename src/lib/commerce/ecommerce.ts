@@ -11,12 +11,14 @@ import { commerceEditionProductSchema } from "./editions";
 import { Orders } from "../../payload/collections/orders";
 import { assertCommerceBrowserMutation, commerceAdmin, commerceAdminField, commerceAttemptCreate, commerceOwnerRead, commerceServerField, commerceServerWrite } from "./access";
 import { commerceProductSchema, commercePublicationSchema, loadCommerceCatalogue } from "./catalogue";
-import { guestCheckoutQuoteSchema, shippingAddressSchema, ticketEmailConsentSchema } from "./contracts";
-import { CART_EXPECTED_MEMBER_HEADER, cartRefusalData, cartRefusalMessage } from "./cart-refusal";
+import { guestCheckoutQuoteSchema, productMaximumPerPersonSchema, shippingAddressSchema, ticketEmailConsentSchema } from "./contracts";
+import { CART_EXPECTED_MEMBER_HEADER, CART_MERGE_BROWSER_HEADER, cartRefusalData, cartRefusalMessage, type CartRefusal } from "./cart-refusal";
 import { cartQuantityError, SHARED_GUEST_CART_KIND } from "./cart-quantity";
 import { sharedTicketMode } from "./event-tickets";
-import { purchaseSnapshotSchema } from "./purchase-snapshot";
+import { purchaseSnapshotSchema, reservationAllowance } from "./purchase-snapshot";
+import { MEMBERSHIP_ACCOUNT_LIMIT, MEMBERSHIP_RELEASE } from "./contracts";
 import { preserveNativeCheckoutHold } from "./_shared/native-checkout-hold";
+import { resolveNativeCartLine } from "./native-cart-line";
 import { readCommerceJSON } from "./_shared/request-body";
 import { inPaymentEndpoint, lockCommerce, readCommerce, relationshipID } from "./_shared/transaction";
 import { accountAllowanceAdmits, settleReservation } from "./reservations";
@@ -88,31 +90,85 @@ export const createSecureCart = (authorizeMutation: (req: PayloadRequest) => Pro
   if (!internal && ((data.purchasedAt != null && data.purchasedAt !== current?.purchasedAt)
     || (data.secret != null && data.secret !== current?.secret))) throw new APIError("Cart field is server owned", 403);
   if (data.currency && data.currency !== "KRW") throw new APIError("Unsupported currency", 400);
-  const items = z.array(z.object({ id: z.string().optional(), product: z.union([z.string().min(1), z.object({ id: z.string().min(1) })]), quantity: z.int().min(1), variant: z.nullish(z.unknown()), ticketKind: z.unknown().optional() })).max(1).parse(data.items ?? current?.items ?? []);
+  function refuse(reason: CartRefusal): never { throw new APIError(cartRefusalMessage(reason), 409, cartRefusalData(reason)); }
+  const lineSchema = z.object({ id: z.string().optional(), product: z.union([z.string().min(1), z.object({ id: z.string().min(1) })]),
+    quantity: z.int().min(1), variant: z.nullish(z.unknown()), ticketKind: z.unknown().optional() });
+  const items = z.array(lineSchema).parse(data.items ?? current?.items ?? []);
+  const mergeBrowserCart = !internal && req.headers?.get(CART_MERGE_BROWSER_HEADER) === "1";
+  if (mergeBrowserCart && (operation !== "update" || expectedMember === null || items.some(({ variant, ticketKind }) =>
+    variant != null || ticketKind != null))) throw new APIError("Invalid browser cart merge", 400);
+  const productIDs = items.map(({ product }) => relationshipID(product));
+  if (new Set(productIDs).size !== productIDs.length) refuse("duplicate-product");
+  // Quantity intents are minimums, not increments. A retry is idempotent even when the first response was lost.
+  // Read the authoritative cart only after taking the existing write lock above; never trust a browser copy.
+  const lockedItems = z.array(lineSchema).parse(mergeBrowserCart ? current?.items ?? [] : []);
+  const intentByProduct = new Map(items.map(({ product, quantity }) => [relationshipID(product), quantity] as const));
+  const lockedIDs = new Set(lockedItems.map(({ product }) => relationshipID(product)));
+  const requestedItems = mergeBrowserCart ? [
+    ...lockedItems.map((item) => ({ ...item, quantity: Math.max(item.quantity, intentByProduct.get(relationshipID(item.product)) ?? 0) })),
+    ...items.filter(({ product }) => !lockedIDs.has(relationshipID(product))),
+  ] : items;
+  const previousQuantities = new Map<string, number>((current?.items ?? []).map(
+    (line: { product: unknown; quantity: number }) => [relationshipID(line.product), line.quantity],
+  ));
   let subtotal = 0;
-  for (const item of items) {
+  let membershipInCart = false;
+  const canonicalItems: typeof items = [];
+  for (const item of requestedItems) {
     const productID = relationshipID(item.product);
     const quantityError = cartQuantityError({ ...item, productID });
+    // Explicit guest markers cannot opt an arbitrary product into multi-unit ticket rules.
+    if (item.ticketKind != null && quantityError) throw new APIError(quantityError, 400);
+    // A native edition (owner, 27 Nov: editions go in the cart): its one SKU is filled in server-side, priced from the
+    // published edition, and held to the same account allowance reservePurchase enforces (bundle editions share the
+    // one-membership-per-account allowance through their event).
+    const native = await resolveNativeCartLine(req, productID, item.variant);
+    if (native !== "legacy") {
+      if (!native || item.ticketKind != null) refuse("offer-unavailable");
+      const membership = reservationAllowance(native.productID, native.eventID) === MEMBERSHIP_RELEASE;
+      if (membership && (membershipInCart || item.quantity > MEMBERSHIP_ACCOUNT_LIMIT)) refuse("membership-in-cart");
+      membershipInCart ||= membership;
+      if (native.accountLimit !== null && item.quantity > (previousQuantities.get(native.productID) ?? 0)) {
+        // An existing line can be reduced after staff lower its limit. Checkout checks the fresh limit even on that line.
+        if (item.quantity > native.accountLimit) refuse("product-limit-reached");
+        if (!internal && !await accountAllowanceAdmits(req, { customerID: String(owner),
+          productID: native.productID, eventID: native.eventID, quantity: item.quantity, accountLimit: native.accountLimit })) {
+          refuse(membership ? "limit-reached" : "product-limit-reached");
+        }
+      }
+      canonicalItems.push({ ...item, variant: native.variantID });
+      subtotal += native.priceKRW * item.quantity;
+      continue;
+    }
+    // Legacy products: only the guest ticket (an event entry) is still sold, and always alone (owner, 27 Nov: nothing
+    // virtual on its own, so no standalone membership; guest tickets stay as they are).
     if (quantityError) throw new APIError(quantityError, 400);
     if (item.variant != null) throw new APIError("Variants unavailable", 409);
     const offer = await loadCommerceCatalogue({ req, productID });
     if (!offer || (item.ticketKind != null && (item.ticketKind !== SHARED_GUEST_CART_KIND || !offer.ticketTarget)) ||
       item.quantity > offer.availableQuantity || item.quantity > offer.maximumQuantity) throw new APIError(cartRefusalMessage("offer-unavailable"), 409, cartRefusalData("offer-unavailable"));
+    // A legacy offer that isn't a guest ticket is the standalone membership: never sold (owner, 27 Nov).
+    if (!offer.ticketTarget) refuse("offer-unavailable");
+    if (requestedItems.length > 1) refuse("guest-ticket-alone");
     // A browser line that is new or larger is refused early at the account limit. Removing or clearing is never blocked.
-    const previous = (current?.items ?? []).find((line: { product?: unknown }) => relationshipID(line.product) === offer.productID);
-    if (!internal && sharedTicketMode(offer.ticketTarget) && current?.items?.length && !previous) {
+    const previousQuantity = previousQuantities.get(offer.productID);
+    if (!internal && sharedTicketMode(offer.ticketTarget) && previousQuantities.size > 0 && previousQuantity === undefined) {
       throw new APIError(cartRefusalMessage("cart-locked"), 409, cartRefusalData("cart-locked"));
     }
-    if (item.quantity > (previous?.quantity ?? 0)) {
+    if (item.quantity > (previousQuantity ?? 0)) {
+      if (offer.maximumPerPerson != null && item.quantity > offer.maximumPerPerson) refuse("product-limit-reached");
       if (sharedTicketMode(offer.ticketTarget)) await assertGuestSponsorMembership(req, String(owner));
+      const limit = Math.min(offer.maximumQuantity, offer.maximumPerPerson ?? offer.maximumQuantity);
       if (!internal && !await accountAllowanceAdmits(req, { customerID: String(owner), productID: offer.productID,
-        eventID: offer.event.id, quantity: item.quantity, accountLimit: offer.maximumQuantity, guest: Boolean(offer.ticketTarget) })) {
-        throw new APIError(cartRefusalMessage("limit-reached"), 409, cartRefusalData("limit-reached"));
+        eventID: offer.event.id, quantity: item.quantity, accountLimit: limit, guest: true })) {
+        refuse(limit < offer.maximumQuantity ? "product-limit-reached" : "limit-reached");
       }
     }
+    canonicalItems.push(item);
     subtotal += offer.priceKRW * item.quantity;
   }
-  return { ...data, ...(operation === "create" ? { id: randomUUID() } : {}), customer: String(owner), currency: "KRW", items, subtotal };
+  if (!Number.isSafeInteger(subtotal)) refuse("offer-unavailable");
+  return { ...data, ...(operation === "create" ? { id: randomUUID() } : {}), customer: String(owner), currency: "KRW", items: canonicalItems, subtotal };
 };
 
 const commerceOrderFields: Field[] = [
@@ -228,6 +284,9 @@ function productsOverride(defaultCollection: CollectionConfig): CollectionConfig
       { name: "saleStartsAt", type: "date" }, { name: "saleEndsAt", type: "date" },
       { name: "dispatchSchedule", type: "textarea" },
       { name: "shippingFeeKRW", type: "number", min: 0, validate: (value: unknown) => value == null || Number.isSafeInteger(value) || "Shipping must be an approved integer KRW amount" },
+      { name: "maximumPerPerson", type: "number", min: 1, label: english.Staff.schema.maximumPerPerson,
+        admin: { description: english.Staff.schema.maximumPerPersonHelp },
+        validate: (value: unknown) => productMaximumPerPersonSchema.safeParse(value).success || english.Staff.schema.maximumPerPersonInvalid },
       { name: "publicationApproved", type: "checkbox", defaultValue: false },
       { name: "reservedQuantity", type: "number", defaultValue: 0, min: 0, access: { create: commerceServerField, update: commerceServerField }, admin: { readOnly: true } },
       // Product page content only; nothing in it takes part in commerce.

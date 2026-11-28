@@ -44,13 +44,14 @@ export async function seedEvent(payload: Payload, name: string) {
   });
 }
 
-export async function seedNativeCart(payload: Payload, user: TypedUser, edition: Edition, eventID: string | null) {
+export async function seedNativeCart(payload: Payload, user: TypedUser, edition: Edition, eventID: string | null, maximumPerPerson?: number | null) {
   const mediaID = await seed(payload, "media", { filename: `${randomUUID()}.png`, mimeType: "image/png" });
   const variantTypeID = await seed(payload, "variantTypes", { name: "edition", label: "Edition" });
   const optionID = await seed(payload, "variantOptions", { variantType: variantTypeID, label: edition.title, value: edition.kind });
   const productID = await seed(payload, "products", {
     commerceModel: "native-edition-v2", title: edition.title, description: "Synthetic approved edition",
     _status: "published", publicationApproved: true, enableVariants: false, variantTypes: [variantTypeID],
+    maximumPerPerson,
     images: [{ id: randomUUID(), image: mediaID }], event: eventID,
     saleStartsAt: at(-60_000), saleEndsAt: at(3_600_000), dispatchSchedule: "Fixture", shippingFeeKRW: shippingAmount,
     // Distinct decoy price/stock make accidental use of legacy parent fields observable.

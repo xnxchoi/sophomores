@@ -84,7 +84,6 @@ export const segmentNamespaces = {
     "Customer.app_site_me_settings_page_client",
     "Customer.app_site_me_settings_security_page_client",
     "Customer.app_site_shop_cart_page",
-    "Customer.cartDrawer",
     "Customer.components_commerce_cart",
     "Customer.components_commerce_orders",
     "Customer.components_settings_SettingsRail",
@@ -98,6 +97,8 @@ export const segmentNamespaces = {
     // A failed shop or checkout read retries in place (CommerceLoadRetry).
     "InlineRetry",
     "Customer.app_site_shop_invitations_page",
+    // The cart in the shop's cart column (/shop/cart in cart mode): its edition line's link.
+    "Customer.app_site_shop_cart_page",
     "Customer.components_commerce_book_offer",
     "Customer.components_commerce_cart",
     "Customer.components_commerce_invitation_claim",

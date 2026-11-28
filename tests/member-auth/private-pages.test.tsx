@@ -1,3 +1,4 @@
+import { installCartLocks } from "../fixtures/commerce/cart-locks";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
@@ -9,7 +10,7 @@ import { clearMemberBrowserCopies, commercePaymentIntentPrefix, leaveAfterSignOu
 import { readSignedInMemberID } from "@/lib/member-auth/private-view";
 import { createMemberSession } from "@/components/Authentication/member-auth/_shared/session";
 import type { MemberClient, MemberStatus } from "@/lib/member-auth/client";
-import { GUEST_CART_STORAGE_KEY } from "@/lib/commerce/browser-cart";
+import { GUEST_CART_STORAGE_KEY, LEGACY_GUEST_CART_STORAGE_KEY } from "@/lib/commerce/browser-cart";
 import { TICKET_SELECTION_DRAFT_KEY } from "@/lib/tickets/selection-draft";
 import { checkoutIntentKey } from "@/components/tickets/_shared/checkout-intent";
 import { EnglishMessages } from "../fixtures/english-messages";
@@ -155,21 +156,23 @@ function fakeStore(entries: Record<string, string>) {
     data,
     get length() { return data.size; },
     key: (index: number) => [...data.keys()][index] ?? null,
+    getItem: (key: string) => data.get(key) ?? null,
+    setItem: (key: string, value: string) => { data.set(key, value); },
     removeItem: (key: string) => { data.delete(key); }
   };
 }
 
-test("sign-out clears every copy of the account and its purchases, and nothing else", () => {
+test("sign-out clears every copy of the account and its purchases, and nothing else", async () => {
   const session = fakeStore({ [`${commercePaymentIntentPrefix}member-a`]: "{}", [`${commercePaymentIntentPrefix}member-b`]: "{}", [checkoutIntentKey]: "{}", "sphmrs.unrelated": "1" });
-  const local = fakeStore({ [GUEST_CART_STORAGE_KEY]: "{}", [TICKET_SELECTION_DRAFT_KEY]: "{}", "sphmrs.theme": "dark" });
+  const local = fakeStore({ [GUEST_CART_STORAGE_KEY]: "{}", [LEGACY_GUEST_CART_STORAGE_KEY]: "{}", [TICKET_SELECTION_DRAFT_KEY]: "{}", "sphmrs.theme": "dark" });
   const visited: string[] = [];
-  leaveAfterSignOut((url) => visited.push(url), { local, session });
+  await leaveAfterSignOut((url) => visited.push(url), { local, session });
   assert.deepEqual([...session.data.keys()], ["sphmrs.unrelated"]);
   assert.deepEqual([...local.data.keys()], ["sphmrs.theme"]);
   assert.deepEqual(visited, ["/"], "then a full navigation home, which drops cached pages and in-memory state");
   // Storage that refuses access is not an error.
-  const refusing = { get length(): number { throw new Error("denied"); }, key: () => null, removeItem: () => {} };
-  assert.doesNotThrow(() => clearMemberBrowserCopies({ local: refusing, session: refusing }));
+  const refusing = { get length(): number { throw new Error("denied"); }, key: () => null, getItem: () => null, setItem() {}, removeItem() {} };
+  await assert.doesNotReject(() => clearMemberBrowserCopies({ local: refusing, session: refusing }));
 });
 
 test("settings sign-out clears and leaves only when Better Auth confirms it", async () => {
@@ -232,6 +235,7 @@ before(async () => {
   Object.defineProperty(dom.window.document, "visibilityState", { configurable: true, get: () => visibility });
   saved.set("IS_REACT_ACT_ENVIRONMENT", Object.getOwnPropertyDescriptor(globalThis, "IS_REACT_ACT_ENVIRONMENT"));
   Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { value: true, configurable: true, writable: true });
+  installCartLocks();
   ui = await import("@testing-library/react/pure");
   ({ PrivatePageGuard } = await import("@/components/auth/private-page-guard"));
   ({ watchPrivateView } = await import("@/lib/member-auth/private-view"));

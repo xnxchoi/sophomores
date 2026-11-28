@@ -21,7 +21,7 @@ test("initiation rejects a quantity-2 cart before reading the catalogue", async 
   assert.equal(reads, 0);
 });
 
-test("cart writes accept quantity 1 only", async () => {
+test("an unmarked legacy cart line still rejects quantity 2 before loading legacy offer terms", async () => {
   const config = await commercePlugin({ collections: [], endpoints: [], secret: randomUUID(),
     db: postgresAdapter({ pool: { connectionString: "postgres://localhost/commerce_test" } }) });
   const carts = config.collections!.find((entry) => entry.slug === "carts")!;
@@ -29,12 +29,13 @@ test("cart writes accept quantity 1 only", async () => {
   let reads = 0;
   const req = { user, transactionID: "tx", payload: {
     db: { name: "postgres", sessions: { tx: { db: { execute: async () => undefined } } } },
-    find: async () => { reads++; throw new Error("catalogue read"); },
+    find: async () => { reads++; return { docs: [{ id: "product", commerceModel: "legacy-v1" }] }; },
+    findGlobal: async () => { reads++; throw new Error("legacy offer read"); },
   } } as unknown as PayloadRequest;
   await withCommerceWrite(req, async () => {
     await assert.rejects(hook({ req, operation: "create", data: { customer: "owner", items: [{ product: "product", quantity: 2 }] } } as never), /one unit/i);
   });
-  assert.equal(reads, 0);
+  assert.equal(reads, 1);
 });
 
 test("a multi-unit marker cannot send a variant or more than two guests to the catalogue", async t => {

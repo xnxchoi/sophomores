@@ -733,6 +733,9 @@
       "commerceProductModel": "",
       "nativeEditionDisplayOnly": "",
       "editionDisplayApproved": "",
+      "maximumPerPerson": "",
+      "maximumPerPersonHelp": "",
+      "maximumPerPersonInvalid": "",
       "teamRoster": "",
       "teamMember": "",
       "teamMembers": "",
@@ -833,6 +836,9 @@
   },
   "Customer": {
     "components_commerce_book_offer": {
+      "addToCart": "",
+      "inCart": "",
+      "removeFromCart": "",
       "book": "",
       "unavailableTitle": "",
       "unavailableDetail": "",
@@ -1537,7 +1543,8 @@
       "title": "",
       "introduction": "",
       "signInTitle": "",
-      "backToCart": ""
+      "backToCart": "",
+      "buyOnItsPage": ""
     },
     "components_commerce_cart": {
       "estimatedTotalAnnouncement": "",
@@ -1551,6 +1558,9 @@
       "itemDetailsUnavailable": "",
       "remove": "",
       "removeNamed": "",
+      "localTitle": "",
+      "localNote": "",
+      "localAdding": "",
       "removing": "",
       "removed": "",
       "removeFailed": "",
@@ -1565,13 +1575,19 @@
       "estimatedTotal": "",
       "estimateDetail": "",
       "priceUnavailable": "",
+      "shippingAtCheckout": "배송비는 결제 단계에서 더해져요.",
       "nextSteps": "",
       "continueToShop": "",
+      "signInToSave": "",
       "continueToCheckout": "",
       "visitShop": "",
       "shippingAndReturns": "",
       "writeOfferUnavailable": "",
       "writeLimitReached": "",
+      "writeMembershipInCart": "",
+      "writeGuestTicketAlone": "",
+      "writeProductLimitReached": "",
+      "writeAccountChanged": "",
       "writePaymentInProgress": "",
       "writeCartLocked": "",
       "writeRejected": "",
@@ -1702,11 +1718,6 @@
       "emptyPageDetail": "",
       "pagesUnavailable": "",
       "noPages": ""
-    },
-    "cartDrawer": {
-      "description": "",
-      "close": "",
-      "fullPage": ""
     },
     "components_membership_welcome": {
       "title": "",

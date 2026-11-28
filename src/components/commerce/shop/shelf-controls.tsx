@@ -1,8 +1,10 @@
 "use client";
 
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { ArrowLeftIcon, ArrowRightIcon } from "@phosphor-icons/react/dist/ssr";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/core/Button";
 
 type Ref<T> = { current: T };
 type BookRect = { leftPx: number; topPx: number; widthPx: number; heightPx: number };
@@ -102,11 +104,11 @@ export function ShelfPills({ shown, hub, rects, labels, onDetails, onOpenBook }:
 
 /** One pill (HomeBookCornerButtons__CornerButton): 15 px, 7.2 × 16 px padding, 40 px radius; hover swaps its colours. */
 function ShelfPill({ visible, label, onEnter, onPress }: { visible: boolean; label: string; onEnter: () => void; onPress: () => void }) {
-  return <button type="button" tabIndex={visible ? 0 : -1} onMouseEnter={onEnter}
+  return <Button variant="bare" type="button" tabIndex={visible ? 0 : -1} onMouseEnter={onEnter}
     onPointerDown={(event) => event.currentTarget.setPointerCapture(event.pointerId)}
     onClick={(event) => { event.stopPropagation(); onPress(); }}
-    className={cn("inline-flex items-center rounded-[40px] bg-background px-4 py-[7.2px] text-[15px] leading-[1.4] whitespace-nowrap text-foreground transition-colors duration-150 ease-[ease] hover:bg-foreground hover:text-background",
-      visible ? "pointer-events-auto" : "pointer-events-none")}>+ {label} +</button>;
+    className={cn("inline-flex items-center rounded-[40px] bg-background px-4 py-[7.2px] text-[15px] leading-[1.4] whitespace-nowrap text-foreground transition-colors duration-150 ease-[ease] hover:bg-foreground hover:text-background outline-offset-2 focus-visible:outline-2 focus-visible:outline-current",
+      visible ? "pointer-events-auto" : "pointer-events-none")}>+ {label} +</Button>;
 }
 
 /**
@@ -155,13 +157,13 @@ export function ShelfPager({ shown, hub, rects, count, slotOf, sectionTop, label
     return () => { cancelAnimationFrame(frame); window.removeEventListener("resize", reset); setVisible(false); };
   }, [shown, hub, rects, slotOf, sectionTop]);
 
-  return <div aria-hidden={!visible} className={cn("pointer-events-none fixed inset-0 z-30 min-[901px]:hidden", visible ? "opacity-100 transition-opacity duration-240 ease-[ease-out]" : "opacity-0")}>
+  return <div aria-hidden={!visible} className={cn("pointer-events-none fixed inset-0 z-30 min-[900px]:hidden", visible ? "opacity-100 transition-opacity duration-240 ease-[ease-out]" : "opacity-0")}>
     <div ref={row} role="group" aria-label={labels.group}
       className={cn("fixed top-0 left-1/2 flex -translate-x-1/2 items-center justify-between text-foreground select-none", visible ? "pointer-events-auto" : "pointer-events-none")}>
       <PagerButton visible={visible} label={labels.previous} disabled={position <= 1} onPress={() => hub.stepSpineSelection(-1, count)}>
         <ArrowLeftIcon aria-hidden="true" className="size-3" />
       </PagerButton>
-      <span aria-live="polite" className="px-0.5 text-[11px] tracking-[0.03em] whitespace-nowrap tabular-nums">{position} / {count}</span>
+      <span aria-live="polite" className="px-0.5 text-[11.2px] tracking-[0.03em] whitespace-nowrap tabular-nums">{position} / {count}</span>
       <PagerButton visible={visible} label={labels.next} disabled={position >= count} onPress={() => hub.stepSpineSelection(1, count)}>
         <ArrowRightIcon aria-hidden="true" className="size-3" />
       </PagerButton>
@@ -171,9 +173,9 @@ export function ShelfPager({ shown, hub, rects, count, slotOf, sectionTop, label
 
 /** CoverflowPager__ArrowButton: "[ arrow ]", 0.3 opacity when it can't move further. */
 function PagerButton({ visible, label, disabled, onPress, children }: { visible: boolean; label: string; disabled: boolean; onPress: () => void; children: ReactNode }) {
-  return <button type="button" tabIndex={visible ? 0 : -1} disabled={disabled} aria-label={label}
+  return <Button variant="bare" type="button" tabIndex={visible ? 0 : -1} disabled={disabled} aria-label={label}
     onPointerDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); onPress(); }}
-    className="inline-flex min-h-11 min-w-11 items-center justify-center gap-[1ch] px-[9px] text-xs tracking-[0.02em] whitespace-nowrap transition-opacity duration-150 ease-[ease] disabled:opacity-30">
-    <span aria-hidden="true">[</span>{children}<span aria-hidden="true">]</span>
-  </button>;
+    className="group/focus inline-flex min-h-11 min-w-11 items-center justify-center gap-[1ch] px-[9px] text-[12.3px] leading-4 tracking-[0.02em] whitespace-nowrap transition-opacity duration-150 ease-[ease] disabled:opacity-30">
+    <FocusShape className="inline-flex items-center gap-[1ch]"><span aria-hidden="true">[</span>{children}<span aria-hidden="true">]</span></FocusShape>
+  </Button>;
 }

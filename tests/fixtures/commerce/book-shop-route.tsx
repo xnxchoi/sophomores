@@ -31,4 +31,8 @@ export function CommerceOfferView({ offer, children }: { offer: unknown; childre
 }
 export function CommerceAccountGate({ children }: { children: ReactNode }) { return <section data-account-gate>{children}</section>; }
 export function CommerceCheckout() { return <p data-legacy-checkout>Fixture legacy checkout</p>; }
+// The in-place cart panel's pieces (/shop): inert here, the route test covers the shop's routing only.
+export async function loadCartProps() { return {}; }
+export function ShopCartPanel() { return null; }
+export function PrivateRoute({ children }: { children: ReactNode }) { return <>{children}</>; }
 export default {};

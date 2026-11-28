@@ -4,31 +4,55 @@ import { Button } from "@/components/core/Button";
 import { ArrowClockwiseIcon, ArrowLeftIcon } from "@phosphor-icons/react";
 import { useEcommerce } from "@payloadcms/plugin-ecommerce/client/react";
 import { useTranslations } from "next-intl";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { Link } from "@/components/core/Link/Link";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { PageFrame } from "@/components/commerce/page-frame";
 import { CommerceAccountGate, CommerceProvider } from "@/components/commerce/checkout";
 import { CommerceCart } from "@/components/commerce/cart";
 import type { CartProduct } from "@/lib/commerce/cart-products";
-import { z } from "zod";
-import { listGuestCart, writeThroughGuestCart, type MemberCartView, type WriteThroughResult } from "@/lib/commerce/browser-cart";
+import { readGuestCartIntentKey, subscribeGuestCart, writeThroughGuestCart, type WriteThroughResult } from "@/lib/commerce/browser-cart";
 import type { MemberCapabilities } from "@/lib/member-auth/contracts";
 
 /**
- * /shop/cart (owner, 23 Nov): the cart is visible to everyone, and sign-in happens only at Checkout. Signed out, Checkout
- * swaps the page to the account step (its own title); once signed in, the page swaps back to the cart, which goes on.
+ * /shop/cart is visible to everyone. Signed-out shoppers can sign in to save their selection;
+ * the account step returns them to the cart, not payment.
  */
-export function CartView({ products, signedIn, initialCapabilities, signInOffInReview, copy }: {
+export function CartView(props: CartProps) {
+  return <CartContents {...props} frame={({ title, step, children }) =>
+    <PageFrame title={title} displayTitle layout={step === "sign-in" ? "wide" : props.signInOffInReview ? "editorial" : "wide"}>{children}</PageFrame>} />;
+}
+
+export type CartProps = {
   products: readonly CartProduct[];
   signedIn: boolean;
   initialCapabilities: Readonly<MemberCapabilities>;
   signInOffInReview: boolean;
   copy: { title: string; signInTitle: string; backToCart: string };
+  /** Names and prices the cart's edition lines: the server action resolveCartEditions, passed down by loadCartProps. */
+  resolveProducts?: (productIDs: string[]) => Promise<readonly CartProduct[]>;
+  /** Where one saved edition checks out: set only by a candidate whose account-cart checkout route works (Auth's
+   * editions-pay). Unset here, so the cart never links an edition to checkout (Review-A HOLD on 5147095f). */
+  editionCheckoutHref?: string;
+};
+
+/**
+ * The cart's steps without a page around them: the cart, or the account step Checkout asks for when signed out, and the
+ * guest cart's write-through once signed in. `frame` lays each step out: the cart page's PageFrame, or the shop's cart
+ * panel (shop/cart-panel.tsx), which shows the same steps in stripe.press's cart column.
+ */
+export function CartContents({ products, signedIn, initialCapabilities, signInOffInReview, copy, resolveProducts, editionCheckoutHref, frame, cart }: CartProps & {
+  frame: (props: { title: string; step: "cart" | "sign-in"; children: ReactNode }) => ReactNode;
+  /** The cart itself (default CommerceCart): the shop's cart column lays out its own lines. */
+  cart?: (props: { products: readonly CartProduct[]; signedIn: boolean; localPendingFor?: string; onSignIn?: () => void;
+    resolveProducts?: CartProps["resolveProducts"]; editionCheckoutHref?: string }) => ReactNode;
 }) {
   const [view, setView] = useState<"cart" | "sign-in">("cart");
   const [member, setMember] = useState(signedIn);
-  if (view === "sign-in") return <PageFrame title={copy.signInTitle} displayTitle layout="wide">
+  const [transferring, setTransferring] = useState<string>();
+  // Called, not rendered as <frame>: a caller's inline frame would otherwise be a new component type on every render
+  // and remount the steps (and their provider) each time.
+  if (view === "sign-in") return frame({ title: copy.signInTitle, step: "sign-in", children: <>
     <Button variant="bare" type="button" onClick={() => setView("cart")}
       className="group/focus -ml-1 mb-6 inline-flex min-h-11 items-center gap-2 px-1 text-xs uppercase tracking-[0.04em] underline decoration-current/40 underline-offset-4 hover:decoration-current">
       <FocusShape className="inline-flex items-center gap-[inherit] outline-offset-4"><ArrowLeftIcon aria-hidden="true" className="size-4" />{copy.backToCart}</FocusShape>
@@ -36,13 +60,15 @@ export function CartView({ products, signedIn, initialCapabilities, signInOffInR
     <CommerceAccountGate signInOffInReview={signInOffInReview} initialCapabilities={initialCapabilities} returnTo="shop-cart">
       <SignedIn onReady={() => { setMember(true); setView("cart"); }} />
     </CommerceAccountGate>
-  </PageFrame>;
-  return <PageFrame title={copy.title} displayTitle layout={signInOffInReview ? "editorial" : "wide"}>
+  </> });
+  return frame({ title: copy.title, step: "cart", children: <>
     <CommerceProvider>
-      {member && <GuestCartWriteThrough />}
-      <CommerceCart products={products} wide signedIn={member} onSignIn={member ? undefined : () => setView("sign-in")} />
+      {member && <GuestCartWriteThrough running={transferring !== undefined} onRunning={setTransferring} />}
+      {cart ? cart({ products, signedIn: member, localPendingFor: transferring, resolveProducts, editionCheckoutHref, onSignIn: member ? undefined : () => setView("sign-in") })
+        : <CommerceCart products={products} wide signedIn={member} localPendingFor={transferring} resolveProducts={resolveProducts} editionCheckoutHref={editionCheckoutHref}
+          onSignIn={member ? undefined : () => setView("sign-in")} />}
     </CommerceProvider>
-  </PageFrame>;
+  </> });
 }
 
 /** The gate mounts its children only once the account step reports a signed-in member, so mounting here means sign-in finished. */
@@ -51,55 +77,28 @@ function SignedIn({ onReady }: { onReady: () => void }) {
   return null;
 }
 
-const id = z.union([z.string().min(1), z.number()]);
-const memberRead = z.object({ user: z.object({ id, cart: z.object({ docs: z.array(z.union([id, z.object({ id })])) }).optional() }).nullable() });
-const cartRead = z.object({ id, items: z.array(z.object({ product: z.unknown().optional() })).nullish() });
-
 /**
- * One write-through, as Auth's r3 contract asks: confirm who is signed in (the page's member, or nothing is written), read
- * that member's open cart fresh from the server (never the provider's possibly older copy), then call
- * writeThroughGuestCart pinned to them. A read that doesn't settle keeps the browser line for a later try.
+ * Transfer browser selections after sign-in. Stop on an account change instead of
+ * automatically copying any remaining selections into a different account.
+ * Auth-editions HOLD, 27 Nov: Try again follows the lines still on this browser, the member the transfer began with and
+ * whether a transfer is running, so a line edited or added while its write was acknowledged ("written" or "nothing"
+ * with lines left) can be retried by the same member. It never retries into a different account; the pin itself is
+ * stored with the lines (browser-cart.ts), so a reload or a later visit can't move them to another member either.
  */
-export async function confirmAndWriteThrough(expectedMemberID: string, options: { fetcher?: typeof fetch; storage?: Parameters<typeof listGuestCart>[0] } = {}): Promise<WriteThroughResult> {
-  const [line] = listGuestCart(options.storage);
-  if (!line) return { outcome: "nothing" };
-  const fetcher = options.fetcher ?? fetch;
-  const retry = { outcome: "retry", productID: line.productID } as const;
-  const read = async <T,>(url: string, schema: z.ZodType<T>) => {
-    try {
-      const response = await fetcher(url, { credentials: "include", cache: "no-store" });
-      if (!response.ok) return undefined;
-      const body = schema.safeParse(await response.json());
-      return body.success ? body.data : undefined;
-    } catch { return undefined; }
-  };
-  const me = await read("/api/users/me?depth=0&select[id]=true&select[cart]=true", memberRead);
-  if (!me) return retry;
-  if (!me.user || String(me.user.id) !== expectedMemberID) return { outcome: "account-changed", productID: line.productID };
-  // The users.cart join lists the member's newest open cart first, never a purchased one.
-  const open = me.user.cart?.docs[0];
-  let cart: MemberCartView = null;
-  if (open != null) {
-    const found = await read(`/api/carts/${encodeURIComponent(String(typeof open === "object" ? open.id : open))}?depth=0`, cartRead);
-    if (!found) return retry;
-    cart = found;
-  }
-  return writeThroughGuestCart(cart, { memberID: expectedMemberID, fetcher, storage: options.storage });
-}
-
-/**
- * After sign-in (email code here, or an Apple/Google return to /shop/cart): put the browser cart's line into the member's
- * cart once. If the signed-in account changed under the page, nothing was written: re-read the member and try again as
- * them (twice at most, then the Try again button).
- */
-function GuestCartWriteThrough() {
+function GuestCartWriteThrough({ running, onRunning }: { running: boolean; onRunning: (memberID?: string) => void }) {
   const t = useTranslations("Customer.components_commerce_cart");
   const { user, clearSession, onLogin } = useEcommerce();
   const memberID = user?.id == null ? undefined : String(user.id);
   const [result, setResult] = useState<WriteThroughResult | null>(null);
+  // The member the transfer began with, for render; transferMember is the effect's own copy of the same pin.
+  const [pinned, setPinned] = useState<string | undefined>(undefined);
   const [attempt, setAttempt] = useState(0);
+  const retainedKey = useSyncExternalStore(subscribeGuestCart, () => readGuestCartIntentKey(memberID), () => "[]");
+  const retained: [string, string, string][] = JSON.parse(retainedKey);
+  // Compare a refusal to the intent we tried, not to storage after the response came back.
+  const [attemptedKey, setAttemptedKey] = useState("[]");
   const ran = useRef(-1);
-  const rechecks = useRef(0);
+  const transferMember = useRef<string | undefined>(undefined);
   const mounted = useRef(true);
   const latest = useRef(memberID);
   useEffect(() => { latest.current = memberID; }, [memberID]);
@@ -107,32 +106,55 @@ function GuestCartWriteThrough() {
   useEffect(() => {
     const expected = latest.current;
     if (!expected || ran.current === attempt) return;
+    if (transferMember.current && transferMember.current !== expected) return;
+    transferMember.current = expected;
     ran.current = attempt;
-    void confirmAndWriteThrough(expected).then(async (next) => {
+    const attempted = readGuestCartIntentKey(expected);
+    if (attempted === "[]") return;
+    onRunning(expected);
+    void writeThroughGuestCart({ memberID: expected }).then(async (next) => {
       if (!mounted.current) return;
-      if (next.outcome === "account-changed" && rechecks.current < 2) {
-        rechecks.current += 1;
-        clearSession(); await onLogin();
-        if (mounted.current) setAttempt((value) => value + 1);
-        return;
-      }
+      onRunning();
+      if (latest.current !== expected) return;
+      setPinned(expected);
+      setAttemptedKey(attempted);
       setResult(next);
-      // Re-read the member and their cart so the page shows what was written.
-      if (next.outcome === "written") { clearSession(); await onLogin(); }
+      if (next.outcome === "account-changed" || next.outcome === "written" || ("changed" in next && next.changed)) {
+        clearSession(); await onLogin();
+      }
     });
-  }, [memberID, attempt, clearSession, onLogin]);
-  if (!result || result.outcome === "nothing" || result.outcome === "already-in-cart" || result.outcome === "written") return null;
-  const message = result.outcome === "retry" || result.outcome === "account-changed" ? t("writeRetry")
+  }, [memberID, attempt, clearSession, onLogin, onRunning]);
+  // Nothing left on this browser: nothing to report or retry.
+  if (!result || !memberID || memberID !== pinned || retained.length === 0) return null;
+  const attempted: [string, string, string][] = JSON.parse(attemptedKey);
+  if (attempted[0]?.[2] !== retained[0]?.[2]) return null;
+  const accountChanged = result.outcome === "account-changed";
+  const retryable = result.outcome === "retry" ||
+    (result.outcome === "refused" && (result.reason === "membership-in-cart" || result.reason === "guest-ticket-alone" ||
+      result.reason === "payment-in-progress" || result.reason === "cart-locked" || result.reason === "product-limit-reached"));
+  const anotherIntent = retained.some(([productID, intent]) =>
+    !("productID" in result) || productID !== result.productID ||
+    !attempted.some(([attemptedProductID, attemptedIntent]) => attemptedProductID === productID && attemptedIntent === intent));
+  const canRetry = !accountChanged && !running && (retryable || anotherIntent);
+  const settled = result.outcome === "nothing" || result.outcome === "written";
+  if (settled && !accountChanged && !canRetry) return null;
+  const message = accountChanged ? t("writeAccountChanged")
+    // Settled with lines left: the cart's "Only on this browser" note already says so; offer only Try again.
+    : settled ? null
+    : result.outcome === "retry" ? t("writeRetry")
     : result.reason === "offer-unavailable" ? t("writeOfferUnavailable")
     : result.reason === "limit-reached" ? t("writeLimitReached")
+    : result.reason === "membership-in-cart" ? t("writeMembershipInCart")
+    : result.reason === "guest-ticket-alone" ? t("writeGuestTicketAlone")
+    : result.reason === "product-limit-reached" ? t("writeProductLimitReached")
     : result.reason === "payment-in-progress" ? t("writePaymentInProgress")
     : result.reason === "cart-locked" ? t("writeCartLocked")
     : t("writeRejected");
   return <div role="status" className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-border pt-5 text-sm">
-    <p>{message}</p>
-    {result.outcome === "refused" && result.reason === "payment-in-progress" && <Link href="/shop/payment"
+    {message && <p>{message}</p>}
+    {!accountChanged && result.outcome === "refused" && result.reason === "payment-in-progress" && <Link href="/shop/payment"
       className="group/focus inline-flex min-h-11 items-center underline decoration-current/40 underline-offset-4 hover:decoration-current"><FocusShape className="outline-offset-4">{t("checkPayment")}</FocusShape></Link>}
-    {(result.outcome === "retry" || result.outcome === "account-changed") && <Button variant="bare" type="button" onClick={() => { rechecks.current = 0; setResult(null); setAttempt((value) => value + 1); }}
+    {canRetry && <Button variant="bare" type="button" onClick={() => { setResult(null); setAttempt((value) => value + 1); }}
       className="group/focus inline-flex min-h-11 items-center gap-1.5 text-muted-foreground transition-colors hover:text-foreground">
       <FocusShape className="inline-flex items-center gap-[inherit] outline-offset-4"><ArrowClockwiseIcon aria-hidden="true" className="size-4" />{t("tryAgain")}</FocusShape>
     </Button>}

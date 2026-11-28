@@ -356,7 +356,7 @@ export function createMemberSession(
         const status = await client.status();
         if (status.authenticated) throw new Error("Sign-out was not confirmed");
         // Signed out: this browser keeps no copy of the account or its purchases.
-        clearMemberBrowserCopies();
+        await clearMemberBrowserCopies();
         await client.clearPhoneIdentifier();
         pendingPasskey = undefined;
         update({

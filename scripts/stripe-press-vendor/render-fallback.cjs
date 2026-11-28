@@ -1,19 +1,22 @@
 // Renders the no-WebGL image set for the shop's books from the owner's book model (public/assets/three/book/book-rest.glb)
 // in the shape of stripe.press's fallback manifest (their module 24750): a 36-frame turn (a full turn about the vertical
 // axis, 10° a frame, starting at the hero pose), the hero (frame 0's book, cropped, at a larger size), the spine and the
-// cover (straight on, cropped). None of their images are used. Writes WebP with alpha to
+// cover (straight on, cropped), and the cart view (the spine laid flat, title reading left to right: their `cart`, one per
+// copy in the no-WebGL cart stack, module 60193). None of their images are used. Writes WebP with alpha to
 // public/assets/three/book/fallback/<set>/ and the manifest src/components/commerce/shop/_shared/fallback-manifest.json.
 //
 //   node scripts/stripe-press-vendor/render-fallback.cjs                       the placeholder set (every product)
 //   node scripts/stripe-press-vendor/render-fallback.cjs <productId> <cover>   one product's set, from its cover atlas
 //                                                                              (1920×1300, the layout of make-cover.cjs)
+//   add --only-cart to render only the cart view into an existing set (the other images stay as they are)
 // Re-run it when a product's cover changes. Needs Playwright's Chromium (WebGL) and sharp, both already installed.
 const path = require("path"), fs = require("fs");
 const ROOT = path.join(__dirname, "../..");
 const { chromium } = require(path.join(ROOT, "node_modules/playwright"));
 const sharp = require(path.join(ROOT, "node_modules/sharp"));
 
-const [productId, coverArg] = process.argv.slice(2);
+const onlyCart = process.argv.includes("--only-cart");
+const [productId, coverArg] = process.argv.slice(2).filter((arg) => arg !== "--only-cart");
 const SET = productId || "placeholder";
 const COVER = coverArg ? path.resolve(coverArg) : path.join(ROOT, "public/assets/three/book/cover-placeholder.png");
 const OUT = path.join(ROOT, "public/assets/three/book/fallback", SET), URL_BASE = "/assets/three/book/fallback/" + SET + "/";
@@ -31,6 +34,8 @@ const COVER_HEX = paletteHex("titanium"), PAGE_HEX = paletteHex("titanium");
 const TURN = { width: 580, height: 711 }, HERO_SCALE = 1005 / 660, STRAIGHT_HEIGHT = 1020, FRAMES = 36;
 // The hero pose: the front cover towards the camera, turned so the spine edge shows, seen a little from above.
 const FRONT = -Math.PI / 2, HERO_YAW = 0.26, HERO_PITCH = 0.08;
+// The cart view's roll: the spine's top to the right, so its title reads left to right.
+const CART_ROLL = -Math.PI / 2;
 
 const html = `<!doctype html><html><body style="margin:0;background:transparent">
 <script type="importmap">{"imports":{"three":"/three/build/three.module.js","three/addons/":"/three/examples/jsm/"}}</script>
@@ -55,8 +60,8 @@ const pivot = new THREE.Group(); pivot.add(book); scene.add(pivot);
 const reach = Math.max(size.y, size.z) * 0.62;
 const perspective = new THREE.PerspectiveCamera(20, 1, 0.1, 500);
 const ortho = new THREE.OrthographicCamera(-reach, reach, reach, -reach, 0.1, 500);
-window.shot = (w, h, yaw, pitch, straight) => {
-  r.setSize(w, h); pivot.rotation.set(pitch, yaw, 0, "YXZ");
+window.shot = (w, h, yaw, pitch, straight, roll = 0) => {
+  r.setSize(w, h); pivot.rotation.set(pitch, yaw, roll, "YXZ");
   let cam;
   if (straight) { cam = ortho; const a = w / h; cam.left = -reach * a; cam.right = reach * a; cam.top = reach; cam.bottom = -reach; }
   else { cam = perspective; cam.aspect = w / h; }
@@ -90,7 +95,17 @@ const webp = (buffer, file) => sharp(buffer).webp({ quality: 88, alphaQuality: 1
     route.fulfill({ body: fs.readFileSync(file), contentType: file.endsWith(".js") ? "text/javascript" : file.endsWith(".png") ? "image/png" : "application/octet-stream" });
   });
   await page.goto("http://render.local/"); await page.waitForFunction(() => window.ready === true, null, { timeout: 60000 });
-  const shot = async (w, h, yaw, pitch, straight) => Buffer.from((await page.evaluate(([w, h, yaw, pitch, straight]) => window.shot(w, h, yaw, pitch, straight), [w, h, yaw, pitch, straight])).split(",")[1], "base64");
+  const shot = async (w, h, yaw, pitch, straight, roll = 0) => Buffer.from((await page.evaluate(([w, h, yaw, pitch, straight, roll]) => window.shot(w, h, yaw, pitch, straight, roll), [w, h, yaw, pitch, straight, roll])).split(",")[1], "base64");
+  // The cart view: the spine straight on, rolled a quarter turn so the book lies flat (their 654×78, Nomad Letters).
+  const cartShot = async () => { const cart = await crop(await shot(STRAIGHT_HEIGHT, STRAIGHT_HEIGHT, 0, 0, true, CART_ROLL)); await webp(cart.buffer, "cart.webp");
+    return { src: URL_BASE + "cart.webp", width: cart.box.width, height: cart.box.height }; };
+  const manifest = fs.existsSync(MANIFEST) ? JSON.parse(fs.readFileSync(MANIFEST, "utf8")) : { placeholder: null, books: {} };
+  if (onlyCart) {
+    const set = productId ? manifest.books[productId] : manifest.placeholder;
+    if (!set) throw new Error("no rendered set for " + SET + " to add a cart view to; render the whole set first");
+    set.cart = await cartShot(); await browser.close();
+    fs.writeFileSync(MANIFEST, JSON.stringify(manifest, null, 2) + "\n"); console.log(JSON.stringify({ set: SET, cart: set.cart })); return;
+  }
 
   // The turn: whole frames (the book moves within them), frame 0 the hero pose; the hero box is frame 0's book.
   const frames = [];
@@ -109,6 +124,7 @@ const webp = (buffer, file) => sharp(buffer).webp({ quality: 88, alphaQuality: 1
   await webp(spine.buffer, "spine.webp");
   const front = await crop(await shot(STRAIGHT_HEIGHT, STRAIGHT_HEIGHT, FRONT, 0, true));
   await webp(front.buffer, "cover.webp");
+  const cart = await cartShot();
   await browser.close();
 
   const set = {
@@ -116,8 +132,8 @@ const webp = (buffer, file) => sharp(buffer).webp({ quality: 88, alphaQuality: 1
     cover: { src: URL_BASE + "cover.webp", width: front.box.width, height: front.box.height },
     hero: { src: URL_BASE + "hero.webp", width: hero.box.width, height: hero.box.height },
     turn: { frames, width: TURN.width, height: TURN.height, heroBox },
+    cart,
   };
-  const manifest = fs.existsSync(MANIFEST) ? JSON.parse(fs.readFileSync(MANIFEST, "utf8")) : { placeholder: null, books: {} };
   if (productId) manifest.books[productId] = set; else manifest.placeholder = set;
   fs.writeFileSync(MANIFEST, JSON.stringify(manifest, null, 2) + "\n");
   console.log(JSON.stringify({ set: SET, hero: set.hero, spine: set.spine, cover: set.cover, heroBox }));

@@ -1,8 +1,11 @@
 "use client";
 
+import { cartOwnsInput } from "./cart-column";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Vendored } from "./stripe-scene";
 import { fallbackImagesFor, type FallbackImage } from "./_shared/fallback-images";
+import { Button } from "@/components/core/Button";
 
 /**
  * stripe.press's no-WebGL spine row (`NoWebglSpineRow`, module 27511, 2k0q1kp4qmm_6.js:20-695), ported as written: when
@@ -377,7 +380,7 @@ export function NoWebglSpineRow({ vendored, books, hidden, onBookOpen, labels }:
     const snap = () => {
       window.clearTimeout(timer);
       if (touching || props.current.hidden || performance.now() - inputAt > 2500 || hub.bookOpenTransitionLiveRef.current.active
-        || hub.spineViewRestoringLiveRef.current || document.documentElement.hasAttribute("data-shelf-scroll-lock")) return;
+        || hub.spineViewRestoringLiveRef.current || document.documentElement.hasAttribute("data-shelf-scroll-lock") || cartOwnsInput()) return;
       const target = seat.current.seatScrollY;
       if (target == null) return;
       const distance = target - window.scrollY;
@@ -386,7 +389,7 @@ export function NoWebglSpineRow({ vendored, books, hidden, onBookOpen, labels }:
     };
     const schedule = (delay = SEAT_DELAY_MS) => { window.clearTimeout(timer); timer = window.setTimeout(snap, delay); };
     const scrolled = () => schedule(), ended = () => schedule(50), input = () => { inputAt = performance.now(); };
-    const key = (event: KeyboardEvent) => { if (["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " ", "j", "k"].includes(event.key)) input(); };
+    const key = (event: KeyboardEvent) => { if (!cartOwnsInput() && ["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " ", "j", "k"].includes(event.key)) input(); };
     const touchStart = () => { touching = true; input(); window.clearTimeout(timer); };
     const touchEnd = () => { touching = false; input(); schedule(); };
     const hasScrollEnd = "onscrollend" in window;
@@ -446,7 +449,7 @@ export function NoWebglSpineRow({ vendored, books, hidden, onBookOpen, labels }:
       <div ref={buttons} className="absolute top-0 left-1/2 h-full w-0">
         {hub.spineDisplayOrder.map((index) => {
           const title = books[index]?.title ?? catalogue.I[index].title, isShown = index === shown.to;
-          return <button key={books[index]?.id ?? index} ref={(element) => { buttonEls.current[index] = element; }} type="button"
+          return <Button variant="bare" key={books[index]?.id ?? index} ref={(element) => { buttonEls.current[index] = element; }} type="button"
             aria-label={fill(isShown && shown.out ? labels.open : labels.show, title)} tabIndex={isShown ? 0 : -1}
             onClick={(event) => {
               if (event.timeStamp - dragEndedAt.current < 350) return;
@@ -456,7 +459,9 @@ export function NoWebglSpineRow({ vendored, books, hidden, onBookOpen, labels }:
             }}
             onPointerEnter={() => { hub.bookHoverIndexLiveRef.current = index; }}
             onPointerLeave={() => { if (hub.bookHoverIndexLiveRef.current === index) hub.bookHoverIndexLiveRef.current = -1; }}
-            className="pointer-events-auto absolute top-0 left-0 m-0 touch-pan-y border-0 bg-transparent p-0 [-webkit-tap-highlight-color:transparent] pointer-coarse:min-h-11 pointer-coarse:min-w-11" />;
+            className="pointer-events-auto absolute top-0 left-0 m-0 touch-pan-y border-0 bg-transparent p-0 [-webkit-tap-highlight-color:transparent] pointer-coarse:min-h-11 pointer-coarse:min-w-11 group/focus">
+            <FocusShape aria-hidden="true" className="pointer-events-none absolute inset-0 block rounded-[2px]" />
+          </Button>;
         })}
       </div>
     </div>

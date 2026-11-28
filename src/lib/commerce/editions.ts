@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { CollectionSlug, Payload, PayloadRequest } from "payload";
 import { resolveEditionRule } from "./edition-rules";
+import { productMaximumPerPersonSchema } from "./contracts";
 
 const relation = z.union([z.string().min(1), z.object({ id: z.string().min(1) })])
   .transform((value) => typeof value === "string" ? value : value.id);
@@ -13,6 +14,7 @@ export const commerceEditionProductSchema = z.object({
     z.string().min(1), z.object({ id: z.string().min(1), url: z.string().optional(), alt: z.string().nullish() }),
   ]) })).min(1),
   variantTypes: z.tuple([relation]), updatedAt: z.string().min(1),
+  maximumPerPerson: productMaximumPerPersonSchema,
 });
 
 export const commerceEditionVariantSchema = z.object({
@@ -30,7 +32,7 @@ export type CommerceEditionCatalogue = Readonly<{
   status: "displayable";
   product: Readonly<{
     productID: string; releaseID: string; title: string; description: string;
-    images: z.infer<typeof commerceEditionProductSchema>["images"]; productVersion: string;
+    images: z.infer<typeof commerceEditionProductSchema>["images"]; productVersion: string; maximumPerPerson: number | null;
   }>;
   editions: readonly Readonly<{
     variantID: string; optionID: string; variantTypeID: string;
@@ -104,7 +106,7 @@ export async function loadPublishedCommerceEditions(
   return { status: "displayable", purchaseReady: false,
     product: { productID: product.data.id, releaseID: product.data.id,
       title: product.data.title, description: product.data.description,
-      images: product.data.images, productVersion: product.data.updatedAt }, editions };
+      images: product.data.images, productVersion: product.data.updatedAt, maximumPerPerson: product.data.maximumPerPerson ?? null }, editions };
 }
 
 /** Public checkout facts for an explicit product ID, not purchase permission or a member's remaining allowance. */
@@ -130,6 +132,7 @@ export function commerceEditionOfferFrom(catalogue: CommerceEditionCatalogue, pr
     ...rule,
     productID, title: catalogue.product.title, priceKRW: edition.priceKRW,
     productVersion: catalogue.product.productVersion, releaseID: catalogue.product.releaseID,
+    maximumPerPerson: catalogue.product.maximumPerPerson,
     edition: {
       variantID: edition.variantID, optionID: edition.optionID, variantTypeID: edition.variantTypeID,
       label: edition.label, variantVersion: edition.variantVersion,

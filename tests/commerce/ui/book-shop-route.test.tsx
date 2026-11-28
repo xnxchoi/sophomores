@@ -14,7 +14,9 @@ before(async () => {
       if (context.parentURL && new URL(context.parentURL).pathname.endsWith("/src/app/(site)/shop/page.tsx")
         && ["next/server", "payload", "@payload-config", "@/lib/commerce/catalogue", "@/lib/commerce/editions",
           "@/lib/member-auth/public-capabilities.server", "@/components/commerce/checkout",
-          "@/components/commerce/offer", "@/components/commerce/book-offer", "@/components/commerce/load-retry"].includes(specifier)) {
+          "@/components/commerce/offer", "@/components/commerce/book-offer", "@/components/commerce/load-retry",
+          // The in-place cart panel (Hamlet, 27 Nov): its loader reads the member; the route test covers the shop's routing only.
+          "./cart/load-cart", "./cart/shop-cart-panel", "@/components/auth/private-route"].includes(specifier)) {
         return { url: new URL("../../fixtures/commerce/book-shop-route.tsx", import.meta.url).href, shortCircuit: true };
       }
       return nextResolve(specifier, context);
@@ -26,13 +28,12 @@ after(() => boundary?.deregister());
 
 test("actual ShopPage routes native absence independently but never purchases an ambiguous book", async (t) => {
   for (const reason of ["native-schema-unregistered", "product-unpublished"] as const) {
-    await t.test(reason + " preserves a legitimate existing legacy offer", async () => {
+    await t.test(reason + " never falls back to standalone sales", async () => {
       setBookShopScenario({ editions: { status: "unavailable", reason, purchaseReady: false }, legacyOffer: true });
       const html = renderToStaticMarkup(await ShopPage());
-      assert.match(html, /data-legacy-offer="present"/);
-      assert.match(html, /data-legacy-checkout/);
-      assert.doesNotMatch(html, /data-book-state/);
-      assert.equal(legacyOfferReads(), 1);
+      assert.match(html, /data-book-state="unavailable"/);
+      assert.doesNotMatch(html, /data-legacy-offer|data-legacy-checkout|data-account-gate/);
+      assert.equal(legacyOfferReads(), 0);
     });
   }
   for (const reason of ["invalid-configuration"] as const) {
@@ -61,19 +62,11 @@ test("actual ShopPage routes native absence independently but never purchases an
     assert.doesNotMatch(html, /data-legacy-offer|data-legacy-checkout|data-account-gate/);
     assert.equal(legacyOfferReads(), 0);
   });
-  await t.test("a legacy offer read that throws is a failed read with a retry, not the closed shop", async () => {
+  await t.test("the removed legacy fallback is never queried, even on native absence", async () => {
     setBookShopScenario({ editions: { status: "unavailable", reason: "product-unpublished", purchaseReady: false }, legacyOffer: new Error("Synthetic legacy read failure") });
     const html = renderToStaticMarkup(await ShopPage());
-    assert.match(html, /data-book-state="read-failed"/);
-    assert.match(html, /data-retry/);
+    assert.match(html, /data-book-state="unavailable"/);
     assert.doesNotMatch(html, /data-legacy-offer|data-legacy-checkout|data-account-gate/);
-    assert.equal(legacyOfferReads(), 1);
-  });
-  await t.test("no native or legacy publication never fabricates a checkout", async () => {
-    setBookShopScenario({ editions: { status: "unavailable", reason: "product-unpublished", purchaseReady: false }, legacyOffer: false });
-    const html = renderToStaticMarkup(await ShopPage());
-    assert.match(html, /data-legacy-offer="absent"/);
-    assert.doesNotMatch(html, /data-legacy-checkout|data-account-gate/);
-    assert.equal(legacyOfferReads(), 1);
+    assert.equal(legacyOfferReads(), 0);
   });
 });

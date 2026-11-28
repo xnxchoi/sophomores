@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { cartOwnsInput } from "./cart-column";
 import type { SceneCatalogue, SceneHub } from "./stripe-scene";
 
 type Selection = { to?: number; settled?: boolean };
@@ -99,6 +100,7 @@ export function useShelfCatch(hub: SceneHub, catalogue: SceneCatalogue, source: 
     };
 
     const wheel = (event: WheelEvent) => {
+      if (cartOwnsInput()) return;   // the cart owns input: no catch under it
       const now = performance.now(), gap = now - wheelAt;
       const delta = event.deltaMode === 1 ? 16 * event.deltaY : event.deltaMode === 2 ? event.deltaY * (window.innerHeight || 800) : event.deltaY;
       wheelAt = now;

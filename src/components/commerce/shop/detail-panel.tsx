@@ -1,10 +1,12 @@
 "use client";
 
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { RichText } from "@payloadcms/richtext-lexical/react";
 import type { SerializedEditorState } from "@payloadcms/richtext-lexical/lexical";
 import { ArrowUpRightIcon, CaretDownIcon } from "@phosphor-icons/react";
 import { useLocale, useTranslations } from "next-intl";
-import { useState, type ReactNode } from "react";
+import { useState, useSyncExternalStore, type ReactNode } from "react";
+import { addGuestCartLine, listGuestCart, removeGuestCartLine, subscribeGuestCart } from "@/lib/commerce/browser-cart";
 import type { CommerceEditionOffer } from "@/lib/commerce/editions";
 import { editionRefundTerms } from "@/lib/commerce/refund-policy";
 import { cn } from "@/lib/utils";
@@ -12,6 +14,9 @@ import { RefundTerms } from "../refund-terms";
 import type { ProductPageContent } from "../product-page/_shared/content";
 import { physicalDetails, type EditionProduct } from "../product-page/product-page";
 import { DetailGallery } from "./detail-gallery";
+import { useCartFly } from "./cart-fly";
+import { useShopViewer, verifyShopViewer } from "./use-shop-viewer";
+import { Button } from "@/components/core/Button";
 
 /**
  * One book's details inside stripe.press's scene: their detail panel content (`ie`, 06w:6066-6943; notes
@@ -23,8 +28,7 @@ import { DetailGallery } from "./detail-gallery";
  *   lists fold behind a [ Details ] toggle.
  * The full-bleed bands and the screen-tall top block apply inside the scene's detail slots only (in-[[data-detail-panel-
  * index]]), so the same panel sits plainly in the fallback list.
- * Ours, where theirs has no counterpart: the purchase row (purchase isn't open), the refund rule beside it (owner, 25
- * Nov), and our bracket labels' words. Labels are sans, not their mono (owner, 21 Nov: mono only where named); colours
+ * Ours, where theirs has no counterpart: the refund rule beside the add row (owner, 25 Nov), and our bracket labels' words. Labels are sans, not their mono (owner, 21 Nov: mono only where named); colours
  * are the site's (colour hold), with their proportions: rules at 45 %, muted text at 78 %. Detail mode plays no item
  * stagger in theirs (`noScrollFade`), so none here; the panel's slide is the stack's.
  */
@@ -57,7 +61,7 @@ export function DetailPanel({ product, offer, content }: { product: EditionProdu
       {/* Their AddToCartFrame: the formats table, then the pill row (none of ours yet; its 40 px stays). */}
       <section aria-label={t("formats")} className="flex flex-col gap-6">
         <div className="mt-[18px] border-y border-dotted border-foreground/45">
-          <PriceRow disabled label={t("purchaseNotOpen")} value={money.format(offer.priceKRW)} />
+          <AddRow productID={product.productID} title={product.title} price={money.format(offer.priceKRW)} />
           {content.formats.map((format) => <PriceRow key={format.label} label={format.label} value={format.note ?? ""} url={format.url ?? undefined} />)}
         </div>
         <div className="pl-3.5 text-[13px] leading-5 text-foreground/78 text-pretty">
@@ -90,7 +94,7 @@ export function DetailPanel({ product, offer, content }: { product: EditionProdu
             <figure>
               <p aria-hidden="true" className="-mb-5 pt-[30px] font-display text-[80px] leading-[0.9] max-[900px]:pt-9">“</p>
               <figcaption className="mt-[17px] mb-[18px] text-[13px] tracking-[0.04em] uppercase underline underline-offset-2">
-                {entry.url ? <a href={entry.url} target="_blank" rel="noreferrer" className="text-inherit">{entry.name}</a> : entry.name}
+                {entry.url ? <a href={entry.url} target="_blank" rel="noreferrer" className="text-inherit outline-offset-2 focus-visible:outline-2 focus-visible:outline-current">{entry.name}</a> : entry.name}
               </figcaption>
               <blockquote className="mb-[21px] pr-5 text-lg leading-[1.45] font-light">{entry.quote}</blockquote>
               {entry.role && <p className="mb-9 text-[13px] tracking-[0.03em] uppercase opacity-60">{entry.role}</p>}
@@ -125,12 +129,14 @@ function Production({ colophon, gallery, anchor, labels }: { colophon: { label: 
             {at === 0
               ? <>
                   <span className="max-[900px]:hidden"><Label>{section.label}</Label></span>
-                  <button type="button" aria-expanded={!collapsed} onClick={() => setCollapsed((value) => !value)}
-                    className="hidden w-full items-center justify-between pb-1.5 text-left text-[11px] leading-[1.5] uppercase max-[900px]:flex pointer-coarse:min-h-11">
-                    [ {section.label} ]
-                    <span className="inline-flex items-center gap-1">{collapsed ? labels.expand : labels.collapse}
-                      <CaretDownIcon aria-hidden="true" className={cn("size-2.5 transition-transform duration-250 ease-[ease]", !collapsed && "rotate-180")} /></span>
-                  </button>
+                  <Button variant="bare" type="button" aria-expanded={!collapsed} onClick={() => setCollapsed((value) => !value)}
+                    className="group/focus hidden w-full items-center pb-1.5 text-left text-[11px] leading-[1.5] uppercase max-[900px]:flex pointer-coarse:min-h-11">
+                    <FocusShape className="flex w-full items-center justify-between">
+                      [ {section.label} ]
+                      <span className="inline-flex items-center gap-1">{collapsed ? labels.expand : labels.collapse}
+                        <CaretDownIcon aria-hidden="true" className={cn("size-2.5 transition-transform duration-250 ease-[ease]", !collapsed && "rotate-180")} /></span>
+                    </FocusShape>
+                  </Button>
                 </>
               : <Label>{section.label}</Label>}
             <ul className={cn("pl-3.5 text-base leading-[1.65]", at === 0 && "max-[900px]:group-data-collapsed/colophon:hidden")}>
@@ -145,12 +151,12 @@ function Production({ colophon, gallery, anchor, labels }: { colophon: { label: 
         </div>
         <div className="ml-auto w-full min-w-0 max-[900px]:order-4 max-[900px]:mb-6 min-[900px]:col-start-2 min-[900px]:row-start-3">
           <div className="flex w-full flex-wrap gap-1.5">
-            {gallery.map((image, at) => <button key={image.url} type="button" data-active={at === index || undefined} onClick={() => setIndex(at)}
-              className="flex min-w-0 shrink-0 grow-0 basis-[calc(20%-4.8px)] flex-col items-start gap-0.5 text-left opacity-55 transition-opacity duration-200 ease-[ease] hover:opacity-100 data-active:opacity-100">
+            {gallery.map((image, at) => <Button variant="bare" key={image.url} type="button" data-active={at === index || undefined} onClick={() => setIndex(at)}
+              className="flex min-w-0 shrink-0 grow-0 basis-[calc(20%-4.8px)] flex-col items-start gap-0.5 text-left opacity-55 transition-opacity duration-200 ease-[ease] hover:opacity-100 focus-visible:opacity-100 data-active:opacity-100 outline-offset-2 focus-visible:outline-2 focus-visible:outline-current">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={image.url} alt="" loading="lazy" className="block aspect-[1075/1433] h-auto w-full rounded-[4px] bg-foreground/10 object-cover" />
               <span className="text-[11px] leading-[1.5] tabular-nums">{String(at + 1).padStart(2, "0")}</span>
-            </button>)}
+            </Button>)}
           </div>
         </div>
       </>}
@@ -183,6 +189,71 @@ function Prose({ data }: { data: SerializedEditorState }) {
 }
 
 /** Their PriceRow: at least 41 px, dotted rule between rows, label left and value right (15 px/140 %, 16 px in), tinted on hover. */
+/**
+ * Their add-to-cart row (06w9 hZ): a press adds the book and the row stays, now saying it's in the cart, with the round
+ * × of their cart lines to take it out. One per account, so no quantity. Through Auth's browser cart (its exports only);
+ * a member's cart takes it at sign-in. In the preview it works while the sale isn't open (owner, 27 Nov: "pretend that
+ * the non-live parts are live").
+ * Scoped to the shop's viewer (Review-B HOLD on 0336e57b, Auth-editions' boundary): while it is unknown the row shows no
+ * selection and changes nothing; each add or remove first re-verifies the same viewer, passes that member to Auth's
+ * helpers, and is awaited. The book flies and the row turns only on a confirmed add for the viewer still looking; a
+ * refusal says so in place, without the fly. One action at a time.
+ */
+function AddRow({ productID, title, price }: { productID: string; title: string; price: string }) {
+  const t = useTranslations("Customer.components_commerce_book_offer");
+  const cart = useTranslations("Customer.components_commerce_cart");
+  const viewer = useShopViewer();
+  const known = viewer !== undefined;
+  const inCart = useSyncExternalStore(subscribeGuestCart,
+    () => known && listGuestCart(undefined, viewer ?? undefined).some((line) => line.productID === productID), () => false);
+  const fly = useCartFly();
+  const [pending, setPending] = useState(false);
+  const [failed, setFailed] = useState<{ viewer: string | null; kind: "add" | "remove" } | null>(null);
+  // A failure is shown only to the viewer it happened to.
+  const failure = failed && failed.viewer === viewer ? failed.kind : null;
+
+  async function change(kind: "add" | "remove") {
+    if (pending || !known) return;
+    const before = viewer;
+    setPending(true);
+    setFailed(null);
+    try {
+      const check = await verifyShopViewer();
+      if (!check || check.viewer !== before) return;
+      const memberID = check.viewer ?? undefined;
+      // Checked inside the cart's lock too: an action queued there for a viewer who has since left writes nothing.
+      const ok = kind === "add"
+        ? await addGuestCartLine(productID, undefined, { memberID, stillCurrent: check.isCurrent })
+        : await removeGuestCartLine(productID, undefined, memberID, { stillCurrent: check.isCurrent });
+      // Any recheck since (a switch, or even the same member again): nothing is flown or reported for it.
+      if (!check.isCurrent()) return;
+      if (!ok) { setFailed({ viewer: check.viewer, kind }); return; }
+      if (kind === "add") fly?.(productID);
+    } finally { setPending(false); }
+  }
+
+  const note = failure && <p role="status" className="px-4 pb-2 text-[12px] leading-[1.5] text-muted-foreground">
+    {failure === "add" ? cart("writeRejected") : cart("removeFailed")}</p>;
+  if (inCart) return <div>
+    <div className="flex min-h-[41px] items-center justify-between border-t border-dotted border-foreground/45 text-[15px] leading-[1.4] first:border-t-0 pointer-coarse:min-h-11">
+      <span className="min-w-0 px-4">{t("inCart")}</span>
+      <span className="flex shrink-0 items-center gap-3 px-4 tabular-nums">{price}
+        <Button variant="bare" type="button" aria-label={t("removeFromCart", { title })} disabled={pending} onClick={() => void change("remove")}
+          className="group/focus -m-3 inline-flex size-11 items-center justify-center disabled:opacity-40">
+          <FocusShape className="flex size-5 items-center justify-center rounded-full border-[0.8px] border-current pb-0.5 text-[19.5px] leading-none opacity-75 transition-opacity duration-200 group-hover/focus:opacity-100">×</FocusShape>
+        </Button></span>
+    </div>
+    {note}
+  </div>;
+  return <div>
+    <Button variant="bare" type="button" disabled={pending || !known} onClick={() => void change("add")}
+      className="group/focus flex min-h-[41px] w-full items-center border-t border-dotted border-foreground/45 text-left text-[15px] leading-[1.4] transition-colors duration-200 ease-[ease] first:border-t-0 hover:bg-foreground/8 disabled:opacity-60 pointer-coarse:min-h-11">
+      <FocusShape className="flex w-full items-center justify-between"><span className="min-w-0 px-4">{t("addToCart")}</span><span className="shrink-0 px-4 tabular-nums">{price}</span></FocusShape>
+    </Button>
+    {note}
+  </div>;
+}
+
 function PriceRow({ label, value, url, disabled }: { label: string; value: string; url?: string; disabled?: boolean }) {
   const body = <>
     <span className="min-w-0 px-4 [overflow-wrap:anywhere]">{label}</span>
@@ -190,7 +261,7 @@ function PriceRow({ label, value, url, disabled }: { label: string; value: strin
   </>;
   return url
     ? <a href={url} target="_blank" rel="noreferrer"
-        className="flex min-h-[41px] items-center justify-between border-t border-dotted border-foreground/45 text-[15px] leading-[1.4] transition-colors duration-200 ease-[ease] first:border-t-0 hover:bg-foreground/8 pointer-coarse:min-h-11">{body}</a>
+        className="flex min-h-[41px] items-center justify-between border-t border-dotted border-foreground/45 text-[15px] leading-[1.4] transition-colors duration-200 ease-[ease] first:border-t-0 hover:bg-foreground/8 pointer-coarse:min-h-11 group/focus"><FocusShape className="flex w-full items-center justify-between">{body}</FocusShape></a>
     : <div aria-disabled={disabled || undefined}
         className={cn("flex min-h-[41px] items-center justify-between border-t border-dotted border-foreground/45 text-[15px] leading-[1.4] first:border-t-0 pointer-coarse:min-h-11", disabled && "opacity-60")}>{body}</div>;
 }

@@ -5,7 +5,6 @@ import { getTranslations } from "next-intl/server";
 import { currentUser } from "@/lib/auth/server";
 import { PageFrame } from "@/components/commerce/page-frame";
 import { Link } from "@/components/core/Link/Link";
-import { AccountCartEntry } from "./_cart/cart-entry";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { memberSignInHref } from "@/lib/member-auth/paths";
 
@@ -32,7 +31,11 @@ export default async function AccountHomePage() {
           </div>
           <ArrowRightIcon aria-hidden="true" className="mt-1 size-5 shrink-0 text-muted-foreground transition-transform duration-200 group-hover:translate-x-1 group-focus-visible:translate-x-1" />
         </Link>
-        <AccountCartEntry />
+        {/* The cart opens in the shop's cart mode (stripe.press's /cart); the account sheet retired (Cordy, 26 Nov, step 6). */}
+        <Link href="/shop/cart" className="group rounded-xl border border-border bg-card p-6 text-card-foreground outline-offset-4 transition-colors hover:bg-muted focus-visible:outline-2">
+          <h3 className="font-heading text-2xl underline-offset-4 group-hover:underline">{t("cart.title")}</h3>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{t("cart.description")}</p>
+        </Link>
         <Link href="/shop" className="group rounded-xl border border-border bg-card p-6 text-card-foreground outline-offset-4 transition-colors hover:bg-muted focus-visible:outline-2">
           <h3 className="font-heading text-2xl underline-offset-4 group-hover:underline">{t("shop.title")}</h3>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{t("shop.description")}</p>

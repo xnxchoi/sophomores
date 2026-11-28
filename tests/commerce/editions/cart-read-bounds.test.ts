@@ -49,10 +49,15 @@ test("a failing edition read names nothing for it, keeps the other editions, and
   assert.deepEqual(await loadCartEditionProducts(payload(), ["legacy-membership"]), []);
 });
 
-test("the membership loader logs one fixed line on a read failure instead of swallowing it", async (t) => {
+test("the pinned Guest loader logs one fixed line on a read failure instead of swallowing it", async (t) => {
+  for (const [key, value] of Object.entries({ UNLOCK_SHARED_TICKET_EVENT_ID: "event", UNLOCK_SHARED_TICKET_GUEST_PRODUCT_ID: "guest" })) {
+    const original = process.env[key];
+    t.after(() => { if (original === undefined) delete process.env[key]; else process.env[key] = original; });
+    process.env[key] = value;
+  }
   const logged: unknown[][] = [];
   t.mock.method(console, "error", (...args: unknown[]) => { logged.push(args); });
   const failing = { async findGlobal() { throw new Error("database connection lost"); } } as unknown as Parameters<typeof loadCartProducts>[0];
   assert.deepEqual(await loadCartProducts(failing), []);
-  assert.deepEqual(logged, [["Cart membership pricing is unavailable."]]);
+  assert.deepEqual(logged, [["Cart Guest ticket pricing is unavailable."]]);
 });

@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import type { PayloadRequest } from "payload";
-import { MAX_ORDER_UNITS, MEMBERSHIP_RELEASE } from "./contracts";
+import { MAX_ORDER_UNITS, MEMBERSHIP_RELEASE, productMaximumPerPersonSchema } from "./contracts";
 import { keyGrantStates, MEMBER_EVENT_GRANT, memberEventGrantOperationKey, parseKeyGrantTarget } from "./keys/contracts";
 import { assertGuestSponsorMembership } from "./membership";
 import { optionalRelationshipID, purchaseSnapshotSchema, reservationAllowance } from "./purchase-snapshot";
@@ -145,9 +145,9 @@ async function readAccountAllowance(req: PayloadRequest, customerID: string, pro
  * server-only ledgers; it answers yes or no and never returns them. Integrity and storage failures propagate (fail closed).
  */
 export async function accountAllowanceAdmits(req: PayloadRequest, { customerID, productID, eventID, quantity, accountLimit, guest = false }:
-  { customerID: string; productID: string; eventID: string | null; quantity: number; accountLimit: number; guest?: boolean }): Promise<boolean> {
+  { customerID: string; productID: string; eventID: string | null; quantity: number; accountLimit: number | null; guest?: boolean }): Promise<boolean> {
   const { namespace, reserved, paid } = await readAccountAllowance(req, customerID, productID, eventID, guest);
-  if (reserved + paid + quantity > accountLimit) return false;
+  if (accountLimit !== null && reserved + paid + quantity > accountLimit) return false;
   if (namespace !== MEMBERSHIP_RELEASE) return true;
   try { await assertNoLiveMembershipKey(req, customerID); }
   catch (error) { if (error instanceof Error && error.message === LIVE_MEMBERSHIP_KEY) return false; throw error; }
@@ -210,6 +210,12 @@ export async function reservePurchase(input: ReservationInput): Promise<Commerce
   const { namespace, key, allowance, reserved, paid } = await readAccountAllowance(req, customerID, productID, eventID, !!ticket);
   // Single membership token per account (owner, 22 Nov), under the snapshot's recorded limit.
   if (reserved + paid + quantity > accountLimit) throw new Error("Account membership allowance exceeded");
+  if (ticket) {
+    // Product edits share our product lock. Keep the v3 ceiling frozen, but apply the current product cap
+    // to new reservations only, including the buyer's held and paid Guest units.
+    const maximum = productMaximumPerPersonSchema.parse(product.maximumPerPerson);
+    if (maximum != null && reserved + paid + quantity > maximum) throw new Error("Guest ticket product limit exceeded");
+  }
   if (namespace === MEMBERSHIP_RELEASE) await assertNoLiveMembershipKey(req, customerID);
   // The refund terms shown beside Pay, checked again under the event lock against the event as read here and a clock
   // sampled after every read above (Review-B r4): a change (an edited start, a cutoff crossed while this request waited)

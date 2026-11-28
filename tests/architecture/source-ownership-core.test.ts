@@ -43,7 +43,9 @@ test("transition classification and selection preserve their current behavior", 
     ["/me/settings", "/me/settings/profile", false, null, "SHELL"],
     ["/shop", "/shop/products/abc", false, null, "SHELL"],
     ["/shop/products/abc", "/shop/products/def", false, null, "SHELL"],
-    ["/shop/products/abc", "/shop/cart", false, null, "FADE"],
+    ["/shop/products/abc", "/shop/cart", false, null, "SHELL"],
+    ["/shop/cart", "/shop", false, null, "SHELL"],
+    ["/shop/cart", "/shop/orders", false, null, "FADE"],
     ["/", "/account", true, null, "FROM_MENU"],
     ["/", "/account", true, "IMMEDIATE", "IMMEDIATE"]
   ] as const) {

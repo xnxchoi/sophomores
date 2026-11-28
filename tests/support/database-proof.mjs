@@ -1,8 +1,12 @@
 import { spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 import { portHolder, proofTargets } from "./proof-ports.mjs";
+import { requireReconciliationEvidence } from "./reconciliation-proof-evidence.mjs";
 
 // Opt-in real-PostgreSQL proofs. Each proof gets the exact disposable loopback
 // container its fixture inspects (name, port, database, 384 MiB, named volume).
@@ -10,9 +14,7 @@ import { portHolder, proofTargets } from "./proof-ports.mjs";
 // the standalone reconciliation proof), so the proof is refused and nothing of it
 // is touched. The volume is named per run, and only this run's container ID and
 // labelled volume are removed.
-// No application .env or DATABASE_URI is read. The I0 payment-durability and I2
-// reconciliation proofs predate the reconciliation gate and are retired with the
-// I2 machinery when the standard settle replaces it.
+// No application .env or DATABASE_URI is read. The reconciliation suite is opt-in.
 // Container, port and database come from the shared map (proof-ports.mjs), which
 // the fixtures read too.
 const proofs = [
@@ -26,6 +28,12 @@ const proofs = [
     // retry, and the keyset live-key fence. Its fixture pins this exact container.
     file: "tests/commerce/domain/membership-allowance.db.test.ts",
     flag: "COMMERCE_PAYLOAD_DATABASE_TESTS",
+    ...proofTargets.reconciliation,
+  },
+  {
+    file: "tests/commerce/portone/reconciliation.db.test.ts",
+    flag: "COMMERCE_PAYLOAD_DATABASE_TESTS", explicit: true,
+    requireReconciliationEvidence: true,
     ...proofTargets.reconciliation,
   },
   {
@@ -153,9 +161,14 @@ for (const proof of selected ? [selected] : proofs.filter(({ explicit }) => !exp
       if (!ready) await delay(1000);
     }
     if (!ready) throw new Error(`${proof.container} did not become ready`);
+    if (proof.requireReconciliationEvidence) owned.evidenceDir = mkdtempSync(join(tmpdir(), "sphmrs-i2-evidence-"));
+    const evidencePath = owned.evidenceDir && join(owned.evidenceDir, "results.json");
     const run = spawnSync(process.execPath, [
       "--import", "tsx", "--import", "./tests/support/css-modules.mjs",
-      "--test", "--test-concurrency=1", proof.file,
+      "--test", "--test-concurrency=1",
+      ...(evidencePath ? ["--test-reporter=spec", "--test-reporter-destination=stdout",
+        "--test-reporter=./tests/support/reconciliation-proof-evidence.mjs", `--test-reporter-destination=${evidencePath}`] : []),
+      proof.file,
     ], {
       stdio: "inherit",
       env: {
@@ -169,10 +182,20 @@ for (const proof of selected ? [selected] : proofs.filter(({ explicit }) => !exp
     });
     if (run.error) throw run.error;
     failed ||= run.status !== 0;
+    if (evidencePath && run.status === 0) {
+      let passed;
+      try { passed = requireReconciliationEvidence(readFileSync(evidencePath, "utf8"), resolve(proof.file)); }
+      catch { throw new Error("Reconciliation proof lacks complete, readable no-skip evidence."); }
+      console.log(`Reconciliation evidence verified: ${passed} passed, zero skipped.`);
+    }
   } catch (error) {
     console.error(error instanceof Error ? error.message : "Database proof failed");
     failed = true;
   } finally {
+    if (owned.evidenceDir) {
+      try { rmSync(owned.evidenceDir, { recursive: true, force: true }); }
+      catch { console.error("Could not clean this run's reconciliation evidence directory."); failed = true; }
+    }
     if (!cleanup(owned)) failed = true;
   }
 }

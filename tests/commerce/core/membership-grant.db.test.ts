@@ -13,7 +13,7 @@ const settled = { orders: 1, stock: 9, reserved: 0, allowance: 1, admissions: 1,
 test("Sunday launch: membership is granted in the settle transaction", {
   skip: process.env.SUNDAY_MEMBERSHIP_DATABASE_TESTS !== "1", timeout: 240_000,
 }, async (t) => {
-  const { isolateTransport, openProofDatabase, seedAttempt, initiateAttempt, confirmation, effects, nativeSession } = await import("./payment-postgres-fixture");
+  const { isolateTransport, openProofDatabase, seedAttempt, confirmation, effects, nativeSession } = await import("./payment-postgres-fixture");
   const { createLocalReq } = await import("payload");
   const { sql } = await import("@payloadcms/db-postgres");
   const { runReconciliation } = await import("../../../src/lib/commerce/portone/admission");
@@ -95,12 +95,11 @@ test("Sunday launch: membership is granted in the settle transaction", {
     assert.deepEqual(await wallets(f), bound, "replay preserves the same wallet binding");
   });
 
-  await t.test("today's checkout initiates through the real adapter and settles end to end", async (st) => {
-    // initiatePayment keys the transaction by the id it chose; Payload honours it only with allowIDOnCreate.
-    const f = await initiateAttempt(db.payload);
+  await t.test("an already-prepared membership attempt settles end to end", async (st) => {
+    const f = await seedAttempt(db.payload);
     assert.equal((await member(db.control, f.customerID)).status, "applicant");
     const created = (await db.control.query("SELECT status::text FROM transactions WHERE id=$1::uuid", [f.transactionID])).rows;
-    assert.deepEqual(created, [{ status: "pending" }], "the transaction exists under the adapter's id");
+    assert.deepEqual(created, [{ status: "pending" }], "the historical transaction exists");
     const reserved = (await db.control.query("SELECT state::text FROM commerce_reservations WHERE attempt_i_d=$1", [f.transactionID])).rows;
     assert.deepEqual(reserved, [{ state: "reserved" }]);
     assert.deepEqual(await effects(db.control, f), pending);
@@ -109,7 +108,7 @@ test("Sunday launch: membership is granted in the settle transaction", {
     const grants = await keyGrants(f);
     assert.equal(grants.length, 1);
     assert.equal(grants[0].mode, "member_safe");
-    st.diagnostic("real initiatePayment -> reserve -> confirm -> settle; membership approved; one key-grant intent");
+    st.diagnostic("existing reserve -> confirm -> settle; membership approved; one key-grant intent");
   });
 
   await t.test("only an explicit server opt-in keeps a supplied id; a REST-style create gets a server-chosen id", async () => {

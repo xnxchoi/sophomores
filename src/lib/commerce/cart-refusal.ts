@@ -14,6 +14,11 @@ export const cartRefusalTexts = {
   "cart-locked": "Cart is locked",
   "open-cart-exists": "An open cart already exists",
   "account-changed": "The signed-in account changed",
+  // Owner, 27 Nov: several editions per cart, "but sometimes you can't. Those are individually handled."
+  "membership-in-cart": "Only one edition with membership fits one account",
+  "guest-ticket-alone": "A guest ticket is bought on its own",
+  "duplicate-product": "Each product must appear on only one cart line",
+  "product-limit-reached": "The purchase limit for this product was reached",
 } as const;
 export type CartRefusal = keyof typeof cartRefusalTexts;
 export const cartRefusals = Object.keys(cartRefusalTexts) as CartRefusal[];
@@ -32,3 +37,6 @@ export function cartRefusalOf(status: number, error: { data?: unknown; message?:
 
 /** The request header that pins a browser cart write to the member the page confirmed. */
 export const CART_EXPECTED_MEMBER_HEADER = "x-sphmrs-cart-member";
+
+/** PATCH contains quantity intents, not a replacement cart. Merge under the cart lock. */
+export const CART_MERGE_BROWSER_HEADER = "x-sphmrs-cart-merge-browser";

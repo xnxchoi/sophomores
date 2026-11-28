@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type Ref } from "react";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode, type Ref } from "react";
 import { useTransitionRouter } from "next-transition-router";
 import { ArrowLeftIcon } from "@phosphor-icons/react/dist/ssr";
 import { Link } from "@/components/core/Link/Link";
@@ -16,6 +17,15 @@ import { READING_RUN_ON, useReadingScroll, type ReadingSource } from "./use-read
 import { useBookSounds } from "./use-book-sounds";
 import { LookInsideBar } from "./look-inside-bar";
 import { ShelfPager, ShelfPills, type ShelfHub } from "./shelf-controls";
+import { useCartMode, type CartConstants, type CartMotion, type CartTiming } from "./use-cart-mode";
+import { useCartRoute } from "./use-cart-route";
+import { CartFlyContext } from "./cart-fly";
+import { CartBehind, CartColumn, cartOwnsInput, ownInput } from "./cart-column";
+import { NoWebglCartStack } from "./no-webgl-cart-stack";
+import { listGuestCart, subscribeGuestCart } from "@/lib/commerce/browser-cart";
+import { useShopViewer } from "./use-shop-viewer";
+import { useStackRemoval } from "./use-stack-removal";
+import { Button } from "@/components/core/Button";
 
 /**
  * The shop's home, rebuilt from stripe.press's home code (06w9 module 43181; .tmp/stripe-notes/home-layout-inventory.md,
@@ -54,26 +64,33 @@ type Geometry = { lvh: number; mobile: boolean; top: number;
   drop: number; height: number; offset: number; extents: number[];
   starts: number[]; lock: number[]; total: number };
 
-export function ShopHome({ items, labels, initialOpen }: { items: Item[]; labels: Labels;
+export function ShopHome({ items, labels, initialOpen, cartPanel, cartOpen = false }: { items: Item[]; labels: Labels;
   /** The product whose address the page was loaded on: it opens in place once the scene is ready. */
-  initialOpen?: string }) {
+  initialOpen?: string;
+  /** Loaded on the cart's address: the cart's steps, shown in the cart mode's column (stripe.press's /cart). */
+  cartPanel?: ReactNode;
+  /** The page was loaded on the cart's address: the cart is open from the start. Otherwise the cart opens in place. */
+  cartOpen?: boolean }) {
   const books = useMemo<SceneBook[]>(() => items.map(({ id, title, stageArt, pages, pageCount }) => ({ id, title, stageArt: stageArt?.url ?? null, pages, pageCount })), [items]);
   const { vendored, failed } = useStripeScene(books, Math.min(FEATURED_MAX, items.length));
   // Sounds only while the working scene is up: not while it loads, nor on the plain list it falls back to.
   useBookSounds(vendored != null && !failed);
   const first = items[0]?.stageArt;
-  if (failed) return <ShopFallback items={items} labels={labels} initialOpen={initialOpen} />;
+  // While the cart owns input (cart mode), the browse layer under it takes none (Review-B, 27 Nov); a direct load of the
+  // cart's address starts that way.
+  const [cartOwns, setCartOwns] = useState(cartPanel != null && cartOpen);
+  if (failed) return <ShopFallback items={items} labels={labels} initialOpen={initialOpen} cartPanel={cartOpen ? cartPanel : undefined} />;
   // Native wheel scrolling here, as on stripe.press: their scroll mapping, holds and shelf catch read the browser's own
   // scroll, and the site's Lenis smoothing would keep driving the page through the shelf's catch.
   return <section data-lenis-prevent-wheel aria-label={labels.featured} className="relative min-h-svh">
-    {vendored && items.length > 0 ? <Home vendored={vendored} items={items} labels={labels} initialOpen={initialOpen} /> : first && (
+    {vendored && items.length > 0 ? <Home vendored={vendored} items={items} labels={labels} initialOpen={initialOpen} cartPanel={cartPanel} cartOpen={cartOpen} onCartOwns={setCartOwns} /> : first && (
       // The first card where theirs lands (162 px down, 16 px in, 24 px off the bottom) until their code is running.
       <div className="pointer-events-none fixed inset-x-4 top-[162px] bottom-6 z-0 overflow-hidden rounded-[8px] bg-muted max-[900px]:top-[140px]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={first.url} alt={first.alt ?? ""} draggable={false} className="absolute inset-0 size-full object-cover" />
       </div>)}
     {/* Every book reachable without the scene (their hidden keyboard listbox of every book). */}
-    <ul className="sr-only">{items.map((entry) => <li key={entry.id}><Link href={entry.href}>{entry.title} {entry.price}</Link> {entry.refund}</li>)}</ul>
+    <ul inert={cartOwns} className="sr-only focus-within:not-sr-only focus-within:fixed focus-within:top-24 focus-within:left-4 focus-within:z-50 focus-within:grid focus-within:gap-1 focus-within:rounded-lg focus-within:bg-background focus-within:p-4 focus-within:text-sm">{items.map((entry) => <li key={entry.id}><Link href={entry.href} className="outline-offset-2 focus-visible:outline-2 focus-visible:outline-current">{entry.title} {entry.price}</Link> {entry.refund}</li>)}</ul>
   </section>;
 }
 
@@ -81,14 +98,15 @@ export function ShopHome({ items, labels, initialOpen }: { items: Item[]; labels
  * When the scene's code doesn't load: the products as a plain list (title, price, refund rule, a link to each), with a
  * product's own details first on its address, and a reload to try the scene again.
  */
-function ShopFallback({ items, labels, initialOpen }: { items: Item[]; labels: Labels; initialOpen?: string }) {
+function ShopFallback({ items, labels, initialOpen, cartPanel }: { items: Item[]; labels: Labels; initialOpen?: string; cartPanel?: ReactNode }) {
   const open = items.find((entry) => entry.id === initialOpen && entry.details);
   return <PageInset as="section" aria-label={labels.featured} className="min-h-svh pt-24 pb-24">
     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
       <p>{labels.sceneFailed}</p>
       <button type="button" onClick={() => window.location.reload()}
-        className="inline-flex min-h-11 items-center text-foreground underline-offset-4 transition-opacity hover:opacity-70">{labels.tryAgain}</button>
+        className="group/focus inline-flex min-h-11 items-center text-foreground underline-offset-4 transition-opacity hover:opacity-70"><FocusShape>{labels.tryAgain}</FocusShape></button>
     </div>
+    {cartPanel && <div className="mt-10 max-w-2xl">{cartPanel}</div>}
     {open && <div className="mt-10 max-w-2xl">{open.details}</div>}
     <ul className="mt-16 grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
       {items.map((entry) => <li key={entry.id} className="min-w-0">
@@ -102,7 +120,8 @@ function ShopFallback({ items, labels, initialOpen }: { items: Item[]; labels: L
   </PageInset>;
 }
 
-function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; items: Item[]; labels: Labels; initialOpen?: string }) {
+function Home({ vendored, items, labels, initialOpen, cartPanel, cartOpen, onCartOwns }: { vendored: Vendored; items: Item[]; labels: Labels; initialOpen?: string; cartPanel?: ReactNode;
+  cartOpen: boolean; onCartOwns: (owns: boolean) => void }) {
   const { hub, scroll, catalogue, router, seats, motion: tokens } = vendored;
   // Without WebGL their page shows the 2D layers (no-webgl-book-layer.tsx, no-webgl-spine-row.tsx), and the 2D row
   // reports its seat in module 44870 (`rD.f`), which the seat and the title fade read first (06w9:11117, 11874).
@@ -304,11 +323,18 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
     held: () => held.current, seatBottom: setSeatBottom }; });
   useShelfCatch(hub, catalogue, catchSource);
 
+  // Loaded on the cart's address: it starts open (their openInstantly), from the route, with no browse frame first
+  // (Review-B, 28 Nov). cartOn (the cart's open through its close) starts on too: the open frame is written at rest (not
+  // active), the scene only takes the cart's −20vw shift while the cart is on (G14: the stack sat ~180 px right of the card
+  // without it), and the details' own shift writer stands down meanwhile (cartHoldsShift).
+  const direct = Boolean(cartPanel && cartOpen);
+  const cartOn = useRef(direct);
   // Opening a book into its details inside the scene (use-book-detail.tsx), at every width.
   const detailSource = useRef<BookDetailSource>({ rawProgress: () => 0, hrefOf: () => null, home: "/shop", placeOf: () => 0, shelfAt: () => null,
-    pin: () => undefined, unpin: () => undefined, pagesOpen: () => false });
+    pin: () => undefined, unpin: () => undefined, pagesOpen: () => false, cartHoldsShift: () => cartOn.current });
   useEffect(() => { detailSource.current = { rawProgress: () => hub.scrollProgressDirectLiveRef.current as number,
     hrefOf: (index) => items[index]?.href ?? null, home: "/shop", placeOf: bookY, shelfAt: seatY, pagesOpen: () => lookOpen.current,
+    cartHoldsShift: () => cartOn.current,
     // The scene poses an open book by the progress in its details: at the open book's own index, the top of them. As
     // theirs (06w9:15271-15273), the scene's row smoother snaps to it (snap 6 frames, row seed 3) instead of easing
     // through the stack between the shelf and the book's own place.
@@ -363,6 +389,72 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
     place: (index) => window.scrollTo({ top: Math.max(0, index < catalogue.t ? bookY(index) : (seatY() ?? shelfY())), behavior: "smooth" }),
     book: (index) => (items[index] ? { pageCount: scenePageCount(items[index].pages, items[index].pageCount), startPage: 1 } : null) }; });
   const look = useLookInside(hub, detail.open, lookSource);
+
+  // The cart mode (stripe.press's /cart, a mode of their home): their cart hook on their clock and curves, its frame
+  // written as theirs does (06w9 s_.current): three :root variables the page, the column and the backdrop fade by, and
+  // on desktop the scene's shift from where it stood to −20vw with the books' slide.
+  const cartTiming = useMemo(() => vendored.module(60444) as unknown as CartTiming, [vendored]);
+  const cartConstants = useMemo(() => vendored.module(72646) as unknown as CartConstants, [vendored]);
+  const cartShiftFrom = useRef(0);
+  const cart = useCartMode({ initialOpen: direct, timing: cartTiming, k: cartConstants, coverReady: hub.coverAppliedLiveRef as unknown as { current: Set<number> },
+    onFrame: (frame: CartMotion) => {
+      const root = document.documentElement.style;
+      root.setProperty("--cart-page-opacity", String(frame.pageOpacity));
+      root.setProperty("--cart-panel-enter", String(frame.panel));
+      root.setProperty("--cart-backdrop-opacity", String(frame.backdropOpacity));
+      if (geo.current.mobile || !(frame.active || cartOn.current)) return;
+      hub.detailCanvasShiftVwLiveRef.current = cartShiftFrom.current + (-20 - cartShiftFrom.current) * frame.bookSlide;
+      hub.canvasShiftAnimatingUntilRef.current = performance.now() + 720; hub.sceneShiftAnimRef.current = null;
+    } });
+  useEffect(() => { cartOn.current = cart.cartMode; }, [cart.cartMode]);
+  // The cart owns input while it is on: the browse layer is inert, the shop's global keys and wheel stand down, the
+  // hidden book list too. When it closes, focus lands on the active title, a visible shelf target (Review-B, 27 Nov).
+  const wasCart = useRef(false);
+  useEffect(() => {
+    ownInput(cart.cartMode); onCartOwns(cart.cartMode);
+    if (wasCart.current && !cart.cartMode) {
+      const target = page.current?.querySelector<HTMLElement>("[data-shelf-return]");
+      if (target && !document.activeElement?.closest("aside")) target.focus({ preventScroll: true });
+    }
+    wasCart.current = cart.cartMode;
+  }, [cart.cartMode, onCartOwns]);
+  useEffect(() => () => ownInput(false), []);
+  useEffect(() => () => { const root = document.documentElement.style; for (const name of ["--cart-page-opacity", "--cart-panel-enter", "--cart-backdrop-opacity"]) root.removeProperty(name); }, []);
+  // What the stack shows: each product's quantity in the cart (their cartQuantitiesByBookId; our book ids are product
+  // ids). Read from Auth's browser cart in the shop viewer's scope (Review-B HOLD on 0336e57b): nothing while the viewer
+  // is unknown; signed in, only lines this member may see.
+  const viewer = useShopViewer();
+  const guestKey = useSyncExternalStore(subscribeGuestCart,
+    () => (viewer === undefined ? "[]" : JSON.stringify(listGuestCart(undefined, viewer ?? undefined))), () => "[]");
+  // In the cart column, its lines report what's in the cart (a member's too); until they do, the browser's cart.
+  const [panelQuantities, setPanelQuantities] = useState<Record<string, number> | null>(null);
+  const cartQuantities = useMemo(() => Object.fromEntries((panelQuantities
+    ? Object.entries(panelQuantities).map(([productID, quantity]) => ({ productID, quantity }))
+    : JSON.parse(guestKey) as { productID: string; quantity: number }[])
+    .filter((line) => items.some((entry) => entry.id === line.productID) && line.quantity > 0).map((line) => [line.productID, line.quantity])), [guestKey, panelQuantities, items]);
+  // The cart's books share the cart's private-page concealment (Review-B HOLD on 38f56878): the lines mark the shop's root
+  // the moment their guard conceals, before any paint, and clear it only when the guard shows them again (the same
+  // member verified). Under the mark the stack (scene or flat images) is invisible in cart mode.
+  const concealCart = useCallback((hidden: boolean) => { page.current?.toggleAttribute("data-cart-concealed", hidden); }, []);
+  const itemIds = useMemo(() => items.map((entry) => entry.id), [items]);
+  // The books not in the cart are veiled while it is open, from the first render on its own address.
+  const [cartVeil, setCartVeil] = useState(direct);
+  // How it closes (their c5): with books in the cart and the shelf's book not one of them, the stack leaves first
+  // (500 ms) and the page comes back after; on a phone, or without WebGL (no stack to send off), it doesn't.
+  const closing = () => ({ exitStackFirst: !geo.current.mobile && !noWebgl && Object.values(cartQuantities).some((count) => count > 0)
+    && !((cartQuantities[items[activeRef.current]?.id ?? ""] ?? 0) > 0) });
+  // Its address, Escape and Back/Forward (use-cart-route.tsx). Opening in place (their c5 toward the cart): the scene's
+  // shift is taken from where it stands, the books not in the cart are veiled, and the cart's books fly into the stack on
+  // their entry clock (module 60444 `k`), the shelf's book first.
+  const route = useCartRoute({ enabled: Boolean(cartPanel), cart, detailOpen: detail.open != null,
+    open: () => {
+      const inCart = items.flatMap((entry, index) => (cartQuantities[entry.id] ?? 0) > 0 ? [index] : []);
+      cartShiftFrom.current = Number(hub.detailCanvasShiftVwLiveRef.current) || 0; cartOn.current = true; ownInput(true);
+      setCartVeil(true); return cart.toggle({ entry: cartTiming.k(activeRef.current, inCart) });
+    },
+    close: () => { if (!cart.toggle(closing())) return false; setCartVeil(false); return true; } });
+  const { closeCart } = route;
+  const backToShelf = useCallback(() => { closeCart(); }, [closeCart]);
   const lookOpen = useRef(false);
   useEffect(() => { lookOpen.current = look.open; });
   // The scene hears the book being read 200 ms late (their `uK`), the first one at once.
@@ -404,7 +496,7 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
   useEffect(() => {
     if (detail.open != null || look.open) return;
     const key = (event: KeyboardEvent) => {
-      if (event.key !== "Enter" || event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
+      if (event.key !== "Enter" || event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey || cartOwnsInput()) return;
       const target = event.target as HTMLElement | null;
       if (target?.closest("a, button, input, textarea, select, [contenteditable], [role=button], [role=option]")) return;
       const index = onShelf ? (hub.spineSelectionLiveRef.current as { to?: number } | null)?.to : active;
@@ -509,13 +601,38 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
   // Once the detail state itself is open, the landing has done its job (closing must not fall back to it).
   useEffect(() => { if (detail.open != null) setLanding(null); }, [detail.open]);
   const lookProps = look.sceneProps, lookHome = look.home && look.homeIndex != null ? look.homeIndex : null;
+  const stageIndex = lookHome ?? (detail.open != null ? (sceneIndex ?? detail.open) : active);
+  // The cart's add and remove motion (their cart-motion hook, 06w9:621355-622500): the add row starts a fly of its book
+  // into the stack before it adds; outside the cart, the stage's book leaving the cart (its count falling to 0 while it
+  // stays the stage's book) sends it off. Both are counters the scene watches, with the book they apply to.
+  const [flight, setFlight] = useState({ trigger: 0, index: 0 });
+  const flyFor = useCallback((productID: string) => {
+    const index = items.findIndex((entry) => entry.id === productID);
+    if (index >= 0) setFlight((current) => ({ trigger: current.trigger + 1, index }));
+  }, [items]);
+  // The stage book's removal (use-stack-removal.tsx). Its source is the column's lines, or the browser's cart for the
+  // shop's viewer; while that viewer is unknown there is no source, so a recheck never reads as a removal.
+  const quantitySource = panelQuantities ? "lines" : viewer === undefined ? null : "browser:" + (viewer ?? "signed-out");
+  const removal = useStackRemoval({ cartMode: cart.cartMode, stageIndex, stageID: items[stageIndex]?.id,
+    count: items[stageIndex]?.id ? (cartQuantities[items[stageIndex].id] ?? 0) : 0, source: quantitySource });
   const sceneProps = useMemo(() => ({ skipIntro, ...lookProps,
     books: (window as unknown as { __SPBOOKS: unknown }).__SPBOOKS, scrollProgress: committed, scrollProgressLiveRef: progressRef,
-    activeBookIndex: lookHome ?? (detail.open != null ? (sceneIndex ?? detail.open) : active), stackMode: "browse", onBookOpen: (index: number) => openRef.current(index),
+    activeBookIndex: stageIndex, stackMode: "browse", onBookOpen: (index: number) => openRef.current(index),
     // Their `isDetailOpen: tx || iv` and `detailBookIndex: iv ? nI : uK`: the home's open book is posed as a detail book.
     isDetailOpen: (detail.open ?? landing ?? lookHome) != null,
     detailBookIndex: lookHome ?? (detail.open != null || landing != null ? (sceneIndex ?? detail.open ?? landing) : -1),
-  }), [skipIntro, lookProps, lookHome, committed, active, detail.open, landing, sceneIndex]);
+    // The cart mode (their props to BookStack in cart mode, 06w9): the stack's blend and slides, the entry and its clock,
+    // the motion ref the scene reads every frame, and the quantities it stacks.
+    ...(cart.cartMode || cart.phase !== "idle" ? {
+      stackMode: "cart", cartLayoutBlend: cart.layoutBlend, cartNonCartSlideBlend: cart.nonCartSlide, cartStackExitProgress: cart.stackExit,
+      cartShelfSlideProgress: cart.shelfSlide, cartReturning: cart.phase === "toBrowse", cartTransitioning: cart.phase !== "idle",
+      cartEntry: cart.entry, cartPanelOpen: cart.panelOpen, veilNonCartBooks: cartVeil,
+    } : {}),
+    cartMotionRef: cart.motion, cartEntryClockRef: cart.clock, onCartMotionRest: cart.settle,
+    cartQuantitiesByBookId: cartQuantities, quantities: cartQuantities,
+    cartFlyTrigger: flight.trigger, cartFlyBookIndex: flight.index, cartRemoveTrigger: removal.trigger, cartRemoveBookIndex: removal.index,
+  }), [skipIntro, lookProps, lookHome, stageIndex, flight, removal, committed, active, detail.open, landing, sceneIndex, cart.cartMode, cart.phase, cart.layoutBlend,
+    cart.nonCartSlide, cart.stackExit, cart.shelfSlide, cart.entry, cart.panelOpen, cart.motion, cart.clock, cart.settle, cartVeil, cartQuantities]);
 
   // The spine row seats against, and lifts out ahead of, the section after the shelf (their #home-section-films, read
   // through homeWebsitesSectionElLiveRef); without one the scene treats the row as already gone. Theirs places that
@@ -595,7 +712,14 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
   // While reading, the page is the stack of every book's details (their sections, then half a screen); otherwise the
   // home's own scroll.
   const readingHeight = reading.layout.total + Math.round(geometry.lvh / 2);
-  return <div ref={page} className="relative overflow-x-clip" style={{ "--shop-shift": geometry.shift + "px", "--shop-drop": geometry.drop + "px" } as CSSProperties}>
+  return <CartFlyContext value={flyFor}><div ref={page} className="group/shop relative overflow-x-clip" style={{ "--shop-shift": geometry.shift + "px", "--shop-drop": geometry.drop + "px" } as CSSProperties}>
+    <CartBehind open={cart.cartMode} art={items[active]?.stageArt} cardTop={geometry.top} />
+    {/* Without WebGL the cart's books are images (theirs: NoWebglCartStack, desktop only). */}
+    {cart.cartMode && noWebgl && !geometry.mobile && <div className="contents group-data-[cart-concealed]/shop:invisible">
+      <NoWebglCartStack ids={itemIds} quantities={cartQuantities} cardTop={geometry.top} /></div>}
+    {cartPanel && <CartColumn open={cart.cartMode} shown={cart.panelOpen} back={labels.toShelf} onBack={backToShelf} onLines={setPanelQuantities} onConceal={concealCart}>{cartPanel}</CartColumn>}
+    {/* The browse layer: the scene stays mounted, but takes no input while the cart owns it. */}
+    <div inert={cart.cartMode} className="contents">
     <div aria-hidden="true" className="h-(--page-height)" style={{ "--page-height": (readingOpen ? readingHeight : Math.max(0, nextTop)) + "px" } as CSSProperties} />
     {/* The section after the shelf (their Multimedia's place). A placeholder for now (owner, 26 Nov: "a whole new section
         … For now, make it a placeholder: min 100vh, 100vw section"). At least a screen tall, so the page scrolls on
@@ -617,20 +741,21 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
         <NoWebglSpineRow vendored={vendored} books={flatBooks} hidden={detail.open != null || look.open}
           onBookOpen={(index) => openRef.current(index)} labels={{ open: labels.openTitle, show: labels.showOnShelf }} />
       </div>
-    ) : <StripeScene vendored={vendored} props={sceneProps} className="pointer-events-none fixed inset-0 isolate z-10" />}
+    ) : <StripeScene vendored={vendored} props={sceneProps}
+      className={cn("pointer-events-none fixed inset-0 isolate z-10", cart.cartMode && "group-data-[cart-concealed]/shop:invisible")} />}
     {/* On a phone the return link takes the label's place while a book is open (their Nav__FeaturedSlot: the label slides
         −10 px and fades, the link comes in from +10 px 100 ms later, 300 ms each). */}
-    <div className="fixed top-[calc(53px+var(--shop-shift,0px))] left-4 z-20 grid text-[11px] uppercase leading-4 tracking-[0.06em] text-muted-foreground">
+    <div style={{ opacity: "var(--cart-page-opacity, 1)" }} className="fixed top-[calc(53px+var(--shop-shift,0px))] left-4 z-20 grid text-[11px] uppercase leading-4 tracking-[0.06em] text-muted-foreground">
       <p className={cn("pointer-events-none col-start-1 row-start-1 transition-[opacity,translate] duration-300 ease-[ease]", phoneDetail ? "-translate-x-2.5 opacity-0" : "delay-100")}>
         {/* Theirs reads the label from the first section at the nav (header.sampler, 06w9:11821-11922); with details open
             no section is there, so it shows the default (traced 26 Nov). */}
         [ {onShelf && detail.open == null ? labels.shelf : labels.featured} ]
       </p>
-      <button type="button" tabIndex={phoneDetail ? 0 : -1} aria-hidden={!phoneDetail} onClick={() => detail.closeBook()}
-        className={cn("col-start-1 row-start-1 -my-3.5 inline-flex min-h-11 min-w-11 items-center self-start text-left uppercase transition-[opacity,translate,color] duration-300 ease-[ease] hover:text-foreground",
+      <Button variant="bare" type="button" tabIndex={phoneDetail ? 0 : -1} aria-hidden={!phoneDetail} onClick={() => detail.closeBook()}
+        className={cn("group/focus col-start-1 row-start-1 -my-3.5 inline-flex min-h-11 min-w-11 items-center self-start text-left uppercase transition-[opacity,translate,color] duration-300 ease-[ease] hover:text-foreground",
           phoneDetail ? "pointer-events-auto delay-100" : "pointer-events-none translate-x-2.5 opacity-0")}>
-        <ArrowLeftIcon aria-hidden="true" className="mr-1.5 size-3.5" />{labels.toShelf}
-      </button>
+        <FocusShape className="inline-flex items-center"><ArrowLeftIcon aria-hidden="true" className="mr-1.5 size-3.5" />{labels.toShelf}</FocusShape>
+      </Button>
     </div>
     <TitleRail railRef={titles} label={labels.titles} titles={items.map((entry) => entry.title)} refunds={items.map((entry) => entry.refund)} active={detail.open ?? selected ?? railIndex}
       fade={detail.open != null ? 0 : rowOver >= 0 ? 0.5 * rowOver : Math.max(0, Math.min(1, (committed - K - 0.2) / 0.3))} shelf={committed >= J}
@@ -661,7 +786,8 @@ function Home({ vendored, items, labels, initialOpen }: { vendored: Vendored; it
         active={READING_RUN_ON || index === detail.open}
         onMeasured={reading.measured} anchors={reading.anchors}>{entry.details}</DetailSlot>)}
     </DetailStack>
-  </div>;
+    </div>
+  </div></CartFlyContext>;
 }
 
 /**
@@ -730,7 +856,7 @@ function Cards({ narrow, items, featured, geometry, progressRef, listeners, read
   // The card's box: 8 px off the bottom on desktop, 25 on a phone (theirs, 1jyk:64-77, without the URL-bar terms). With
   // details open on desktop it narrows to 60 % of that box (their CardViewport mask, 1jyk:325-328): in over 480 ms after
   // 100 ms on their ease-in-quad/ease-out-cubic split (sampled into linear()), back over 640 ms easeInOutCubic.
-  return <div aria-hidden="true" style={{ top: geometry.top, height: geometry.height - (geometry.mobile ? 25 : CARD_INSET_BOTTOM) }}
+  return <div aria-hidden="true" style={{ top: geometry.top, height: geometry.height - (geometry.mobile ? 25 : CARD_INSET_BOTTOM), opacity: "var(--cart-page-opacity, 1)" }}
     className={cn("pointer-events-none fixed inset-x-4 z-0 overflow-hidden rounded-[8px] transition-[clip-path] max-[900px]:z-[2] max-[900px]:[clip-path:none]",
       narrow ? "[clip-path:inset(0_40%_0_0_round_8px)] delay-100 duration-480 ease-[linear(0,0.008,0.031,0.07,0.125,0.195,0.281,0.383,0.5,0.665,0.789,0.878,0.938,0.974,0.992,0.999,1)]"
         : "[clip-path:inset(0_0_0_0_round_8px)] duration-640 ease-[cubic-bezier(0.65,0,0.35,1)]")}>
@@ -778,25 +904,33 @@ function TitleRail({ railRef, label, titles, refunds, active, fade, shelf, detai
     window.addEventListener("resize", place);
     return () => window.removeEventListener("resize", place);
   }, [active, titles, detail, anchor]);
-  return <nav ref={railRef} aria-label={label} aria-hidden={hidden || undefined} inert={hidden} style={{ opacity: shown && !hidden ? 1 - 2 * fade : 0 }}
+  return <nav ref={railRef} aria-label={label} aria-hidden={hidden || undefined} inert={hidden} style={{ opacity: shown && !hidden ? "calc(var(--cart-page-opacity, 1) * " + (1 - 2 * fade) + ")" : 0 }}
     className={cn("pointer-events-none fixed inset-x-0 top-[calc(70px+var(--shop-shift,0px))] z-20 overflow-hidden px-5 pt-5 pb-3 transition-[opacity,clip-path] duration-[1600ms] max-[900px]:top-[calc(63px+var(--shop-shift,0px))]",
       hidden ? "duration-300" : detail ? "[clip-path:inset(0_40%_0_0)] [transition-duration:1600ms,600ms] [transition-timing-function:ease,cubic-bezier(0.16,1,0.3,1)]" : "[clip-path:inset(0_0_0_0)] ease-[ease]",
       shown && shelf && !detail && !hidden && "duration-[350ms]")}>
     <ul style={{ transform: "translateX(" + shift + "px)" }}
-      className="flex w-max gap-x-[72px] transition-transform duration-500 ease-[ease-in-out] max-[900px]:gap-x-[30px]">
+      className="relative z-0 flex w-max gap-x-[72px] transition-transform duration-500 ease-[ease-in-out] max-[900px]:gap-x-[30px]">
       {/* Three copies, the middle one active, so the active title always has neighbours on both sides (theirs: 21ix). */}
       {[...titles, ...titles, ...titles].map((title, slot) => { const index = slot % titles.length, middle = slot >= titles.length && slot < 2 * titles.length;
         return <li key={slot} aria-hidden={middle ? undefined : true}>
-        <button ref={(item) => { items.current[slot] = item; }} type="button" tabIndex={middle ? undefined : -1} onClick={() => onPick(index)}
+        <Button variant="bare" ref={(item) => { items.current[slot] = item; }} type="button" tabIndex={middle ? undefined : -1} onClick={() => onPick(index)}
+          data-shelf-return={middle && index === active ? "" : undefined}
           className="pointer-events-auto relative font-display text-[length:calc(40px+16*(100vw-375px)/1353)] leading-[1.12] font-medium tracking-[-0.1rem] whitespace-nowrap text-foreground outline-offset-4 focus-visible:outline-2 max-[900px]:text-[length:calc(44px+17.6*(100vw-375px)/1353)]">
-          <span className={cn("block origin-[0_78%] italic transition-[opacity,transform] duration-[448ms] ease-[ease]",
-            middle && index === active ? "opacity-0 [transform:skewX(9deg)]" : "opacity-80")}>{title}</span>
-          <span className={cn("absolute inset-0 not-italic transition-[opacity,transform] duration-[448ms] ease-[ease]",
-            middle && index === active ? "opacity-100" : "opacity-0 [transform:skewX(-5deg)]")}>{title}</span>
+          {/* Theirs (FeaturedTitle): both faces skew from 0 78 %, over 448 ms into the active title and 400 ms out of it. The
+              unfocused (italic) face is our palette's muted ink, where theirs is the ink at 0.8 (owner, 27 Nov). */}
+          <span className={cn("block origin-[0_78%] italic transition-[opacity,transform] ease-[ease]",
+            middle && index === active ? "opacity-0 duration-[448ms] [transform:skewX(9deg)]" : "text-muted-foreground duration-[400ms]")}>{title}</span>
+          <span className={cn("absolute inset-0 origin-[0_78%] not-italic transition-[opacity,transform] ease-[ease]",
+            middle && index === active ? "opacity-100 duration-[448ms]" : "opacity-0 duration-[400ms] [transform:skewX(-5deg)]")}>{title}</span>
           {refunds[index] && <span className="mt-1 block font-sans text-sm leading-6 font-normal tracking-normal not-italic">{refunds[index]}</span>}
-        </button>
+        </Button>
       </li>; })}
     </ul>
+    {/* Their TitleBandAbyss pair (21ix:230-280), desktop only: page-coloured plates over the strip, opaque on the outer 8 %
+        of each side, so the clipped titles fade out at the edges; the right one stops at the details column while it's open. */}
+    <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 bottom-2 z-1 bg-background [mask-image:linear-gradient(270deg,transparent_0%,transparent_92%,#000_100%)] max-[900px]:hidden" />
+    <div aria-hidden="true" className={cn("pointer-events-none absolute top-0 bottom-2 left-0 z-1 bg-background [mask-image:linear-gradient(90deg,transparent_0%,transparent_92%,#000_100%)] transition-[right] max-[900px]:hidden",
+      detail ? "right-[calc(40%-1px)] duration-[600ms] ease-[cubic-bezier(0.16,1,0.3,1)]" : "-right-px duration-[400ms] ease-[cubic-bezier(0.32,0,0.67,0)]")} />
   </nav>;
 }
 
@@ -811,21 +945,21 @@ function ViewDetails({ href, label, hidden, onOpen, book }: { href: string; labe
   return <div className={cn("fixed right-4 -bottom-0.5 z-20 flex h-[30px] items-center gap-3 pointer-coarse:h-11 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] max-[900px]:hidden",
     shown && !hidden ? "translate-y-0" : "translate-y-[calc(100%+24px)]")}>
     {book && <>
-      <button type="button" onPointerDown={(event) => event.stopPropagation()} onClick={book.onToggle}
-        className="text-xs uppercase tracking-[-0.02em] transition-opacity hover:opacity-70 pointer-coarse:min-h-11 pointer-coarse:min-w-11">{book.label} {book.open ? "[-]" : "[+]"}</button>
+      <Button variant="bare" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={book.onToggle}
+        className="group/focus text-xs uppercase tracking-[-0.02em] transition-opacity hover:opacity-70 pointer-coarse:min-h-11 pointer-coarse:min-w-11"><FocusShape>{book.label} {book.open ? "[-]" : "[+]"}</FocusShape></Button>
       <span aria-hidden="true" className="text-xs">·</span>
     </>}
     <Link href={href} onClick={(event) => { if (event.metaKey || event.ctrlKey || event.shiftKey) return; event.preventDefault(); onOpen(); }}
-      className="inline-flex items-center text-xs uppercase tracking-[-0.02em] transition-opacity hover:opacity-70 pointer-coarse:min-h-11 pointer-coarse:min-w-11">{label} [+]</Link>
+      className="group/focus inline-flex items-center text-xs uppercase tracking-[-0.02em] transition-opacity hover:opacity-70 pointer-coarse:min-h-11 pointer-coarse:min-w-11"><FocusShape>{label} [+]</FocusShape></Link>
   </div>;
 }
 
 /** Their peek pill ("+ Open book +", 06w9:17934-17957): over the open book in the details, at 30 % of the width. */
 function OpenBookPill({ label, shown, onHover, onOpen }: { label: string; shown: boolean; onHover: (hovered: boolean) => void; onOpen: () => void }) {
-  return <button type="button" tabIndex={shown ? 0 : -1} aria-hidden={!shown} onMouseEnter={() => onHover(true)} onMouseLeave={() => onHover(false)}
+  return <Button variant="bare" type="button" tabIndex={shown ? 0 : -1} aria-hidden={!shown} onMouseEnter={() => onHover(true)} onMouseLeave={() => onHover(false)}
     onClick={(event) => { event.stopPropagation(); onOpen(); }}
-    className={cn("fixed bottom-[14%] left-[30%] z-30 -translate-x-1/2 rounded-full bg-background px-3 py-1.5 text-xs pointer-coarse:min-h-11 uppercase tracking-[-0.02em] text-foreground transition-opacity duration-300 max-[900px]:hidden",
-      shown ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0")}>+ {label} +</button>;
+    className={cn("fixed bottom-[14%] left-[30%] z-30 -translate-x-1/2 rounded-full bg-background px-3 py-1.5 text-xs pointer-coarse:min-h-11 uppercase tracking-[-0.02em] text-foreground transition-opacity duration-300 max-[900px]:hidden outline-offset-2 focus-visible:outline-2 focus-visible:outline-current",
+      shown ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0")}>+ {label} +</Button>;
 }
 
 /**
@@ -845,10 +979,10 @@ function DetailStack({ shown, height, toShelf, onClose, children }: { shown: boo
       {/* Under the site header (which overlays the top 72 px), where their 46 px under their own nav would be covered. On a
           phone the link sits in the label's slot instead. */}
       <div className="sticky top-[88px] z-10 px-6 max-[900px]:hidden">
-        <button type="button" onClick={onClose}
-          className="inline-flex min-h-8 items-center bg-background text-[11px] uppercase pointer-coarse:min-h-11 pointer-coarse:min-w-11 tracking-[0.04em] text-muted-foreground transition-colors hover:text-foreground">
-          <ArrowLeftIcon aria-hidden="true" className="mr-1.5 size-3.5" />{toShelf}
-        </button>
+        <Button variant="bare" type="button" onClick={onClose}
+          className="group/focus inline-flex min-h-8 items-center bg-background text-[11px] uppercase pointer-coarse:min-h-11 pointer-coarse:min-w-11 tracking-[0.04em] text-muted-foreground transition-colors hover:text-foreground">
+          <FocusShape className="inline-flex items-center"><ArrowLeftIcon aria-hidden="true" className="mr-1.5 size-3.5" />{toShelf}</FocusShape>
+        </Button>
       </div>
       {children}
     </div>

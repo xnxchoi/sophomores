@@ -1,3 +1,4 @@
+import { seedCart } from "../../fixtures/commerce/cart-locks";
 import { MemberAuthProviders } from "../../member-auth/fixtures/providers";
 import assert from "node:assert/strict";
 import type { ReactNode } from "react";
@@ -25,37 +26,83 @@ afterEach(() => { env.ui.cleanup(); env.ecommerce.resetFakeEcommerce(); env.dom.
 after(async () => { await env.restore(); });
 
 const wrapper = ({ children }: { children: ReactNode }) => <MemberAuthProviders>{children}</MemberAuthProviders>;
-function state(products: readonly CartProduct[], signedIn = true) {
-  return env.ui.renderHook(() => useCommerceCartState({ signedIn, products }), { wrapper });
+function state(products: readonly CartProduct[], signedIn = true, editionCheckoutHref?: string) {
+  return env.ui.renderHook(() => useCommerceCartState({ signedIn, products, editionCheckoutHref }), { wrapper });
 }
 
-test("a membership line resolves, is quoted, and checks out", () => {
+test("a legacy line can be quoted without allowing checkout", () => {
   env.ecommerce.setFakeEcommerce({ user: member, cart: cart([{ id: "i1", product: "p1", quantity: 1 }]) });
   const { result } = state([membership, edition]);
   assert.deepEqual(result.current.lines, [{ id: "i1", productID: "p1", kind: "membership", title: "Book only", image: null,
     unitPriceKRW: 35000, quantity: 1, maxQuantity: 1, available: true, quoted: true, productHref: null }]);
   assert.deepEqual([result.current.subtotalKRW, result.current.shippingKRW, result.current.totalKRW], [35000, 3000, 38000]);
-  assert.deepEqual([result.current.checkoutAvailable, result.current.checkoutReason, result.current.checkoutHref], [true, "ready", "/shop/checkout"]);
+  assert.deepEqual([result.current.checkoutAvailable, result.current.checkoutReason, result.current.checkoutHref], [false, "checkout-held", null]);
   assert.equal(result.current.canRefresh, true);
 });
 
-test("an edition line resolves its name, image and price, and points to its product page instead of checkout", () => {
-  env.ecommerce.setFakeEcommerce({ user: member, cart: cart([{ id: "i2", product: "e1", quantity: 1 }]) });
-  const { result } = state([membership, edition]);
+test("one saved edition line is named and priced, shows its subtotal without a guessed total, and links to /shop/checkout", () => {
+  env.ecommerce.setFakeEcommerce({ user: member, cart: cart([{ id: "i2", product: "e1", quantity: 1 }], { customer: "u1" }) });
+  const { result } = state([membership, edition], true, "/shop/checkout");
   assert.deepEqual(result.current.lines, [{ id: "i2", productID: "e1", kind: "edition", title: "Signed edition",
     image: { url: "/e1.jpg", alt: "Signed edition" }, unitPriceKRW: 120000, quantity: 1, maxQuantity: 1,
     available: false, quoted: true, productHref: "/shop/products/e1" }]);
-  assert.deepEqual([result.current.subtotalKRW, result.current.shippingKRW, result.current.totalKRW], [null, null, null]);
-  assert.deepEqual([result.current.checkoutAvailable, result.current.checkoutReason, result.current.checkoutHref],
-    [false, "edition-on-product-page", null]);
+  // Owner launch gap, 28 Nov / Auth-editions: the account cart is authoritative; shipping is set at checkout.
+  assert.deepEqual([result.current.subtotalKRW, result.current.shippingKRW, result.current.totalKRW], [120000, null, null]);
+  assert.deepEqual([result.current.checkoutAvailable, result.current.checkoutHref], [true, "/shop/checkout"]);
+});
+
+test("the edition checkout link is refused without a working checkout route, for another member's cart, or mid-refresh", async () => {
+  // Review-A HOLD on 5147095f: the candidate must pass the href; the saved cart must be the member's own and active.
+  env.ecommerce.setFakeEcommerce({ user: member, cart: cart([{ id: "i2", product: "e1", quantity: 1 }], { customer: "u1" }) });
+  let hook = state([membership, edition]);
+  assert.deepEqual([hook.result.current.subtotalKRW, hook.result.current.checkoutHref], [120000, null], "no href, no link");
+  hook.unmount();
+  env.ecommerce.setFakeEcommerce({ cart: cart([{ id: "i2", product: "e1", quantity: 1 }], { customer: "u2" }) });
+  hook = state([membership, edition], true, "/shop/checkout");
+  assert.equal(hook.result.current.checkoutHref, null, "another member's cart");
+  hook.unmount();
+  env.ecommerce.setFakeEcommerce({ cart: cart([{ id: "i2", product: "e1", quantity: 1 }], { customer: "u1", status: "abandoned" }) });
+  hook = state([membership, edition], true, "/shop/checkout");
+  assert.equal(hook.result.current.checkoutHref, null, "not an active cart");
+  hook.unmount();
+  let finish: () => void = () => {};
+  env.ecommerce.setFakeEcommerce({ cart: cart([{ id: "i2", product: "e1", quantity: 1 }], { customer: "u1" }),
+    refreshCart: () => new Promise<void>((resolve) => { finish = resolve; }) });
+  hook = state([membership, edition], true, "/shop/checkout");
+  assert.equal(hook.result.current.checkoutHref, "/shop/checkout");
+  let refreshing: Promise<void> = Promise.resolve();
+  env.ui.act(() => { refreshing = hook.result.current.refresh(); });
+  assert.equal(hook.result.current.checkoutHref, null, "nothing links while a refresh is in progress");
+  await env.ui.act(async () => { finish(); await refreshing; });
+  hook.unmount();
+});
+
+test("the edition checkout link is refused for a browser-only cart, a line kept only on this browser, or an unknown line", () => {
+  // Signed out: priced, but the browser cart never links to checkout.
+  seedCart(env.dom.window.localStorage, [{ productID: "e1", quantity: 1 }]);
+  let hook = state([membership, edition], false, "/shop/checkout");
+  assert.equal(hook.result.current.subtotalKRW, 120000);
+  assert.deepEqual([hook.result.current.checkoutAvailable, hook.result.current.checkoutHref], [false, null]);
+  hook.unmount();
+  // Signed in with the saved edition, while another line is still only on this browser: checkout stays closed.
+  env.ecommerce.setFakeEcommerce({ user: member, cart: cart([{ id: "i2", product: "e1", quantity: 1 }], { customer: "u1" }) });
+  hook = state([membership, edition], true, "/shop/checkout");
+  assert.deepEqual([hook.result.current.checkoutAvailable, hook.result.current.checkoutHref], [false, null]);
+  hook.unmount();
+  env.dom.window.localStorage.clear();
+  // A saved line the catalogue doesn't name: no price, no subtotal, no link.
+  env.ecommerce.setFakeEcommerce({ user: member, cart: cart([{ id: "i3", product: "gone", quantity: 1 }], { customer: "u1" }) });
+  hook = state([membership, edition], true, "/shop/checkout");
+  assert.deepEqual([hook.result.current.subtotalKRW, hook.result.current.checkoutAvailable, hook.result.current.checkoutHref], [null, false, null]);
 });
 
 test("a signed-out browser line resolves the same way, its ID being the product ID", () => {
-  env.dom.window.localStorage.setItem("sphmrs.cart.v1", JSON.stringify({ version: 1, lines: [{ productID: "e1", quantity: 1 }] }));
+  seedCart(env.dom.window.localStorage, [{ productID: "e1", quantity: 1 }]);
   const { result } = state([membership, edition], false);
   assert.equal(result.current.lines[0]?.id, "e1");
   assert.equal(result.current.lines[0]?.title, "Signed edition");
   assert.equal(result.current.checkoutReason, "edition-on-product-page");
+  assert.equal(result.current.checkoutHref, null, "a browser cart never links to checkout");
   assert.equal(result.current.canRefresh, false, "a browser cart has nothing to refresh");
 });
 
@@ -102,7 +149,7 @@ function resolving(products: readonly CartProduct[], resolveProducts: Resolver, 
 }
 
 test("an edition line not loaded up front is resolved once; meanwhile the row shows and only checkout waits", async () => {
-  env.dom.window.localStorage.setItem("sphmrs.cart.v1", JSON.stringify({ version: 1, lines: [{ productID: "e1", quantity: 1 }] }));
+  seedCart(env.dom.window.localStorage, [{ productID: "e1", quantity: 1 }]);
   const asked: string[][] = [];
   let answer!: (found: readonly CartProduct[]) => void;
   const { result } = resolving([membership], (ids) => { asked.push(ids); return new Promise((resolve) => { answer = resolve; }); }, false);
@@ -144,5 +191,5 @@ test("nothing unknown, nothing asked", async () => {
   let calls = 0;
   const { result } = resolving([membership], async () => { calls += 1; return []; });
   await env.ui.act(async () => {});
-  assert.deepEqual([calls, result.current.checkoutReason], [0, "ready"]);
+  assert.deepEqual([calls, result.current.checkoutReason], [0, "checkout-held"]);
 });

@@ -16,6 +16,8 @@ const amount = z.int().min(0).max(Number.MAX_SAFE_INTEGER);
 export const MEMBERSHIP_RELEASE = "membership";
 /** The rule new v1 snapshots are created under. Each snapshot records its own. */
 export const MEMBERSHIP_ACCOUNT_LIMIT = 1;
+/** A blank product maximum imposes no additional per-account limit. */
+export const productMaximumPerPersonSchema = z.int().positive().nullish();
 /**
  * Storage holds at most three units per order (`commerce-reservations.quantity`,
  * `commerce-admissions.unit`, and every attempt parser), so a recorded limit or

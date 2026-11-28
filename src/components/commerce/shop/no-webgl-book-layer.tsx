@@ -4,6 +4,7 @@ import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSPr
 import { cn } from "@/lib/utils";
 import { fallbackImagesFor, type FallbackTurn } from "./_shared/fallback-images";
 import type { Vendored } from "./stripe-scene";
+import { Button } from "@/components/core/Button";
 
 /**
  * stripe.press's NoWebglBookLayer (module 2548, 0jause8z1kh3y.js:20-598), ported. With no WebGL2 their BookStack is
@@ -437,7 +438,7 @@ export const NoWebglBookLayer = memo(function NoWebglBookLayer({ vendored, books
       } : undefined;
       // The hero (0jause:97-151): its image's px × 0.632/900 lvh (× 0.77 under 900 px; theirs max-width 899.98px), in
       // and out over 320 ms, the scene's soft shadow from the upper left. Their grab cursors are left out.
-      return <button key={book.id} type="button" data-nowebgl-hero={index} data-shown={slot.shown ? "true" : "false"}
+      return <Button variant="bare" key={book.id} type="button" data-nowebgl-hero={index} data-shown={slot.shown ? "true" : "false"}
         data-interactive={slot.interactive ? "true" : "false"} tabIndex={slot.interactive && !detailOpen ? 0 : -1}
         aria-label={detailOpen ? book.title : openLabel(book.title)} ref={slot.refHero}
         style={{ "--nwgl-w": images.hero.width, "--nwgl-h": images.hero.height } as CSSProperties}
@@ -479,8 +480,7 @@ export const NoWebglBookLayer = memo(function NoWebglBookLayer({ vendored, books
           if (performance.now() < slot.suppressClickUntil) { event.preventDefault(); return; }
           const { detailOpen: open, hidden: hide, onBookOpen: openBook } = latest.current;
           if (!open && !hide) openBook(slot.index);
-        }}
-        onDragStart={(event) => event.preventDefault()}>
+        }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img ref={slot.refStill} src={images.hero.src} width={images.hero.width} height={images.hero.height} alt="" draggable={false} decoding="async"
           onLoad={() => { slot.loaded = true; settle.current(); }}
@@ -493,7 +493,7 @@ export const NoWebglBookLayer = memo(function NoWebglBookLayer({ vendored, books
           <img ref={slot.refFrameB} alt="" draggable={false} decoding="async" style={frameBox}
             className="pointer-events-none invisible absolute block max-w-none select-none [-webkit-user-drag:none]" />
         </>}
-      </button>;
+      </Button>;
     })}
   </div>;
 });

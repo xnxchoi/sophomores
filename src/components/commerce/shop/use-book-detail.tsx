@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { cartOwnsInput } from "./cart-column";
 import type { SceneCatalogue, SceneHub, SceneRouter } from "./stripe-scene";
 
 type Transition = { active: boolean; index: number; progress: number; activeProgress: number; activeProgressY: number;
@@ -17,7 +18,10 @@ export type BookDetailSource = { rawProgress: () => number; hrefOf: (index: numb
   /** A phone's carry: the open book's exits at its landing (their `landingExits`); undefined on desktop. */
   landingExits?: (index: number) => unknown;
   /** True while the book's pages are open ("Open book"): ← turns a page then, it does not leave the details. */
-  pagesOpen: () => boolean };
+  pagesOpen: () => boolean;
+  /** True while the cart is on (its open through its close): the cart's motion holds the scene's shift then, and the
+   * details leave it alone (Review-B, 28 Nov: a direct /shop/cart load kept its −20vw only until this hook's first write). */
+  cartHoldsShift?: () => boolean };
 
 /**
  * Their book detail (06w9), at every width: a click on a shelf spine carries that book into its details inside the scene.
@@ -222,12 +226,13 @@ export function useBookDetail(hub: SceneHub, catalogue: SceneCatalogue, router: 
   // Theirs keeps the shift (`hy`) through the close's fade and lets it go as the reverse carry starts (16424-16562).
   const shift = !phone && (presenting || (open != null && (!leaving || holding))) ? -20 : 0, lastShift = useRef(0);
   useEffect(() => {
+    if (source.current.cartHoldsShift?.()) return;
     hub.detailCanvasShiftVwLiveRef.current = shift;
     if (lastShift.current === shift) return;
     lastShift.current = shift;
     hub.canvasShiftAnimatingUntilRef.current = performance.now() + 720;
     hub.sceneShiftAnimRef.current = { startTime: performance.now(), startValue: hub.sceneShiftXWorldLiveRef.current, duration: 640 };
-  }, [shift, hub]);
+  }, [shift, hub, source]);
 
   // The router's book-detail scope (16985-16992) and its state flag; Escape and Back close.
   const closeRef = useRef(closeBook);
@@ -240,7 +245,7 @@ export function useBookDetail(hub: SceneHub, catalogue: SceneCatalogue, router: 
   useEffect(() => {
     if (open == null) return;
     const scope = router.v("book-detail", { acceptsGesture: false, horizontal: (step: number) => { if (step === -1 && !source.current.pagesOpen()) closeRef.current(); } });
-    const key = (event: KeyboardEvent) => { if (event.key === "Escape") closeRef.current(); };
+    const key = (event: KeyboardEvent) => { if (event.key === "Escape" && !cartOwnsInput()) closeRef.current(); };
     const back = () => { if (window.location.pathname === source.current.home) closeRef.current(true); };
     window.addEventListener("keydown", key);
     window.addEventListener("popstate", back);

@@ -1,3 +1,4 @@
+import { installCartLocks, seedCart } from "../../fixtures/commerce/cart-locks";
 import { MemberAuthProviders } from "../../member-auth/fixtures/providers";
 import assert from "node:assert/strict";
 import { after, afterEach, before, test } from "node:test";
@@ -5,7 +6,7 @@ import { JSDOM } from "jsdom";
 import type { CommerceOffer } from "../../../src/lib/commerce/catalogue";
 import { membershipCartProduct } from "../../../src/lib/commerce/cart-products";
 
-// Signed out, /shop/cart shows the browser cart's line (Auth's browser-cart contract) and Checkout asks for sign-in.
+// Signed out, /shop/cart shows the browser cart's line (Auth's browser-cart contract) and saving asks for sign-in.
 let dom: JSDOM;
 let ui: typeof import("@testing-library/react/pure");
 let CommerceCart: typeof import("../../../src/components/commerce/cart").CommerceCart;
@@ -25,6 +26,7 @@ before(async () => {
     Object.defineProperty(globalThis, key, { value: key === "getComputedStyle" && typeof value === "function" ? value.bind(dom.window) : value, configurable: true, writable: true });
   }
   Object.defineProperty(dom.window, "matchMedia", { configurable: true, value: () => ({ matches: true, addEventListener() {}, removeEventListener() {} }) });
+  installCartLocks();
   ui = await import("@testing-library/react/pure");
   ui.configure({ getElementError: (message) => new Error(message ?? "Element not found") });
   CommerceCart = (await import("../../../src/components/commerce/cart")).CommerceCart;
@@ -38,18 +40,18 @@ after(async () => {
   for (const [key, descriptor] of previous) { if (descriptor) Object.defineProperty(globalThis, key, descriptor); else Reflect.deleteProperty(globalThis, key); }
 });
 
-test("signed out: the browser cart's line shows, Checkout asks for sign-in, and Remove empties it", async () => {
-  dom.window.localStorage.setItem("sphmrs.cart.v1", JSON.stringify({ version: 1, lines: [{ productID: "p1", quantity: 1 }] }));
+test("signed out: the browser cart's line shows and saving asks for sign-in, and Remove empties it", async () => {
+  seedCart(dom.window.localStorage, [{ productID: "p1", quantity: 1 }]);
   let signIn = 0;
   ui.render(<MemberAuthProviders><CommerceProvider>
     <CommerceCart products={[membershipCartProduct(offer)]} wide signedIn={false} onSignIn={() => { signIn += 1; }} />
   </CommerceProvider></MemberAuthProviders>);
   assert.ok(ui.screen.getByRole("heading", { name: "Book only" }));
-  ui.fireEvent.click(ui.screen.getByRole("button", { name: /checkout/i }));
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign in to save your cart" }));
   assert.equal(signIn, 1);
   ui.fireEvent.click(ui.screen.getByRole("button", { name: /Remove Book only/ }));
   await ui.waitFor(() => assert.ok(ui.screen.getByText("Your cart is empty")));
-  assert.equal(dom.window.localStorage.getItem("sphmrs.cart.v1") === null, true);
+  assert.equal(dom.window.localStorage.getItem("sphmrs.cart.v2") === null, true);
 });
 
 test("signed out with no browser line: the empty state, never a loading line", () => {

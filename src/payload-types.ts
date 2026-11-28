@@ -502,6 +502,7 @@ export interface Product {
   saleEndsAt?: string | null;
   dispatchSchedule?: string | null;
   shippingFeeKRW?: number | null;
+  maximumPerPerson?: number | null;
   publicationApproved?: boolean | null;
   reservedQuantity?: number | null;
   page?: {
@@ -2643,6 +2644,7 @@ export interface ProductsSelect<T extends boolean = true> {
   saleEndsAt?: T;
   dispatchSchedule?: T;
   shippingFeeKRW?: T;
+  maximumPerPerson?: T;
   publicationApproved?: T;
   reservedQuantity?: T;
   page?:

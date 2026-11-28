@@ -22,7 +22,7 @@ export function FooterShell({ children }: { children?: ReactNode }) {
     // Owner, 28 Nov, again: "It's still a TOO tight": the 9 px text keeps its size and gets room (Courtney's defaults):
     // pt-8/pb-10 on phones, md:pt-12/md:pb-14, 24 px between the links, 20 px either side of the divider. The links' and
     // EN/KO's 44 px targets reach 16 px past their 12 px line, the phone's 28 px up and the email's 28 px down, all inside
-    // the padding. From md the footer tucks a net 22 px under the page's rounded end (FooterGate's 28 px less mt-1.5), so
+    // the footer (with no fact row above it, the phone's reaches 3 px over the divider, still 1 px clear of the links'). From md the footer tucks a net 22 px under the page's rounded end (FooterGate's 28 px less mt-1.5), so
     // md:pt-12 starts the links' targets 10 px clear of the page. md:pb-14 leaves the email's target ending 28 px above the
     // footer's foot, inside the frame's 30 px bottom rail; the rail passes taps through (live hit test at 1440, 28 Nov).
     // On touch phones the bottom bar's spacer (client-layout) follows the footer with the page colour
@@ -33,8 +33,8 @@ export function FooterShell({ children }: { children?: ReactNode }) {
         <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-8">
           {/* Small, so regular weight (light at 9 px goes faint), with a 1 px full-ink underline. Each link keeps a 44 x 44
               px target (min-w for the short Korean names, label at its start so the row keeps the facts' left edge); the
-              negative margin keeps the row as short as its 12 px line, and a wrapped line sits 32 px down, clear of the
-              line above's targets. */}
+              negative margin keeps the row as short as its 12 px line, and a wrapped line sits 32 px down, so its targets
+              meet the line above's without crossing them. */}
           <SellerPolicyLinks className="flex-row gap-x-6 gap-y-8 text-[9px] leading-3 font-normal lg:text-[11px] [&_a]:-my-4 [&_a]:min-h-11 [&_a]:min-w-11 [&_a]:decoration-current [&_a]:decoration-1 [&_a]:underline-offset-[0.18em] [&_a]:hover:decoration-current" />
           <div className="-mx-3 -my-4 shrink-0">
             <FooterLocaleSwitch />

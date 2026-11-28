@@ -38,6 +38,9 @@ export default async function HelpPage() {
   } catch { console.error("Published commerce information is unavailable."); }
 
   return <EditorialPage title={t("title")} standfirst={copy.introduction ? <p>{copy.introduction}</p> : undefined}>
+    {/**
+     * Feels like a pretty wrong motherfucking way to do this. Review and redo as The Hideaway did.
+     */}
     <nav aria-label={t("topics")}>
       {/* No rule of its own above or below: the frame's rule (under the title, or above the body from lg) and the contact section's rule frame the list. */}
       <ol className="divide-y divide-border">

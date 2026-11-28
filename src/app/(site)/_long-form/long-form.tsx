@@ -1,6 +1,9 @@
 import { cn } from "@/lib/utils";
 import type { SerializedEditorState } from "@payloadcms/richtext-lexical/lexical";
-import { RichText, type JSXConvertersFunction } from "@payloadcms/richtext-lexical/react";
+import {
+  RichText,
+  type JSXConvertersFunction
+} from "@payloadcms/richtext-lexical/react";
 import type { ApprovedPolicy } from "@/lib/commerce/disclosures";
 import type { ReactNode } from "react";
 
@@ -43,7 +46,12 @@ export function LongFormSections({ sections, prefix = "policy", heading: Heading
   return (
     <div className={cn("space-y-12 sm:space-y-16", className)}>
       {sections.map((section, index) => (
-        <section key={index} id={`${prefix}-section-${index}`} aria-labelledby={`${prefix}-heading-${index}`} className="scroll-mt-header">
+        <section
+          key={index}
+          id={`${prefix}-section-${index}`}
+          aria-labelledby={`${prefix}-heading-${index}`}
+          className="scroll-mt-header"
+        >
           <Heading
             id={`${prefix}-heading-${index}`}
             className={cn("tracking-tight text-balance", Heading === "h2" ? "font-heading text-2xl leading-snug sm:text-3xl" : "font-heading text-xl leading-snug", headingClassName)}
@@ -52,7 +60,9 @@ export function LongFormSections({ sections, prefix = "policy", heading: Heading
           </Heading>
           <LongFormProse className={cn("mt-5", proseClassName)}>
             {section.paragraphs.map((paragraph, paragraphIndex) => (
-              <p key={paragraphIndex} className="whitespace-pre-line">{paragraph}</p>
+              <p key={paragraphIndex} className="whitespace-pre-line">
+                {paragraph}
+              </p>
             ))}
           </LongFormProse>
         </section>
@@ -61,8 +71,15 @@ export function LongFormSections({ sections, prefix = "policy", heading: Heading
   );
 }
 
-export function sectionsContents(sections: ApprovedPolicy["sections"], prefix = "policy"): ContentsEntry[] {
-  return sections.map((section, index) => ({ id: `${prefix}-section-${index}`, label: section.heading, depth: 2 }));
+export function sectionsContents(
+  sections: ApprovedPolicy["sections"],
+  prefix = "policy"
+): ContentsEntry[] {
+  return sections.map((section, index) => ({
+    id: `${prefix}-section-${index}`,
+    label: section.heading,
+    depth: 2
+  }));
 }
 
 /** A node after normalisation: `type` is a string and `children` is always an array of normalised nodes. */
@@ -73,12 +90,18 @@ export type ReadingDocument = SerializedEditorState & { readonly normalised: tru
 
 /** Deeper than any real policy; past it, nesting is treated as malformed. */
 const MAX_DEPTH = 64;
-const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
 
 function normaliseNode(raw: unknown, depth: number): ReadingNode | null {
-  if (depth > MAX_DEPTH || !isRecord(raw) || typeof raw.type !== "string") return null;
+  if (depth > MAX_DEPTH || !isRecord(raw) || typeof raw.type !== "string")
+    return null;
   // Uploads render from their related document; without one there is nothing to show.
-  if (raw.type === "upload" && !(isRecord(raw.value) && typeof raw.value.mimeType === "string")) return null;
+  if (
+    raw.type === "upload" &&
+    !(isRecord(raw.value) && typeof raw.value.mimeType === "string")
+  )
+    return null;
   const node: ReadingNode = {
     ...raw,
     type: raw.type,
@@ -87,7 +110,12 @@ function normaliseNode(raw: unknown, depth: number): ReadingNode | null {
   if ("text" in raw) node.text = typeof raw.text === "string" ? raw.text : "";
   if (raw.type === "link" || raw.type === "autolink") {
     const fields = isRecord(raw.fields) ? raw.fields : {};
-    node.fields = { ...fields, url: typeof fields.url === "string" ? fields.url : "", newTab: fields.newTab === true, linkType: fields.linkType === "internal" ? "internal" : "custom" };
+    node.fields = {
+      ...fields,
+      url: typeof fields.url === "string" ? fields.url : "",
+      newTab: fields.newTab === true,
+      linkType: fields.linkType === "internal" ? "internal" : "custom"
+    };
   }
   return node;
 }
@@ -99,12 +127,24 @@ function normaliseNode(raw: unknown, depth: number): ReadingNode | null {
  * over-deep nodes, uploads without a document) is dropped. Dropped entries carry no readable text.
  */
 export function editorDocument(value: unknown): ReadingDocument | null {
-  if (!isRecord(value) || !isRecord(value.root) || !Array.isArray(value.root.children)) return null;
-  const children = value.root.children.flatMap((child) => normaliseNode(child, 1) ?? []);
-  return { ...value, root: { ...value.root, type: "root", children }, normalised: true } as unknown as ReadingDocument;
+  if (
+    !isRecord(value) ||
+    !isRecord(value.root) ||
+    !Array.isArray(value.root.children)
+  )
+    return null;
+  const children = value.root.children.flatMap(
+    (child) => normaliseNode(child, 1) ?? []
+  );
+  return {
+    ...value,
+    root: { ...value.root, type: "root", children },
+    normalised: true
+  } as unknown as ReadingDocument;
 }
 
-const textOf = (node: ReadingNode): string => node.text ?? node.children.map(textOf).join("");
+const textOf = (node: ReadingNode): string =>
+  node.text ?? node.children.map(textOf).join("");
 
 /**
  * Contents and heading anchors for owner-edited rich text, derived together so every entry has a
@@ -118,10 +158,17 @@ export function documentOutline(data: ReadingDocument) {
   const entries: ContentsEntry[] = [];
   const used = new Set<string>();
   for (const node of data.root.children as unknown as ReadingNode[]) {
-    if (node.type !== "heading" || (node.tag !== "h2" && node.tag !== "h3")) continue;
+    if (node.type !== "heading" || (node.tag !== "h2" && node.tag !== "h3"))
+      continue;
     const label = textOf(node).trim();
     if (!label) continue;
-    const base = "policy-doc-" + (label.normalize("NFC").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-+|-+$/g, "") || "heading");
+    const base =
+      "policy-doc-" +
+      (label
+        .normalize("NFC")
+        .toLowerCase()
+        .replace(/[^\p{L}\p{N}]+/gu, "-")
+        .replace(/^-+|-+$/g, "") || "heading");
     let id = base;
     for (let count = 2; used.has(id); count++) id = `${base}-${count}`;
     used.add(id);
@@ -149,12 +196,21 @@ export function LongFormDocument({ data, ids, tableLabel, nested = false, classN
   const converters: JSXConvertersFunction = ({ defaultConverters }) => ({
     ...defaultConverters,
     heading: ({ node, nodesToJSX }) => {
-      const level = Math.max(0, HEADINGS.findIndex((tag) => tag === node.tag)) + (nested ? 1 : 0);
+      const level =
+        Math.max(
+          0,
+          HEADINGS.findIndex((tag) => tag === node.tag)
+        ) + (nested ? 1 : 0);
       const Tag = HEADINGS[Math.min(level, HEADINGS.length - 1)]!;
       return <Tag id={ids.get(node)}>{nodesToJSX({ nodes: node.children })}</Tag>;
     },
     table: ({ node, nodesToJSX }) => (
-      <div role="region" aria-label={tableLabel} tabIndex={0} className="max-w-full overflow-x-auto rounded-sm outline-offset-4 focus-visible:outline-2">
+      <div
+        role="region"
+        aria-label={tableLabel}
+        tabIndex={0}
+        className="max-w-full overflow-x-auto rounded-sm outline-offset-4 focus-visible:outline-2"
+      >
         <table className="w-full border-collapse text-left text-sm leading-relaxed sm:text-base">
           <tbody>{nodesToJSX({ nodes: node.children })}</tbody>
         </table>
@@ -162,7 +218,10 @@ export function LongFormDocument({ data, ids, tableLabel, nested = false, classN
     ),
     tablerow: ({ node, nodesToJSX }) => <tr className="border-b border-border">{nodesToJSX({ nodes: node.children })}</tr>,
     tablecell: ({ node, nodesToJSX }) => {
-      const span = { colSpan: node.colSpan && node.colSpan > 1 ? node.colSpan : undefined, rowSpan: node.rowSpan && node.rowSpan > 1 ? node.rowSpan : undefined };
+      const span = {
+        colSpan: node.colSpan && node.colSpan > 1 ? node.colSpan : undefined,
+        rowSpan: node.rowSpan && node.rowSpan > 1 ? node.rowSpan : undefined
+      };
       // Lexical header states: 1 = header row (labels a column), 2 = header column (labels a row), 3 = both.
       return node.headerState > 0
         ? <th {...span} scope={node.headerState === 2 ? "row" : "col"} className="py-3 pr-6 align-top text-sm text-muted-foreground">{nodesToJSX({ nodes: node.children })}</th>

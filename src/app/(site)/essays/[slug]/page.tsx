@@ -1,3 +1,7 @@
+/**
+ *
+ * Please check how this is handled on PayloadCMS' most recent versions of the templates and examples, available on their repo.
+ *  */
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { EssayReader } from "@/components/reading/essay-reader";

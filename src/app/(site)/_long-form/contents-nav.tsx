@@ -54,15 +54,29 @@ export function ContentsNav({ entries, label }: { entries: ReadonlyArray<Content
       <details className="group border-y border-border lg:hidden">
         <summary className="group/focus flex min-h-12 list-none items-center justify-between gap-4 py-3 text-sm [&::-webkit-details-marker]:hidden">
           <FocusShape className="outline-offset-4">{label}</FocusShape>
-          <span aria-hidden="true" className="text-lg leading-none text-muted-foreground transition-transform duration-[var(--duration-spring)] ease-[var(--ease-spring)] group-open:rotate-45">+</span>
+          <span
+            aria-hidden="true"
+            className="text-lg leading-none text-muted-foreground transition-transform duration-[var(--duration-spring)] ease-[var(--ease-spring)] group-open:rotate-45"
+          >
+            +
+          </span>
         </summary>
         {/* Jumping to a section folds the phone contents away, so the text is not pushed down on return. */}
-        <nav aria-label={label} className="pb-4" onClick={(event) => { if ((event.target as Element).closest("a")) event.currentTarget.closest("details")?.removeAttribute("open"); }}>
+        <nav
+          aria-label={label}
+          className="pb-4"
+          onClick={(event) => {
+            if ((event.target as Element).closest("a"))
+              event.currentTarget.closest("details")?.removeAttribute("open");
+          }}
+        >
           <ContentsLinks entries={entries} current={current} />
         </nav>
       </details>
       <nav aria-label={label} className="hidden lg:block">
-        <h2 className="mb-4 text-xs tracking-widest text-muted-foreground uppercase">{label}</h2>
+        <h2 className="mb-4 text-xs tracking-widest text-muted-foreground uppercase">
+          {label}
+        </h2>
         <ContentsLinks entries={entries} current={current} rail />
       </nav>
     </>
@@ -138,7 +152,8 @@ function ContentsLinks({ entries, current, rail = false }: { entries: ReadonlyAr
             aria-current={current === entry.id ? "location" : undefined}
             className={cn(
               "group/focus flex min-h-12 items-start py-3 text-sm leading-6 text-muted-foreground underline-offset-4 transition-colors duration-[var(--duration-fast)] ease-[var(--ease-standard)] hover:text-foreground hover:underline aria-[current=location]:text-foreground",
-              rail && "border-l border-border pl-5 hover:border-foreground aria-[current=location]:border-foreground",
+              rail &&
+                "border-l border-border pl-5 hover:border-foreground aria-[current=location]:border-foreground",
               // A nested entry's number starts where its parent's label does: the parent's padding, its
               // fixed-width number (w-5) and the gap (gap-3).
               rows[index].nested && (rail ? "pl-[3.25rem]" : "pl-8")

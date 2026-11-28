@@ -22,7 +22,15 @@ export function EditorialTitle({ title, titleId = "page-title", standfirst }: {
  * so the right side carries the list instead of a narrow centred column. Below lg they stack. Everything arrives in
  * one soft CSS fade on the shared motion timing, so text never waits on scripts.
  */
-export function EditorialPage({ title, titleId = "page-title", standfirst, lead, rail, children, after }: {
+export function EditorialPage({
+  title,
+  titleId = "page-title",
+  standfirst,
+  lead,
+  rail,
+  children,
+  after
+}: {
   title: string;
   /** Kept stable where pages already publish an anchor for their title. */
   titleId?: string;

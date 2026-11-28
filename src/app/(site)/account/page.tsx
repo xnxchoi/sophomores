@@ -1,3 +1,7 @@
+/**
+ * Why the fuck are we using search params here?
+ * Is this really the right way?
+ */
 import messages from "../../../../messages/en.json";
 import { TicketAccountEntry } from "@/components/tickets/ticket-account-entry";
 import { connection } from "next/server";
@@ -29,7 +33,11 @@ export default async function MemberAccountStudyPage({
   // next and a recognised provider error code carry over; without a next, sign-in ends at shop home (owner, 24 Nov).
   if (!(await currentUser())) redirect(memberSignInHref(query?.next, query?.error));
   const providerReturn = query?.error !== undefined;
-  const accountReturn = query?.next === "/me" || query?.next === "/me/settings/account" || query?.next === "/me/orders" || query?.next === "/me/settings";
+  const accountReturn =
+    query?.next === "/me" ||
+    query?.next === "/me/settings/account" ||
+    query?.next === "/me/orders" ||
+    query?.next === "/me/settings";
   return (
     // Signed in, the account shows even when its status check fails (owner, 26 Nov: "Account page shoulda fucking
     // should show the account page when logged in"); only a signed-out visitor sees sign-in, by the redirect above.

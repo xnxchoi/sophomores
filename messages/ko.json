@@ -1719,6 +1719,11 @@
       "pagesUnavailable": "",
       "noPages": ""
     },
+    "cartDrawer": {
+      "description": "",
+      "close": "",
+      "fullPage": ""
+    },
     "components_membership_welcome": {
       "title": "",
       "membership": "",

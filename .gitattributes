@@ -1,3 +1,4 @@
+* text=auto eol=lf
 
 # Native Illustrator documents are binary, including PDF-compatible saves.
 *.ai binary

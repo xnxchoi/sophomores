@@ -25,7 +25,10 @@ import { useIsMobile } from "@/providers/MiddleMan";
 function ViewportHeight() {
   useEffect(() => {
     const apply = () => {
-      document.documentElement.style.setProperty("--vh", `${window.innerHeight * 0.01}px`);
+      document.documentElement.style.setProperty(
+        "--vh",
+        `${window.innerHeight * 0.01}px`
+      );
     };
     apply();
     window.addEventListener("resize", apply);
@@ -36,7 +39,9 @@ function ViewportHeight() {
 
 function SiteMenuLinks() {
   const t = useTranslations("Customer.navigation");
-  const setNavigationPageItemData = useRPStore((state) => state.setNavigationPageItemData);
+  const setNavigationPageItemData = useRPStore(
+    (state) => state.setNavigationPageItemData
+  );
   const setNavigationPreviewMediaByKey = useRPStore((state) => state.setNavigationPreviewMediaByKey);
   useEffect(() => {
     // Cauterization: Hideaway filled these from the header global.

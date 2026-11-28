@@ -19,7 +19,9 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function AccountHomePage() {
   if (!(await currentUser())) redirect(memberSignInHref("/me"));
   const t = await getTranslations("Customer.app_site_me_page");
-  const settings = await getTranslations("Customer.app_site_me_settings_page_client");
+  const settings = await getTranslations(
+    "Customer.app_site_me_settings_page_client"
+  );
   return <PageFrame title={t("title")} displayTitle>
     <section aria-labelledby="account-shopping-heading">
       <h2 id="account-shopping-heading" className="font-sans text-xs uppercase tracking-widest text-muted-foreground">{t("shopping")}</h2>

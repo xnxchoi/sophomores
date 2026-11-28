@@ -494,9 +494,11 @@ test('an unresolved signed Paid signal fences browser resume and retire before p
 })
 
 
-test('an old signed Paid case blocks preparation on a fresh cart for any membership product', async () => {
+test('a fresh legacy membership prepare is refused, and an old signed Paid v1 case still holds a fresh v2 Signet candidate', async () => {
   const { createPortOneAdapter } = await import('../../../src/lib/commerce/portone/adapter')
-  const { inPaymentTransaction } = await import('../../../src/lib/commerce/_shared/transaction')
+  const { inPaymentTransaction, lockCommerce } = await import('../../../src/lib/commerce/_shared/transaction')
+  const { assertPurchaseWithoutPaidReview, PaymentReviewRequired } = await import('../../../src/lib/commerce/portone/review')
+  const { paidReviewCustomerLock } = await import('../../../src/lib/commerce/portone/accounting')
   const f = await fixture()
   f.setRetired()
   f.seed({ ordinaryUsed: 12, riskUsed: 4 })
@@ -513,8 +515,10 @@ test('an old signed Paid case blocks preparation on a fresh cart for any members
     saleEndsAt: '2100-01-01T00:00:00Z', dispatchSchedule: 'Fixture', shippingFeeKRW: 0, inventory: 3, reservedQuantity: 0,
     priceInKRWEnabled: true, priceInKRW: 100, updatedAt: 'v1' }
   const create = f.req.payload.create
+  const created: string[] = []
   f.req.payload.create = (async (input: Parameters<typeof create>[0]) => {
     if (input.collection === 'transactions') assert.fail('Replacement reached financial row creation')
+    created.push(String(input.collection))
     return create(input)
   }) as typeof create
   const oldFind = f.req.payload.find
@@ -537,17 +541,29 @@ test('an old signed Paid case blocks preparation on a fresh cart for any members
   f.req.data = { attemptID: randomUUID() }
   const adapter = createPortOneAdapter(f.deps)
   const data = { cart: { id: cartID }, currency: 'KRW', customerEmail: '', shippingAddress: f.row.portone.snapshot.shippingAddress } as unknown as Parameters<typeof adapter.initiatePayment>[0]['data']
-  await assert.rejects(inPaymentTransaction(f.req, async () => adapter.initiatePayment({
-    data, req: f.req, transactionsSlug: 'transactions',
-  })), /Payment requires review/)
+  // A fresh standalone legacy (v1) membership is no longer sold (owner, 27 Nov: nothing virtual on its own), for this
+  // product or another: prepare refuses it before any attempt, reservation or provider read.
+  for (const id of [product.id, 'distinct-product']) {
+    offeredProduct = id
+    f.req.data = { attemptID: randomUUID() }
+    await assert.rejects(inPaymentTransaction(f.req, async () => adapter.initiatePayment({
+      data, req: f.req, transactionsSlug: 'transactions',
+    })), /Offer is not available/)
+  }
+  assert.deepEqual(created, [])
   assert.equal(f.counts().gets, 0)
 
-  // Every v1 product shares the account's membership allowance, so another product is held too.
-  offeredProduct = 'distinct-product'
-  f.req.data = { attemptID: randomUUID() }
-  await assert.rejects(inPaymentTransaction(f.req, async () => adapter.initiatePayment({
-    data, req: f.req, transactionsSlug: 'transactions',
-  })), /Payment requires review/)
+  // The signed Paid case on the historical v1 membership still holds the account's one membership allowance across
+  // versions: a fresh v2 Signet candidate on another product and another cart is refused for review, under the same
+  // customer lock the adapter takes. (Full adapter coverage of native editions lives with the isolated native fixture.)
+  const signet = { version: 2 as const, customerID: f.identity.customerID, cartID: randomUUID(),
+    productID: 'signet-edition', eventID: 'launch-event' }
+  assert.notEqual(signet.productID, f.row.portone.snapshot.productID)
+  assert.notEqual(signet.cartID, f.row.portone.snapshot.cartID)
+  await assert.rejects(inPaymentTransaction(f.req, async () => withCommerceWrite(f.req, async () => {
+    await lockCommerce(f.req, [paidReviewCustomerLock(f.identity.customerID)])
+    await assertPurchaseWithoutPaidReview(f.req, signet, 'transactions')
+  })), PaymentReviewRequired)
   assert.equal(f.counts().gets, 0)
 })
 

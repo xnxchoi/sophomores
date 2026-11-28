@@ -1,0 +1,10 @@
+**/.env*
+**/.sops*
+**/*.p8
+**/*.pem
+**/*.key
+**/node_modules
+**/.git
+**/.next
+Dockerfile
+.dockerignore

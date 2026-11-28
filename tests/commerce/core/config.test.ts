@@ -25,12 +25,19 @@ test("official plugin owns exactly one catalogue/cart/order/transaction; edition
   for (const slug of ["products", "carts", "orders", "transactions"]) assert.equal(result.collections?.filter((entry) => entry.slug === slug).length, 1);
   for (const slug of ["variants", "variantTypes", "variantOptions"]) collection(result, slug);
   const hook = collection(result, "carts").hooks!.beforeChange![0];
-  const req = { user: { id: "owner", collection: "users" } } as unknown as PayloadRequest;
+  // The cart line is classified first (native edition or legacy): an explicitly legacy published product, read once.
+  const productReads: unknown[] = [];
+  const req = { user: { id: "owner", collection: "users" }, payload: { find: async (args: { collection: string; where: unknown }) => {
+    assert.equal(args.collection, "products");
+    productReads.push(args.where);
+    return { docs: [{ id: "book", commerceModel: "legacy" }], totalDocs: 1 };
+  } } } as unknown as PayloadRequest;
   await withCommerceWrite(req, async () => {
     await assert.rejects(async () => hook({
       req, operation: "create", data: { items: [{ product: "book", quantity: 1, variant: "edition" }] }
     } as never), error => error instanceof APIError && error.status === 409 && error.message === "Variants unavailable");
   });
+  assert.deepEqual(productReads, [{ and: [{ id: { equals: "book" } }] }]);
   const addresses = collection(result, "addresses");
   for (const action of ["create", "read", "update", "delete"] as const) assert.equal(await addresses.access![action]!({ req: {} } as never), false);
   const cartEndpoints = collection(result, "carts").endpoints;

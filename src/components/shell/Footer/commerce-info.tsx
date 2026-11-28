@@ -18,13 +18,14 @@ export function CommerceInfo({ facts }: { facts: FooterSellerFacts | null }) {
       {/* One compact block in the Korean form's order (Courtney, 28 Nov: the stacked pairs were a long, sparse column):
           label and value on one row, the labels' column at most 45 % wide (a longer label wraps), the value column
           taking the rest, where the address and email wrap. The same block on every width. The phone's target reaches
-          32 px up; when no plain row sits above it, pt-8 gives it that room so it never reaches the legal links. */}
+          32 px up, and the legal links' targets reach 1 px short of this block; each plain row above the phone covers
+          16 px of that reach, so the block reserves the rest (Review-B, 28 Nov): 32 px with no row above the phone,
+          16 px with one, nothing from two. */}
       <dl
         className={cn(
           "grid max-w-[40rem] grid-cols-[fit-content(45%)_minmax(0,1fr)] gap-x-3 gap-y-1",
-          facts.customerServicePhone &&
-            !(facts.tradeName || facts.representative || facts.bizNum || facts.mailOrderRegistration || facts.businessAddress) &&
-            "pt-8"
+          facts.customerServicePhone && rowsAbovePhone(facts) === 0 && "pt-8",
+          facts.customerServicePhone && rowsAbovePhone(facts) === 1 && "pt-4"
         )}
       >
         {facts.tradeName && <InfoItem label={t("name")}>{facts.tradeName}</InfoItem>}
@@ -45,6 +46,11 @@ export function CommerceInfo({ facts }: { facts: FooterSellerFacts | null }) {
       </dl>
     </section>
   );
+}
+
+/** How many plain fact rows sit above the phone row (the facts print in this fixed order; a missing one is left out). */
+function rowsAbovePhone(facts: FooterSellerFacts): number {
+  return [facts.tradeName, facts.representative, facts.bizNum, facts.mailOrderRegistration, facts.businessAddress].filter(Boolean).length;
 }
 
 /**

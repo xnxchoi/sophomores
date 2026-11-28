@@ -196,8 +196,9 @@ function CoveredPage({ children }: { children: ReactNode }) {
     // page edge meets the frame's window. The page runs under the side rails, so the arc enters from behind
     // the frame. A clip at the rails would also cut the shop's fixed scene and controls. Below md the footer isn't pinned,
     // so the page keeps square corners. overflow-clip keeps a page's own full-width background (such as /shop's) inside
-    // the rounding; unlike overflow-hidden it isn't a scroll container, so sticky children still work.
-    <div ref={cover} data-themed="background-color" className="relative z-1 mx-page-inset bg-background shadow-2xl shadow-carbon/25 md:overflow-clip md:rounded-b-page">
+    // the rounding; unlike overflow-hidden it isn't a scroll container, so sticky children still work. No shadow (owner,
+    // 28 Nov: "drop the shadow, keep the gap"): it showed as a grey band in the footer's mt-1.5 gap on phones.
+    <div ref={cover} data-themed="background-color" className="relative z-1 mx-page-inset bg-background md:overflow-clip md:rounded-b-page">
       {children}
       <div ref={end} aria-hidden="true" />
     </div>

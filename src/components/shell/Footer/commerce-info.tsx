@@ -17,15 +17,14 @@ export function CommerceInfo({ facts }: { facts: FooterSellerFacts | null }) {
     <section id="seller-information" aria-label={t("section")} className="scroll-mt-header">
       {/* One compact block in the Korean form's order (Courtney, 28 Nov: the stacked pairs were a long, sparse column):
           label and value on one row, the labels' column at most 45 % wide (a longer label wraps), the value column
-          taking the rest, where the address and email wrap. The same block on every width. The phone's target reaches
-          32 px up, and the legal links' targets reach 1 px short of this block; each plain row above the phone covers
-          16 px of that reach, so the block reserves the rest (Review-B, 28 Nov): 32 px with no row above the phone,
-          16 px with one, nothing from two. */}
+          taking the rest, where the address and email wrap. The same block on every width. Rows on a 26 px pitch (16 px
+          lines, 10 px apart) and a 24 px (md: 40 px) gap to the values: the owner's "TOO tight" (28 Nov). The phone's
+          target reaches 28 px up and the legal links' targets end 25 px above this block (20 px either side of the
+          divider), so only a phone with no plain row above it needs room: pt-1 (Review-B, 28 Nov). */}
       <dl
         className={cn(
-          "grid max-w-[40rem] grid-cols-[fit-content(45%)_minmax(0,1fr)] gap-x-3 gap-y-1",
-          facts.customerServicePhone && rowsAbovePhone(facts) === 0 && "pt-8",
-          facts.customerServicePhone && rowsAbovePhone(facts) === 1 && "pt-4"
+          "grid max-w-[44rem] grid-cols-[fit-content(45%)_minmax(0,1fr)] gap-x-6 gap-y-2.5 md:gap-x-10",
+          facts.customerServicePhone && rowsAbovePhone(facts) === 0 && "pt-1"
         )}
       >
         {facts.tradeName && <InfoItem label={t("name")}>{facts.tradeName}</InfoItem>}
@@ -61,15 +60,15 @@ function rowsAbovePhone(facts: FooterSellerFacts): number {
 function InfoItem({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="col-span-2 grid grid-cols-subgrid items-baseline">
-      <dt className="text-[9px] leading-3 tracking-[0.06em] text-footer-muted uppercase">{label}</dt>
-      <dd className="min-w-0 text-[9px] leading-3 break-words text-foreground">{children}</dd>
+      <dt className="text-[9px] leading-4 tracking-[0.06em] text-footer-muted uppercase">{label}</dt>
+      <dd className="min-w-0 text-[9px] leading-4 break-words text-foreground">{children}</dd>
     </div>
   );
 }
 
 /**
- * A 44 px target on a 12 px line, with the negative margin keeping the row as tight as the plain facts. The phone and
- * email rows are adjacent (16 px apart), so their targets must not cross (Santa review, 28 Nov: the email's box covered
+ * A 44 px target on a 16 px line, with the negative margin keeping the row as tight as the plain facts. The phone and
+ * email rows are adjacent (26 px apart), so their targets must not cross (Santa review, 28 Nov: the email's box covered
  * the phone number): the phone's reaches up over the plain rows above it, the email's down into the footer's foot.
  */
 function FactLink({ href, reach, children }: { href: string; reach: "up" | "down"; children: ReactNode }) {
@@ -78,7 +77,7 @@ function FactLink({ href, reach, children }: { href: string; reach: "up" | "down
       href={href}
       className={cn(
         "group/focus inline-flex min-h-11 min-w-11 max-w-full break-all underline decoration-current underline-offset-4 hover:decoration-current",
-        reach === "up" ? "-mt-8 items-end" : "-mb-8 items-start"
+        reach === "up" ? "-mt-7 items-end" : "-mb-7 items-start"
       )}
     >
       <FocusShape className="outline-offset-4">{children}</FocusShape>

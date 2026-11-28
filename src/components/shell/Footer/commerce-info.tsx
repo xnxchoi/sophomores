@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/components/core/Link/Link";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
+import { cn } from "@/lib/utils";
 import type { FooterSellerFacts } from "@/lib/site-info/seller-facts";
 
 /**
@@ -25,12 +26,12 @@ export function CommerceInfo({ facts }: { facts: FooterSellerFacts | null }) {
         {facts.businessAddress && <InfoItem label={t("address")}>{facts.businessAddress}</InfoItem>}
         {facts.customerServicePhone && (
           <InfoItem label={t("phone")}>
-            <FactLink href={"tel:" + facts.customerServicePhone.replace(/[^\d+]/g, "")}>{facts.customerServicePhone}</FactLink>
+            <FactLink reach="up" href={"tel:" + facts.customerServicePhone.replace(/[^\d+]/g, "")}>{facts.customerServicePhone}</FactLink>
           </InfoItem>
         )}
         {facts.customerServiceEmail && (
           <InfoItem label={t("email")}>
-            <FactLink href={"mailto:" + facts.customerServiceEmail}>{facts.customerServiceEmail}</FactLink>
+            <FactLink reach="down" href={"mailto:" + facts.customerServiceEmail}>{facts.customerServiceEmail}</FactLink>
           </InfoItem>
         )}
       </dl>
@@ -52,12 +53,19 @@ function InfoItem({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-/** A 44 px target around a 12 px line: the negative margin keeps the rows as tight as the plain facts. */
-function FactLink({ href, children }: { href: string; children: ReactNode }) {
+/**
+ * A 44 px target on a 12 px line, with the negative margin keeping the row as tight as the plain facts. The phone and
+ * email rows are adjacent (16 px apart), so their targets must not cross (Santa review, 28 Nov: the email's box covered
+ * the phone number): the phone's reaches up over the plain rows above it, the email's down into the footer's foot.
+ */
+function FactLink({ href, reach, children }: { href: string; reach: "up" | "down"; children: ReactNode }) {
   return (
     <Link
       href={href}
-      className="group/focus -my-4 inline-flex min-h-11 max-w-full items-center break-all underline decoration-current/60 underline-offset-4 hover:decoration-current"
+      className={cn(
+        "group/focus inline-flex min-h-11 max-w-full break-all underline decoration-current/60 underline-offset-4 hover:decoration-current",
+        reach === "up" ? "-mt-8 items-end" : "-mb-8 items-start"
+      )}
     >
       <FocusShape className="outline-offset-4">{children}</FocusShape>
     </Link>

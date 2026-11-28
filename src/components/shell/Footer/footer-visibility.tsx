@@ -118,7 +118,7 @@ export function FooterGate({ children }: { children: ReactNode }) {
   const pathname = usePathname() ?? "";
   if (pathHidesFooter(pathname)) return null;
   // From md up it tucks the page's corner radius (--page-radius) under the page's end, so the footer itself shows behind
-  // the page's rounded bottom corners and no other colour shows in them. Its own top padding (md:pt-20) keeps the links clear.
+  // the page's rounded bottom corners and no other colour shows in them. Its own top padding (md:pt-10) keeps the links clear.
   return <div className="md:sticky md:bottom-0 md:z-0 md:mt-[calc(var(--page-radius)*-1)]">{children}</div>;
 }
 

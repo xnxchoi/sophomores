@@ -22,7 +22,7 @@ export function FooterLocaleSwitch() {
       {locales.map((locale, index) => (
         <span key={locale} className="flex items-center">
           {index > 0 && (
-            <span aria-hidden="true" className="text-[9px] text-foreground/20">
+            <span aria-hidden="true" className="text-[9px] text-footer-muted">
               /
             </span>
           )}

@@ -172,36 +172,6 @@
   --color-footer: var(--black-lighter-2);
   --color-footer-ink: var(--white);
   --color-footer-muted: var(--stone);
-  /* The footer's small text sits on a solid 3px band of the footer ground, so no grain speck lands beside a glyph: the
-     Singer Stone labels measured 3.50:1 against the lightest specks next to their strokes, 5.31:1 with this band
-     (Review-B, 26 Nov). Small text only: the legal links take it below md, where they are 22px; from md they are
-     28-34px large text, clear of 3:1 without it, and the band would read as a glow. */
-  --text-shadow-footer-ground:
-    1px 0px var(--color-footer),
-    -1px 0px var(--color-footer),
-    0px 1px var(--color-footer),
-    0px -1px var(--color-footer),
-    1px 1px var(--color-footer),
-    -1px -1px var(--color-footer),
-    1px -1px var(--color-footer),
-    -1px 1px var(--color-footer),
-    2px 0px var(--color-footer),
-    -2px 0px var(--color-footer),
-    0px 2px var(--color-footer),
-    0px -2px var(--color-footer),
-    2px 2px var(--color-footer),
-    -2px -2px var(--color-footer),
-    2px -2px var(--color-footer),
-    -2px 2px var(--color-footer),
-    3px 0px var(--color-footer),
-    -3px 0px var(--color-footer),
-    0px 3px var(--color-footer),
-    0px -3px var(--color-footer),
-    3px 3px var(--color-footer),
-    -3px -3px var(--color-footer),
-    3px -3px var(--color-footer),
-    -3px 3px var(--color-footer),
-    0 0 4px var(--color-footer);
 }
 
 @theme static {
